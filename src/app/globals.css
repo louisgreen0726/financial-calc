@@ -42,7 +42,7 @@
 
 /* Base Zinc Theme with Emerald Primary */
 :root {
-  --background: 0 0% 100%;
+  --background: 210 20% 98%; /* Soft off-white */
   --foreground: 240 10% 3.9%;
   
   --card: 0 0% 100%;
