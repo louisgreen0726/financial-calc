@@ -18,7 +18,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             {/* Main Content Area */}
             <div className="flex-1 md:pl-72 flex flex-col min-h-screen">
                 <Header />
-                <main className="flex-1 p-6 md:p-8 overflow-y-auto w-full max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 ease-in-out">
+                <main className="flex-1 p-4 md:p-8 overflow-y-auto w-full max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 ease-in-out">
                     {children}
                 </main>
             </div>
