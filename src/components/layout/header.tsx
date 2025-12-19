@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { MobileSidebar } from "./mobile-sidebar";
 import { cn } from "@/lib/utils";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { ModeToggle } from "@/components/mode-toggle";
 
 export function Header() {
     const pathname = usePathname();
@@ -26,8 +27,8 @@ export function Header() {
                         {/* Search could go here */}
                     </div>
                     <nav className="flex items-center gap-2">
+                        <ModeToggle />
                         <LanguageSwitcher />
-                        {/* User profile or theme toggle could go here */}
                     </nav>
                 </div>
             </div>
