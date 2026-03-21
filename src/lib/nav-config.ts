@@ -1,19 +1,11 @@
-import { 
-  Calculator, 
-  TrendingUp, 
-  PieChart, 
-  Landmark, 
-  CreditCard, 
-  Activity, 
-  Globe, 
-  ShieldCheck 
-} from "lucide-react";
+import { Calculator, TrendingUp, PieChart, Landmark, CreditCard, Activity, Globe, ShieldCheck } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 export interface NavItem {
   titleKey: string;
   descKey: string;
   href: string;
-  icon: any;
+  icon: LucideIcon;
 }
 
 export interface NavSection {
@@ -69,7 +61,7 @@ export const NAV_CONFIG: NavSection[] = [
         titleKey: "nav.derivatives.options.title",
         descKey: "nav.derivatives.options.desc",
         href: "/options",
-        icon: ShieldCheck, 
+        icon: ShieldCheck,
       },
       {
         titleKey: "nav.derivatives.risk.title",
@@ -97,4 +89,3 @@ export const NAV_CONFIG: NavSection[] = [
     ],
   },
 ];
-

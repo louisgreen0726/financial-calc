@@ -11,12 +11,12 @@ export function LanguageSwitcher() {
     <Button
       variant="ghost"
       size="sm"
-      onClick={() => setLanguage(language === 'en' ? 'zh' : 'en')}
+      onClick={() => setLanguage(language === "en" ? "zh" : "en")}
       className="w-9 px-0"
-      title={language === 'en' ? "Switch to Chinese" : "切换到英文"}
+      aria-label={language === "en" ? "Switch to Chinese" : "切换到英文"}
     >
       <Globe className="h-4 w-4 mr-2" />
-      {language === 'en' ? 'EN' : '中'}
+      {language === "en" ? "EN" : "中"}
     </Button>
   );
 }
