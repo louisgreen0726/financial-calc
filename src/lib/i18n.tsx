@@ -1,9 +1,15 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 // --- Types ---
-type Language = 'en' | 'zh';
+type Language = "en" | "zh";
+
+type NestedKeyOf<T, Prefix extends string = ""> = T extends string
+  ? Prefix
+  : {
+      [K in keyof T & string]: NestedKeyOf<T[K], Prefix extends "" ? K : `${Prefix}.${K}`>;
+    }[keyof T & string];
 
 type Translations = {
   common: {
@@ -21,28 +27,38 @@ type Translations = {
     add: string;
     remove: string;
     clear: string;
+    light: string;
+    dark: string;
+    system: string;
+    toggleMenu: string;
+    toggleTheme: string;
+    home: string;
+  };
+  sidebar: {
+    edition: string;
+    version: string;
   };
   nav: {
     core: {
       title: string;
-      tvm: { title: string; desc: string; };
-      cashFlow: { title: string; desc: string; };
+      tvm: { title: string; desc: string };
+      cashFlow: { title: string; desc: string };
     };
     investing: {
       title: string;
-      equity: { title: string; desc: string; };
-      portfolio: { title: string; desc: string; };
-      bonds: { title: string; desc: string; };
+      equity: { title: string; desc: string };
+      portfolio: { title: string; desc: string };
+      bonds: { title: string; desc: string };
     };
     derivatives: {
       title: string;
-      options: { title: string; desc: string; };
-      risk: { title: string; desc: string; };
+      options: { title: string; desc: string };
+      risk: { title: string; desc: string };
     };
     banking: {
       title: string;
-      loans: { title: string; desc: string; };
-      macro: { title: string; desc: string; };
+      loans: { title: string; desc: string };
+      macro: { title: string; desc: string };
     };
   };
   home: {
@@ -92,9 +108,29 @@ type Translations = {
   equity: {
     title: string;
     subtitle: string;
-    capm: { tab: string; title: string; desc: string; rf: string; beta: string; rm: string; re: string; prem: string; };
-    wacc: { tab: string; title: string; eqVal: string; debtVal: string; costEq: string; costDebt: string; tax: string; result: string; desc: string; };
-    ddm: { tab: string; title: string; desc: string; d1: string; req: string; g: string; intrinsic: string; resultDesc: string; };
+    capm: { tab: string; title: string; desc: string; rf: string; beta: string; rm: string; re: string; prem: string };
+    wacc: {
+      tab: string;
+      title: string;
+      eqVal: string;
+      debtVal: string;
+      costEq: string;
+      costDebt: string;
+      tax: string;
+      result: string;
+      desc: string;
+    };
+    ddm: {
+      tab: string;
+      title: string;
+      desc: string;
+      d1: string;
+      req: string;
+      g: string;
+      intrinsic: string;
+      resultDesc: string;
+      growthError: string;
+    };
   };
   bonds: {
     title: string;
@@ -105,7 +141,7 @@ type Translations = {
     ytm: string;
     years: string;
     freq: string;
-    freqOpts: { annual: string; semi: string; quart: string; month: string; };
+    freqOpts: { annual: string; semi: string; quart: string; month: string };
     fairPrice: string;
     discount: string;
     premium: string;
@@ -149,6 +185,13 @@ type Translations = {
     sell: string;
     payoff: string;
     intrinsic: string;
+    greeks: {
+      delta: string;
+      gamma: string;
+      theta: string;
+      vega: string;
+      rho: string;
+    };
   };
   risk: {
     title: string;
@@ -186,6 +229,13 @@ type Translations = {
     interest: string;
     remBalance: string;
   };
+  macro: {
+    title: string;
+    subtitle: string;
+    construction: string;
+    constructionDesc: string;
+    comingSoon: string;
+  };
 };
 
 // --- Dictionaries ---
@@ -205,6 +255,16 @@ const en: Translations = {
     add: "Add",
     remove: "Remove",
     clear: "Clear",
+    light: "Light",
+    dark: "Dark",
+    system: "System",
+    toggleMenu: "Toggle Menu",
+    toggleTheme: "Toggle Theme",
+    home: "Home",
+  },
+  sidebar: {
+    edition: "Professional Edition",
+    version: "v1.0.0",
   },
   nav: {
     core: {
@@ -306,6 +366,7 @@ const en: Translations = {
       g: "Growth Rate (%)",
       intrinsic: "Intrinsic Value",
       resultDesc: "Fair price based on dividend growth perpetuity.",
+      growthError: "Growth rate must be less than the required return.",
     },
   },
   bonds: {
@@ -361,6 +422,13 @@ const en: Translations = {
     sell: "Right to Sell",
     payoff: "Intrinsic Value Payoff",
     intrinsic: "Value at Expiration vs Spot Price",
+    greeks: {
+      delta: "Delta (Δ)",
+      gamma: "Gamma (Γ)",
+      theta: "Theta (Θ)",
+      vega: "Vega (ν)",
+      rho: "Rho (ρ)",
+    },
   },
   risk: {
     title: "Risk Management",
@@ -398,6 +466,14 @@ const en: Translations = {
     interest: "Interest",
     remBalance: "Balance",
   },
+  macro: {
+    title: "Macroeconomics & FX",
+    subtitle: "Analyze macroeconomic indicators and foreign exchange rates.",
+    construction: "Module Under Construction",
+    constructionDesc: "This module is currently under development.",
+    comingSoon:
+      "Coming soon: Inflation calculators, Purchasing Power Parity (PPP), and real-time FX rate conversion tools.",
+  },
 };
 
 const zh: Translations = {
@@ -416,6 +492,16 @@ const zh: Translations = {
     add: "新增",
     remove: "删除",
     clear: "重置",
+    light: "浅色",
+    dark: "深色",
+    system: "跟随系统",
+    toggleMenu: "切换菜单",
+    toggleTheme: "切换主题",
+    home: "首页",
+  },
+  sidebar: {
+    edition: "专业版",
+    version: "v1.0.0",
   },
   nav: {
     core: {
@@ -517,12 +603,13 @@ const zh: Translations = {
       g: "股利增长率 (%)",
       intrinsic: "内在价值",
       resultDesc: "基于股利永续增长假设推算的每股公允价值。",
+      growthError: "增长率必须低于要求回报率。",
     },
   },
   bonds: {
     title: "债券估值",
     subtitle: "计算债券理论价格、到期收益率(YTM)、久期及凸性。",
-    char: "债券属性",
+    char: "债券参数",
     face: "票面面值",
     coupon: "票息率 (%)",
     ytm: "到期收益率 (%)",
@@ -544,7 +631,7 @@ const zh: Translations = {
     universe: "资产池配置",
     universeDesc: "设定各资产的预期回报率与风险 (标准差)。",
     rf: "无风险利率",
-    corr: "相关系数矩阵",
+    corr: "相关系数",
     asset: "资产名称",
     ret: "预期回报 (%)",
     risk: "风险/波动率 (%)",
@@ -568,10 +655,17 @@ const zh: Translations = {
     vol: "波动率 (σ %)",
     call: "看涨期权 (Call)",
     put: "看跌期权 (Put)",
-    buy: "买方 (Long)",
-    sell: "卖方 (Short)",
+    buy: "买入权利",
+    sell: "卖出权利",
     payoff: "到期盈亏图",
     intrinsic: "内在价值分析",
+    greeks: {
+      delta: "Delta (Δ)",
+      gamma: "Gamma (Γ)",
+      theta: "Theta (Θ)",
+      vega: "Vega (ν)",
+      rho: "Rho (ρ)",
+    },
   },
   risk: {
     title: "风险管理",
@@ -609,6 +703,13 @@ const zh: Translations = {
     interest: "偿还利息",
     remBalance: "剩余本金",
   },
+  macro: {
+    title: "宏观经济与外汇",
+    subtitle: "分析宏观经济指标与汇率变化。",
+    construction: "模块建设中",
+    constructionDesc: "本模块正在开发中。",
+    comingSoon: "即将推出：通胀计算器、购买力平价 (PPP) 与实时汇率换算工具。",
+  },
 };
 
 const dictionaries = { en, zh };
@@ -625,35 +726,31 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState<Language>('en');
-
-  // Load from local storage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem('app-language') as Language;
-    if (saved && (saved === 'en' || saved === 'zh')) {
-      setLanguage(saved);
-    }
-  }, []);
+  const [language, setLanguage] = useState<Language>(() => {
+    if (typeof window === "undefined") return "en";
+    const saved = localStorage.getItem("app-language");
+    return saved === "en" || saved === "zh" ? saved : "en";
+  });
 
   const handleSetLanguage = (lang: Language) => {
     setLanguage(lang);
-    localStorage.setItem('app-language', lang);
+    localStorage.setItem("app-language", lang);
   };
 
   const currentDictionary = dictionaries[language];
 
   // Helper to get nested values like "nav.core.title"
   const t = (path: string): string => {
-    const keys = path.split('.');
-    let current: any = currentDictionary;
+    const keys = path.split(".");
+    let current: unknown = currentDictionary;
     for (const key of keys) {
-      if (current[key] === undefined) {
+      if (typeof current !== "object" || current === null || (current as Record<string, unknown>)[key] === undefined) {
         console.warn(`Translation missing for key: ${path} in language: ${language}`);
         return path;
       }
-      current = current[key];
+      current = (current as Record<string, unknown>)[key];
     }
-    return typeof current === 'string' ? current : path;
+    return typeof current === "string" ? current : path;
   };
 
   return (
@@ -666,7 +763,9 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 export function useLanguage() {
   const context = useContext(LanguageContext);
   if (context === undefined) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
+    throw new Error("useLanguage must be used within a LanguageProvider");
   }
   return context;
 }
+
+export type TranslationKey = NestedKeyOf<Translations>;

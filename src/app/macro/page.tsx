@@ -1,28 +1,33 @@
+"use client";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useLanguage } from "@/lib/i18n";
+import { Globe } from "lucide-react";
 
 export default function MacroPage() {
-    return (
-        <div className="space-y-6">
-            <div>
-                <h2 className="text-3xl font-bold tracking-tight">Macroeconomics & FX</h2>
-                <p className="text-muted-foreground">
-                    Analyze macroeconomic indicators and foreign exchange rates.
-                </p>
-            </div>
+  const { t } = useLanguage();
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Module construction</CardTitle>
-                        <CardDescription>This module is currently under development.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-sm text-muted-foreground">
-                            Coming soon: Inflation calculators, Purchasing Power Parity (PPP), and real-time FX rate conversion tools.
-                        </p>
-                    </CardContent>
-                </Card>
-            </div>
-        </div>
-    );
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">{t("macro.title")}</h1>
+        <p className="text-muted-foreground mt-2">{t("macro.subtitle")}</p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Globe className="h-5 w-5 text-primary" />
+              {t("macro.construction")}
+            </CardTitle>
+            <CardDescription>{t("macro.constructionDesc")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">{t("macro.comingSoon")}</p>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
 }

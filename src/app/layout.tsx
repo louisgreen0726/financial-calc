@@ -4,6 +4,7 @@ import "./globals.css";
 import { AppLayout } from "@/components/layout/app-layout";
 import { LanguageProvider } from "@/lib/i18n";
 import { ThemeProvider } from "@/components/theme-provider";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,23 +28,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <LanguageProvider>
-            <AppLayout>
-              {children}
-            </AppLayout>
+            <ErrorBoundary>
+              <AppLayout>{children}</AppLayout>
+            </ErrorBoundary>
           </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>
   );
 }
-
