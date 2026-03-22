@@ -7,6 +7,8 @@
 [![Tests](https://img.shields.io/badge/Tests-53+-success?style=flat-square&logo=vitest)](.)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 
+**🌐 Language / 语言**: [English](#financial-command-center) | [中文](README_zh.md)
+
 **专业级金融建模、估值与风险分析平台 | Professional-grade financial modeling, valuation, and risk analysis tools**
 
 A comprehensive, bilingual (English/Chinese) financial calculator web application featuring 10 specialized modules with 35+ financial formulas. Built with modern web technologies for precision, performance, and exceptional user experience.
