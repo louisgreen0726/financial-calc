@@ -292,4 +292,32 @@ describe("Finance", () => {
       expect(Finance.effectiveRate(0.12, 0)).toBeNaN();
     });
   });
+
+  describe("rate", () => {
+    it("calculates interest rate for loan", () => {
+      const result = Finance.rate(12, 100, -1000, 0);
+      expect(result).toBeCloseTo(0.029, 3);
+    });
+  });
+
+  describe("macro functions", () => {
+    describe("inflationRate", () => {
+      it("calculates annual inflation rate", () => {
+        const result = Finance.inflationRate(100, 150, 10);
+        expect(result).toBeCloseTo(0.0414, 3);
+      });
+    });
+    describe("purchasingPower", () => {
+      it("calculates future purchasing power", () => {
+        const result = Finance.purchasingPower(1000, 0.03, 10);
+        expect(result).toBeCloseTo(744.09, 2);
+      });
+    });
+    describe("realInterestRate", () => {
+      it("calculates real rate using Fisher equation", () => {
+        const result = Finance.realInterestRate(0.05, 0.02);
+        expect(result).toBeCloseTo(0.0294, 3);
+      });
+    });
+  });
 });
