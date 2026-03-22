@@ -87,6 +87,7 @@ type Translations = {
       pv: string;
       pmt: string;
       nper: string;
+      rate: string;
     };
     emptyState: string;
   };
@@ -232,9 +233,67 @@ type Translations = {
   macro: {
     title: string;
     subtitle: string;
-    construction: string;
-    constructionDesc: string;
-    comingSoon: string;
+    inflation: {
+      tab: string;
+      title: string;
+      desc: string;
+      startPrice: string;
+      endPrice: string;
+      years: string;
+      rate: string;
+      error: {
+        negativePrice: string;
+        invalidYears: string;
+      };
+    };
+    purchasingPower: {
+      tab: string;
+      title: string;
+      desc: string;
+      amount: string;
+      inflation: string;
+      years: string;
+      futureValue: string;
+      loss: string;
+      error: {
+        negativeAmount: string;
+        invalidYears: string;
+      };
+    };
+    realRate: {
+      tab: string;
+      title: string;
+      desc: string;
+      nominal: string;
+      inflation: string;
+      real: string;
+    };
+    cpiAdjust: {
+      tab: string;
+      title: string;
+      desc: string;
+      amount: string;
+      fromCPI: string;
+      toCPI: string;
+      adjusted: string;
+      error: {
+        negativeAmount: string;
+        zeroCPI: string;
+      };
+    };
+    ppp: {
+      tab: string;
+      title: string;
+      desc: string;
+      domestic: string;
+      foreign: string;
+      rate: string;
+      rateDesc: string;
+      error: {
+        negativePrice: string;
+        zeroForeign: string;
+      };
+    };
   };
 };
 
@@ -315,6 +374,7 @@ const en: Translations = {
       pv: "The present value needed to reach the goal.",
       pmt: "Recurring payment required per period.",
       nper: "Number of periods required.",
+      rate: "The interest rate per period.",
     },
     emptyState: "Enter values and press Calculate",
   },
@@ -468,11 +528,68 @@ const en: Translations = {
   },
   macro: {
     title: "Macroeconomics & FX",
-    subtitle: "Analyze macroeconomic indicators and foreign exchange rates.",
-    construction: "Module Under Construction",
-    constructionDesc: "This module is currently under development.",
-    comingSoon:
-      "Coming soon: Inflation calculators, Purchasing Power Parity (PPP), and real-time FX rate conversion tools.",
+    subtitle: "Inflation calculations, purchasing power parity, and real interest rate analysis.",
+    inflation: {
+      tab: "Inflation",
+      title: "Inflation Rate Calculator",
+      desc: "Calculate the compound annual inflation rate based on price changes over time.",
+      startPrice: "Initial Price",
+      endPrice: "Final Price",
+      years: "Years",
+      rate: "Annual Inflation Rate",
+      error: {
+        negativePrice: "Price must be positive",
+        invalidYears: "Years must be positive",
+      },
+    },
+    purchasingPower: {
+      tab: "Purchasing Power",
+      title: "Purchasing Power Calculator",
+      desc: "See how inflation erodes the purchasing power of money over time.",
+      amount: "Current Amount ($)",
+      inflation: "Annual Inflation Rate (%)",
+      years: "Years",
+      futureValue: "Future Purchasing Power",
+      loss: "Value Lost",
+      error: {
+        negativeAmount: "Amount cannot be negative",
+        invalidYears: "Years cannot be negative",
+      },
+    },
+    realRate: {
+      tab: "Real Interest Rate",
+      title: "Real Interest Rate (Fisher Equation)",
+      desc: "Calculate the real return after adjusting for inflation using the Fisher equation.",
+      nominal: "Nominal Rate (%)",
+      inflation: "Inflation Rate (%)",
+      real: "Real Interest Rate",
+    },
+    cpiAdjust: {
+      tab: "CPI Adjustment",
+      title: "CPI Inflation Adjustment",
+      desc: "Adjust monetary amounts for inflation using Consumer Price Index values.",
+      amount: "Amount to Adjust ($)",
+      fromCPI: "From CPI",
+      toCPI: "To CPI",
+      adjusted: "Inflation-Adjusted Amount",
+      error: {
+        negativeAmount: "Amount cannot be negative",
+        zeroCPI: "CPI must be greater than zero",
+      },
+    },
+    ppp: {
+      tab: "PPP Exchange Rate",
+      title: "Purchasing Power Parity",
+      desc: "Calculate the theoretical exchange rate based on relative price levels (Big Mac Index style).",
+      domestic: "Domestic Price",
+      foreign: "Foreign Price",
+      rate: "Implied Exchange Rate",
+      rateDesc: "1 unit domestic = ? units foreign",
+      error: {
+        negativePrice: "Price must be positive",
+        zeroForeign: "Foreign price must be greater than zero",
+      },
+    },
   },
 };
 
@@ -552,6 +669,7 @@ const zh: Translations = {
       pv: "达成未来目标所需的当前资金。",
       pmt: "每期需支付或收取的金额。",
       nper: "达到目标所需的总期数。",
+      rate: "每期的利率。",
     },
     emptyState: "请输入参数并点击开始计算",
   },
@@ -705,10 +823,68 @@ const zh: Translations = {
   },
   macro: {
     title: "宏观经济与外汇",
-    subtitle: "分析宏观经济指标与汇率变化。",
-    construction: "模块建设中",
-    constructionDesc: "本模块正在开发中。",
-    comingSoon: "即将推出：通胀计算器、购买力平价 (PPP) 与实时汇率换算工具。",
+    subtitle: "通胀计算、购买力平价及实际利率分析工具。",
+    inflation: {
+      tab: "通胀率",
+      title: "年均通胀率计算器",
+      desc: "基于价格变动计算复合年均通胀率。",
+      startPrice: "初始价格",
+      endPrice: "最终价格",
+      years: "年数",
+      rate: "年均通胀率",
+      error: {
+        negativePrice: "价格必须为正数",
+        invalidYears: "年数必须为正数",
+      },
+    },
+    purchasingPower: {
+      tab: "购买力",
+      title: "购买力计算器",
+      desc: "查看通胀如何随时间侵蚀货币购买力。",
+      amount: "当前金额 ($)",
+      inflation: "年均通胀率 (%)",
+      years: "年数",
+      futureValue: "未来购买力",
+      loss: "价值损失",
+      error: {
+        negativeAmount: "金额不能为负数",
+        invalidYears: "年数不能为负数",
+      },
+    },
+    realRate: {
+      tab: "实际利率",
+      title: "实际利率 (费雪方程)",
+      desc: "使用费雪方程计算通胀调整后的实际回报。",
+      nominal: "名义利率 (%)",
+      inflation: "通胀率 (%)",
+      real: "实际利率",
+    },
+    cpiAdjust: {
+      tab: "CPI调整",
+      title: "CPI通胀调整",
+      desc: "使用消费者价格指数调整货币金额。",
+      amount: "待调整金额 ($)",
+      fromCPI: "起始CPI",
+      toCPI: "目标CPI",
+      adjusted: "通胀调整后金额",
+      error: {
+        negativeAmount: "金额不能为负数",
+        zeroCPI: "CPI必须大于零",
+      },
+    },
+    ppp: {
+      tab: "PPP汇率",
+      title: "购买力平价",
+      desc: "基于相对物价水平计算理论汇率（类似巨无霸指数）。",
+      domestic: "本国价格",
+      foreign: "外国价格",
+      rate: "隐含汇率",
+      rateDesc: "1单位本国货币 = ?单位外国货币",
+      error: {
+        negativePrice: "价格必须为正数",
+        zeroForeign: "外国价格必须大于零",
+      },
+    },
   },
 };
 

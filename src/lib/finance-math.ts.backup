@@ -51,45 +51,45 @@ export const Finance = {
   rate: (nper: number, pmt: number, pv: number, fv: number = 0, type: 0 | 1 = 0, guess: number = 0.1): number => {
     if (!isValid(nper) || !isValid(pmt) || !isValid(pv) || !isValid(fv)) return NaN;
     if (nper === 0) return NaN;
-
+    
     // Use Newton-Raphson method to solve for rate
     const eps = 1e-6;
     const maxIter = 1000;
     let rate = guess;
-
+    
     for (let i = 0; i < maxIter; i++) {
       if (rate <= -1) return NaN;
-
+      
       const term = Math.pow(1 + rate, nper);
       if (!isFinite(term)) return NaN;
-
+      
       // f(rate) = pv * (1 + rate)^nper + pmt * (1 + rate * type) * ((1 + rate)^nper - 1) / rate + fv
       let f: number;
       let df: number;
-
+      
       if (Math.abs(rate) < 1e-10) {
         // Handle near-zero rate case
         f = pv + pmt * nper + fv;
-        df = pv * nper + (pmt * nper * (nper + 1)) / 2;
+        df = pv * nper + pmt * nper * (nper + 1) / 2;
       } else {
-        const annuityFactor = (term - 1) / rate;
+        const annuityFactor = ((term - 1) / rate);
         f = pv * term + pmt * (1 + rate * type) * annuityFactor + fv;
-
+        
         // Derivative
         const dAnnuity = (nper * term * rate - (term - 1)) / (rate * rate);
         df = pv * nper * term + pmt * (type * annuityFactor + (1 + rate * type) * dAnnuity);
       }
-
+      
       if (Math.abs(df) < 1e-10) return NaN;
-
+      
       const newRate = rate - f / df;
-
+      
       if (!isFinite(newRate)) return NaN;
       if (Math.abs(newRate - rate) < eps) return newRate;
-
+      
       rate = newRate;
     }
-
+    
     return rate;
   },
   npv: (rate: number, values: number[]): number => {
@@ -368,34 +368,5 @@ export const Finance = {
     if (!isValid(domesticPrice) || !isValid(foreignPrice)) return NaN;
     if (foreignPrice === 0) return NaN;
     return domesticPrice / foreignPrice;
-  },
-
-  // === ADDITIONAL FINANCIAL FUNCTIONS ===
-  compoundInterest: (principal: number, rate: number, nper: number, compoundsPerYear: number = 1): number => {
-    if (!isValid(principal) || !isValid(rate) || !isValid(nper) || !isValid(compoundsPerYear)) return NaN;
-    if (principal < 0 || nper < 0 || compoundsPerYear <= 0) return NaN;
-    const totalCompounds = nper * compoundsPerYear;
-    const periodicRate = rate / compoundsPerYear;
-    return principal * Math.pow(1 + periodicRate, totalCompounds);
-  },
-  annuityDuePV: (rate: number, nper: number, pmt: number, fv: number = 0): number => {
-    if (!isValid(rate) || !isValid(nper) || !isValid(pmt) || !isValid(fv)) return NaN;
-    if (nper === 0) return NaN;
-    return Finance.pv(rate, nper, pmt, fv, 1);
-  },
-  annuityDueFV: (rate: number, nper: number, pmt: number, pv: number = 0): number => {
-    if (!isValid(rate) || !isValid(nper) || !isValid(pmt) || !isValid(pv)) return NaN;
-    if (nper === 0) return NaN;
-    return Finance.fv(rate, nper, pmt, pv, 1);
-  },
-  growingAnnuityPV: (rate: number, nper: number, pmt: number, growthRate: number): number => {
-    if (!isValid(rate) || !isValid(nper) || !isValid(pmt) || !isValid(growthRate)) return NaN;
-    if (nper === 0) return NaN;
-    if (Math.abs(rate - growthRate) < 1e-10) {
-      return (pmt * nper) / (1 + rate);
-    }
-    const numerator = 1 - Math.pow((1 + growthRate) / (1 + rate), nper);
-    const denominator = rate - growthRate;
-    return (pmt * numerator) / denominator;
   },
 };
