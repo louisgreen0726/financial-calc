@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, ReactNode } from "react";
 
 // --- Types ---
 type Language = "en" | "zh";
@@ -33,6 +33,10 @@ type Translations = {
     toggleMenu: string;
     toggleTheme: string;
     home: string;
+    copy: string;
+    copied: string;
+    copySuccess: string;
+    copyError: string;
   };
   sidebar: {
     edition: string;
@@ -320,6 +324,10 @@ const en: Translations = {
     toggleMenu: "Toggle Menu",
     toggleTheme: "Toggle Theme",
     home: "Home",
+    copy: "Copy",
+    copied: "Copied",
+    copySuccess: "Copied to clipboard",
+    copyError: "Failed to copy",
   },
   sidebar: {
     edition: "Professional Edition",
@@ -615,6 +623,10 @@ const zh: Translations = {
     toggleMenu: "切换菜单",
     toggleTheme: "切换主题",
     home: "首页",
+    copy: "复制",
+    copied: "已复制",
+    copySuccess: "已复制到剪贴板",
+    copyError: "复制失败",
   },
   sidebar: {
     edition: "专业版",

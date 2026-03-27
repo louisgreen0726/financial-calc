@@ -5,6 +5,7 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { LanguageProvider } from "@/lib/i18n";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,6 +35,7 @@ export default function RootLayout({
             <ErrorBoundary>
               <AppLayout>{children}</AppLayout>
             </ErrorBoundary>
+            <Toaster position="bottom-right" />
           </LanguageProvider>
         </ThemeProvider>
       </body>
