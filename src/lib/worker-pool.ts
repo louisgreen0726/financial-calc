@@ -32,7 +32,7 @@ class WorkerPool {
     const { id, result, error } = event.data;
     const task = this.taskMap.get(id);
 
-    if (_task) {
+    if (task) {
       if (error) {
         task.reject(new Error(error));
       } else {
