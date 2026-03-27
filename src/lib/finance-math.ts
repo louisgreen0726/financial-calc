@@ -5,9 +5,35 @@
 
 const isValid = (n: number): boolean => Number.isFinite(n) && !Number.isNaN(n);
 
+// Type definitions
+export interface AmortizationItem {
+  period: number;
+  payment: number;
+  principal: number;
+  interest: number;
+  balance: number;
+}
+
+export interface BondDurationResult {
+  macDuration: number;
+  modDuration: number;
+}
+
+export interface GreeksResult {
+  delta: number;
+  gamma: number;
+  theta: number;
+  vega: number;
+  rho: number;
+}
+
+export type PaymentTiming = 0 | 1;
+export type LoanMethod = "CPM" | "CAM";
+export type OptionType = "call" | "put";
+
 export const Finance = {
   // === TVM ===
-  pv: (rate: number, nper: number, pmt: number, fv: number = 0, type: 0 | 1 = 0): number => {
+  pv: (rate: number, nper: number, pmt: number, fv: number = 0, type: PaymentTiming = 0): number => {
     if (!isValid(rate) || !isValid(nper) || !isValid(pmt) || !isValid(fv)) return NaN;
     if (nper === 0) return NaN;
     if (rate === 0) return -(fv + pmt * nper);
@@ -16,7 +42,7 @@ export const Finance = {
     const pv = -(fv + pmt * (1 + rate * type) * ((term - 1) / rate)) / term;
     return pv;
   },
-  fv: (rate: number, nper: number, pmt: number, pv: number, type: 0 | 1 = 0): number => {
+  fv: (rate: number, nper: number, pmt: number, pv: number, type: PaymentTiming = 0): number => {
     if (!isValid(rate) || !isValid(nper) || !isValid(pmt) || !isValid(pv)) return NaN;
     if (nper === 0) return NaN;
     if (rate === 0) return -(pv + pmt * nper);
@@ -25,7 +51,7 @@ export const Finance = {
     const fv = -(pv * term + pmt * (1 + rate * type) * ((term - 1) / rate));
     return fv;
   },
-  pmt: (rate: number, nper: number, pv: number, fv: number = 0, type: 0 | 1 = 0): number => {
+  pmt: (rate: number, nper: number, pv: number, fv: number = 0, type: PaymentTiming = 0): number => {
     if (!isValid(rate) || !isValid(nper) || !isValid(pv) || !isValid(fv)) return NaN;
     if (nper === 0) return NaN;
     if (rate === 0) return -(pv + fv) / nper;
@@ -34,7 +60,7 @@ export const Finance = {
     const pmt = -(fv + pv * term) / ((1 + rate * type) * ((term - 1) / rate));
     return pmt;
   },
-  nper: (rate: number, pmt: number, pv: number, fv: number = 0, type: 0 | 1 = 0): number => {
+  nper: (rate: number, pmt: number, pv: number, fv: number = 0, type: PaymentTiming = 0): number => {
     if (!isValid(rate) || !isValid(pmt) || !isValid(pv) || !isValid(fv)) return NaN;
     if (rate === 0) {
       if (pmt === 0) return NaN;
@@ -48,7 +74,14 @@ export const Finance = {
     if (!isFinite(logRatio) || !isFinite(logRate) || logRate === 0) return NaN;
     return logRatio / logRate;
   },
-  rate: (nper: number, pmt: number, pv: number, fv: number = 0, type: 0 | 1 = 0, guess: number = 0.1): number => {
+  rate: (
+    nper: number,
+    pmt: number,
+    pv: number,
+    fv: number = 0,
+    type: PaymentTiming = 0,
+    guess: number = 0.1
+  ): number => {
     if (!isValid(nper) || !isValid(pmt) || !isValid(pv) || !isValid(fv)) return NaN;
     if (nper === 0) return NaN;
 
@@ -125,10 +158,15 @@ export const Finance = {
     if (!isValid(nominalRate) || !isValid(periodsPerYear) || periodsPerYear <= 0) return NaN;
     return Math.pow(1 + nominalRate / periodsPerYear, periodsPerYear) - 1;
   },
-  amortizationSchedule: (principal: number, rate: number, nper: number, method: "CPM" | "CAM" = "CPM") => {
+  amortizationSchedule: (
+    principal: number,
+    rate: number,
+    nper: number,
+    method: LoanMethod = "CPM"
+  ): AmortizationItem[] => {
     if (!isValid(principal) || !isValid(rate) || !isValid(nper)) return [];
     if (principal <= 0 || nper <= 0) return [];
-    const schedule = [];
+    const schedule: AmortizationItem[] = [];
     let balance = principal;
     const cpmPmt = method === "CPM" ? Finance.pmt(rate, nper, -principal) : 0;
     const fixedPrincipal = method === "CAM" ? principal / nper : 0;
@@ -158,7 +196,13 @@ export const Finance = {
   },
 
   // === BONDS ===
-  bondPrice: (faceValue: number, couponRate: number, yearsToMaturity: number, ytm: number, frequency: number = 2) => {
+  bondPrice: (
+    faceValue: number,
+    couponRate: number,
+    yearsToMaturity: number,
+    ytm: number,
+    frequency: number = 2
+  ): number => {
     if (
       !isValid(faceValue) ||
       !isValid(couponRate) ||
@@ -185,7 +229,7 @@ export const Finance = {
     yearsToMaturity: number,
     ytm: number,
     frequency: number = 2
-  ) => {
+  ): BondDurationResult => {
     if (
       !isValid(faceValue) ||
       !isValid(couponRate) ||
@@ -218,7 +262,7 @@ export const Finance = {
     yearsToMaturity: number,
     ytm: number,
     frequency: number = 2
-  ) => {
+  ): number => {
     if (
       !isValid(faceValue) ||
       !isValid(couponRate) ||
@@ -296,7 +340,7 @@ export const Finance = {
    * @param r Risk-Free Rate
    * @param sigma Volatility
    */
-  blackScholes: (type: "call" | "put", S: number, K: number, t: number, r: number, sigma: number) => {
+  blackScholes: (type: OptionType, S: number, K: number, t: number, r: number, sigma: number): number => {
     if (!isValid(S) || !isValid(K) || !isValid(t) || !isValid(r) || !isValid(sigma)) return NaN;
     if (S <= 0 || K <= 0 || sigma <= 0) return NaN;
     if (t <= 0) {
@@ -315,8 +359,8 @@ export const Finance = {
   /**
    * Option Greeks
    */
-  greeks: (type: "call" | "put", S: number, K: number, t: number, r: number, sigma: number) => {
-    const zero = { delta: 0, gamma: 0, theta: 0, vega: 0, rho: 0 };
+  greeks: (type: OptionType, S: number, K: number, t: number, r: number, sigma: number): GreeksResult => {
+    const zero: GreeksResult = { delta: 0, gamma: 0, theta: 0, vega: 0, rho: 0 };
     if (!isValid(S) || !isValid(K) || !isValid(t) || !isValid(r) || !isValid(sigma)) return zero;
     if (t <= 0 || S <= 0 || K <= 0 || sigma <= 0) return zero;
 
@@ -327,7 +371,7 @@ export const Finance = {
     const Nd2 = Finance.normCDF(d2);
     const N_d2 = Finance.normCDF(-d2);
 
-    let delta, theta, rho;
+    let delta: number, theta: number, rho: number;
     const gamma = nd1 / (S * sigma * Math.sqrt(t));
     const vega = (S * Math.sqrt(t) * nd1) / 100;
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Finance } from "@/lib/finance-math";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -29,21 +29,24 @@ export default function EquityPage() {
   const [growth, setGrowth] = useState("4");
   const [reqReturn, setReqReturn] = useState("9");
 
-  const capmResult = Finance.capm(parseFloat(rf) / 100 || 0, parseFloat(beta) || 0, parseFloat(rm) / 100 || 0);
+  // Memoized calculations for performance
+  const capmResult = useMemo(() => {
+    return Finance.capm(parseFloat(rf) / 100 || 0, parseFloat(beta) || 0, parseFloat(rm) / 100 || 0);
+  }, [rf, beta, rm]);
 
-  const waccResult = Finance.wacc(
-    parseFloat(equity) || 0,
-    parseFloat(debt) || 0,
-    (parseFloat(costEquity) || 0) / 100,
-    (parseFloat(costDebt) || 0) / 100,
-    (parseFloat(taxRate) || 0) / 100
-  );
+  const waccResult = useMemo(() => {
+    return Finance.wacc(
+      parseFloat(equity) || 0,
+      parseFloat(debt) || 0,
+      (parseFloat(costEquity) || 0) / 100,
+      (parseFloat(costDebt) || 0) / 100,
+      (parseFloat(taxRate) || 0) / 100
+    );
+  }, [equity, debt, costEquity, costDebt, taxRate]);
 
-  const ddmResult = Finance.ddm(
-    parseFloat(div) || 0,
-    (parseFloat(reqReturn) || 0) / 100,
-    (parseFloat(growth) || 0) / 100
-  );
+  const ddmResult = useMemo(() => {
+    return Finance.ddm(parseFloat(div) || 0, (parseFloat(reqReturn) || 0) / 100, (parseFloat(growth) || 0) / 100);
+  }, [div, reqReturn, growth]);
 
   return (
     <div className="space-y-6">
@@ -73,22 +76,46 @@ export default function EquityPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>{t("equity.capm.rf")}</Label>
-                  <Input value={rf} onChange={(e) => setRf(e.target.value)} type="number" />
+                  <Label htmlFor="capm-rf">{t("equity.capm.rf")}</Label>
+                  <Input
+                    id="capm-rf"
+                    value={rf}
+                    onChange={(e) => setRf(e.target.value)}
+                    type="number"
+                    aria-describedby="capm-rf-help"
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("equity.capm.beta")}</Label>
-                  <Input value={beta} onChange={(e) => setBeta(e.target.value)} type="number" step="0.1" />
+                  <Label htmlFor="capm-beta">{t("equity.capm.beta")}</Label>
+                  <Input
+                    id="capm-beta"
+                    value={beta}
+                    onChange={(e) => setBeta(e.target.value)}
+                    type="number"
+                    step="0.1"
+                    aria-describedby="capm-beta-help"
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("equity.capm.rm")}</Label>
-                  <Input value={rm} onChange={(e) => setRm(e.target.value)} type="number" />
+                  <Label htmlFor="capm-rm">{t("equity.capm.rm")}</Label>
+                  <Input
+                    id="capm-rm"
+                    value={rm}
+                    onChange={(e) => setRm(e.target.value)}
+                    type="number"
+                    aria-describedby="capm-rm-help"
+                  />
                 </div>
               </CardContent>
             </Card>
 
             <Card className="flex flex-col justify-center items-center bg-muted/30">
-              <div className="text-center space-y-2">
+              <div
+                className="text-center space-y-2"
+                role="region"
+                aria-live="polite"
+                aria-label="CAPM calculation result"
+              >
                 <h3 className="text-lg font-medium text-muted-foreground">{t("equity.capm.re")}</h3>
                 <div className="text-5xl font-bold text-primary tracking-tighter">{(capmResult * 100).toFixed(2)}%</div>
                 <p className="text-sm text-muted-foreground max-w-xs mx-auto pt-4">
@@ -111,33 +138,48 @@ export default function EquityPage() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>{t("equity.wacc.eqVal")}</Label>
-                    <Input value={equity} onChange={(e) => setEquity(e.target.value)} type="number" />
+                    <Label htmlFor="wacc-equity">{t("equity.wacc.eqVal")}</Label>
+                    <Input id="wacc-equity" value={equity} onChange={(e) => setEquity(e.target.value)} type="number" />
                   </div>
                   <div className="space-y-2">
-                    <Label>{t("equity.wacc.costEq")}</Label>
-                    <Input value={costEquity} onChange={(e) => setCostEquity(e.target.value)} type="number" />
+                    <Label htmlFor="wacc-cost-eq">{t("equity.wacc.costEq")}</Label>
+                    <Input
+                      id="wacc-cost-eq"
+                      value={costEquity}
+                      onChange={(e) => setCostEquity(e.target.value)}
+                      type="number"
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>{t("equity.wacc.debtVal")}</Label>
-                    <Input value={debt} onChange={(e) => setDebt(e.target.value)} type="number" />
+                    <Label htmlFor="wacc-debt">{t("equity.wacc.debtVal")}</Label>
+                    <Input id="wacc-debt" value={debt} onChange={(e) => setDebt(e.target.value)} type="number" />
                   </div>
                   <div className="space-y-2">
-                    <Label>{t("equity.wacc.costDebt")}</Label>
-                    <Input value={costDebt} onChange={(e) => setCostDebt(e.target.value)} type="number" />
+                    <Label htmlFor="wacc-cost-debt">{t("equity.wacc.costDebt")}</Label>
+                    <Input
+                      id="wacc-cost-debt"
+                      value={costDebt}
+                      onChange={(e) => setCostDebt(e.target.value)}
+                      type="number"
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("equity.wacc.tax")}</Label>
-                  <Input value={taxRate} onChange={(e) => setTaxRate(e.target.value)} type="number" />
+                  <Label htmlFor="wacc-tax">{t("equity.wacc.tax")}</Label>
+                  <Input id="wacc-tax" value={taxRate} onChange={(e) => setTaxRate(e.target.value)} type="number" />
                 </div>
               </CardContent>
             </Card>
 
             <Card className="flex flex-col justify-center items-center bg-muted/30">
-              <div className="text-center space-y-2">
+              <div
+                className="text-center space-y-2"
+                role="region"
+                aria-live="polite"
+                aria-label="WACC calculation result"
+              >
                 <h3 className="text-lg font-medium text-muted-foreground">{t("equity.wacc.result")}</h3>
                 <div className="text-5xl font-bold text-primary tracking-tighter">{(waccResult * 100).toFixed(2)}%</div>
                 <p className="text-sm text-muted-foreground max-w-xs mx-auto pt-4">{t("equity.wacc.desc")}</p>
@@ -158,22 +200,27 @@ export default function EquityPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>{t("equity.ddm.d1")}</Label>
-                  <Input value={div} onChange={(e) => setDiv(e.target.value)} type="number" step="0.01" />
+                  <Label htmlFor="ddm-div">{t("equity.ddm.d1")}</Label>
+                  <Input id="ddm-div" value={div} onChange={(e) => setDiv(e.target.value)} type="number" step="0.01" />
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("equity.ddm.req")}</Label>
-                  <Input value={reqReturn} onChange={(e) => setReqReturn(e.target.value)} type="number" />
+                  <Label htmlFor="ddm-req">{t("equity.ddm.req")}</Label>
+                  <Input id="ddm-req" value={reqReturn} onChange={(e) => setReqReturn(e.target.value)} type="number" />
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("equity.ddm.g")}</Label>
-                  <Input value={growth} onChange={(e) => setGrowth(e.target.value)} type="number" />
+                  <Label htmlFor="ddm-growth">{t("equity.ddm.g")}</Label>
+                  <Input id="ddm-growth" value={growth} onChange={(e) => setGrowth(e.target.value)} type="number" />
                 </div>
               </CardContent>
             </Card>
 
             <Card className="flex flex-col justify-center items-center bg-muted/30">
-              <div className="text-center space-y-2">
+              <div
+                className="text-center space-y-2"
+                role="region"
+                aria-live="polite"
+                aria-label="DDM calculation result"
+              >
                 <h3 className="text-lg font-medium text-muted-foreground">{t("equity.ddm.intrinsic")}</h3>
                 <div
                   className={`text-5xl font-bold tracking-tighter ${ddmResult <= 0 ? "text-muted-foreground" : "text-primary"}`}
