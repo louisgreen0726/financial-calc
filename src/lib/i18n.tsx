@@ -343,6 +343,12 @@ type Translations = {
     confirmClear: string;
     search: string;
     noResults: string;
+    loading: string;
+    noHistory: string;
+    noHistoryDesc: string;
+    searchPlaceholder: string;
+    select: string;
+    itemsSelected: string;
   };
   sensitivity: {
     title: string;
@@ -356,9 +362,77 @@ type Translations = {
   };
   settings: {
     title: string;
+    customizeExperience: string;
+    appearance: string;
+    appearanceDesc: string;
+    theme: string;
+    light: string;
+    dark: string;
+    system: string;
+    language: string;
+    behavior: string;
+    behaviorDesc: string;
+    autoCalculate: string;
+    autoCalculateDesc: string;
+    notifications: string;
+    notificationsDesc: string;
+    dataManagement: string;
+    dataManagementDesc: string;
+    exportHistoryJson: string;
+    clearAllHistory: string;
+    about: string;
+    aboutDesc: string;
+    version: string;
+    description: string;
   };
   help: {
     title: string;
+    learnMore: string;
+    quickStart: string;
+    quickStartDesc: string;
+    step1Title: string;
+    step1Desc: string;
+    step2Title: string;
+    step2Desc: string;
+    step3Title: string;
+    step3Desc: string;
+    availableCalculators: string;
+    calculatorsDesc: string;
+    faq: string;
+    keyboardShortcuts: string;
+    contactSupport: string;
+    contactDesc: string;
+    github: string;
+    tvmCalc: string;
+    tvmCalcDesc: string;
+    cashFlowCalc: string;
+    cashFlowCalcDesc: string;
+    stockVal: string;
+    stockValDesc: string;
+    portfolioOpt: string;
+    portfolioOptDesc: string;
+    bondsCalc: string;
+    bondsCalcDesc: string;
+    optionsCalc: string;
+    optionsCalcDesc: string;
+    riskMetrics: string;
+    riskMetricsDesc: string;
+    loanCalc: string;
+    loanCalcDesc: string;
+    faqHistory: string;
+    faqHistoryAns: string;
+    faqExport: string;
+    faqExportAns: string;
+    faqTheme: string;
+    faqThemeAns: string;
+    faqLanguage: string;
+    faqLanguageAns: string;
+    faqMobile: string;
+    faqMobileAns: string;
+    faqPrivacy: string;
+    faqPrivacyAns: string;
+    showShortcuts: string;
+    navigateCalculator: string;
   };
   export: {
     title: string;
@@ -714,6 +788,12 @@ const en: Translations = {
     confirmClear: "Clear all history?",
     search: "Search history...",
     noResults: "No results found",
+    loading: "Loading...",
+    noHistory: "No history yet",
+    noHistoryDesc: "Your calculation history will appear here once you start using the financial calculators.",
+    searchPlaceholder: "Search history...",
+    select: "Select",
+    itemsSelected: "selected",
   },
   sensitivity: {
     title: "Sensitivity Analysis",
@@ -727,9 +807,84 @@ const en: Translations = {
   },
   settings: {
     title: "Settings",
+    customizeExperience: "Customize your experience",
+    appearance: "Appearance",
+    appearanceDesc: "Customize how the app looks",
+    theme: "Theme",
+    light: "Light",
+    dark: "Dark",
+    system: "System",
+    language: "Language / 语言",
+    behavior: "Behavior",
+    behaviorDesc: "Customize how calculations work",
+    autoCalculate: "Auto-calculate",
+    autoCalculateDesc: "Automatically recalculate results when inputs change",
+    notifications: "Notifications",
+    notificationsDesc: "Show toast notifications for actions",
+    dataManagement: "Data Management",
+    dataManagementDesc: "Manage your calculation history and data",
+    exportHistoryJson: "Export History (JSON)",
+    clearAllHistory: "Clear All History",
+    about: "About",
+    aboutDesc: "About FinCalc Pro",
+    version: "Version 2.0.0",
+    description:
+      "A comprehensive suite of financial calculators including TVM, cash flow analysis, stock valuation, portfolio optimization, bonds, options, risk metrics, loans, and macroeconomics.",
   },
   help: {
     title: "Help & Support",
+    learnMore: "Learn how to use FinCalc Pro",
+    quickStart: "Quick Start Guide",
+    quickStartDesc: "Get started with financial calculations",
+    step1Title: "Choose a Calculator",
+    step1Desc:
+      "Select from TVM (Time Value of Money), Cash Flow, Equity Valuation, Portfolio Optimization, Bonds, Options, Risk Metrics, Loans, or Macroeconomics.",
+    step2Title: "Enter Your Parameters",
+    step2Desc: "Fill in the required financial parameters like interest rate, periods, cash flows, etc.",
+    step3Title: "Calculate & View Results",
+    step3Desc: "Click Calculate to see results. Export in CSV, JSON, or PDF formats.",
+    availableCalculators: "Available Calculators",
+    calculatorsDesc: "Overview of each financial tool",
+    faq: "Frequently Asked Questions",
+    keyboardShortcuts: "Keyboard Shortcuts",
+    contactSupport: "Contact & Support",
+    contactDesc: "For questions, bug reports, or feature requests, please visit our GitHub repository.",
+    github: "github.com/louisgreen0726/financial-calc",
+    tvmCalc: "TVM Calculator",
+    tvmCalcDesc: "Time Value of Money - Calculate PV, FV, PMT, NPER, and interest rate.",
+    cashFlowCalc: "Cash Flow Analysis",
+    cashFlowCalcDesc: "NPV, IRR, Payback Period, and ROI calculations for investment projects.",
+    stockVal: "Stock Valuation",
+    stockValDesc: "DDM (Dividend Discount Model), CAPM, WACC, and financial ratios.",
+    portfolioOpt: "Portfolio Optimization",
+    portfolioOptDesc: "Monte Carlo simulation for efficient frontier and optimal portfolios.",
+    bondsCalc: "Bonds & Fixed Income",
+    bondsCalcDesc: "YTM, Duration, Convexity, and bond pricing calculations.",
+    optionsCalc: "Options Pricing",
+    optionsCalcDesc: "Black-Scholes option pricing with Greeks (Delta, Gamma, Theta, Vega, Rho).",
+    riskMetrics: "Risk Metrics",
+    riskMetricsDesc: "VaR (Value at Risk) and CVaR (Conditional VaR) calculations.",
+    loanCalc: "Loan Calculator",
+    loanCalcDesc: "EMI calculation with amortization schedules (CPM and CAM methods).",
+    faqHistory: "How does calculation history work?",
+    faqHistoryAns:
+      "Calculation history is stored locally in your browser. Each time you perform a calculation, it's saved with timestamp and inputs. You can access history from the bottom-right corner of any calculator page, or from the dedicated History page.",
+    faqExport: "How do I export my calculations?",
+    faqExportAns:
+      "Click the Export menu button to export in CSV, JSON, or PDF format. The CSV and JSON options will download your data immediately. PDF export captures the calculation results as a formatted document.",
+    faqTheme: "How do I change between light and dark mode?",
+    faqThemeAns:
+      "Click the theme toggle button in the header. You can choose Light, Dark, or follow your system preference.",
+    faqLanguage: "How do I switch languages?",
+    faqLanguageAns: "Click the language button in the header to toggle between English and Chinese (中文).",
+    faqMobile: "How do I use this on mobile?",
+    faqMobileAns:
+      "The app is fully responsive. On mobile devices, use the hamburger menu to access the sidebar navigation, and the bottom tab bar for quick access to Home, Calculator, History, Settings, and Help.",
+    faqPrivacy: "Is my data stored on servers?",
+    faqPrivacyAns:
+      "No. All calculation history is stored locally in your browser's localStorage. No data is sent to any server. You can export or clear your history at any time from the Settings page.",
+    showShortcuts: "Show keyboard shortcuts",
+    navigateCalculator: "Navigate to calculator",
   },
   export: {
     title: "Export",
@@ -1084,6 +1239,12 @@ const zh: Translations = {
     confirmClear: "确定清除所有历史记录？",
     search: "搜索历史...",
     noResults: "未找到结果",
+    loading: "加载中...",
+    noHistory: "暂无历史记录",
+    noHistoryDesc: "开始使用计算器后，您的计算历史将显示在这里。",
+    searchPlaceholder: "搜索历史记录...",
+    select: "选择",
+    itemsSelected: "已选择",
   },
   sensitivity: {
     title: "敏感性分析",
@@ -1097,9 +1258,83 @@ const zh: Translations = {
   },
   settings: {
     title: "设置",
+    customizeExperience: "自定义您的体验",
+    appearance: "外观",
+    appearanceDesc: "自定义应用的外观",
+    theme: "主题",
+    light: "浅色",
+    dark: "深色",
+    system: "跟随系统",
+    language: "语言 / Language",
+    behavior: "行为",
+    behaviorDesc: "自定义计算方式",
+    autoCalculate: "自动计算",
+    autoCalculateDesc: "当输入变化时自动重新计算结果",
+    notifications: "通知",
+    notificationsDesc: "显示操作通知提示",
+    dataManagement: "数据管理",
+    dataManagementDesc: "管理您的计算历史和数据",
+    exportHistoryJson: "导出历史记录 (JSON)",
+    clearAllHistory: "清除所有历史",
+    about: "关于",
+    aboutDesc: "关于 FinCalc Pro",
+    version: "版本 2.0.0",
+    description:
+      "全面的金融计算器套件，包括货币时间价值、现金流分析、股票估值、投资组合优化、债券、期权、风险指标、贷款和宏观经济计算工具。",
   },
   help: {
     title: "帮助与支持",
+    learnMore: "了解如何使用 FinCalc Pro",
+    quickStart: "快速入门指南",
+    quickStartDesc: "开始使用金融计算工具",
+    step1Title: "选择计算器",
+    step1Desc:
+      "从货币时间价值 (TVM)、现金流分析、股票估值、投资组合优化、债券、期权、风险指标、贷款或宏观经济计算器中选择。",
+    step2Title: "输入您的参数",
+    step2Desc: "填写所需的金融参数，如利率、期数、现金流等。",
+    step3Title: "计算并查看结果",
+    step3Desc: "点击计算查看结果。以 CSV、JSON 或 PDF 格式导出。",
+    availableCalculators: "可用计算器",
+    calculatorsDesc: "各金融工具概述",
+    faq: "常见问题",
+    keyboardShortcuts: "键盘快捷键",
+    contactSupport: "联系我们",
+    contactDesc: "如有问题、错误报告或功能请求，请访问我们的 GitHub 仓库。",
+    github: "github.com/louisgreen0726/financial-calc",
+    tvmCalc: "货币时间价值计算器",
+    tvmCalcDesc: "现值、终值、年金、期数及利率计算。",
+    cashFlowCalc: "现金流分析",
+    cashFlowCalcDesc: "投资项目的 NPV、IRR、回收期和 ROI 计算。",
+    stockVal: "股票估值",
+    stockValDesc: "股利折现模型 (DDM)、CAPM、WACC 及财务比率。",
+    portfolioOpt: "投资组合优化",
+    portfolioOptDesc: "蒙特卡洛模拟有效前沿和最优投资组合。",
+    bondsCalc: "债券与固定收益",
+    bondsCalcDesc: "YTM、久期、凸性和债券定价计算。",
+    optionsCalc: "期权定价",
+    optionsCalcDesc: "Black-Scholes 期权定价及希腊字母分析（Delta、Gamma、Theta、Vega、Rho）。",
+    riskMetrics: "风险指标",
+    riskMetricsDesc: "在险价值 (VaR) 和条件风险价值 (CVaR) 计算。",
+    loanCalc: "贷款计算器",
+    loanCalcDesc: "等额本息和等额本金还款方式的摊销计划计算。",
+    faqHistory: "计算历史如何工作？",
+    faqHistoryAns:
+      "计算历史存储在浏览器的本地存储中。每次执行计算时，都会保存时间戳和输入参数。您可以从任意计算器页面的右下角或专用的历史记录页面访问历史记录。",
+    faqExport: "如何导出我的计算结果？",
+    faqExportAns:
+      "点击导出菜单按钮可以 CSV、JSON 或 PDF 格式导出。CSV 和 JSON 选项会立即下载您的数据。PDF 导出会将计算结果捕获为格式化文档。",
+    faqTheme: "如何在浅色和深色模式之间切换？",
+    faqThemeAns: "点击顶部的theme切换按钮。您可以选择浅色、深色或跟随系统设置。",
+    faqLanguage: "如何切换语言？",
+    faqLanguageAns: "点击顶部的语言按钮可以在英语和中文之间切换。",
+    faqMobile: "如何在手机上使用？",
+    faqMobileAns:
+      "应用完全响应式。在移动设备上，使用汉堡菜单访问侧边栏导航，底部标签栏可快速访问首页、计算器、历史记录、设置和帮助。",
+    faqPrivacy: "我的数据是否存储在服务器上？",
+    faqPrivacyAns:
+      "不会。所有计算历史都存储在浏览器本地存储中。不会向任何服务器发送数据。您可以随时从设置页面导出或清除历史记录。",
+    showShortcuts: "显示键盘快捷键",
+    navigateCalculator: "导航到计算器",
   },
   export: {
     title: "导出",

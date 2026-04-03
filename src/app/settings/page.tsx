@@ -48,7 +48,7 @@ export default function SettingsPage() {
     <div className="space-y-6 max-w-2xl">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">{t("settings.title") || "Settings"}</h1>
-        <p className="text-muted-foreground mt-2">Customize your experience</p>
+        <p className="text-muted-foreground mt-2">{t("settings.customizeExperience")}</p>
       </div>
 
       {/* Appearance */}
@@ -56,13 +56,13 @@ export default function SettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             {theme === "dark" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-            Appearance
+            {t("settings.appearance")}
           </CardTitle>
-          <CardDescription>Customize how the app looks</CardDescription>
+          <CardDescription>{t("settings.appearanceDesc")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-3">
-            <Label>Theme</Label>
+            <Label>{t("settings.theme")}</Label>
             <div className="flex gap-2 flex-wrap">
               <Button
                 variant={theme === "light" ? "default" : "outline"}
@@ -71,7 +71,7 @@ export default function SettingsPage() {
                 className={cn("gap-2", theme === "light" && "bg-primary")}
               >
                 <Sun className="h-4 w-4" />
-                Light
+                {t("settings.light")}
               </Button>
               <Button
                 variant={theme === "dark" ? "default" : "outline"}
@@ -80,7 +80,7 @@ export default function SettingsPage() {
                 className={cn("gap-2", theme === "dark" && "bg-primary")}
               >
                 <Moon className="h-4 w-4" />
-                Dark
+                {t("settings.dark")}
               </Button>
               <Button
                 variant={theme === "system" ? "default" : "outline"}
@@ -89,7 +89,7 @@ export default function SettingsPage() {
                 className={cn("gap-2", theme === "system" && "bg-primary")}
               >
                 <Monitor className="h-4 w-4" />
-                System
+                {t("settings.system")}
               </Button>
             </div>
           </div>
@@ -97,7 +97,7 @@ export default function SettingsPage() {
           <Separator />
 
           <div className="space-y-3">
-            <Label>Language / 语言</Label>
+            <Label>{t("settings.language")}</Label>
             <div className="flex gap-2 flex-wrap">
               <Button
                 variant={language === "en" ? "default" : "outline"}
@@ -127,15 +127,15 @@ export default function SettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calculator className="h-5 w-5" />
-            Behavior
+            {t("settings.behavior")}
           </CardTitle>
-          <CardDescription>Customize how calculations work</CardDescription>
+          <CardDescription>{t("settings.behaviorDesc")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Auto-calculate</Label>
-              <p className="text-sm text-muted-foreground">Automatically recalculate results when inputs change</p>
+              <Label>{t("settings.autoCalculate")}</Label>
+              <p className="text-sm text-muted-foreground">{t("settings.autoCalculateDesc")}</p>
             </div>
             <Switch checked={autoCalculate} onCheckedChange={setAutoCalculate} />
           </div>
@@ -144,8 +144,8 @@ export default function SettingsPage() {
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Notifications</Label>
-              <p className="text-sm text-muted-foreground">Show toast notifications for actions</p>
+              <Label>{t("settings.notifications")}</Label>
+              <p className="text-sm text-muted-foreground">{t("settings.notificationsDesc")}</p>
             </div>
             <Switch checked={notifications} onCheckedChange={setNotifications} />
           </div>
@@ -157,15 +157,15 @@ export default function SettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Download className="h-5 w-5" />
-            Data Management
+            {t("settings.dataManagement")}
           </CardTitle>
-          <CardDescription>Manage your calculation history and data</CardDescription>
+          <CardDescription>{t("settings.dataManagementDesc")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-2 flex-wrap">
             <Button variant="outline" size="sm" onClick={handleExportHistory} className="gap-2">
               <Download className="h-4 w-4" />
-              Export History (JSON)
+              {t("settings.exportHistoryJson")}
             </Button>
             <Button
               variant="outline"
@@ -174,7 +174,7 @@ export default function SettingsPage() {
               className="gap-2 text-destructive hover:text-destructive"
             >
               <Trash2 className="h-4 w-4" />
-              Clear All History
+              {t("settings.clearAllHistory")}
             </Button>
           </div>
         </CardContent>
@@ -183,18 +183,15 @@ export default function SettingsPage() {
       {/* About */}
       <Card className="rounded-xl">
         <CardHeader>
-          <CardTitle>About</CardTitle>
-          <CardDescription>About FinCalc Pro</CardDescription>
+          <CardTitle>{t("settings.about")}</CardTitle>
+          <CardDescription>{t("settings.aboutDesc")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-muted-foreground">
           <p>
-            <strong>FinCalc Pro</strong> - Professional Financial Calculator
+            <strong>FinCalc Pro</strong> - {t("settings.title")}
           </p>
-          <p>Version 2.0.0</p>
-          <p>
-            A comprehensive suite of financial calculators including TVM, cash flow analysis, stock valuation, portfolio
-            optimization, bonds, options, risk metrics, loans, and macroeconomics.
-          </p>
+          <p>{t("settings.version")}</p>
+          <p>{t("settings.description")}</p>
         </CardContent>
       </Card>
     </div>
