@@ -40,14 +40,16 @@ export function sanitizeNumericInput(value: string): {
 }
 
 /**
- * Escape HTML special characters for safe display
+ * Escape HTML special characters for safe display (SSR-safe, no DOM dependency)
  * @param text Text to escape
  * @returns Escaped text
  */
 export function escapeHtml(text: string): string {
   if (!text) return "";
-
-  const div = document.createElement("div");
-  div.textContent = text;
-  return div.innerHTML;
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }

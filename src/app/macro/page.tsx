@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from "@/lib/i18n";
-import { TrendingUp, DollarSign, Percent, Scale, Globe } from "lucide-react";
+import { TrendingUp, DollarSign, Percent, Scale, Globe, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface ValidationError {
   field: string;
@@ -153,10 +154,10 @@ export default function MacroPage() {
     return Finance.exchangeRatePPP(domestic, foreign);
   }, [domesticPrice, foreignPrice, validatePPPInputs]);
 
-  const inflationErrors = validateInflationInputs();
-  const ppErrors = validatePPInputs();
-  const cpiErrors = validateCPIInputs();
-  const pppErrors = validatePPPInputs();
+  const inflationErrors = useMemo(() => validateInflationInputs(), [validateInflationInputs]);
+  const ppErrors = useMemo(() => validatePPInputs(), [validatePPInputs]);
+  const cpiErrors = useMemo(() => validateCPIInputs(), [validateCPIInputs]);
+  const pppErrors = useMemo(() => validatePPPInputs(), [validatePPPInputs]);
 
   return (
     <div className="space-y-6">
@@ -244,6 +245,12 @@ export default function MacroPage() {
                     <p className="text-sm text-red-500">{inflationErrors.find((e) => e.field === "years")?.message}</p>
                   )}
                 </div>
+                {inflationErrors.length > 0 && (
+                  <Alert variant="destructive" className="py-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-xs">{inflationErrors[0].message}</AlertDescription>
+                  </Alert>
+                )}
               </CardContent>
             </Card>
 
@@ -300,6 +307,12 @@ export default function MacroPage() {
                     <p className="text-sm text-red-500">{ppErrors.find((e) => e.field === "years")?.message}</p>
                   )}
                 </div>
+                {ppErrors.length > 0 && (
+                  <Alert variant="destructive" className="py-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-xs">{ppErrors[0].message}</AlertDescription>
+                  </Alert>
+                )}
               </CardContent>
             </Card>
 
@@ -421,6 +434,12 @@ export default function MacroPage() {
                     <p className="text-sm text-red-500">{cpiErrors.find((e) => e.field === "toCPI")?.message}</p>
                   )}
                 </div>
+                {cpiErrors.length > 0 && (
+                  <Alert variant="destructive" className="py-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-xs">{cpiErrors[0].message}</AlertDescription>
+                  </Alert>
+                )}
               </CardContent>
             </Card>
 
@@ -475,6 +494,12 @@ export default function MacroPage() {
                     <p className="text-sm text-red-500">{pppErrors.find((e) => e.field === "foreign")?.message}</p>
                   )}
                 </div>
+                {pppErrors.length > 0 && (
+                  <Alert variant="destructive" className="py-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-xs">{pppErrors[0].message}</AlertDescription>
+                  </Alert>
+                )}
               </CardContent>
             </Card>
 

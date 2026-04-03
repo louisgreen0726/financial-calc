@@ -26,14 +26,8 @@ export default function RiskPage() {
     // Scale volatility to horizon
     const sigmaHorizon = sigmaAnnual * Math.sqrt(d / 252);
 
-    // Z-score for confidence
-    const getZ = (p: number) => {
-      if (p >= 0.99) return 2.326;
-      if (p >= 0.95) return 1.645;
-      if (p >= 0.9) return 1.282;
-      return 1.645;
-    };
-    const z = getZ(conf);
+    // Precise z-score via inverse normal CDF (Beasley-Springer-Moro algorithm)
+    const z = Finance.normCDFInverse(conf);
 
     const VaR_pct = z * sigmaHorizon;
     const VaR_val = P * VaR_pct;
@@ -43,7 +37,7 @@ export default function RiskPage() {
     const CVaR_pct = es_factor * sigmaHorizon;
     const CVaR_val = P * CVaR_pct;
 
-    return { VaR_val, VaR_pct, CVaR_val, CVaR_pct, sigmaHorizon };
+    return { VaR_val, VaR_pct, CVaR_val, CVaR_pct, sigmaHorizon, z };
   }, [value, volatility, confidence, days]);
 
   // Generate Distribution Curve
@@ -51,6 +45,7 @@ export default function RiskPage() {
     const data = [];
     const sigma = metrics.sigmaHorizon;
     const P = parseFloat(value) || 0;
+    const tailZ = metrics.z; // precise z from normCDFInverse, matches confidence level
     // Show range from -4 std dev to +4 std dev
     for (let i = -4; i <= 4; i += 0.1) {
       const ret = i * sigma;
@@ -62,7 +57,7 @@ export default function RiskPage() {
         return: ret,
         loss: loss,
         prob: prob,
-        isTail: i < -1.645, // Visual approximation, dynamic based on Z needed
+        isTail: i < -tailZ, // dynamically matches current confidence level
       });
     }
     return data;
@@ -144,9 +139,33 @@ export default function RiskPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData}>
                   <defs>
-                    <linearGradient id="colorProb" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                    <linearGradient id="colorProb" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="hsl(var(--destructive))" stopOpacity={0.5} />
+                      <stop
+                        offset={`${Math.max(0, Math.min(100, ((4 - metrics.z) / 8) * 100))}%`}
+                        stopColor="hsl(var(--destructive))"
+                        stopOpacity={0.5}
+                      />
+                      <stop
+                        offset={`${Math.max(0, Math.min(100, ((4 - metrics.z) / 8) * 100))}%`}
+                        stopColor="hsl(var(--primary))"
+                        stopOpacity={0.3}
+                      />
+                      <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                    </linearGradient>
+                    <linearGradient id="strokeProb" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="hsl(var(--destructive))" stopOpacity={1} />
+                      <stop
+                        offset={`${Math.max(0, Math.min(100, ((4 - metrics.z) / 8) * 100))}%`}
+                        stopColor="hsl(var(--destructive))"
+                        stopOpacity={1}
+                      />
+                      <stop
+                        offset={`${Math.max(0, Math.min(100, ((4 - metrics.z) / 8) * 100))}%`}
+                        stopColor="hsl(var(--primary))"
+                        stopOpacity={1}
+                      />
+                      <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={1} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
@@ -162,11 +181,16 @@ export default function RiskPage() {
                   <Area
                     type="monotone"
                     dataKey="prob"
-                    stroke="hsl(var(--primary))"
+                    stroke="url(#strokeProb)"
                     fillOpacity={1}
                     fill="url(#colorProb)"
                   />
-                  <ReferenceLine x={-metrics.VaR_val} stroke="hsl(var(--destructive))" label="VaR" />
+                  <ReferenceLine
+                    x={metrics.VaR_val}
+                    stroke="hsl(var(--destructive))"
+                    strokeWidth={2}
+                    label={{ value: "VaR", fill: "hsl(var(--destructive))", fontSize: 11 }}
+                  />
                 </AreaChart>
               </ResponsiveContainer>
             </CardContent>

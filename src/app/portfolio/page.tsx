@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,10 @@ import { Trash2, Plus, Play, PieChart as PieIcon, RefreshCw, Loader2 } from "luc
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ZAxis } from "recharts";
 import { formatNumber } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
+import { sanitizeInput } from "@/lib/sanitize";
 import { EmptyState } from "@/components/empty-state";
+import { ProgressBar } from "@/components/progress-bar";
+import { useMonteCarloSimulation } from "@/hooks/use-monte-carlo-simulation";
 
 interface Asset {
   id: number;
@@ -40,7 +43,17 @@ export default function PortfolioPage() {
   const [simulations, setSimulations] = useState<PortfolioPoint[]>([]);
   const [optimal, setOptimal] = useState<PortfolioPoint | null>(null);
   const [minVol, setMinVol] = useState<PortfolioPoint | null>(null);
-  const [loading, setLoading] = useState(false);
+
+  // Monte Carlo simulation hook (replaces inline web worker)
+  const { progress, isRunning, run, cancel } = useMonteCarloSimulation();
+
+  // Ensure cleanup on unmount
+  useEffect(() => {
+    return () => {
+      cancel();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const addAsset = () => {
     const id = Math.max(0, ...assets.map((a) => a.id)) + 1;
@@ -52,38 +65,41 @@ export default function PortfolioPage() {
   };
 
   const updateAsset = (id: number, field: keyof Asset, value: string) => {
+    const sanitizedValue = field === "name" ? sanitizeInput(value) : value;
     setAssets(
-      assets.map((a) => (a.id === id ? { ...a, [field]: field === "name" ? value : parseFloat(value) || 0 } : a))
+      assets.map((a) =>
+        a.id === id ? { ...a, [field]: field === "name" ? sanitizedValue : parseFloat(sanitizedValue) || 0 } : a
+      )
     );
   };
 
-  const runSimulation = useCallback(() => {
-    if (assets.length < 2 || loading) return;
-    setLoading(true);
-
-    const worker = new Worker(new URL("@/workers/monte-carlo.worker.ts", import.meta.url), { type: "module" });
-
-    worker.onmessage = (e) => {
-      const { simulations: sims, optimal: opt, minVol: mv } = e.data;
-      setSimulations(sims);
-      setOptimal(opt);
-      setMinVol(mv);
-      setLoading(false);
-      worker.terminate();
-    };
-
-    worker.onerror = () => {
-      setLoading(false);
-      worker.terminate();
-    };
-
-    worker.postMessage({
+  const startSimulation = () => {
+    if (assets.length < 2) return;
+    const payload = {
       assets: assets.map((a) => ({ id: a.id, name: a.name, return: a.return, risk: a.risk })),
       correlation,
       rf,
       simulations: 2000,
+    } as const;
+
+    // Pass the alias path so the bundler can resolve it correctly in both client and server builds
+    const workerUrl = "@/workers/monte-carlo.worker.ts";
+
+    run(workerUrl, payload, {
+      onProgress: () => {
+        // progress is surfaced by the hook; no extra action needed
+      },
+      onComplete: (data) => {
+        const d = data as { simulations: PortfolioPoint[]; optimal: PortfolioPoint; minVol: PortfolioPoint };
+        if (d?.simulations) setSimulations(d.simulations);
+        if (d?.optimal) setOptimal(d.optimal);
+        if (d?.minVol) setMinVol(d.minVol);
+      },
+      onError: () => {
+        // Error handled silently
+      },
     });
-  }, [assets, correlation, rf, loading]);
+  };
 
   return (
     <div className="space-y-6">
@@ -92,9 +108,9 @@ export default function PortfolioPage() {
           <h1 className="text-3xl font-bold tracking-tight">{t("portfolio.title")}</h1>
           <p className="text-muted-foreground mt-2">{t("portfolio.subtitle")}</p>
         </div>
-        <Button onClick={runSimulation} size="lg" className="gap-2" disabled={loading}>
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-          {loading ? t("common.loading") : t("portfolio.run")}
+        <Button onClick={startSimulation} size="lg" className="gap-2" disabled={isRunning}>
+          {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+          {isRunning ? t("common.loading") : t("portfolio.run")}
         </Button>
       </div>
 
@@ -132,6 +148,7 @@ export default function PortfolioPage() {
                   <TableRow key={asset.id}>
                     <TableCell>
                       <Input
+                        aria-label={t("portfolio.asset")}
                         value={asset.name}
                         onChange={(e) => updateAsset(asset.id, "name", e.target.value)}
                         className="h-8 w-24"
@@ -139,6 +156,7 @@ export default function PortfolioPage() {
                     </TableCell>
                     <TableCell>
                       <Input
+                        aria-label={`${t("portfolio.ret")} for ${asset.name}`}
                         type="number"
                         value={asset.return}
                         onChange={(e) => updateAsset(asset.id, "return", e.target.value)}
@@ -147,6 +165,7 @@ export default function PortfolioPage() {
                     </TableCell>
                     <TableCell>
                       <Input
+                        aria-label={`${t("portfolio.risk")} for ${asset.name}`}
                         type="number"
                         value={asset.risk}
                         onChange={(e) => updateAsset(asset.id, "risk", e.target.value)}
@@ -176,6 +195,7 @@ export default function PortfolioPage() {
         </Card>
 
         <div className="lg:col-span-8 space-y-6">
+          {isRunning && <ProgressBar progress={progress} label="Running Monte Carlo simulation..." showETA />}
           <Card className="h-[450px] flex flex-col">
             <CardHeader>
               <CardTitle>{t("portfolio.frontier")}</CardTitle>
@@ -213,9 +233,15 @@ export default function PortfolioPage() {
                           return (
                             <div className="rounded-lg border bg-card p-2 shadow-sm">
                               <p className="font-semibold">{data.type || t("portfolio.title")}</p>
-                              <p className="text-sm">Ret: {formatNumber(data.ret)}%</p>
-                              <p className="text-sm">Risk: {formatNumber(data.risk)}%</p>
-                              <p className="text-sm text-muted-foreground">Sharpe: {formatNumber(data.sharpe)}</p>
+                              <p className="text-sm">
+                                {t("portfolio.ret")}: {formatNumber(data.ret)}%
+                              </p>
+                              <p className="text-sm">
+                                {t("portfolio.risk")}: {formatNumber(data.risk)}%
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {t("portfolio.ratio")}: {formatNumber(data.sharpe)}
+                              </p>
                             </div>
                           );
                         }
@@ -235,7 +261,7 @@ export default function PortfolioPage() {
                 <EmptyState
                   icon={RefreshCw}
                   title={t("portfolio.empty")}
-                  description={loading ? t("common.loading") : undefined}
+                  description={isRunning ? t("common.loading") : undefined}
                 />
               )}
             </CardContent>

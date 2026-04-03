@@ -12,7 +12,7 @@
 
 **专业级金融建模、估值与风险分析平台 | Professional-grade financial modeling, valuation, and risk analysis tools**
 
-A comprehensive, bilingual (English/Chinese) financial calculator web application featuring 10 specialized modules with 35+ financial formulas. Built with modern web technologies for precision, performance, and exceptional user experience.
+A comprehensive, bilingual (English/Chinese) financial calculator web application featuring 9 specialized modules with 35+ financial formulas. Built with modern web technologies for precision, performance, and exceptional user experience.
 
 ---
 
@@ -81,10 +81,6 @@ A comprehensive, bilingual (English/Chinese) financial calculator web applicatio
 - **Real Interest Rate**: Fisher Equation implementation
 - **CPI Adjustment**: Consumer Price Index-based adjustments
 - **PPP Exchange Rate**: Purchasing Power Parity calculations
-
-#### 10. Derivatives & Risk - 衍生品与风险
-- Advanced risk metrics
-- Monte Carlo simulation capabilities
 
 ### Advanced Features - 高级功能
 
@@ -219,12 +215,12 @@ npm start
 
 ## Project Statistics
 
-- **Total Components**: 37 (12 custom + 25 Shadcn UI)
-- **Custom Hooks**: 8
-- **Library Modules**: 11
-- **Test Coverage**: 53 tests passing ✅
+- **Calculator Modules**: 9 (TVM, Cash Flow, Equity, Bonds, Portfolio, Options, Risk, Loans, Macro)
+- **Custom Components**: 20 (excluding UI primitives)
+- **Custom Hooks**: 11
+- **Library Modules**: 10 (non-test)
+- **Test Coverage**: 53+ tests passing ✅
 - **TypeScript**: Strict mode enabled
-- **Lines of Code**: ~2,881 lines in new features
 - **All 4 Improvement Phases**: Completed ✅
 
 ---
@@ -249,17 +245,54 @@ financial-calc/
 │   │   └── macro/              # Macroeconomics
 │   ├── components/
 │   │   ├── ui/                 # Shadcn UI components (auto-generated)
-│   │   └── layout/             # App layout components
-│   │       ├── app-layout.tsx
-│   │       ├── sidebar.tsx
-│   │       └── header.tsx
-│   └── lib/
-│       ├── finance-math.ts     # Core financial formulas (35+)
-│       ├── finance-math.test.ts # Unit tests (53+)
-│       ├── i18n.tsx            # Internationalization (EN/ZH)
-│       ├── nav-config.ts       # Navigation configuration
-│       ├── utils.ts            # Utility functions
-│       └── validation.ts       # Zod validation schemas
+│   │   ├── layout/             # App layout components
+│   │   │   ├── app-layout.tsx
+│   │   │   ├── sidebar.tsx
+│   │   │   ├── header.tsx
+│   │   │   └── mobile-sidebar.tsx
+│   │   ├── sensitivity-analysis.tsx
+│   │   ├── sensitivity-heatmap.tsx
+│   │   ├── history-panel.tsx
+│   │   ├── export-menu.tsx
+│   │   ├── virtual-table.tsx
+│   │   ├── keyboard-shortcuts-help.tsx
+│   │   ├── copy-button.tsx
+│   │   ├── share-dialog.tsx
+│   │   ├── calculation-steps.tsx
+│   │   ├── error-boundary.tsx
+│   │   ├── empty-state.tsx
+│   │   ├── mode-toggle.tsx
+│   │   ├── language-switcher.tsx
+│   │   └── ...
+│   ├── hooks/                  # Custom React hooks
+│   │   ├── use-keyboard-shortcuts.ts
+│   │   ├── use-calculation-history.ts
+│   │   ├── use-export.ts
+│   │   ├── use-local-storage.ts
+│   │   ├── use-url-state.ts
+│   │   ├── use-validation.ts
+│   │   ├── use-numeric-state.ts
+│   │   ├── use-monte-carlo-simulation.ts
+│   │   ├── use-auto-calculate.ts
+│   │   ├── use-locale-format.ts
+│   │   └── use-service-worker.ts
+│   ├── lib/                    # Core libraries
+│   │   ├── finance-math.ts     # Core financial formulas (35+)
+│   │   ├── finance-math.test.ts # Unit tests (53+)
+│   │   ├── i18n.tsx            # Internationalization (EN/ZH)
+│   │   ├── nav-config.ts       # Navigation configuration
+│   │   ├── utils.ts            # Utility functions
+│   │   ├── validation.ts       # Zod validation schemas
+│   │   ├── constants.ts        # Application constants
+│   │   ├── sanitize.ts         # XSS protection
+│   │   ├── pdf-export.ts       # PDF export functionality
+│   │   ├── chart-theme.ts      # Chart theming
+│   │   ├── design-tokens.ts    # Design tokens
+│   │   └── logger.ts           # Logging utilities
+│   ├── workers/
+│   │   └── monte-carlo.worker.ts # Monte Carlo simulation worker
+│   └── types/
+│       └── next-pwa.d.ts       # PWA type declarations
 ├── public/                     # Static assets
 ├── package.json
 ├── next.config.ts              # Next.js configuration (static export)

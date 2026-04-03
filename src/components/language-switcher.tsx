@@ -1,10 +1,12 @@
 "use client";
 
+import React from "react";
+
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/lib/i18n";
 import { Globe } from "lucide-react";
 
-export function LanguageSwitcher() {
+export const LanguageSwitcher = React.memo(function LanguageSwitcher() {
   const { language, setLanguage } = useLanguage();
 
   return (
@@ -19,4 +21,4 @@ export function LanguageSwitcher() {
       {language === "en" ? "EN" : "中"}
     </Button>
   );
-}
+});

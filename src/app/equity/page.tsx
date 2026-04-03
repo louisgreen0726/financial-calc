@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Finance } from "@/lib/finance-math";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency } from "@/lib/utils";
 import { BarChart, Activity, DollarSign } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
+import { useCalculationHistory } from "@/hooks/use-calculation-history";
+import { HistoryPanel } from "@/components/history-panel";
+import { ExportMenu } from "@/components/export-menu";
 
 export default function EquityPage() {
   const { t } = useLanguage();
@@ -48,12 +51,55 @@ export default function EquityPage() {
     return Finance.ddm(parseFloat(div) || 0, (parseFloat(reqReturn) || 0) / 100, (parseFloat(growth) || 0) / 100);
   }, [div, reqReturn, growth]);
 
+  const { addToHistory } = useCalculationHistory({ page: "equity" });
+
+  useEffect(() => {
+    if (isFinite(capmResult) && !isNaN(capmResult)) {
+      addToHistory({ rf, beta, rm }, capmResult, "CAPM");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [capmResult]);
+
+  useEffect(() => {
+    if (isFinite(waccResult) && !isNaN(waccResult)) {
+      addToHistory({ equity, debt, costEquity, costDebt, taxRate }, waccResult, "WACC");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [waccResult]);
+
+  useEffect(() => {
+    if (isFinite(ddmResult) && !isNaN(ddmResult)) {
+      addToHistory({ div, growth, reqReturn }, ddmResult, "DDM");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ddmResult]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{t("equity.title")}</h1>
           <p className="text-muted-foreground mt-2">{t("equity.subtitle")}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <HistoryPanel
+            page="equity"
+            onRestore={(inputs) => {
+              if (inputs.rf) setRf(String(inputs.rf));
+              if (inputs.beta) setBeta(String(inputs.beta));
+              if (inputs.rm) setRm(String(inputs.rm));
+
+              if (inputs.equity) setEquity(String(inputs.equity));
+              if (inputs.debt) setDebt(String(inputs.debt));
+              if (inputs.costEquity) setCostEquity(String(inputs.costEquity));
+              if (inputs.costDebt) setCostDebt(String(inputs.costDebt));
+              if (inputs.taxRate) setTaxRate(String(inputs.taxRate));
+
+              if (inputs.div) setDiv(String(inputs.div));
+              if (inputs.growth) setGrowth(String(inputs.growth));
+              if (inputs.reqReturn) setReqReturn(String(inputs.reqReturn));
+            }}
+          />
         </div>
       </div>
 
@@ -84,6 +130,9 @@ export default function EquityPage() {
                     type="number"
                     aria-describedby="capm-rf-help"
                   />
+                  <p id="capm-rf-help" className="sr-only">
+                    Risk-free rate used in the CAPM calculation.
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="capm-beta">{t("equity.capm.beta")}</Label>
@@ -95,6 +144,9 @@ export default function EquityPage() {
                     step="0.1"
                     aria-describedby="capm-beta-help"
                   />
+                  <p id="capm-beta-help" className="sr-only">
+                    CAPM beta input representing the asset&apos;s sensitivity to market movements.
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="capm-rm">{t("equity.capm.rm")}</Label>
@@ -105,6 +157,9 @@ export default function EquityPage() {
                     type="number"
                     aria-describedby="capm-rm-help"
                   />
+                  <p id="capm-rm-help" className="sr-only">
+                    CAPM market return input used in the calculation of expected return.
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -116,7 +171,7 @@ export default function EquityPage() {
                 aria-live="polite"
                 aria-label="CAPM calculation result"
               >
-                <h3 className="text-lg font-medium text-muted-foreground">{t("equity.capm.re")}</h3>
+                <h2 className="text-lg font-medium text-muted-foreground">{t("equity.capm.re")}</h2>
                 <div className="text-5xl font-bold text-primary tracking-tighter">{(capmResult * 100).toFixed(2)}%</div>
                 <p className="text-sm text-muted-foreground max-w-xs mx-auto pt-4">
                   {t("equity.capm.prem")}: {(parseFloat(rm) - parseFloat(rf)).toFixed(2)}%.
@@ -180,7 +235,7 @@ export default function EquityPage() {
                 aria-live="polite"
                 aria-label="WACC calculation result"
               >
-                <h3 className="text-lg font-medium text-muted-foreground">{t("equity.wacc.result")}</h3>
+                <h2 className="text-lg font-medium text-muted-foreground">{t("equity.wacc.result")}</h2>
                 <div className="text-5xl font-bold text-primary tracking-tighter">{(waccResult * 100).toFixed(2)}%</div>
                 <p className="text-sm text-muted-foreground max-w-xs mx-auto pt-4">{t("equity.wacc.desc")}</p>
               </div>
@@ -221,7 +276,7 @@ export default function EquityPage() {
                 aria-live="polite"
                 aria-label="DDM calculation result"
               >
-                <h3 className="text-lg font-medium text-muted-foreground">{t("equity.ddm.intrinsic")}</h3>
+                <h2 className="text-lg font-medium text-muted-foreground">{t("equity.ddm.intrinsic")}</h2>
                 <div
                   className={`text-5xl font-bold tracking-tighter ${ddmResult <= 0 ? "text-muted-foreground" : "text-primary"}`}
                 >

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
 
 // --- Types ---
 type Language = "en" | "zh";
@@ -140,7 +140,8 @@ type Translations = {
   bonds: {
     title: string;
     subtitle: string;
-    char: string;
+    // renamed from `char` to `characteristics` for clarity
+    characteristics: string;
     face: string;
     coupon: string;
     ytm: string;
@@ -154,6 +155,8 @@ type Translations = {
     modDur: string;
     convexity: string;
     curve: string;
+    metrics: string;
+    priceSensitivity: string;
   };
   portfolio: {
     title: string;
@@ -299,6 +302,51 @@ type Translations = {
       };
     };
   };
+  shortcuts: {
+    title: string;
+    action: string;
+    key: string;
+    note: string;
+    calculate: string;
+    clear: string;
+    copy: string;
+    reset: string;
+    help: string;
+    save: string;
+    exportCsv: string;
+    exportJson: string;
+    toggleDarkMode: string;
+    zoomIn: string;
+    zoomOut: string;
+  };
+  share: {
+    title: string;
+    copyLink: string;
+    copyMarkdown: string;
+    copyText: string;
+    print: string;
+  };
+  history: {
+    title: string;
+    clearAll: string;
+    restore: string;
+    delete: string;
+    restored: string;
+    cleared: string;
+    confirmClear: string;
+    search: string;
+    noResults: string;
+  };
+  sensitivity: {
+    title: string;
+    baseValue: string;
+    result: string;
+    change: string;
+    trend: string;
+    max: string;
+    min: string;
+    range: string;
+  };
 };
 
 // --- Dictionaries ---
@@ -357,8 +405,8 @@ const en: Translations = {
     },
   },
   home: {
-    title: "Financial Command Center",
-    subtitle: "Professional-grade financial modeling, valuation, and risk analysis tools.",
+    title: "Professional Financial Calculator",
+    subtitle: "Comprehensive financial modeling, valuation, and risk analysis tools.",
     openModule: "Open Module",
   },
   tvm: {
@@ -440,7 +488,7 @@ const en: Translations = {
   bonds: {
     title: "Bond Valuation",
     subtitle: "Calculate Bond Price, Yield to Maturity, Duration, and Convexity.",
-    char: "Bond Characteristics",
+    characteristics: "Bond Parameters",
     face: "Face Value",
     coupon: "Coupon Rate (%)",
     ytm: "Yield to Maturity (%)",
@@ -450,10 +498,12 @@ const en: Translations = {
     fairPrice: "Fair Price",
     discount: "Discount",
     premium: "Premium",
-    macDur: "Mac Duration",
-    modDur: "Mod Duration",
+    macDur: "Macaulay Duration",
+    modDur: "Modified Duration",
     convexity: "Convexity",
     curve: "Price vs Yield Relationship",
+    metrics: "Key Metrics",
+    priceSensitivity: "Price Sensitivity",
   },
   portfolio: {
     title: "Portfolio Optimization",
@@ -599,6 +649,51 @@ const en: Translations = {
       },
     },
   },
+  shortcuts: {
+    title: "Keyboard Shortcuts",
+    action: "Action",
+    key: "Shortcut",
+    note: "Press ? to toggle this dialog",
+    calculate: "Calculate result",
+    clear: "Clear all inputs",
+    copy: "Copy result",
+    reset: "Reset to defaults",
+    help: "Show this help",
+    save: "Save calculation",
+    exportCsv: "Export as CSV",
+    exportJson: "Export as JSON",
+    toggleDarkMode: "Toggle dark mode",
+    zoomIn: "Zoom in",
+    zoomOut: "Zoom out",
+  },
+  share: {
+    title: "Share Results",
+    copyLink: "Copy shareable link",
+    copyMarkdown: "Copy as Markdown table",
+    copyText: "Copy as plain text",
+    print: "Print / Save as PDF",
+  },
+  history: {
+    title: "History",
+    clearAll: "Clear all",
+    restore: "Restore",
+    delete: "Delete",
+    restored: "Calculation restored",
+    cleared: "History cleared",
+    confirmClear: "Clear all history?",
+    search: "Search history...",
+    noResults: "No results found",
+  },
+  sensitivity: {
+    title: "Sensitivity Analysis",
+    baseValue: "Base Case",
+    result: "Result",
+    change: "Change",
+    trend: "Trend",
+    max: "Max",
+    min: "Min",
+    range: "Range",
+  },
 };
 
 const zh: Translations = {
@@ -656,8 +751,8 @@ const zh: Translations = {
     },
   },
   home: {
-    title: "金融指挥中心",
-    subtitle: "专业级金融建模、估值与风险分析平台。",
+    title: "专业金融计算器",
+    subtitle: "全面的金融建模、估值和风险分析工具。",
     openModule: "进入模块",
   },
   tvm: {
@@ -739,7 +834,7 @@ const zh: Translations = {
   bonds: {
     title: "债券估值",
     subtitle: "计算债券理论价格、到期收益率(YTM)、久期及凸性。",
-    char: "债券参数",
+    characteristics: "债券参数",
     face: "票面面值",
     coupon: "票息率 (%)",
     ytm: "到期收益率 (%)",
@@ -753,6 +848,8 @@ const zh: Translations = {
     modDur: "修正久期",
     convexity: "凸性",
     curve: "价格-收益率曲线",
+    metrics: "关键指标",
+    priceSensitivity: "价格敏感性分析",
   },
   portfolio: {
     title: "投资组合优化",
@@ -898,6 +995,51 @@ const zh: Translations = {
       },
     },
   },
+  shortcuts: {
+    title: "键盘快捷键",
+    action: "操作",
+    key: "快捷键",
+    note: "按 ? 键打开此对话框",
+    calculate: "计算结果",
+    clear: "清除所有输入",
+    copy: "复制结果",
+    reset: "重置为默认值",
+    help: "显示帮助",
+    save: "保存计算",
+    exportCsv: "导出为 CSV",
+    exportJson: "导出为 JSON",
+    toggleDarkMode: "切换深色模式",
+    zoomIn: "放大",
+    zoomOut: "缩小",
+  },
+  share: {
+    title: "分享结果",
+    copyLink: "复制分享链接",
+    copyMarkdown: "复制为 Markdown 表格",
+    copyText: "复制为纯文本",
+    print: "打印 / 另存为 PDF",
+  },
+  history: {
+    title: "历史记录",
+    clearAll: "清除全部",
+    restore: "恢复",
+    delete: "删除",
+    restored: "计算已恢复",
+    cleared: "历史已清除",
+    confirmClear: "确定清除所有历史记录？",
+    search: "搜索历史...",
+    noResults: "未找到结果",
+  },
+  sensitivity: {
+    title: "敏感性分析",
+    baseValue: "基准情形",
+    result: "结果",
+    change: "变化",
+    trend: "趋势",
+    max: "最大值",
+    min: "最小值",
+    range: "区间",
+  },
 };
 
 const dictionaries = { en, zh };
@@ -927,13 +1069,22 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   const currentDictionary = dictionaries[language];
 
+  // Client-side: reflect language on the root HTML element for accessibility and i18n tooling
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = language;
+    }
+  }, [language]);
+
   // Helper to get nested values like "nav.core.title"
   const t = (path: string): string => {
     const keys = path.split(".");
     let current: unknown = currentDictionary;
     for (const key of keys) {
       if (typeof current !== "object" || current === null || (current as Record<string, unknown>)[key] === undefined) {
-        console.warn(`Translation missing for key: ${path} in language: ${language}`);
+        if (process.env.NODE_ENV !== "production") {
+          console.warn(`Translation missing for key: ${path} in language: ${language}`);
+        }
         return path;
       }
       current = (current as Record<string, unknown>)[key];

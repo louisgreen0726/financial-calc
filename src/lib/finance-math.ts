@@ -332,6 +332,26 @@ export const Finance = {
   },
 
   /**
+   * Inverse Normal CDF (Quantile Function) — Beasley-Springer-Moro algorithm.
+   * Returns z such that normCDF(z) ≈ p. Accuracy ~1e-9.
+   * @param p Probability in (0, 1)
+   */
+  normCDFInverse: (p: number): number => {
+    if (!isValid(p) || p <= 0 || p >= 1) return NaN;
+    const sign = p < 0.5 ? -1 : 1;
+    let t = p < 0.5 ? p : 1 - p;
+    t = Math.sqrt(-2.0 * Math.log(t));
+    const c0 = 2.515517,
+      c1 = 0.802853,
+      c2 = 0.010328;
+    const d1 = 1.432788,
+      d2 = 0.189269,
+      d3 = 0.001308;
+    const z = t - (c0 + c1 * t + c2 * t * t) / (1.0 + d1 * t + d2 * t * t + d3 * t * t * t);
+    return sign * z;
+  },
+
+  /**
    * Black-Scholes Formula
    * @param type "call" or "put"
    * @param S Spot Price

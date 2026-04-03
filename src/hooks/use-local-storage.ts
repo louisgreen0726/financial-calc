@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { logger } from "@/lib/logger";
 
 interface UseLocalStorageOptions<T> {
   key: string;
@@ -26,7 +27,7 @@ export function useLocalStorage<T>({
           return deserializer(item);
         }
       } catch (error) {
-        console.warn(`Error reading localStorage key "${key}":`, error);
+        logger.warn(`Error reading localStorage key "${key}":`, error);
       }
       return defaultValue;
     };
@@ -45,7 +46,7 @@ export function useLocalStorage<T>({
         setStoredValue(valueToStore);
         window.localStorage.setItem(key, serializer(valueToStore));
       } catch (error) {
-        console.warn(`Error setting localStorage key "${key}":`, error);
+        logger.warn(`Error setting localStorage key "${key}":`, error);
       }
     },
     [key, serializer, storedValue]
@@ -56,7 +57,7 @@ export function useLocalStorage<T>({
       window.localStorage.removeItem(key);
       setStoredValue(defaultValue);
     } catch (error) {
-      console.warn(`Error removing localStorage key "${key}":`, error);
+      logger.warn(`Error removing localStorage key "${key}":`, error);
     }
   }, [key, defaultValue]);
 
