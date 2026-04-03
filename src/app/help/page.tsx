@@ -2,43 +2,28 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { HelpCircle, Calculator, Keyboard, BookOpen, Mail, ExternalLink, ChevronRight } from "lucide-react";
+import { useLanguage } from "@/lib/i18n";
+
+const FAQ_KEYS = [
+  { q: "help.faqHistory", a: "help.faqHistoryAns" },
+  { q: "help.faqExport", a: "help.faqExportAns" },
+  { q: "help.faqTheme", a: "help.faqThemeAns" },
+  { q: "help.faqLanguage", a: "help.faqLanguageAns" },
+  { q: "help.faqMobile", a: "help.faqMobileAns" },
+  { q: "help.faqPrivacy", a: "help.faqPrivacyAns" },
+];
 
 export default function HelpPage() {
-  const faqs = [
-    {
-      q: "How does calculation history work?",
-      a: "Calculation history is stored locally in your browser. Each time you perform a calculation, it's saved with timestamp and inputs. You can access history from the bottom-right corner of any calculator page, or from the dedicated History page.",
-    },
-    {
-      q: "How do I export my calculations?",
-      a: "Click the Export menu button to export in CSV, JSON, or PDF format. The CSV and JSON options will download your data immediately. PDF export captures the calculation results as a formatted document.",
-    },
-    {
-      q: "How do I change between light and dark mode?",
-      a: "Click the theme toggle button in the header. You can choose Light, Dark, or follow your system preference.",
-    },
-    {
-      q: "How do I switch languages?",
-      a: "Click the language button in the header to toggle between English and Chinese (中文).",
-    },
-    {
-      q: "How do I use this on mobile?",
-      a: "The app is fully responsive. On mobile devices, use the hamburger menu to access the sidebar navigation, and the bottom tab bar for quick access to Home, Calculator, History, Settings, and Help.",
-    },
-    {
-      q: "Is my data stored on servers?",
-      a: "No. All calculation history is stored locally in your browser's localStorage. No data is sent to any server. You can export or clear your history at any time from the Settings page.",
-    },
-  ];
+  const { t } = useLanguage();
 
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
         <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
           <HelpCircle className="h-8 w-8" />
-          Help & Support
+          {t("help.title")}
         </h1>
-        <p className="text-muted-foreground mt-2">Learn how to use FinCalc Pro</p>
+        <p className="text-muted-foreground mt-2">{t("help.learnMore")}</p>
       </div>
 
       {/* Quick Start */}
@@ -46,38 +31,31 @@ export default function HelpPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BookOpen className="h-5 w-5" />
-            Quick Start Guide
+            {t("help.quickStart")}
           </CardTitle>
-          <CardDescription>Get started with financial calculations</CardDescription>
+          <CardDescription>{t("help.quickStartDesc")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-3">
             <div className="flex items-start gap-3">
               <div className="p-2 rounded-lg bg-primary/10 text-primary font-bold shrink-0">1</div>
               <div>
-                <h4 className="font-semibold">Choose a Calculator</h4>
-                <p className="text-sm text-muted-foreground">
-                  Select from TVM (Time Value of Money), Cash Flow, Equity Valuation, Portfolio Optimization, Bonds,
-                  Options, Risk Metrics, Loans, or Macroeconomics.
-                </p>
+                <h4 className="font-semibold">{t("help.step1Title")}</h4>
+                <p className="text-sm text-muted-foreground">{t("help.step1Desc")}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <div className="p-2 rounded-lg bg-primary/10 text-primary font-bold shrink-0">2</div>
               <div>
-                <h4 className="font-semibold">Enter Your Parameters</h4>
-                <p className="text-sm text-muted-foreground">
-                  Fill in the required financial parameters like interest rate, periods, cash flows, etc.
-                </p>
+                <h4 className="font-semibold">{t("help.step2Title")}</h4>
+                <p className="text-sm text-muted-foreground">{t("help.step2Desc")}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <div className="p-2 rounded-lg bg-primary/10 text-primary font-bold shrink-0">3</div>
               <div>
-                <h4 className="font-semibold">Calculate & View Results</h4>
-                <p className="text-sm text-muted-foreground">
-                  Click Calculate to see results. Export in CSV, JSON, or PDF formats.
-                </p>
+                <h4 className="font-semibold">{t("help.step3Title")}</h4>
+                <p className="text-sm text-muted-foreground">{t("help.step3Desc")}</p>
               </div>
             </div>
           </div>
@@ -89,59 +67,43 @@ export default function HelpPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calculator className="h-5 w-5" />
-            Available Calculators
+            {t("help.availableCalculators")}
           </CardTitle>
-          <CardDescription>Overview of each financial tool</CardDescription>
+          <CardDescription>{t("help.calculatorsDesc")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="p-4 rounded-lg border bg-card">
-              <h4 className="font-semibold">TVM Calculator</h4>
-              <p className="text-sm text-muted-foreground mt-1">
-                Time Value of Money - Calculate PV, FV, PMT, NPER, and interest rate.
-              </p>
+              <h4 className="font-semibold">{t("help.tvmCalc")}</h4>
+              <p className="text-sm text-muted-foreground mt-1">{t("help.tvmCalcDesc")}</p>
             </div>
             <div className="p-4 rounded-lg border bg-card">
-              <h4 className="font-semibold">Cash Flow Analysis</h4>
-              <p className="text-sm text-muted-foreground mt-1">
-                NPV, IRR, Payback Period, and ROI calculations for investment projects.
-              </p>
+              <h4 className="font-semibold">{t("help.cashFlowCalc")}</h4>
+              <p className="text-sm text-muted-foreground mt-1">{t("help.cashFlowCalcDesc")}</p>
             </div>
             <div className="p-4 rounded-lg border bg-card">
-              <h4 className="font-semibold">Stock Valuation</h4>
-              <p className="text-sm text-muted-foreground mt-1">
-                DDM (Dividend Discount Model), CAPM, WACC, and financial ratios.
-              </p>
+              <h4 className="font-semibold">{t("help.stockVal")}</h4>
+              <p className="text-sm text-muted-foreground mt-1">{t("help.stockValDesc")}</p>
             </div>
             <div className="p-4 rounded-lg border bg-card">
-              <h4 className="font-semibold">Portfolio Optimization</h4>
-              <p className="text-sm text-muted-foreground mt-1">
-                Monte Carlo simulation for efficient frontier and optimal portfolios.
-              </p>
+              <h4 className="font-semibold">{t("help.portfolioOpt")}</h4>
+              <p className="text-sm text-muted-foreground mt-1">{t("help.portfolioOptDesc")}</p>
             </div>
             <div className="p-4 rounded-lg border bg-card">
-              <h4 className="font-semibold">Bonds & Fixed Income</h4>
-              <p className="text-sm text-muted-foreground mt-1">
-                YTM, Duration, Convexity, and bond pricing calculations.
-              </p>
+              <h4 className="font-semibold">{t("help.bondsCalc")}</h4>
+              <p className="text-sm text-muted-foreground mt-1">{t("help.bondsCalcDesc")}</p>
             </div>
             <div className="p-4 rounded-lg border bg-card">
-              <h4 className="font-semibold">Options Pricing</h4>
-              <p className="text-sm text-muted-foreground mt-1">
-                Black-Scholes option pricing with Greeks (Delta, Gamma, Theta, Vega, Rho).
-              </p>
+              <h4 className="font-semibold">{t("help.optionsCalc")}</h4>
+              <p className="text-sm text-muted-foreground mt-1">{t("help.optionsCalcDesc")}</p>
             </div>
             <div className="p-4 rounded-lg border bg-card">
-              <h4 className="font-semibold">Risk Metrics</h4>
-              <p className="text-sm text-muted-foreground mt-1">
-                VaR (Value at Risk) and CVaR (Conditional VaR) calculations.
-              </p>
+              <h4 className="font-semibold">{t("help.riskMetrics")}</h4>
+              <p className="text-sm text-muted-foreground mt-1">{t("help.riskMetricsDesc")}</p>
             </div>
             <div className="p-4 rounded-lg border bg-card">
-              <h4 className="font-semibold">Loan Calculator</h4>
-              <p className="text-sm text-muted-foreground mt-1">
-                EMI calculation with amortization schedules (CPM and CAM methods).
-              </p>
+              <h4 className="font-semibold">{t("help.loanCalc")}</h4>
+              <p className="text-sm text-muted-foreground mt-1">{t("help.loanCalcDesc")}</p>
             </div>
           </div>
         </CardContent>
@@ -150,17 +112,17 @@ export default function HelpPage() {
       {/* FAQ */}
       <Card className="rounded-xl">
         <CardHeader>
-          <CardTitle>Frequently Asked Questions</CardTitle>
+          <CardTitle>{t("help.faq")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {faqs.map((faq, i) => (
+            {FAQ_KEYS.map((faq, i) => (
               <div key={i} className="p-4 rounded-lg border bg-card">
                 <h4 className="font-semibold flex items-center gap-2">
                   <ChevronRight className="h-4 w-4 text-primary" />
-                  {faq.q}
+                  {t(faq.q)}
                 </h4>
-                <p className="text-sm text-muted-foreground mt-2 ml-6">{faq.a}</p>
+                <p className="text-sm text-muted-foreground mt-2 ml-6">{t(faq.a)}</p>
               </div>
             ))}
           </div>
@@ -172,17 +134,17 @@ export default function HelpPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Keyboard className="h-5 w-5" />
-            Keyboard Shortcuts
+            {t("help.keyboardShortcuts")}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 md:grid-cols-2">
             <div className="flex justify-between items-center p-3 rounded-lg bg-muted">
-              <span>Show keyboard shortcuts</span>
+              <span>{t("help.showShortcuts")}</span>
               <kbd className="px-2 py-1 rounded bg-background text-sm font-mono">?</kbd>
             </div>
             <div className="flex justify-between items-center p-3 rounded-lg bg-muted">
-              <span>Navigate to calculator</span>
+              <span>{t("help.navigateCalculator")}</span>
               <div className="flex gap-1">
                 <kbd className="px-2 py-1 rounded bg-background text-sm font-mono">1</kbd>
                 <kbd className="px-2 py-1 rounded bg-background text-sm font-mono">2</kbd>
@@ -198,13 +160,11 @@ export default function HelpPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5" />
-            Contact & Support
+            {t("help.contactSupport")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            For questions, bug reports, or feature requests, please visit our GitHub repository.
-          </p>
+          <p className="text-sm text-muted-foreground">{t("help.contactDesc")}</p>
           <a
             href="https://github.com/louisgreen0726/financial-calc"
             target="_blank"
@@ -212,7 +172,7 @@ export default function HelpPage() {
             className="inline-flex items-center gap-2 text-primary hover:underline"
           >
             <ExternalLink className="h-4 w-4" />
-            github.com/louisgreen0726/financial-calc
+            {t("help.github")}
           </a>
         </CardContent>
       </Card>

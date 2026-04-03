@@ -159,7 +159,7 @@ export default function HistoryPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{t("history.title") || "History"}</h1>
-            <p className="text-muted-foreground mt-2">Loading...</p>
+            <p className="text-muted-foreground mt-2">{t("history.loading")}</p>
           </div>
         </div>
       </div>
@@ -170,10 +170,8 @@ export default function HistoryPage() {
     <Card className="rounded-xl">
       <CardContent className="flex flex-col items-center justify-center py-16">
         <Clock className="h-16 w-16 text-muted-foreground/30 mb-4" />
-        <h3 className="text-lg font-semibold mb-2">No history yet</h3>
-        <p className="text-muted-foreground text-center max-w-sm">
-          Your calculation history will appear here once you start using the financial calculators.
-        </p>
+        <h3 className="text-lg font-semibold mb-2">{t("history.noHistory")}</h3>
+        <p className="text-muted-foreground text-center max-w-sm">{t("history.noHistoryDesc")}</p>
       </CardContent>
     </Card>
   );
@@ -185,7 +183,7 @@ export default function HistoryPage() {
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search history..."
+              placeholder={t("history.searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 h-9"
@@ -193,10 +191,12 @@ export default function HistoryPage() {
           </div>
           {batchMode ? (
             <div className="flex gap-2 items-center">
-              <span className="text-sm text-muted-foreground">{selectedIds.size} selected</span>
+              <span className="text-sm text-muted-foreground">
+                {selectedIds.size} {t("history.itemsSelected")}
+              </span>
               <Button variant="ghost" size="sm" onClick={deleteSelected} className="text-destructive">
                 <Trash2 className="h-4 w-4 mr-1" />
-                Delete
+                {t("history.delete")}
               </Button>
               <Button
                 variant="ghost"
@@ -213,7 +213,7 @@ export default function HistoryPage() {
             sortedHistory.length > 0 && (
               <Button variant="ghost" size="sm" onClick={() => setBatchMode(true)}>
                 <CheckSquare className="h-4 w-4 mr-1" />
-                Select
+                {t("history.select")}
               </Button>
             )
           )}
@@ -223,7 +223,7 @@ export default function HistoryPage() {
         <ScrollArea className="h-[500px]">
           <div className="space-y-2">
             {sortedHistory.length === 0 && (
-              <div className="text-center py-12 text-muted-foreground">No results found</div>
+              <div className="text-center py-12 text-muted-foreground">{t("history.noResults")}</div>
             )}
             <AnimatePresence>
               {sortedHistory.map((item) => (

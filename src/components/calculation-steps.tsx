@@ -27,7 +27,8 @@ function FormattedFormula({ text }: { text: string }) {
   let currentIndex = 0;
   let partIndex = 0;
 
-  const regex = /\^(\d+|\([^)]+\))/g;
+  // Match ^ followed by: digits, letters (like ^n), curly braces ^{...}, or parentheses ^(...)
+  const regex = /\^(\d+|[a-zA-Z]+|\{[^}]+\}|\([^)]+\))/g;
   let match;
 
   while ((match = regex.exec(text)) !== null) {

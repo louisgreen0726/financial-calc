@@ -44,8 +44,8 @@ export function SensitivityHeatmap({ data, rowLabels, colLabels, formatCell }: P
   };
 
   return (
-    <div className="w-full overflow-x-auto">
-      <table className="w-full border-collapse">
+    <div className="w-full overflow-x-auto rounded-lg bg-blue-50 dark:bg-blue-950 p-1">
+      <table className="w-full border-collapse rounded-lg overflow-hidden">
         <thead>
           <tr className="bg-muted">
             <th className="px-4 py-3 text-left text-sm font-semibold text-muted-foreground min-w-[80px]">
