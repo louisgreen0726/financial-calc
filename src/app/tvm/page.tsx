@@ -32,7 +32,7 @@ function TVMPageContent() {
       rate: "5",
       nper: "10",
       pmt: "0",
-      pv: "-1000",
+      pv: "1000",
       fv: "0",
       type: "0", // 0 = End (Arrears), 1 = Begin (Due)
     },
@@ -252,7 +252,7 @@ function TVMPageContent() {
     setRate("5");
     setNper("10");
     setPmt("0");
-    setPv("-1000");
+    setPv("1000");
     setFv("0");
     setType("0");
     setResult(null);

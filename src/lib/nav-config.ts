@@ -1,4 +1,16 @@
-import { Calculator, TrendingUp, PieChart, Landmark, CreditCard, Activity, Globe, ShieldCheck } from "lucide-react";
+import {
+  Calculator,
+  TrendingUp,
+  PieChart,
+  Landmark,
+  CreditCard,
+  Activity,
+  Globe,
+  ShieldCheck,
+  History,
+  Settings,
+  HelpCircle,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export interface NavItem {
@@ -91,6 +103,30 @@ export const NAV_CONFIG: NavSection[] = [
         descKey: "nav.banking.macro.desc",
         href: "/macro",
         icon: Globe,
+      },
+    ],
+  },
+  {
+    titleKey: "nav.more.title",
+    color: "text-slate-500",
+    items: [
+      {
+        titleKey: "history.title",
+        descKey: "nav.more.history.desc",
+        href: "/history",
+        icon: History,
+      },
+      {
+        titleKey: "settings.title",
+        descKey: "nav.more.settings.desc",
+        href: "/settings",
+        icon: Settings,
+      },
+      {
+        titleKey: "help.title",
+        descKey: "nav.more.help.desc",
+        href: "/help",
+        icon: HelpCircle,
       },
     ],
   },

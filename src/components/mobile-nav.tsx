@@ -4,13 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Calculator, History, HelpCircle, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n";
 
 const NAV_ITEMS = [
-  { href: "/", icon: Home, label: "Home" },
-  { href: "/tvm", icon: Calculator, label: "Calculator" },
-  { href: "/history", icon: History, label: "History" },
-  { href: "/settings", icon: Settings, label: "Settings" },
-  { href: "/help", icon: HelpCircle, label: "Help" },
+  { href: "/", icon: Home, labelKey: "common.home" },
+  { href: "/tvm", icon: Calculator, labelKey: "nav.core.tvm.title" },
+  { href: "/history", icon: History, labelKey: "history.title" },
+  { href: "/settings", icon: Settings, labelKey: "settings.title" },
+  { href: "/help", icon: HelpCircle, labelKey: "help.title" },
 ];
 
 /**
@@ -19,11 +20,12 @@ const NAV_ITEMS = [
  */
 export function MobileNav() {
   const pathname = usePathname();
+  const { t } = useLanguage();
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t">
       <div className="flex items-center justify-around h-16 relative">
-        {NAV_ITEMS.map(({ href, icon: Icon, label }) => {
+        {NAV_ITEMS.map(({ href, icon: Icon, labelKey }) => {
           const isActive = pathname === href;
           return (
             <Link
@@ -35,7 +37,7 @@ export function MobileNav() {
               )}
             >
               <Icon className="h-5 w-5" />
-              <span className="text-[10px] font-medium">{label}</span>
+              <span className="text-[10px] font-medium truncate px-1">{t(labelKey) || labelKey}</span>
             </Link>
           );
         })}

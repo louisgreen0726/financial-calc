@@ -65,6 +65,12 @@ type Translations = {
       loans: { title: string; desc: string };
       macro: { title: string; desc: string };
     };
+    more: {
+      title: string;
+      history: { desc: string };
+      settings: { desc: string };
+      help: { desc: string };
+    };
   };
   home: {
     title: string;
@@ -351,6 +357,20 @@ type Translations = {
   settings: {
     title: string;
   };
+  help: {
+    title: string;
+  };
+  export: {
+    title: string;
+    csv: string;
+    json: string;
+    pdf: string;
+    noData: string;
+    csvSuccess: string;
+    jsonSuccess: string;
+    pdfSuccess: string;
+    pdfError: string;
+  };
 };
 
 // --- Dictionaries ---
@@ -407,6 +427,12 @@ const en: Translations = {
       title: "Banking & Macro",
       loans: { title: "Loans & Mortgages", desc: "Amortization, Prepayment, APR" },
       macro: { title: "Macro & FX", desc: "Inflation, Purchasing Power, FX" },
+    },
+    more: {
+      title: "More",
+      history: { desc: "View calculation history" },
+      settings: { desc: "App preferences and data" },
+      help: { desc: "Guide and support" },
     },
   },
   home: {
@@ -702,6 +728,20 @@ const en: Translations = {
   settings: {
     title: "Settings",
   },
+  help: {
+    title: "Help & Support",
+  },
+  export: {
+    title: "Export",
+    csv: "Export CSV",
+    json: "Export JSON",
+    pdf: "Export PDF",
+    noData: "No data to export",
+    csvSuccess: "CSV exported successfully",
+    jsonSuccess: "JSON exported successfully",
+    pdfSuccess: "PDF exported successfully",
+    pdfError: "Failed to export PDF",
+  },
 };
 
 const zh: Translations = {
@@ -757,6 +797,12 @@ const zh: Translations = {
       title: "银行与宏观",
       loans: { title: "贷款与按揭", desc: "还款计划, 提前还款, 年化利率 (APR)" },
       macro: { title: "宏观经济与外汇", desc: "通胀调整, 购买力平价, 汇率换算" },
+    },
+    more: {
+      title: "更多",
+      history: { desc: "查看计算历史" },
+      settings: { desc: "应用偏好与数据" },
+      help: { desc: "使用指南与支持" },
     },
   },
   home: {
@@ -1051,6 +1097,20 @@ const zh: Translations = {
   },
   settings: {
     title: "设置",
+  },
+  help: {
+    title: "帮助与支持",
+  },
+  export: {
+    title: "导出",
+    csv: "导出 CSV",
+    json: "导出 JSON",
+    pdf: "导出 PDF",
+    noData: "没有可导出的数据",
+    csvSuccess: "CSV 导出成功",
+    jsonSuccess: "JSON 导出成功",
+    pdfSuccess: "PDF 导出成功",
+    pdfError: "PDF 导出失败",
   },
 };
 

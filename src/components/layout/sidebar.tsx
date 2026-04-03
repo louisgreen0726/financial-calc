@@ -53,11 +53,11 @@ export const Sidebar = React.memo(function Sidebar({ className }: SidebarProps) 
   return (
     <div
       className={cn(
-        "pb-6 h-full flex flex-col overflow-hidden bg-card/60 backdrop-blur-2xl border border-white/10 shadow-2xl relative",
+        "pb-6 h-full flex flex-col bg-card/60 backdrop-blur-2xl border border-white/10 shadow-2xl relative",
         className
       )}
     >
-      <div className="space-y-4 py-4 h-full flex flex-col relative z-10">
+      <div className="space-y-4 py-4 h-full flex flex-col relative z-10 overflow-hidden">
         {/* Logo area with floating glassmorphism */}
         <div className="mx-4 mt-2 relative group">
           <div className="absolute -inset-1 bg-gradient-to-r from-primary to-blue-600 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-500"></div>
