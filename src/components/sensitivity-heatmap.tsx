@@ -44,39 +44,34 @@ export function SensitivityHeatmap({ data, rowLabels, colLabels, formatCell }: P
   };
 
   return (
-    <div style={{ width: "100%", overflowX: "auto" }}>
-      <table aria-label="Sensitivity heatmap" style={{ borderCollapse: "collapse", width: "100%" }}>
+    <div className="w-full overflow-x-auto">
+      <table className="w-full border-collapse">
         <thead>
-          <tr>
-            <th style={{ padding: "8px 12px", textAlign: "left", minWidth: 60 }}></th>
+          <tr className="bg-muted">
+            <th className="px-4 py-3 text-left text-sm font-semibold text-muted-foreground min-w-[80px]">
+              YTM \ Years
+            </th>
             {colLabels.map((cl) => (
-              <th
-                key={cl}
-                style={{ padding: "8px 12px", textAlign: "center", fontSize: 12, color: "var(--muted-foreground)" }}
-              >
+              <th key={cl} className="px-4 py-3 text-center text-sm font-semibold text-muted-foreground min-w-[80px]">
                 {cl}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y divide-border">
           {data.map((row, rowIndex) => (
-            <tr key={`row-${rowIndex}`}>
-              <td style={{ padding: "8px 12px", fontSize: 12, color: "var(--muted-foreground)" }}>
-                {rowLabels[rowIndex]}
-              </td>
+            <tr key={`row-${rowIndex}`} className="hover:bg-muted/50 transition-colors">
+              <td className="px-4 py-3 text-sm font-medium text-muted-foreground bg-muted/30">{rowLabels[rowIndex]}</td>
               {row.map((val, colIndex) => (
                 <td
                   key={`cell-${rowIndex}-${colIndex}`}
+                  className="px-4 py-3 text-right font-mono text-sm font-medium"
                   style={{
-                    padding: "6px 10px",
-                    textAlign: "right",
                     backgroundColor: cellColor(val),
-                    border: "1px solid hsl(var(--border))",
-                    minWidth: 60,
+                    color: isDark ? "hsl(0, 0%, 95%)" : "hsl(0, 0%, 15%)",
                   }}
                 >
-                  <span style={{ fontFamily: "ui-sans-serif, system-ui", fontSize: 12 }}>{formatCell(val)}</span>
+                  {formatCell(val)}
                 </td>
               ))}
             </tr>

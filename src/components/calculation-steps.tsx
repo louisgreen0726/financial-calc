@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronDown, ChevronRight, Calculator } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLanguage } from "@/lib/i18n";
 
 interface CalcStep {
   label: string;
@@ -19,11 +20,47 @@ interface CalculationStepsProps {
   className?: string;
 }
 
+// Helper function to render formulas with superscripts
+function FormattedFormula({ text }: { text: string }) {
+  // Split by ^ and render superscripts
+  const parts: React.ReactNode[] = [];
+  let currentIndex = 0;
+  let partIndex = 0;
+
+  const regex = /\^(\d+|\([^)]+\))/g;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    // Add text before the superscript
+    if (match.index > currentIndex) {
+      parts.push(<span key={`text-${partIndex++}`}>{text.slice(currentIndex, match.index)}</span>);
+    }
+
+    // Add the superscript
+    const supContent = match[1];
+    parts.push(
+      <sup key={`sup-${partIndex++}`} className="text-[0.7em]">
+        {supContent}
+      </sup>
+    );
+
+    currentIndex = match.index + match[0].length;
+  }
+
+  // Add remaining text
+  if (currentIndex < text.length) {
+    parts.push(<span key={`text-${partIndex++}`}>{text.slice(currentIndex)}</span>);
+  }
+
+  return <>{parts}</>;
+}
+
 /**
  * Collapsible calculation steps display with formula derivation.
  */
 export function CalculationSteps({ formula, inputs, steps, result, className }: CalculationStepsProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const { t } = useLanguage();
 
   return (
     <div className={cn("rounded-xl border bg-card", className)}>
@@ -55,7 +92,9 @@ export function CalculationSteps({ formula, inputs, steps, result, className }: 
               {/* Formula */}
               <div className="p-3 bg-muted rounded-lg border-l-4 border-primary">
                 <div className="text-xs text-muted-foreground mb-1">Formula</div>
-                <code className="text-sm font-mono font-medium">{formula}</code>
+                <div className="text-sm font-medium font-mono">
+                  <FormattedFormula text={formula} />
+                </div>
               </div>
 
               {/* Inputs */}
@@ -82,7 +121,11 @@ export function CalculationSteps({ formula, inputs, steps, result, className }: 
                     <div className="flex-1 pb-4">
                       <div className="text-sm font-medium">{step.label}</div>
                       <div className="font-mono text-sm mt-0.5">{step.value}</div>
-                      {step.formula && <code className="text-xs text-muted-foreground mt-1 block">{step.formula}</code>}
+                      {step.formula && (
+                        <div className="text-xs text-muted-foreground mt-1 font-mono">
+                          <FormattedFormula text={step.formula} />
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
