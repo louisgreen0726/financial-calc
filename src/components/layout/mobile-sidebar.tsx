@@ -1,16 +1,16 @@
 "use client";
 
+import React from "react";
+
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Sidebar } from "./sidebar";
 import { Menu } from "lucide-react";
 import { useState } from "react";
-import { usePathname } from "next/navigation";
 import { useLanguage } from "@/lib/i18n";
 
-export function MobileSidebar() {
+export const MobileSidebar = React.memo(function MobileSidebar() {
   const [open, setOpen] = useState(false);
-  const pathname = usePathname();
   const { t } = useLanguage();
 
   const handleClose = () => setOpen(false);
@@ -27,4 +27,4 @@ export function MobileSidebar() {
       </SheetContent>
     </Sheet>
   );
-}
+});

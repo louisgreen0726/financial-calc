@@ -35,7 +35,7 @@ export function ExportMenu({ data, jsonData, pdfElementId, pdfFilename = "export
         elementId: pdfElementId,
       });
       toast.success(t("export.pdfSuccess"));
-    } catch (_error) {
+    } catch {
       toast.error(t("export.pdfError"));
     } finally {
       setIsExporting(false);

@@ -199,6 +199,28 @@ describe("Finance", () => {
     });
   });
 
+  describe("normCDFInverse", () => {
+    it("returns correct z-scores for common probabilities", () => {
+      expect(Finance.normCDFInverse(0.5)).toBeCloseTo(0, 1);
+      expect(Finance.normCDFInverse(0.95)).toBeCloseTo(1.64, 1);
+      expect(Finance.normCDFInverse(0.975)).toBeCloseTo(1.96, 1);
+      expect(Finance.normCDFInverse(0.99)).toBeCloseTo(2.33, 1);
+    });
+
+    it("handles extreme probabilities", () => {
+      expect(Finance.normCDFInverse(0.0001)).toBeLessThan(-3);
+      expect(Finance.normCDFInverse(0.9999)).toBeGreaterThan(3);
+    });
+
+    it("returns NaN for probabilities outside (0,1)", () => {
+      expect(Finance.normCDFInverse(0)).toBeNaN();
+      expect(Finance.normCDFInverse(1)).toBeNaN();
+      expect(Finance.normCDFInverse(-0.5)).toBeNaN();
+      expect(Finance.normCDFInverse(1.5)).toBeNaN();
+      expect(Finance.normCDFInverse(NaN)).toBeNaN();
+    });
+  });
+
   describe("blackScholes", () => {
     it("prices ATM call option", () => {
       const result = Finance.blackScholes("call", 100, 100, 1, 0.05, 0.2);

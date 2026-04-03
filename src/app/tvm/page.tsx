@@ -8,32 +8,70 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Calculator, ArrowRightLeft, RotateCcw } from "lucide-react";
+import { Calculator, ArrowRightLeft, RotateCcw, Share2 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
+import { ShareDialog } from "@/components/share-dialog";
+import { CalculationSteps } from "@/components/calculation-steps";
+import { InputRangeHint } from "@/components/input-range-hint";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorDisplay, ValidationError } from "@/components/ui/error-display";
 import { useFormValidation } from "@/hooks/use-validation";
+import { useCalculationHistory } from "@/hooks/use-calculation-history";
+import { HistoryPanel } from "@/components/history-panel";
+import { useUrlState } from "@/hooks/use-url-state";
 import { cn } from "@/lib/utils";
 
 type TVMTarget = "pv" | "fv" | "pmt" | "nper" | "rate";
 
 export default function TVMPage() {
   const { t } = useLanguage();
-  const [target, setTarget] = useState<TVMTarget>("fv");
+  const { state: urlState, setField } = useUrlState({
+    defaultValues: {
+      target: "fv" as string,
+      rate: "5",
+      nper: "10",
+      pmt: "0",
+      pv: "-1000",
+      fv: "0",
+      type: "0", // 0 = End (Arrears), 1 = Begin (Due)
+    },
+    prefix: "tvm",
+  });
 
-  // State for inputs (strings to allow empty state)
-  const [rate, setRate] = useState<string>("5");
-  const [nper, setNper] = useState<string>("10");
-  const [pmt, setPmt] = useState<string>("0");
-  const [pv, setPv] = useState<string>("-1000");
-  const [fv, setFv] = useState<string>("0");
-  const [type, setType] = useState<"0" | "1">("0"); // 0 = End (Arrears), 1 = Begin (Due)
+  const target = urlState.target as TVMTarget;
+  const setTarget = (v: TVMTarget) => setField("target", v);
+
+  const rate = urlState.rate as string;
+  const setRate = (v: string) => setField("rate", v);
+
+  const nper = urlState.nper as string;
+  const setNper = (v: string) => setField("nper", v);
+
+  const pmt = urlState.pmt as string;
+  const setPmt = (v: string) => setField("pmt", v);
+
+  const pv = urlState.pv as string;
+  const setPv = (v: string) => setField("pv", v);
+
+  const fv = urlState.fv as string;
+  const setFv = (v: string) => setField("fv", v);
+
+  const type = urlState.type as "0" | "1";
+  const setType = (v: "0" | "1") => setField("type", v);
 
   const [result, setResult] = useState<number | null>(null);
   const [calculationError, setCalculationError] = useState<string | null>(null);
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
 
   const { errors, validateField, validateAll, clearErrors } = useFormValidation();
+  const { addToHistory } = useCalculationHistory({ page: "tvm" });
+  const [shareOpen, setShareOpen] = useState(false);
+  const [calcSteps, setCalcSteps] = useState<{
+    formula: string;
+    inputs: Record<string, number>;
+    steps: { label: string; value: string; formula?: string }[];
+    result: number;
+  } | null>(null);
 
   const handleInputChange = (field: string, value: string, setter: (val: string) => void) => {
     setter(value);
@@ -132,6 +170,75 @@ export default function TVMPage() {
       } else {
         setResult(res);
         setCalculationError(null);
+        addToHistory({ rate, nper, pmt, pv, fv, type, target }, res, `TVM → ${target.toUpperCase()}`);
+
+        const compoundFactor = Math.pow(1 + r, n);
+
+        const stepData = {
+          fv: {
+            formula: "FV = PV(1+r)^n + PMT × [(1+r)^n - 1] / r",
+            steps: [
+              { label: "Rate as decimal", value: `${rate}% → ${r.toFixed(4)}`, formula: "r = rate / 100" },
+              {
+                label: "Compound factor",
+                value: `(1+${r.toFixed(4)})^${n} = ${compoundFactor.toFixed(4)}`,
+                formula: "(1+r)^n",
+              },
+              { label: "Future Value", value: `$${res.toFixed(2)}`, formula: "PV(1+r)^n + PMT × annuity" },
+            ],
+          },
+          pv: {
+            formula: "PV = FV / (1+r)^n + PMT × [(1+r)^n - 1] / r",
+            steps: [
+              { label: "Rate as decimal", value: `${rate}% → ${r.toFixed(4)}`, formula: "r = rate / 100" },
+              {
+                label: "Discount factor",
+                value: `1 / ${compoundFactor.toFixed(4)} = ${(1 / compoundFactor).toFixed(4)}`,
+                formula: "1/(1+r)^n",
+              },
+              { label: "Present Value", value: `$${res.toFixed(2)}`, formula: "PV = FV/(1+r)^n + PMT × factor" },
+            ],
+          },
+          pmt: {
+            formula: "PMT = (FV - PV(1+r)^n) / annuity_factor",
+            steps: [
+              { label: "Rate as decimal", value: `${rate}% → ${r.toFixed(4)}`, formula: "r = rate / 100" },
+              {
+                label: "Compound factor",
+                value: `(1+${r.toFixed(4)})^${n} = ${compoundFactor.toFixed(4)}`,
+                formula: "(1+r)^n",
+              },
+              { label: "Payment", value: `$${res.toFixed(2)}`, formula: "PMT = (FV-PV×factor) / annuity" },
+            ],
+          },
+          nper: {
+            formula: "n = ln[(FV×r+PMT)/(PV×r+PMT)] / ln(1+r)",
+            steps: [
+              { label: "Rate as decimal", value: `${rate}% → ${r.toFixed(4)}`, formula: "r = rate / 100" },
+              {
+                label: "Cash flow ratio",
+                value: `${fut}×${r}+${p} vs ${pres}×${r}+${p}`,
+                formula: "(FV×r+PMT)/(PV×r+PMT)",
+              },
+              { label: "Periods", value: `${res.toFixed(2)} years`, formula: "n = ln(ratio) / ln(1+r)" },
+            ],
+          },
+          rate: {
+            formula: "Iterative Newton-Raphson approximation",
+            steps: [
+              { label: "Initial guess", value: "2% per period" },
+              { label: "NPV iteration", value: "Refine until NPV ≈ 0" },
+              { label: "Annual rate", value: `${(res * 100).toFixed(4)}%`, formula: "rate × 100" },
+            ],
+          },
+        };
+
+        setCalcSteps({
+          formula: stepData[target].formula,
+          inputs: { Rate: parseFloat(rate), Periods: n, PMT: p, PV: pres, FV: fut },
+          steps: stepData[target].steps,
+          result: res,
+        });
       }
     } catch (e) {
       console.error(e);
@@ -149,190 +256,230 @@ export default function TVMPage() {
     setType("0");
     setResult(null);
     setCalculationError(null);
+    setCalcSteps(null);
     setTouchedFields({});
     clearErrors();
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t("tvm.title")}</h1>
-          <p className="text-muted-foreground mt-2">{t("tvm.subtitle")}</p>
+    <>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{t("tvm.title")}</h1>
+            <p className="text-muted-foreground mt-2">{t("tvm.subtitle")}</p>
+          </div>
         </div>
-      </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calculator className="h-5 w-5 text-primary" />
-              {t("common.parameters")}
-            </CardTitle>
-            <CardDescription>{t("tvm.emptyState")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label>{t("common.solveFor")}</Label>
-              <Select
-                value={target}
-                onValueChange={(v) => {
-                  setTarget(v as TVMTarget);
-                  setResult(null);
-                  setCalculationError(null);
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="fv">{t("tvm.fv")}</SelectItem>
-                  <SelectItem value="pv">{t("tvm.pv")}</SelectItem>
-                  <SelectItem value="pmt">{t("tvm.pmt")}</SelectItem>
-                  <SelectItem value="nper">{t("tvm.nper")}</SelectItem>
-                  <SelectItem value="rate">{t("tvm.rate")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calculator className="h-5 w-5 text-primary" />
+                {t("common.parameters")}
+              </CardTitle>
+              <CardDescription>{t("tvm.emptyState")}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label>{t("common.solveFor")}</Label>
+                <Select
+                  value={target}
+                  onValueChange={(v) => {
+                    setTarget(v as TVMTarget);
+                    setResult(null);
+                    setCalculationError(null);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fv">{t("tvm.fv")}</SelectItem>
+                    <SelectItem value="pv">{t("tvm.pv")}</SelectItem>
+                    <SelectItem value="pmt">{t("tvm.pmt")}</SelectItem>
+                    <SelectItem value="nper">{t("tvm.nper")}</SelectItem>
+                    <SelectItem value="rate">{t("tvm.rate")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            {calculationError && (
-              <ErrorDisplay message={calculationError} onDismiss={() => setCalculationError(null)} className="mb-4" />
+              {calculationError && (
+                <ErrorDisplay message={calculationError} onDismiss={() => setCalculationError(null)} className="mb-4" />
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className={target === "rate" ? "text-primary font-bold" : ""}>{t("tvm.annualRate")}</Label>
+                  <Input
+                    type="number"
+                    value={rate}
+                    onChange={(e) => handleInputChange("rate", e.target.value, setRate)}
+                    disabled={target === "rate"}
+                    className={cn(errors.rate && touchedFields.rate && "border-red-500 focus-visible:ring-red-500")}
+                  />
+                  <ValidationError error={errors.rate && touchedFields.rate ? errors.rate : null} />
+                  <InputRangeHint min={0} max={100} unit="%" example="5" currentValue={parseFloat(rate)} />
+                </div>
+                <div className="space-y-2">
+                  <Label className={target === "nper" ? "text-primary font-bold" : ""}>{t("tvm.periods")}</Label>
+                  <Input
+                    type="number"
+                    value={nper}
+                    onChange={(e) => handleInputChange("nper", e.target.value, setNper)}
+                    disabled={target === "nper"}
+                    className={cn(errors.nper && touchedFields.nper && "border-red-500 focus-visible:ring-red-500")}
+                  />
+                  <ValidationError error={errors.nper && touchedFields.nper ? errors.nper : null} />
+                  <InputRangeHint min={1} max={600} unit="periods" example="10" currentValue={parseFloat(nper)} />
+                </div>
+                <div className="space-y-2">
+                  <Label className={target === "pmt" ? "text-primary font-bold" : ""}>{t("tvm.payment")}</Label>
+                  <Input
+                    type="number"
+                    value={pmt}
+                    onChange={(e) => handleInputChange("pmt", e.target.value, setPmt)}
+                    disabled={target === "pmt"}
+                    className={cn(errors.pmt && touchedFields.pmt && "border-red-500 focus-visible:ring-red-500")}
+                  />
+                  <ValidationError error={errors.pmt && touchedFields.pmt ? errors.pmt : null} />
+                </div>
+                <div className="space-y-2">
+                  <Label className={target === "pv" ? "text-primary font-bold" : ""}>{t("tvm.presentValue")}</Label>
+                  <Input
+                    type="number"
+                    value={pv}
+                    onChange={(e) => handleInputChange("pv", e.target.value, setPv)}
+                    disabled={target === "pv"}
+                    className={cn(errors.pv && touchedFields.pv && "border-red-500 focus-visible:ring-red-500")}
+                  />
+                  <ValidationError error={errors.pv && touchedFields.pv ? errors.pv : null} />
+                </div>
+                <div className="space-y-2">
+                  <Label className={target === "fv" ? "text-primary font-bold" : ""}>{t("tvm.futureValue")}</Label>
+                  <Input
+                    type="number"
+                    value={fv}
+                    onChange={(e) => handleInputChange("fv", e.target.value, setFv)}
+                    disabled={target === "fv"}
+                    className={cn(errors.fv && touchedFields.fv && "border-red-500 focus-visible:ring-red-500")}
+                  />
+                  <ValidationError error={errors.fv && touchedFields.fv ? errors.fv : null} />
+                </div>
+              </div>
+
+              <div className="space-y-3 pt-2">
+                <Label>{t("tvm.paymentMode")}</Label>
+                <RadioGroup
+                  value={type}
+                  onValueChange={(v) => setType(v as "0" | "1")}
+                  className="flex items-center space-x-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="0" id="end" />
+                    <Label htmlFor="end">{t("tvm.end")}</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="1" id="begin" />
+                    <Label htmlFor="begin">{t("tvm.begin")}</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <div className="flex gap-3">
+                <Button onClick={handleCalculate} className="flex-1" size="lg">
+                  {t("common.calculate")} {target.toUpperCase()}
+                </Button>
+                <Button onClick={handleClear} variant="outline" size="lg" className="gap-2">
+                  <RotateCcw className="h-4 w-4" />
+                  Clear All
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Result Card */}
+          <Card
+            className={cn(
+              "border-2 flex flex-col justify-center items-center p-8 text-center",
+              calculationError || (result !== null && (isNaN(result) || !isFinite(result)))
+                ? "bg-red-50/50 border-red-200 dark:bg-red-950/20 dark:border-red-800"
+                : "bg-muted/30 border-dashed"
             )}
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className={target === "rate" ? "text-primary font-bold" : ""}>{t("tvm.annualRate")}</Label>
-                <Input
-                  type="number"
-                  value={rate}
-                  onChange={(e) => handleInputChange("rate", e.target.value, setRate)}
-                  disabled={target === "rate"}
-                  className={cn(errors.rate && touchedFields.rate && "border-red-500 focus-visible:ring-red-500")}
-                />
-                <ValidationError error={errors.rate && touchedFields.rate ? errors.rate : null} />
-              </div>
-              <div className="space-y-2">
-                <Label className={target === "nper" ? "text-primary font-bold" : ""}>{t("tvm.periods")}</Label>
-                <Input
-                  type="number"
-                  value={nper}
-                  onChange={(e) => handleInputChange("nper", e.target.value, setNper)}
-                  disabled={target === "nper"}
-                  className={cn(errors.nper && touchedFields.nper && "border-red-500 focus-visible:ring-red-500")}
-                />
-                <ValidationError error={errors.nper && touchedFields.nper ? errors.nper : null} />
-              </div>
-              <div className="space-y-2">
-                <Label className={target === "pmt" ? "text-primary font-bold" : ""}>{t("tvm.payment")}</Label>
-                <Input
-                  type="number"
-                  value={pmt}
-                  onChange={(e) => handleInputChange("pmt", e.target.value, setPmt)}
-                  disabled={target === "pmt"}
-                  className={cn(errors.pmt && touchedFields.pmt && "border-red-500 focus-visible:ring-red-500")}
-                />
-                <ValidationError error={errors.pmt && touchedFields.pmt ? errors.pmt : null} />
-              </div>
-              <div className="space-y-2">
-                <Label className={target === "pv" ? "text-primary font-bold" : ""}>{t("tvm.presentValue")}</Label>
-                <Input
-                  type="number"
-                  value={pv}
-                  onChange={(e) => handleInputChange("pv", e.target.value, setPv)}
-                  disabled={target === "pv"}
-                  className={cn(errors.pv && touchedFields.pv && "border-red-500 focus-visible:ring-red-500")}
-                />
-                <ValidationError error={errors.pv && touchedFields.pv ? errors.pv : null} />
-              </div>
-              <div className="space-y-2">
-                <Label className={target === "fv" ? "text-primary font-bold" : ""}>{t("tvm.futureValue")}</Label>
-                <Input
-                  type="number"
-                  value={fv}
-                  onChange={(e) => handleInputChange("fv", e.target.value, setFv)}
-                  disabled={target === "fv"}
-                  className={cn(errors.fv && touchedFields.fv && "border-red-500 focus-visible:ring-red-500")}
-                />
-                <ValidationError error={errors.fv && touchedFields.fv ? errors.fv : null} />
-              </div>
-            </div>
-
-            <div className="space-y-3 pt-2">
-              <Label>{t("tvm.paymentMode")}</Label>
-              <RadioGroup
-                value={type}
-                onValueChange={(v) => setType(v as "0" | "1")}
-                className="flex items-center space-x-4"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="0" id="end" />
-                  <Label htmlFor="end">{t("tvm.end")}</Label>
+          >
+            {result !== null && !isNaN(result) && isFinite(result) ? (
+              <div className="space-y-2 animate-in fade-in zoom-in duration-300">
+                <h3 className="text-lg font-medium text-muted-foreground">
+                  {t("common.result")} ({target.toUpperCase()})
+                </h3>
+                <div className="flex items-center justify-center gap-3">
+                  <p className="text-5xl font-bold tracking-tighter text-primary">
+                    {target === "nper"
+                      ? result.toFixed(2)
+                      : target === "rate"
+                        ? `${(result * 100).toFixed(4)}%`
+                        : new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(result)}
+                  </p>
+                  <button
+                    type="button"
+                    aria-label="Share result"
+                    onClick={() => setShareOpen(true)}
+                    className="inline-flex items-center justify-center rounded border border-slate-200 p-2 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800 transition-colors"
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </button>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="1" id="begin" />
-                  <Label htmlFor="begin">{t("tvm.begin")}</Label>
-                </div>
-              </RadioGroup>
-            </div>
-
-            <div className="flex gap-3">
-              <Button onClick={handleCalculate} className="flex-1" size="lg">
-                {t("common.calculate")} {target.toUpperCase()}
-              </Button>
-              <Button onClick={handleClear} variant="outline" size="lg" className="gap-2">
-                <RotateCcw className="h-4 w-4" />
-                Clear All
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Result Card */}
-        <Card
-          className={cn(
-            "border-2 flex flex-col justify-center items-center p-8 text-center",
-            calculationError || (result !== null && (isNaN(result) || !isFinite(result)))
-              ? "bg-red-50/50 border-red-200 dark:bg-red-950/20 dark:border-red-800"
-              : "bg-muted/30 border-dashed"
-          )}
-        >
-          {result !== null && !isNaN(result) && isFinite(result) ? (
-            <div className="space-y-2 animate-in fade-in zoom-in duration-300">
-              <h3 className="text-lg font-medium text-muted-foreground">
-                {t("common.result")} ({target.toUpperCase()})
-              </h3>
-              <p className="text-5xl font-bold tracking-tighter text-primary">
-                {target === "nper"
-                  ? result.toFixed(2)
-                  : target === "rate"
-                    ? `${(result * 100).toFixed(4)}%`
-                    : new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(result)}
-              </p>
-              <p className="text-sm text-muted-foreground mt-4 max-w-xs mx-auto">
-                {target === "fv" && t("tvm.resultDesc.fv")}
-                {target === "pv" && t("tvm.resultDesc.pv")}
-                {target === "pmt" && t("tvm.resultDesc.pmt")}
-                {target === "nper" && t("tvm.resultDesc.nper")}
-                {target === "rate" && t("tvm.resultDesc.rate")}
-              </p>
-            </div>
-          ) : calculationError || (result !== null && (isNaN(result) || !isFinite(result))) ? (
-            <div className="space-y-3">
-              <div className="h-16 w-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto">
-                <Calculator className="h-8 w-8 text-red-500" />
-              </div>
-              <div>
-                <h3 className="text-lg font-medium text-red-800 dark:text-red-200">Calculation Error</h3>
-                <p className="text-sm text-red-600 dark:text-red-300 mt-1 max-w-xs">
-                  {calculationError || "Unable to calculate result. Please check your inputs and try again."}
+                <p className="text-sm text-muted-foreground mt-4 max-w-xs mx-auto">
+                  {target === "fv" && t("tvm.resultDesc.fv")}
+                  {target === "pv" && t("tvm.resultDesc.pv")}
+                  {target === "pmt" && t("tvm.resultDesc.pmt")}
+                  {target === "nper" && t("tvm.resultDesc.nper")}
+                  {target === "rate" && t("tvm.resultDesc.rate")}
                 </p>
               </div>
-            </div>
-          ) : (
-            <EmptyState icon={ArrowRightLeft} title={t("tvm.emptyState")} />
-          )}
-        </Card>
+            ) : calculationError || (result !== null && (isNaN(result) || !isFinite(result))) ? (
+              <div className="space-y-3">
+                <div className="h-16 w-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto">
+                  <Calculator className="h-8 w-8 text-red-500" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium text-red-800 dark:text-red-200">Calculation Error</h3>
+                  <p className="text-sm text-red-600 dark:text-red-300 mt-1 max-w-xs">
+                    {calculationError || "Unable to calculate result. Please check your inputs and try again."}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <EmptyState icon={ArrowRightLeft} title={t("tvm.emptyState")} />
+            )}
+          </Card>
+        </div>
+
+        {calcSteps && <CalculationSteps {...calcSteps} />}
       </div>
-    </div>
+
+      <ShareDialog
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        title={`TVM Calculation - ${target.toUpperCase()}`}
+        results={{ [target.toUpperCase()]: result ?? 0 }}
+        inputs={{ rate, nper, pmt, pv, fv, type }}
+      />
+      <HistoryPanel
+        page="tvm"
+        onRestore={(inputs) => {
+          if (inputs.rate !== undefined) setRate(String(inputs.rate));
+          if (inputs.nper !== undefined) setNper(String(inputs.nper));
+          if (inputs.pmt !== undefined) setPmt(String(inputs.pmt));
+          if (inputs.pv !== undefined) setPv(String(inputs.pv));
+          if (inputs.fv !== undefined) setFv(String(inputs.fv));
+          if (inputs.type !== undefined) setType(String(inputs.type) as "0" | "1");
+          if (inputs.target) setTarget(String(inputs.target) as TVMTarget);
+          setResult(null);
+          setCalculationError(null);
+          setCalcSteps(null);
+        }}
+      />
+    </>
   );
 }

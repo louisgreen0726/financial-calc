@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { HISTORY_KEY, MAX_HISTORY_ITEMS, HISTORY_EXPIRY_DAYS } from "@/lib/constants";
+import { logger } from "@/lib/logger";
 
 export interface CalculationHistoryItem {
   id: string;
@@ -41,7 +42,7 @@ export function useCalculationHistory({ page, maxItems = MAX_HISTORY_ITEMS }: Us
           return validItems;
         }
       } catch (error) {
-        console.warn("Error loading calculation history:", error);
+        logger.warn("Error loading calculation history:", error);
       }
       return [];
     };
@@ -59,7 +60,7 @@ export function useCalculationHistory({ page, maxItems = MAX_HISTORY_ITEMS }: Us
       try {
         localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
       } catch (error) {
-        console.warn("Error saving calculation history:", error);
+        logger.warn("Error saving calculation history:", error);
       }
     }
   }, [history, isInitialized]);

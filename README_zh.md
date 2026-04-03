@@ -12,7 +12,7 @@
 
 **专业级金融建模、估值与风险分析平台**
 
-一个全面的双语（中文/英文）金融计算器 Web 应用程序，包含 10 个专业模块和 35+ 金融公式。采用现代 Web 技术构建，实现精确计算、高性能和卓越的用户体验。
+一个全面的双语（中文/英文）金融计算器 Web 应用程序，包含 9 个专业模块和 35+ 金融公式。采用现代 Web 技术构建，实现精确计算、高性能和卓越的用户体验。
 
 ---
 
@@ -81,10 +81,6 @@
 - **实际利率**: 费雪方程实现
 - **CPI 调整**: 基于消费者价格指数的调整
 - **PPP 汇率**: 购买力平价计算
-
-#### 10. 衍生品与风险
-- 高级风险指标
-- 蒙特卡洛模拟能力
 
 ### 高级功能
 
@@ -217,12 +213,12 @@ npm start
 
 ## 项目统计
 
-- **总组件数**: 37 (12 自定义 + 25 Shadcn UI)
-- **自定义 Hooks**: 8
-- **库模块**: 11
-- **测试覆盖**: 53 个测试通过 ✅
+- **计算器模块**: 9 个 (TVM、现金流、股票、债券、投资组合、期权、风险、贷款、宏观经济)
+- **自定义组件**: 20 个 (不含 UI 基础组件)
+- **自定义 Hooks**: 11 个
+- **库模块**: 10 个 (不含测试文件)
+- **测试覆盖**: 53+ 个测试通过 ✅
 - **TypeScript**: 严格模式已启用
-- **代码行数**: ~2,881 行新功能代码
 - **所有 4 个改进阶段**: 已完成 ✅
 
 ---
@@ -247,17 +243,54 @@ financial-calc/
 │   │   └── macro/              # 宏观经济
 │   ├── components/
 │   │   ├── ui/                 # Shadcn UI 组件（自动生成）
-│   │   └── layout/             # 应用布局组件
-│   │       ├── app-layout.tsx
-│   │       ├── sidebar.tsx
-│   │       └── header.tsx
-│   └── lib/
-│       ├── finance-math.ts     # 核心金融公式 (35+)
-│       ├── finance-math.test.ts # 单元测试 (53+)
-│       ├── i18n.tsx            # 国际化（中/英）
-│       ├── nav-config.ts       # 导航配置
-│       ├── utils.ts            # 工具函数
-│       └── validation.ts       # Zod 验证模式
+│   │   ├── layout/             # 应用布局组件
+│   │   │   ├── app-layout.tsx
+│   │   │   ├── sidebar.tsx
+│   │   │   ├── header.tsx
+│   │   │   └── mobile-sidebar.tsx
+│   │   ├── sensitivity-analysis.tsx
+│   │   ├── sensitivity-heatmap.tsx
+│   │   ├── history-panel.tsx
+│   │   ├── export-menu.tsx
+│   │   ├── virtual-table.tsx
+│   │   ├── keyboard-shortcuts-help.tsx
+│   │   ├── copy-button.tsx
+│   │   ├── share-dialog.tsx
+│   │   ├── calculation-steps.tsx
+│   │   ├── error-boundary.tsx
+│   │   ├── empty-state.tsx
+│   │   ├── mode-toggle.tsx
+│   │   ├── language-switcher.tsx
+│   │   └── ...
+│   ├── hooks/                  # 自定义 React Hooks
+│   │   ├── use-keyboard-shortcuts.ts
+│   │   ├── use-calculation-history.ts
+│   │   ├── use-export.ts
+│   │   ├── use-local-storage.ts
+│   │   ├── use-url-state.ts
+│   │   ├── use-validation.ts
+│   │   ├── use-numeric-state.ts
+│   │   ├── use-monte-carlo-simulation.ts
+│   │   ├── use-auto-calculate.ts
+│   │   ├── use-locale-format.ts
+│   │   └── use-service-worker.ts
+│   ├── lib/                    # 核心库
+│   │   ├── finance-math.ts     # 核心金融公式 (35+)
+│   │   ├── finance-math.test.ts # 单元测试 (53+)
+│   │   ├── i18n.tsx            # 国际化（中/英）
+│   │   ├── nav-config.ts       # 导航配置
+│   │   ├── utils.ts            # 工具函数
+│   │   ├── validation.ts       # Zod 验证模式
+│   │   ├── constants.ts        # 应用常量
+│   │   ├── sanitize.ts         # XSS 防护
+│   │   ├── pdf-export.ts       # PDF 导出功能
+│   │   ├── chart-theme.ts      # 图表主题
+│   │   ├── design-tokens.ts    # 设计令牌
+│   │   └── logger.ts           # 日志工具
+│   ├── workers/
+│   │   └── monte-carlo.worker.ts # 蒙特卡洛模拟 Worker
+│   └── types/
+│       └── next-pwa.d.ts       # PWA 类型声明
 ├── public/                     # 静态资源
 ├── package.json
 ├── next.config.ts              # Next.js 配置（静态导出）

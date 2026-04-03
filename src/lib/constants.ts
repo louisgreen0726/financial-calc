@@ -59,3 +59,51 @@ export const KEYBOARD_SHORTCUTS = {
 // History limits
 export const MAX_HISTORY_ITEMS = 50;
 export const HISTORY_EXPIRY_DAYS = 30;
+
+// Page default values
+export const TVM_DEFAULTS = {
+  rate: "5",
+  nper: "10",
+  pmt: "0",
+  pv: "-1000",
+  fv: "0",
+  type: "0" as const,
+};
+
+export const EQUITY_DEFAULTS = {
+  capm: { rf: "3.5", beta: "1.2", rm: "10" },
+  wacc: { equity: "1000000", debt: "500000", costEquity: "12", costDebt: "6", taxRate: "25" },
+  ddm: { div: "2.5", growth: "4", reqReturn: "9" },
+};
+
+export const BOND_DEFAULTS = {
+  faceValue: "1000",
+  couponRate: "5",
+  years: "10",
+  ytm: "4",
+  frequency: "2",
+};
+
+export const MACRO_DEFAULTS = {
+  inflation: { startPrice: "100", endPrice: "150", years: "10" },
+  purchasingPower: { amount: "100000", rate: "3", years: "20" },
+  realInterest: { nominalRate: "5", inflationRate: "2" },
+  cpi: { amount: "1000", fromCPI: "100", toCPI: "125" },
+  ppp: { domesticPrice: "5.81", foreignPrice: "650" },
+};
+
+export const LOAN_DEFAULTS = {
+  principal: "100000",
+  annualRate: "5",
+  years: "30",
+};
+
+export const PORTFOLIO_DEFAULTS = {
+  riskFreeRate: 3.0,
+  correlation: 0.2,
+  simulations: 2000,
+};
+
+export const RISK_DEFAULTS = {
+  stdDevRange: { min: -4, max: 4, step: 0.1 },
+};

@@ -7,9 +7,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Keyboard } from "lucide-react";
 
-export function KeyboardShortcutsHelp() {
+interface KeyboardShortcutsHelpProps {
+  /** Controlled open state. When passed, the component acts as a controlled dialog. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+export function KeyboardShortcutsHelp({ open: controlledOpen, onOpenChange }: KeyboardShortcutsHelpProps = {}) {
   const { t } = useLanguage();
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+
+  // Support both controlled and uncontrolled usage
+  const isControlled = controlledOpen !== undefined;
+  const isOpen = isControlled ? controlledOpen : internalOpen;
+  const setIsOpen = isControlled ? (onOpenChange ?? setInternalOpen) : setInternalOpen;
 
   const shortcuts: Record<string, KeyboardShortcut> = {
     CALCULATE: { key: "Enter", description: t("shortcuts.calculate") },
@@ -18,12 +29,26 @@ export function KeyboardShortcutsHelp() {
     RESET: { key: "r", ctrlKey: true, description: t("shortcuts.reset") },
     HELP: { key: "?", description: t("shortcuts.help") },
     SAVE: { key: "s", ctrlKey: true, description: t("shortcuts.save") },
+    EXPORT_CSV: { key: "e", ctrlKey: true, shiftKey: true, description: t("shortcuts.exportCsv") || "Export as CSV" },
+    EXPORT_JSON: {
+      key: "j",
+      ctrlKey: true,
+      shiftKey: true,
+      description: t("shortcuts.exportJson") || "Export as JSON",
+    },
+    DARK_MODE: {
+      key: "d",
+      ctrlKey: true,
+      shiftKey: true,
+      description: t("shortcuts.toggleDarkMode") || "Toggle dark mode",
+    },
+    ZOOM_IN: { key: "+", ctrlKey: true, description: t("shortcuts.zoomIn") || "Zoom in" },
+    ZOOM_OUT: { key: "-", ctrlKey: true, description: t("shortcuts.zoomOut") || "Zoom out" },
   };
 
+  // Only register ? shortcut in uncontrolled mode (Header handles it in controlled mode)
   useKeyboardShortcuts({
-    shortcuts: {
-      HELP: { key: "?", description: "Show help" },
-    },
+    shortcuts: isControlled ? {} : { HELP: { key: "?", description: "Show help" } },
     onShortcut: () => setIsOpen(true),
   });
 
@@ -38,12 +63,14 @@ export function KeyboardShortcutsHelp() {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="fixed bottom-4 left-4 z-50">
-          <Keyboard className="h-4 w-4" />
-          <span className="sr-only">{t("shortcuts.title")}</span>
-        </Button>
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          <Button variant="ghost" size="icon" className="fixed bottom-4 left-4 z-50">
+            <Keyboard className="h-4 w-4" />
+            <span className="sr-only">{t("shortcuts.title")}</span>
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t("shortcuts.title")}</DialogTitle>

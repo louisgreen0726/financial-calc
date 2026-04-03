@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { logger } from "@/lib/logger";
 
 interface ExportToPDFOptions {
   filename?: string;
@@ -47,7 +48,7 @@ export async function exportToPDF({
 
     doc.save(`${filename}.pdf`);
   } catch (error) {
-    console.error("PDF export error:", error);
+    logger.error("PDF export error:", error);
     throw error;
   }
 }

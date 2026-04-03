@@ -5,6 +5,7 @@ import { Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/lib/i18n";
+import { logger } from "@/lib/logger";
 
 interface CopyButtonProps {
   value: string | number;
@@ -51,7 +52,7 @@ export function CopyButton({ value, className }: CopyButtonProps) {
         setCopied(false);
       }, 2000);
     } catch (error) {
-      console.error("Failed to copy:", error);
+      logger.error("Failed to copy:", error);
       toast.error(t("common.copyError") || "Failed to copy");
     }
   }, [value, t]);

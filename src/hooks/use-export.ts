@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import { toast } from "sonner";
 import { useLanguage } from "@/lib/i18n";
+import { logger } from "@/lib/logger";
 
 interface UseExportOptions {
   filename?: string;
@@ -54,7 +55,7 @@ export function useExport({ filename = "export" }: UseExportOptions = {}) {
 
         toast.success(t("export.csvSuccess"));
       } catch (error) {
-        console.error("Export error:", error);
+        logger.error("Export error:", error);
         toast.error(t("export.error"));
       }
     },
@@ -78,7 +79,7 @@ export function useExport({ filename = "export" }: UseExportOptions = {}) {
 
         toast.success(t("export.jsonSuccess"));
       } catch (error) {
-        console.error("Export error:", error);
+        logger.error("Export error:", error);
         toast.error(t("export.error"));
       }
     },

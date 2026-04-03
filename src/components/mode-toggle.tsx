@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useLanguage } from "@/lib/i18n";
 
-export function ModeToggle() {
+export const ModeToggle = React.memo(function ModeToggle() {
   const { setTheme } = useTheme();
   const { t } = useLanguage();
 
@@ -32,4 +32,4 @@ export function ModeToggle() {
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
+});

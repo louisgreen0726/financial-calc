@@ -2,6 +2,7 @@
 
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
+import { MobileNav } from "@/components/mobile-nav";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -28,12 +29,15 @@ export function AppLayout({ children }: AppLayoutProps) {
         <Header />
         <main
           id="main-content"
-          className="flex-1 p-4 md:p-8 overflow-y-auto w-full max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 ease-in-out"
+          className="flex-1 p-4 md:p-8 overflow-y-auto w-full max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 ease-in-out pb-20 md:pb-8"
           tabIndex={-1}
         >
           {children}
         </main>
       </div>
+
+      {/* Mobile Bottom Nav */}
+      <MobileNav />
     </div>
   );
 }

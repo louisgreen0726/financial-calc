@@ -15,7 +15,7 @@ const STATIC_ASSETS = [
 ];
 
 // Install event - cache static assets
-self.addEventListener('install', (event: ExtendableEvent) => {
+self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(STATIC_ASSETS);
@@ -25,7 +25,7 @@ self.addEventListener('install', (event: ExtendableEvent) => {
 });
 
 // Activate event - clean up old caches
-self.addEventListener('activate', (event: ExtendableEvent) => {
+self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -39,27 +39,20 @@ self.addEventListener('activate', (event: ExtendableEvent) => {
 });
 
 // Fetch event - serve from cache or network
-self.addEventListener('fetch', (event: FetchEvent) => {
+self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((response) => {
-      // Return cached version or fetch from network
       if (response) {
         return response;
       }
-      
       return fetch(event.request).then((response) => {
-        // Don't cache if not a valid response
         if (!response || response.status !== 200 || response.type !== 'basic') {
           return response;
         }
-        
-        // Clone the response
         const responseToCache = response.clone();
-        
         caches.open(CACHE_NAME).then((cache) => {
           cache.put(event.request, responseToCache);
         });
-        
         return response;
       });
     })

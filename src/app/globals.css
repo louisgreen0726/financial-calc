@@ -42,7 +42,7 @@
 
 /* Base Zinc Theme with Emerald Primary */
 :root {
-  --background: 210 20% 98%; /* Soft off-white */
+  --background: 210 20% 98%;
   --foreground: 240 10% 3.9%;
 
   --card: 0 0% 100%;
@@ -51,7 +51,7 @@
   --popover: 0 0% 100%;
   --popover-foreground: 240 10% 3.9%;
 
-  --primary: 158 64% 52%; /* Emerald 500 */
+  --primary: 158 64% 52%;
   --primary-foreground: 0 0% 98%;
 
   --secondary: 240 4.8% 95.9%;
@@ -72,7 +72,7 @@
 
   --radius: 0.5rem;
 
-  --chart-1: 158 64% 52%; /* Primary Emerald */
+  --chart-1: 158 64% 52%;
   --chart-2: 210 70% 55%;
   --chart-3: 25 80% 55%;
   --chart-4: 280 65% 60%;
@@ -80,16 +80,16 @@
 }
 
 .dark {
-  --background: 240 10% 3.9%; /* Zinc 950 */
+  --background: 240 10% 3.9%;
   --foreground: 0 0% 98%;
 
-  --card: 240 10% 7%; /* Zinc 900 */
+  --card: 240 10% 7%;
   --card-foreground: 0 0% 98%;
 
   --popover: 240 10% 7%;
   --popover-foreground: 0 0% 98%;
 
-  --primary: 158 64% 52%; /* Emerald 500 */
+  --primary: 158 64% 52%;
   --primary-foreground: 144.9 80.4% 10%;
 
   --secondary: 240 3.7% 15.9%;
@@ -121,5 +121,116 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
+  }
+}
+
+/* Typography scale utilities */
+.font-display {
+  font-size: 2.25rem;
+  line-height: 2.5rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+.font-h1 {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+.font-h2 {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+.font-h3 {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.font-h4 {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  font-weight: 600;
+}
+
+/* Mobile responsive typography */
+@media (max-width: 768px) {
+  .font-display {
+    font-size: 1.75rem;
+    line-height: 2rem;
+  }
+  .font-h1 {
+    font-size: 1.5rem;
+    line-height: 1.875rem;
+  }
+  .font-h2 {
+    font-size: 1.25rem;
+    line-height: 1.625rem;
+  }
+}
+
+/* Mobile touch targets */
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea,
+  button {
+    min-height: 44px;
+  }
+}
+
+/* Dark mode transition */
+a,
+button,
+input,
+select,
+textarea,
+[role="button"],
+.card,
+.bg-card,
+.bg-background {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Print styles */
+@media print {
+  nav,
+  header,
+  footer,
+  button,
+  [role="button"],
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+  }
+  main {
+    display: block !important;
+  }
+  [class*="card"],
+  [class*="Card"] {
+    border: 1px solid #ccc !important;
+    break-inside: avoid;
+    box-shadow: none !important;
+  }
+  svg,
+  canvas {
+    max-width: 100% !important;
+  }
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #666;
+  }
+  * {
+    transition: none !important;
+    animation: none !important;
   }
 }

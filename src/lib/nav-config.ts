@@ -11,11 +11,14 @@ export interface NavItem {
 export interface NavSection {
   titleKey: string;
   items: NavItem[];
+  /** Optional color for icons within this section (Tailwind text color class) */
+  color?: string;
 }
 
 export const NAV_CONFIG: NavSection[] = [
   {
     titleKey: "nav.core.title",
+    color: "text-emerald-500",
     items: [
       {
         titleKey: "nav.core.tvm.title",
@@ -33,6 +36,7 @@ export const NAV_CONFIG: NavSection[] = [
   },
   {
     titleKey: "nav.investing.title",
+    color: "text-blue-500",
     items: [
       {
         titleKey: "nav.investing.equity.title",
@@ -56,6 +60,7 @@ export const NAV_CONFIG: NavSection[] = [
   },
   {
     titleKey: "nav.derivatives.title",
+    color: "text-orange-500",
     items: [
       {
         titleKey: "nav.derivatives.options.title",
@@ -73,6 +78,7 @@ export const NAV_CONFIG: NavSection[] = [
   },
   {
     titleKey: "nav.banking.title",
+    color: "text-purple-500",
     items: [
       {
         titleKey: "nav.banking.loans.title",

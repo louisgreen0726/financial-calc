@@ -24,14 +24,35 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLanguage } from "@/lib/i18n";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Download, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { generatePDFReport } from "@/lib/pdf-export";
+import { useUrlState } from "@/hooks/use-url-state";
 
 export default function LoansPage() {
   const { t } = useLanguage();
-  const [method, setMethod] = useState<"CPM" | "CAM">("CPM");
-  const [amount, setAmount] = useState<string>("500000");
-  const [rate, setRate] = useState<string>("4.5");
-  const [years, setYears] = useState<string>("30");
+  const { state: urlState, setField } = useUrlState({
+    defaultValues: {
+      method: "CPM" as "CPM" | "CAM",
+      amount: "500000",
+      rate: "4.5",
+      years: "30",
+    },
+    prefix: "loans",
+  });
+
+  const method = urlState.method as "CPM" | "CAM";
+  const setMethod = (v: "CPM" | "CAM") => setField("method", v);
+
+  const amount = urlState.amount as string;
+  const setAmount = (v: string) => setField("amount", v);
+
+  const rate = urlState.rate as string;
+  const setRate = (v: string) => setField("rate", v);
+
+  const years = urlState.years as string;
+  const setYears = (v: string) => setField("years", v);
 
   const validationError = useMemo(() => {
     const P = parseFloat(amount);
@@ -74,6 +95,37 @@ export default function LoansPage() {
     { name: t("loans.totalInt"), value: stats.totalInterest, color: "hsl(var(--destructive))" },
   ];
 
+  const exportCSV = () => {
+    if (!schedule.length) return;
+    const headers = [t("loans.payment"), t("loans.principal"), t("loans.interest"), t("loans.remBalance")];
+    const rows = schedule.map((row) =>
+      [row.payment.toFixed(2), row.principal.toFixed(2), row.interest.toFixed(2), row.balance.toFixed(2)].join(",")
+    );
+    const csv = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `amortization-${method}-${amount}-${rate}pct-${years}yr.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("Schedule exported as CSV");
+  };
+
+  const exportPDF = () => {
+    if (!schedule.length) return;
+    const doc = generatePDFReport(`${t("loans.title")} — ${method}`, [
+      { label: t("loans.amount"), value: `$${parseFloat(amount).toLocaleString()}` },
+      { label: t("loans.rate"), value: `${rate}% per annum` },
+      { label: t("loans.term"), value: `${years} years` },
+      { label: t("loans.monthly"), value: `$${stats.monthlyPayment.toFixed(2)}` },
+      { label: t("loans.totalInt"), value: `$${stats.totalInterest.toFixed(2)}` },
+      { label: t("loans.totalCost"), value: `$${stats.totalPayment.toFixed(2)}` },
+    ]);
+    doc.save(`loan-summary-${method}-${rate}pct-${years}yr.pdf`);
+    toast.success("Summary exported as PDF");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -81,6 +133,18 @@ export default function LoansPage() {
           <h1 className="text-3xl font-bold tracking-tight">{t("loans.title")}</h1>
           <p className="text-muted-foreground mt-2">{t("loans.subtitle")}</p>
         </div>
+        {schedule.length > 0 && (
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={exportCSV} className="gap-2">
+              <Download className="h-4 w-4" />
+              Export CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={exportPDF} className="gap-2">
+              <FileText className="h-4 w-4" />
+              Export PDF
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-12">
@@ -105,8 +169,9 @@ export default function LoansPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>{t("loans.amount")}</Label>
+              <Label htmlFor="loan-amount">{t("loans.amount")}</Label>
               <Input
+                id="loan-amount"
                 type="number"
                 min="0"
                 step="0.01"
@@ -117,8 +182,9 @@ export default function LoansPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>{t("loans.rate")}</Label>
+              <Label htmlFor="loan-rate">{t("loans.rate")}</Label>
               <Input
+                id="loan-rate"
                 type="number"
                 min="0"
                 step="0.01"
@@ -129,8 +195,9 @@ export default function LoansPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>{t("loans.term")}</Label>
+              <Label htmlFor="loan-term">{t("loans.term")}</Label>
               <Input
+                id="loan-term"
                 type="number"
                 min="0"
                 step="1"
