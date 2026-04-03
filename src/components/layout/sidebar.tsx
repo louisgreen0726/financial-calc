@@ -77,13 +77,13 @@ export const Sidebar = React.memo(function Sidebar({ className }: SidebarProps) 
         {/* Search / Filter input */}
         <div className="px-4 pb-1 pt-2">
           <div className="relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
             <Input
-              aria-label="Search navigation"
+              aria-label={t("sidebar.search")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={t("sidebar.search") ?? "Search..."}
-              className="w-full bg-background/40 backdrop-blur-md shadow-inner border-white/10 pl-9 rounded-xl focus-visible:ring-1 focus-visible:ring-primary transition-all pb-1.5 pt-1.5 h-9"
+              placeholder={t("sidebar.search")}
+              className="w-full bg-background/50 backdrop-blur-md border-white/10 pl-9 pr-4 rounded-xl focus-visible:ring-1 focus-visible:ring-primary/50 focus:border-primary/50 transition-all h-9 text-sm"
             />
           </div>
         </div>
@@ -92,7 +92,6 @@ export const Sidebar = React.memo(function Sidebar({ className }: SidebarProps) 
           <div className="space-y-6 px-2 pb-10 mt-2">
             <AnimatePresence initial={false}>
               {sections.map((section) => {
-                const sectionColor = section.color ?? "text-primary";
                 const isExpanded = expanded[section.titleKey] ?? true;
 
                 return (
