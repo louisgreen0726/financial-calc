@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { Finance } from "@/lib/finance-math";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,10 +20,11 @@ import { useCalculationHistory } from "@/hooks/use-calculation-history";
 import { HistoryPanel } from "@/components/history-panel";
 import { useUrlState } from "@/hooks/use-url-state";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type TVMTarget = "pv" | "fv" | "pmt" | "nper" | "rate";
 
-export default function TVMPage() {
+function TVMPageContent() {
   const { t } = useLanguage();
   const { state: urlState, setField } = useUrlState({
     defaultValues: {
@@ -481,5 +482,50 @@ export default function TVMPage() {
         }}
       />
     </>
+  );
+}
+
+function TVMPageSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <Skeleton className="h-9 w-48" />
+          <Skeleton className="h-5 w-72 mt-2" />
+        </div>
+      </div>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-32" />
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <Skeleton className="h-10 w-full" />
+            <div className="grid grid-cols-2 gap-4">
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+            </div>
+            <Skeleton className="h-10 w-full" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader />
+          <CardContent className="flex items-center justify-center h-[300px]">
+            <Skeleton className="h-32 w-32 rounded-full" />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+export default function TVMPage() {
+  return (
+    <Suspense fallback={<TVMPageSkeleton />}>
+      <TVMPageContent />
+    </Suspense>
   );
 }

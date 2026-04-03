@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, Suspense } from "react";
 import { Finance } from "@/lib/finance-math";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -29,8 +29,9 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { generatePDFReport } from "@/lib/pdf-export";
 import { useUrlState } from "@/hooks/use-url-state";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export default function LoansPage() {
+function LoansPageContent() {
   const { t } = useLanguage();
   const { state: urlState, setField } = useUrlState({
     defaultValues: {
@@ -384,5 +385,67 @@ export default function LoansPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function LoansPageSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <Skeleton className="h-9 w-48" />
+          <Skeleton className="h-5 w-72 mt-2" />
+        </div>
+      </div>
+      <div className="grid gap-6 lg:grid-cols-12">
+        <Card className="lg:col-span-4 h-fit">
+          <CardHeader>
+            <Skeleton className="h-6 w-32" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </CardContent>
+        </Card>
+        <div className="lg:col-span-8 flex flex-col gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="min-h-[300px]">
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-[200px] w-full" />
+              </CardContent>
+            </Card>
+            <Card className="min-h-[300px]">
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-[200px] w-full" />
+              </CardContent>
+            </Card>
+          </div>
+          <Card className="flex-1 min-h-[400px]">
+            <CardHeader>
+              <Skeleton className="h-6 w-48" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-[360px] w-full" />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function LoansPage() {
+  return (
+    <Suspense fallback={<LoansPageSkeleton />}>
+      <LoansPageContent />
+    </Suspense>
   );
 }
