@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { NAV_CONFIG } from "@/lib/nav-config";
 import { useLanguage } from "@/lib/i18n";
-import { Calculator, ChevronDown, ChevronRight } from "lucide-react";
+import { Calculator, ChevronDown, ChevronRight, Search } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
 type SidebarProps = React.HTMLAttributes<HTMLDivElement>;
@@ -51,51 +51,60 @@ export const Sidebar = React.memo(function Sidebar({ className }: SidebarProps) 
   }, [query, t]);
 
   return (
-    <div className={cn("pb-12 h-screen border-r bg-card/60 backdrop-blur-xl", className)}>
-      <div className="space-y-4 py-4 h-full flex flex-col">
-        {/* Logo area with gradient bg, larger icon, improved typography */}
-        <div className="px-3 py-3 rounded-md bg-gradient-to-r from-emerald-500 to-teal-500 mx-2 shadow-sm">
-          <Link href="/" className="flex items-center pl-2 pr-3 py-2 text-white gap-3">
-            <Calculator className="h-8 w-8" />
-            <div className="flex flex-col leading-tight">
-              <span className="text-lg font-semibold tracking-tight">FinCalc</span>
-              <span className="text-sm opacity-95">Pro</span>
-            </div>
-          </Link>
+    <div
+      className={cn(
+        "pb-6 h-full flex flex-col overflow-hidden bg-card/60 backdrop-blur-2xl border border-white/10 shadow-2xl relative",
+        className
+      )}
+    >
+      <div className="space-y-4 py-4 h-full flex flex-col relative z-10">
+        {/* Logo area with floating glassmorphism */}
+        <div className="mx-4 mt-2 relative group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-primary to-blue-600 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-500"></div>
+          <div className="relative p-3 rounded-2xl bg-background/80 backdrop-blur-sm border border-white/10 shadow-sm flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-3 w-full">
+              <div className="p-2 bg-gradient-to-br from-primary to-blue-600 rounded-xl shadow-inner group-hover:scale-105 transition-transform duration-300">
+                <Calculator className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex flex-col leading-none">
+                <span className="text-lg font-bold tracking-tight box-decoration-clone font-display">FinCalc</span>
+                <span className="text-[10px] mt-1 font-semibold uppercase tracking-widest text-primary/80">Pro</span>
+              </div>
+            </Link>
+          </div>
         </div>
 
         {/* Search / Filter input */}
-        <div className="px-3 pb-1 pt-1">
-          <div className="relative">
+        <div className="px-4 pb-1 pt-2">
+          <div className="relative group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
             <Input
               aria-label="Search navigation"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t("sidebar.search") ?? "Search..."}
-              className="w-full bg-background/50 shadow-none border-border"
+              className="w-full bg-background/40 backdrop-blur-md shadow-inner border-white/10 pl-9 rounded-xl focus-visible:ring-1 focus-visible:ring-primary transition-all pb-1.5 pt-1.5 h-9"
             />
           </div>
         </div>
 
-        <ScrollArea className="flex-1 px-1">
-          <div className="space-y-4 px-3">
+        <ScrollArea className="flex-1 px-2">
+          <div className="space-y-6 px-2 pb-10 mt-2">
             <AnimatePresence initial={false}>
               {sections.map((section) => {
-                const sectionColor = section.color ?? "text-emerald-500";
-                const borderColorClass = sectionColor.replace("text-", "border-");
-                const colorForBg = sectionColor.replace("text-", "");
-                const activeBgClass = `bg-${colorForBg}/20`;
+                const sectionColor = section.color ?? "text-primary";
                 const isExpanded = expanded[section.titleKey] ?? true;
+
                 return (
                   <section key={section.titleKey} className="space-y-2">
                     <div
-                      className="flex items-center justify-between px-1 py-2 cursor-pointer"
+                      className="flex items-center justify-between px-2 py-1.5 cursor-pointer group"
                       onClick={() => toggleSection(section.titleKey)}
                     >
-                      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
+                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/60 group-hover:text-foreground transition-colors mix-blend-luminosity">
                         {t(section.titleKey)}
                       </h3>
-                      <span className="ml-2 text-muted-foreground">
+                      <span className="ml-2 text-muted-foreground/40 group-hover:text-foreground transition-colors">
                         {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                       </span>
                     </div>
@@ -105,35 +114,54 @@ export const Sidebar = React.memo(function Sidebar({ className }: SidebarProps) 
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: "auto" }}
                           exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.15 }}
+                          transition={{ duration: 0.2, ease: "easeInOut" }}
                           style={{ overflow: "hidden" }}
                         >
-                          <div className="space-y-1 pl-2 pr-2 pb-2">
+                          <div className="space-y-1">
                             {section.items.map((item) => {
                               const isActive = pathname === item.href;
                               return (
                                 <Button
                                   key={item.href}
                                   asChild
-                                  variant={isActive ? "secondary" : "ghost"}
+                                  variant="ghost"
                                   className={cn(
-                                    "w-full justify-start pl-3 pr-3 py-2 rounded-none font-medium",
+                                    "w-full justify-start px-3 py-2.5 h-10 rounded-xl font-medium transition-all duration-300 relative overflow-hidden group",
                                     isActive
-                                      ? `border-l-2 ${borderColorClass} ${activeBgClass} text-foreground`
-                                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                                      ? "text-foreground shadow-sm bg-background/50 border border-white/5"
+                                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground border border-transparent"
                                   )}
                                 >
-                                  <Link href={item.href} className="flex items-center w-full">
+                                  <Link href={item.href} className="flex items-center w-full relative z-10">
                                     <item.icon
                                       className={cn(
-                                        "mr-2 h-4 w-4",
-                                        isActive ? "text-foreground" : "text-muted",
-                                        sectionColor
+                                        "mr-3 h-4 w-4 transition-transform duration-300 group-hover:scale-110",
+                                        isActive ? "text-primary" : "text-muted-foreground/70"
                                       )}
                                     />
-                                    <span className={cn(isActive ? "text-foreground" : "text-foreground/80")}>
+                                    <span className={cn(isActive ? "text-foreground font-semibold" : "font-medium")}>
                                       {t(item.titleKey)}
                                     </span>
+
+                                    {/* Active State Background Gradient Indicator */}
+                                    {isActive && (
+                                      <motion.div
+                                        layoutId="sidebar-active"
+                                        className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-100 pointer-events-none -z-10"
+                                        initial={false}
+                                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                      />
+                                    )}
+
+                                    {/* Active State Left Bar */}
+                                    {isActive && (
+                                      <motion.div
+                                        layoutId="sidebar-active-bar"
+                                        className="absolute left-0 top-1/4 bottom-1/4 w-1 bg-primary rounded-r-full"
+                                        initial={false}
+                                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                      />
+                                    )}
                                   </Link>
                                 </Button>
                               );
@@ -149,9 +177,13 @@ export const Sidebar = React.memo(function Sidebar({ className }: SidebarProps) 
           </div>
         </ScrollArea>
 
-        <div className="px-7 py-4 text-xs text-muted-foreground border-t">
-          <p>{t("sidebar.edition")}</p>
-          <p className="opacity-50">{t("sidebar.version")}</p>
+        <div className="px-6 py-4 mt-auto">
+          <div className="p-3 rounded-xl bg-background/30 backdrop-blur-md border border-white/5 flex flex-col items-center justify-center gap-1">
+            <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">
+              {t("sidebar.edition") || "Pro Edition"}
+            </p>
+            <p className="text-[10px] font-mono text-muted-foreground/30">{t("sidebar.version") || "v2.0.0"}</p>
+          </div>
         </div>
       </div>
     </div>

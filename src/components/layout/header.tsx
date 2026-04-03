@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-
 import { usePathname } from "next/navigation";
 import { MobileSidebar } from "./mobile-sidebar";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -12,8 +11,13 @@ import { ChevronRight, Keyboard } from "lucide-react";
 import { KeyboardShortcutsHelp } from "@/components/keyboard-shortcuts-help";
 import { Button } from "@/components/ui/button";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
+import { cn } from "@/lib/utils";
 
-export const Header = React.memo(function Header() {
+interface HeaderProps {
+  className?: string;
+}
+
+export const Header = React.memo(function Header({ className }: HeaderProps) {
   const pathname = usePathname();
   const { t } = useLanguage();
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -31,31 +35,38 @@ export const Header = React.memo(function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center px-4 md:px-8">
+      <header
+        className={cn(
+          "sticky top-2 z-50 w-full flex items-center justify-between px-4 lg:px-6 h-14 transition-all duration-300",
+          className
+        )}
+      >
+        <div className="flex items-center gap-4">
           <MobileSidebar />
-          <div className="mr-4 hidden md:flex items-center gap-1.5">
-            <span className="font-semibold text-sm text-muted-foreground">{t("common.home")}</span>
-            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" />
-            <span className="font-semibold text-sm text-foreground">{pageTitle}</span>
-          </div>
-          <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-            <div className="w-full flex-1 md:w-auto md:flex-none"></div>
-            <nav className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowShortcuts(true)}
-                title={t("shortcuts.title")}
-                aria-label={t("shortcuts.title")}
-              >
-                <Keyboard className="h-4 w-4" />
-              </Button>
-              <ModeToggle />
-              <LanguageSwitcher />
-            </nav>
+          <div className="hidden md:flex items-center gap-2">
+            <span className="font-medium text-sm text-muted-foreground/70">{t("common.home") || "Home"}</span>
+            <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
+            <span className="font-semibold text-sm text-foreground/90 bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-500 tracking-tight">
+              {pageTitle}
+            </span>
           </div>
         </div>
+
+        <nav className="flex items-center gap-1.5">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hover:bg-primary/10 hover:text-primary transition-colors rounded-full"
+            onClick={() => setShowShortcuts(true)}
+            title={t("shortcuts.title")}
+            aria-label={t("shortcuts.title")}
+          >
+            <Keyboard className="h-[1.1rem] w-[1.1rem]" />
+          </Button>
+          <div className="w-px h-5 bg-border mx-1" />
+          <ModeToggle />
+          <LanguageSwitcher />
+        </nav>
       </header>
       <KeyboardShortcutsHelp open={showShortcuts} onOpenChange={setShowShortcuts} />
     </>
