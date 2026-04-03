@@ -22,8 +22,14 @@ export const MobileSidebar = React.memo(function MobileSidebar() {
           <Menu className="w-6 h-6" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="p-0 w-72 bg-background border-r" onClick={handleClose}>
-        <Sidebar className="border-none w-full h-full bg-transparent" />
+      <SheetContent
+        side="left"
+        className="p-0 w-[280px] sm:w-72 bg-background border-r flex flex-col"
+        onClick={handleClose}
+      >
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+          <Sidebar className="border-none w-full min-h-full bg-transparent" />
+        </div>
       </SheetContent>
     </Sheet>
   );

@@ -5,12 +5,14 @@ import { logger } from "@/lib/logger";
 interface ExportToPDFOptions {
   filename?: string;
   elementId?: string;
+  title?: string;
   orientation?: "portrait" | "landscape";
 }
 
 export async function exportToPDF({
   filename = "export",
   elementId,
+  title = "Financial Calculation Report",
   orientation = "portrait",
 }: ExportToPDFOptions): Promise<void> {
   try {
@@ -30,17 +32,30 @@ export async function exportToPDF({
         scale: 2,
         useCORS: true,
         logging: false,
+        backgroundColor: "#ffffff",
       });
 
       const imgData = canvas.toDataURL("image/png");
       const imgWidth = orientation === "portrait" ? 210 : 297;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      doc.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+      // Add title at the top
+      doc.setFontSize(16);
+      doc.setTextColor(40);
+      doc.text(title, 14, 15);
+
+      // Add timestamp
+      doc.setFontSize(10);
+      doc.setTextColor(128);
+      doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 22);
+
+      // Add the captured element below the header
+      const headerHeight = 28;
+      doc.addImage(imgData, "PNG", 0, headerHeight, imgWidth, imgHeight - headerHeight);
     } else {
       // Add title and timestamp
       doc.setFontSize(20);
-      doc.text("Financial Calculation Report", 20, 20);
+      doc.text(title, 20, 20);
 
       doc.setFontSize(12);
       doc.text(`Generated on: ${new Date().toLocaleString()}`, 20, 30);

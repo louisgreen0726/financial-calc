@@ -43,25 +43,25 @@ export default function Home() {
       </div>
 
       {/* Main Calculators Grid */}
-      <StaggeredList className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 relative z-10">
+      <StaggeredList className="grid gap-5 md:gap-6 relative z-10">
         {allNavItems.map((item, i) => (
           <MotionListItem key={item.href} index={i} className="list-none group block h-full">
             <Link href={item.href} className="group flex-1">
-              <MotionCard className="h-full glass-card hover:bg-background/80 hover:shadow-[0_12px_40px_-15px_hsl(var(--primary)_/_30%)] hover:-translate-y-1 transition-all duration-300 relative overflow-hidden transform-gpu">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-3 font-display">
-                    <div className="p-3 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-[0_0_15px_hsl(var(--primary)_/_50%)] transition-all duration-300">
+              <MotionCard className="h-full glass-card rounded-2xl hover:bg-background/80 hover:shadow-[0_12px_40px_-15px_hsl(var(--primary)_/_30%)] hover:-translate-y-1 transition-all duration-300 relative overflow-visible transform-gpu">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none rounded-2xl" />
+                <CardHeader className="pb-2 px-5 pt-5">
+                  <CardTitle className="flex items-center gap-3 font-display text-lg md:text-base">
+                    <div className="p-2.5 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-[0_0_15px_hsl(var(--primary)_/_50%)] transition-all duration-300 shrink-0">
                       <item.icon className="h-5 w-5" />
                     </div>
-                    {t(item.titleKey)}
+                    <span className="truncate">{t(item.titleKey)}</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <CardDescription className="text-sm font-medium text-muted-foreground/80 leading-relaxed">
+                <CardContent className="space-y-3 pt-0 px-5 pb-5">
+                  <CardDescription className="text-sm font-medium text-muted-foreground/80 leading-relaxed line-clamp-2">
                     {t(item.descKey)}
                   </CardDescription>
-                  <div className="flex items-center text-sm font-bold text-primary opacity-0 group-hover:opacity-100 transition-all duration-300 transform -translate-x-4 group-hover:translate-x-0 mt-2">
+                  <div className="flex items-center text-sm font-bold text-primary opacity-0 group-hover:opacity-100 transition-all duration-300 transform -translate-x-4 group-hover:translate-x-0">
                     {t("home.openModule") || "Open Module"} <ArrowRight className="ml-2 h-4 w-4" />
                   </div>
                 </CardContent>
@@ -90,23 +90,25 @@ export default function Home() {
               const navItem = getPageConfig(item.page);
               return (
                 <Link key={item.id} href={`/${item.page}`} className="group">
-                  <Card className="h-full glass-card hover:-translate-y-[2px] transition-all duration-200">
+                  <Card className="h-full glass-card rounded-xl hover:-translate-y-[2px] transition-all duration-200 overflow-hidden">
                     <CardHeader className="p-4 pb-2 border-b border-border/50 bg-muted/20">
-                      <CardTitle className="text-sm font-semibold flex items-center justify-between text-muted-foreground">
-                        {navItem ? t(navItem.titleKey) : item.page}
-                        <span className="text-[10px] font-mono opacity-60 bg-background px-2 py-0.5 rounded-md">
+                      <CardTitle className="text-sm font-semibold flex items-center justify-between text-muted-foreground gap-2">
+                        <span className="truncate">{navItem ? t(navItem.titleKey) : item.page}</span>
+                        <span className="text-[10px] font-mono opacity-60 bg-background px-2 py-0.5 rounded-md shrink-0">
                           {new Date(item.timestamp).toLocaleDateString()}
                         </span>
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4 pt-3 flex flex-col justify-center">
-                      <div className="text-2xl font-display font-bold text-foreground">
+                    <CardContent className="p-4 pt-3 flex flex-col justify-center min-h-[80px]">
+                      <div className="text-xl md:text-2xl font-display font-bold text-foreground truncate">
                         {item.result > 1000 || item.result < -1000 || item.page === "bonds"
                           ? formatCurrency(item.result)
                           : item.result.toLocaleString(undefined, { maximumFractionDigits: 4 })}
                       </div>
                       {item.label && (
-                        <p className="text-xs text-primary font-medium mt-1 uppercase tracking-wider">{item.label}</p>
+                        <p className="text-xs text-primary font-medium mt-1 uppercase tracking-wider truncate">
+                          {item.label}
+                        </p>
                       )}
                     </CardContent>
                   </Card>

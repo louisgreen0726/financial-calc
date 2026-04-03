@@ -41,6 +41,7 @@ type Translations = {
   sidebar: {
     edition: string;
     version: string;
+    search: string;
   };
   nav: {
     core: {
@@ -347,6 +348,9 @@ type Translations = {
     min: string;
     range: string;
   };
+  settings: {
+    title: string;
+  };
 };
 
 // --- Dictionaries ---
@@ -380,6 +384,7 @@ const en: Translations = {
   sidebar: {
     edition: "Professional Edition",
     version: "v1.0.0",
+    search: "Search calculators...",
   },
   nav: {
     core: {
@@ -694,6 +699,9 @@ const en: Translations = {
     min: "Min",
     range: "Range",
   },
+  settings: {
+    title: "Settings",
+  },
 };
 
 const zh: Translations = {
@@ -726,6 +734,7 @@ const zh: Translations = {
   sidebar: {
     edition: "专业版",
     version: "v1.0.0",
+    search: "搜索计算器...",
   },
   nav: {
     core: {
@@ -1039,6 +1048,9 @@ const zh: Translations = {
     max: "最大值",
     min: "最小值",
     range: "区间",
+  },
+  settings: {
+    title: "设置",
   },
 };
 
