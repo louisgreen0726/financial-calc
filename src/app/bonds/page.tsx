@@ -97,7 +97,7 @@ export default function BondsPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t("bonds.title")}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("bonds.title")}</h1>
           <p className="text-muted-foreground mt-2">{t("bonds.subtitle")}</p>
         </div>
         <div className="flex gap-2 items-center">
@@ -264,7 +264,7 @@ export default function BondsPage() {
           </section>
 
           {/* Price-Yield Curve */}
-          <Card className="h-[400px] flex flex-col">
+          <Card className="h-[300px] sm:h-[350px] md:h-[400px] flex flex-col">
             <CardHeader>
               <CardTitle>{t("bonds.curve")}</CardTitle>
               <CardDescription>{t("bonds.subtitle")}</CardDescription>

@@ -63,7 +63,7 @@ export default function OptionsPage() {
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">{t("options.title")}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("options.title")}</h1>
             <p className="text-muted-foreground mt-2">{t("options.subtitle")}</p>
           </div>
         </div>
@@ -174,7 +174,7 @@ export default function OptionsPage() {
               </Card>
             </div>
 
-            <Card className="h-[350px] flex flex-col">
+            <Card className="h-[280px] sm:h-[350px] flex flex-col">
               <CardHeader>
                 <CardTitle>{t("options.payoff")}</CardTitle>
                 <CardDescription>{t("options.intrinsic")}</CardDescription>

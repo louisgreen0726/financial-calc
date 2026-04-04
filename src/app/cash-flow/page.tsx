@@ -77,7 +77,7 @@ export default function CashFlowPage() {
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">{t("cashFlow.title")}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("cashFlow.title")}</h1>
             <p className="text-muted-foreground mt-2">{t("cashFlow.subtitle")}</p>
           </div>
           <div className="flex items-center gap-2">
@@ -111,7 +111,7 @@ export default function CashFlowPage() {
                   <span>{t("cashFlow.period")}</span>
                   <span>{t("cashFlow.flow")}</span>
                 </div>
-                <div className="space-y-2 max-h-[400px] pr-2 overflow-y-auto">
+                <div className="space-y-2 max-h-[250px] sm:max-h-[400px] pr-2 overflow-y-auto">
                   {flows.map((flow, i) => (
                     <div
                       key={i}
@@ -182,7 +182,7 @@ export default function CashFlowPage() {
               </Card>
             </div>
 
-            <Card className="h-[400px] flex flex-col">
+            <Card className="h-[300px] sm:h-[350px] md:h-[400px] flex flex-col">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5" />

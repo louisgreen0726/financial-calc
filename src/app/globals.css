@@ -236,8 +236,16 @@
 }
 
 /* Dark mode transition overrides - make everything super smooth */
-* {
-  transition-property: background-color, border-color, color, fill, stroke, backdrop-filter;
+button,
+a,
+input,
+select,
+textarea,
+.card,
+.bg-card,
+[role="button"] {
+  transition-property:
+    background-color, border-color, color, fill, stroke, backdrop-filter, opacity, transform, box-shadow;
   transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
   transition-duration: 200ms;
 }
@@ -280,6 +288,41 @@
   }
   100% {
     transform: translate(-30px, -50px) scale(0.9);
+  }
+}
+
+/* Mobile: reduce orb size and disable animation */
+@media (max-width: 768px) {
+  .bg-glow-orb {
+    filter: blur(80px);
+    animation: none;
+    opacity: 0.1;
+  }
+  .bg-glow-orb-1 {
+    width: 300px;
+    height: 300px;
+    top: -100px;
+    left: -100px;
+  }
+  .bg-glow-orb-2 {
+    width: 250px;
+    height: 250px;
+    bottom: -75px;
+    right: -50px;
+  }
+}
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .bg-glow-orb {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+    animation-play-state: paused !important;
   }
 }
 

@@ -349,6 +349,9 @@ type Translations = {
     searchPlaceholder: string;
     select: string;
     itemsSelected: string;
+    all: string;
+    favorites: string;
+    itemsDeleted: string;
   };
   sensitivity: {
     title: string;
@@ -477,7 +480,7 @@ const en: Translations = {
   },
   sidebar: {
     edition: "Professional Edition",
-    version: "v1.0.0",
+    version: "v0.1.0",
     search: "Search calculators...",
   },
   nav: {
@@ -794,6 +797,9 @@ const en: Translations = {
     searchPlaceholder: "Search history...",
     select: "Select",
     itemsSelected: "selected",
+    all: "All",
+    favorites: "Favorites",
+    itemsDeleted: "items deleted",
   },
   sensitivity: {
     title: "Sensitivity Analysis",
@@ -827,7 +833,7 @@ const en: Translations = {
     clearAllHistory: "Clear All History",
     about: "About",
     aboutDesc: "About FinCalc Pro",
-    version: "Version 2.0.0",
+    version: "v0.1.0",
     description:
       "A comprehensive suite of financial calculators including TVM, cash flow analysis, stock valuation, portfolio optimization, bonds, options, risk metrics, loans, and macroeconomics.",
   },
@@ -928,7 +934,7 @@ const zh: Translations = {
   },
   sidebar: {
     edition: "专业版",
-    version: "v1.0.0",
+    version: "v0.1.0",
     search: "搜索计算器...",
   },
   nav: {
@@ -1245,6 +1251,9 @@ const zh: Translations = {
     searchPlaceholder: "搜索历史记录...",
     select: "选择",
     itemsSelected: "已选择",
+    all: "全部",
+    favorites: "收藏",
+    itemsDeleted: "项已删除",
   },
   sensitivity: {
     title: "敏感性分析",
@@ -1278,7 +1287,7 @@ const zh: Translations = {
     clearAllHistory: "清除所有历史",
     about: "关于",
     aboutDesc: "关于 FinCalc Pro",
-    version: "版本 2.0.0",
+    version: "v0.1.0",
     description:
       "全面的金融计算器套件，包括货币时间价值、现金流分析、股票估值、投资组合优化、债券、期权、风险指标、贷款和宏观经济计算工具。",
   },

@@ -67,7 +67,7 @@ export default function RiskPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t("risk.title")}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("risk.title")}</h1>
           <p className="text-muted-foreground mt-2">{t("risk.subtitle")}</p>
         </div>
       </div>
@@ -130,7 +130,7 @@ export default function RiskPage() {
             </Card>
           </div>
 
-          <Card className="h-[400px] flex flex-col">
+          <Card className="h-[300px] sm:h-[350px] md:h-[400px] flex flex-col">
             <CardHeader>
               <CardTitle>{t("risk.dist")}</CardTitle>
               <CardDescription>{t("risk.distDesc")}</CardDescription>
