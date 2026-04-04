@@ -4,7 +4,6 @@ import { useState } from "react";
 import { ChevronDown, ChevronRight, Calculator } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { useLanguage } from "@/lib/i18n";
 
 interface CalcStep {
   label: string;
@@ -61,7 +60,6 @@ function FormattedFormula({ text }: { text: string }) {
  */
 export function CalculationSteps({ formula, inputs, steps, result, className }: CalculationStepsProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const { t } = useLanguage();
 
   return (
     <div className={cn("rounded-xl border bg-card", className)}>

@@ -267,7 +267,7 @@ function TVMPageContent() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">{t("tvm.title")}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("tvm.title")}</h1>
             <p className="text-muted-foreground mt-2">{t("tvm.subtitle")}</p>
           </div>
         </div>
@@ -309,7 +309,7 @@ function TVMPageContent() {
                 <ErrorDisplay message={calculationError} onDismiss={() => setCalculationError(null)} className="mb-4" />
               )}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className={target === "rate" ? "text-primary font-bold" : ""}>{t("tvm.annualRate")}</Label>
                   <Input
@@ -317,7 +317,9 @@ function TVMPageContent() {
                     value={rate}
                     onChange={(e) => handleInputChange("rate", e.target.value, setRate)}
                     disabled={target === "rate"}
-                    className={cn(errors.rate && touchedFields.rate && "border-red-500 focus-visible:ring-red-500")}
+                    className={cn(
+                      errors.rate && touchedFields.rate && "border-destructive focus-visible:ring-destructive"
+                    )}
                   />
                   <ValidationError error={errors.rate && touchedFields.rate ? errors.rate : null} />
                   <InputRangeHint min={0} max={100} unit="%" example="5" currentValue={parseFloat(rate)} />
@@ -329,7 +331,9 @@ function TVMPageContent() {
                     value={nper}
                     onChange={(e) => handleInputChange("nper", e.target.value, setNper)}
                     disabled={target === "nper"}
-                    className={cn(errors.nper && touchedFields.nper && "border-red-500 focus-visible:ring-red-500")}
+                    className={cn(
+                      errors.nper && touchedFields.nper && "border-destructive focus-visible:ring-destructive"
+                    )}
                   />
                   <ValidationError error={errors.nper && touchedFields.nper ? errors.nper : null} />
                   <InputRangeHint min={1} max={600} unit="periods" example="10" currentValue={parseFloat(nper)} />
@@ -341,7 +345,9 @@ function TVMPageContent() {
                     value={pmt}
                     onChange={(e) => handleInputChange("pmt", e.target.value, setPmt)}
                     disabled={target === "pmt"}
-                    className={cn(errors.pmt && touchedFields.pmt && "border-red-500 focus-visible:ring-red-500")}
+                    className={cn(
+                      errors.pmt && touchedFields.pmt && "border-destructive focus-visible:ring-destructive"
+                    )}
                   />
                   <ValidationError error={errors.pmt && touchedFields.pmt ? errors.pmt : null} />
                 </div>
@@ -352,7 +358,7 @@ function TVMPageContent() {
                     value={pv}
                     onChange={(e) => handleInputChange("pv", e.target.value, setPv)}
                     disabled={target === "pv"}
-                    className={cn(errors.pv && touchedFields.pv && "border-red-500 focus-visible:ring-red-500")}
+                    className={cn(errors.pv && touchedFields.pv && "border-destructive focus-visible:ring-destructive")}
                   />
                   <ValidationError error={errors.pv && touchedFields.pv ? errors.pv : null} />
                 </div>
@@ -363,7 +369,7 @@ function TVMPageContent() {
                     value={fv}
                     onChange={(e) => handleInputChange("fv", e.target.value, setFv)}
                     disabled={target === "fv"}
-                    className={cn(errors.fv && touchedFields.fv && "border-red-500 focus-visible:ring-red-500")}
+                    className={cn(errors.fv && touchedFields.fv && "border-destructive focus-visible:ring-destructive")}
                   />
                   <ValidationError error={errors.fv && touchedFields.fv ? errors.fv : null} />
                 </div>
@@ -402,9 +408,9 @@ function TVMPageContent() {
           {/* Result Card */}
           <Card
             className={cn(
-              "border-2 flex flex-col justify-center items-center p-8 text-center",
+              "border-2 flex flex-col justify-center items-center p-6 sm:p-8 text-center",
               calculationError || (result !== null && (isNaN(result) || !isFinite(result)))
-                ? "bg-red-50/50 border-red-200 dark:bg-red-950/20 dark:border-red-800"
+                ? "bg-destructive/5 border-destructive/20 dark:bg-destructive/10"
                 : "bg-muted/30 border-dashed"
             )}
           >
@@ -414,7 +420,7 @@ function TVMPageContent() {
                   {t("common.result")} ({target.toUpperCase()})
                 </h3>
                 <div className="flex items-center justify-center gap-3">
-                  <p className="text-5xl font-bold tracking-tighter text-primary">
+                  <p className="text-3xl sm:text-5xl font-bold tracking-tighter text-primary">
                     {target === "nper"
                       ? result.toFixed(2)
                       : target === "rate"
@@ -425,7 +431,7 @@ function TVMPageContent() {
                     type="button"
                     aria-label="Share result"
                     onClick={() => setShareOpen(true)}
-                    className="inline-flex items-center justify-center rounded border border-slate-200 p-2 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800 transition-colors"
+                    className="inline-flex items-center justify-center rounded border border-input p-2 hover:bg-accent transition-colors"
                   >
                     <Share2 className="h-4 w-4" />
                   </button>
@@ -440,12 +446,12 @@ function TVMPageContent() {
               </div>
             ) : calculationError || (result !== null && (isNaN(result) || !isFinite(result))) ? (
               <div className="space-y-3">
-                <div className="h-16 w-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto">
-                  <Calculator className="h-8 w-8 text-red-500" />
+                <div className="h-16 w-16 rounded-full bg-destructive/10 dark:bg-destructive/20 flex items-center justify-center mx-auto">
+                  <Calculator className="h-8 w-8 text-destructive" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-medium text-red-800 dark:text-red-200">Calculation Error</h3>
-                  <p className="text-sm text-red-600 dark:text-red-300 mt-1 max-w-xs">
+                  <h3 className="text-lg font-medium text-destructive">Calculation Error</h3>
+                  <p className="text-sm text-muted-foreground mt-1 max-w-xs">
                     {calculationError || "Unable to calculate result. Please check your inputs and try again."}
                   </p>
                 </div>
@@ -513,7 +519,7 @@ function TVMPageSkeleton() {
         </Card>
         <Card>
           <CardHeader />
-          <CardContent className="flex items-center justify-center h-[300px]">
+          <CardContent className="flex items-center justify-center h-[250px] sm:h-[300px]">
             <Skeleton className="h-32 w-32 rounded-full" />
           </CardContent>
         </Card>

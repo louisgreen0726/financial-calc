@@ -105,7 +105,7 @@ export default function PortfolioPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t("portfolio.title")}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("portfolio.title")}</h1>
           <p className="text-muted-foreground mt-2">{t("portfolio.subtitle")}</p>
         </div>
         <Button onClick={startSimulation} size="lg" className="gap-2" disabled={isRunning}>
@@ -196,7 +196,7 @@ export default function PortfolioPage() {
 
         <div className="lg:col-span-8 space-y-6">
           {isRunning && <ProgressBar progress={progress} label="Running Monte Carlo simulation..." showETA />}
-          <Card className="h-[450px] flex flex-col">
+          <Card className="h-[350px] sm:h-[400px] md:h-[450px] flex flex-col">
             <CardHeader>
               <CardTitle>{t("portfolio.frontier")}</CardTitle>
               <CardDescription>{t("portfolio.frontierDesc")}</CardDescription>

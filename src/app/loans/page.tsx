@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
+import { useMemo, Suspense } from "react";
 import { Finance } from "@/lib/finance-math";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -131,7 +131,7 @@ function LoansPageContent() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t("loans.title")}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("loans.title")}</h1>
           <p className="text-muted-foreground mt-2">{t("loans.subtitle")}</p>
         </div>
         {schedule.length > 0 && (
@@ -253,7 +253,7 @@ function LoansPageContent() {
               </CardHeader>
               <CardContent className="flex-1 min-h-0">
                 {schedule.length === 0 ? (
-                  <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
+                  <div className="flex items-center justify-center h-[150px] sm:h-[200px] text-muted-foreground text-sm">
                     {t("loans.noData") || "Enter valid loan details to see breakdown"}
                   </div>
                 ) : (
@@ -295,8 +295,8 @@ function LoansPageContent() {
               </CardHeader>
               <CardContent className="flex-1 min-h-0">
                 {schedule.length === 0 ? (
-                  <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
-                    {t("loans.noData") || "Enter valid loan details to see balance chart"}
+                  <div className="flex items-center justify-center h-[150px] sm:h-[200px] text-muted-foreground text-sm">
+                    {t("loans.noData") || "Enter valid loan details to see breakdown"}
                   </div>
                 ) : (
                   <ResponsiveContainer width="100%" height={200}>
@@ -416,7 +416,7 @@ function LoansPageSkeleton() {
                 <Skeleton className="h-6 w-32" />
               </CardHeader>
               <CardContent>
-                <Skeleton className="h-[200px] w-full" />
+                <Skeleton className="h-[150px] sm:h-[200px] w-full" />
               </CardContent>
             </Card>
             <Card className="min-h-[300px]">
@@ -424,7 +424,7 @@ function LoansPageSkeleton() {
                 <Skeleton className="h-6 w-32" />
               </CardHeader>
               <CardContent>
-                <Skeleton className="h-[200px] w-full" />
+                <Skeleton className="h-[150px] sm:h-[200px] w-full" />
               </CardContent>
             </Card>
           </div>
@@ -433,7 +433,7 @@ function LoansPageSkeleton() {
               <Skeleton className="h-6 w-48" />
             </CardHeader>
             <CardContent>
-              <Skeleton className="h-[360px] w-full" />
+              <Skeleton className="h-[280px] sm:h-[360px] w-full" />
             </CardContent>
           </Card>
         </div>

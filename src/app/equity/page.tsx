@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Finance } from "@/lib/finance-math";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,6 @@ import { BarChart, Activity, DollarSign } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
 import { useCalculationHistory } from "@/hooks/use-calculation-history";
 import { HistoryPanel } from "@/components/history-panel";
-import { ExportMenu } from "@/components/export-menu";
 
 export default function EquityPage() {
   const { t } = useLanguage();
@@ -53,22 +52,30 @@ export default function EquityPage() {
 
   const { addToHistory } = useCalculationHistory({ page: "equity" });
 
+  // Track last saved results to avoid duplicate history entries on re-renders
+  const lastCapmRef = useRef<number | null>(null);
+  const lastWaccRef = useRef<number | null>(null);
+  const lastDdmRef = useRef<number | null>(null);
+
   useEffect(() => {
-    if (isFinite(capmResult) && !isNaN(capmResult)) {
+    if (isFinite(capmResult) && !isNaN(capmResult) && capmResult !== lastCapmRef.current) {
+      lastCapmRef.current = capmResult;
       addToHistory({ rf, beta, rm }, capmResult, "CAPM");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [capmResult]);
 
   useEffect(() => {
-    if (isFinite(waccResult) && !isNaN(waccResult)) {
+    if (isFinite(waccResult) && !isNaN(waccResult) && waccResult !== lastWaccRef.current) {
+      lastWaccRef.current = waccResult;
       addToHistory({ equity, debt, costEquity, costDebt, taxRate }, waccResult, "WACC");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [waccResult]);
 
   useEffect(() => {
-    if (isFinite(ddmResult) && !isNaN(ddmResult)) {
+    if (isFinite(ddmResult) && !isNaN(ddmResult) && ddmResult !== lastDdmRef.current) {
+      lastDdmRef.current = ddmResult;
       addToHistory({ div, growth, reqReturn }, ddmResult, "DDM");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -78,7 +85,7 @@ export default function EquityPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t("equity.title")}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("equity.title")}</h1>
           <p className="text-muted-foreground mt-2">{t("equity.subtitle")}</p>
         </div>
         <div className="flex items-center gap-2">

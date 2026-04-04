@@ -123,7 +123,7 @@ export default function HistoryPage() {
 
   const deleteSelected = () => {
     selectedIds.forEach((id) => removeFromHistory(id));
-    toast.success(`${selectedIds.size} items deleted`);
+    toast.success(`${selectedIds.size} ${t("history.itemsDeleted")}`);
     setSelectedIds(new Set());
     setBatchMode(false);
   };
@@ -158,7 +158,7 @@ export default function HistoryPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">{t("history.title") || "History"}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("history.title") || "History"}</h1>
             <p className="text-muted-foreground mt-2">{t("history.loading")}</p>
           </div>
         </div>
@@ -220,7 +220,7 @@ export default function HistoryPage() {
         </div>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[500px]">
+        <ScrollArea className="h-[300px] sm:h-[400px] md:h-[500px]">
           <div className="space-y-2">
             {sortedHistory.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">{t("history.noResults")}</div>
@@ -327,7 +327,9 @@ export default function HistoryPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t("history.title") || "Calculation History"}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+            {t("history.title") || "Calculation History"}
+          </h1>
           <p className="text-muted-foreground mt-2">{history.length} calculations recorded</p>
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -351,10 +353,10 @@ export default function HistoryPage() {
         renderEmptyState()
       ) : (
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-4">
+          <TabsList className="mb-4 flex-wrap md:flex-nowrap overflow-x-auto whitespace-nowrap">
             <TabsTrigger value="all" className="gap-2">
               <Clock className="h-4 w-4" />
-              All ({history.length})
+              {t("history.all")} ({history.length})
             </TabsTrigger>
             <TabsTrigger value="favorites" className="gap-2">
               <Star className="h-4 w-4" />

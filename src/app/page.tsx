@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
+import { useReducedMotion } from "framer-motion";
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { NAV_CONFIG } from "@/lib/nav-config";
 import { ArrowRight, Clock } from "lucide-react";
@@ -13,6 +14,7 @@ import { motion } from "framer-motion";
 
 export default function Home() {
   const allNavItems = useMemo(() => NAV_CONFIG.flatMap((section) => section.items), []);
+  const shouldReduceMotion = useReducedMotion();
   const { t } = useLanguage();
   const { history } = useCalculationHistory({ page: "home" });
 
@@ -23,20 +25,20 @@ export default function Home() {
   return (
     <MotionPage className="space-y-10">
       {/* Hero Section */}
-      <div className="space-y-6 py-10 md:py-16 text-center md:text-left relative z-10">
+      <div className="space-y-4 md:space-y-6 py-6 md:py-16 text-center md:text-left relative z-10">
         <motion.h1
-          className="text-5xl md:text-7xl font-display font-extrabold tracking-[-0.04em] text-gradient mx-auto md:mx-0 w-fit leading-tight drop-shadow-sm pb-2"
-          initial={{ opacity: 0, y: 20 }}
+          className="text-3xl sm:text-5xl md:text-7xl font-display font-extrabold tracking-[-0.04em] text-gradient mx-auto md:mx-0 w-fit leading-tight drop-shadow-sm pb-2"
+          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
+          transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.8, ease: "easeOut" }}
         >
           {t("home.title")}
         </motion.h1>
         <motion.p
           className="text-xl md:text-2xl font-medium text-muted-foreground/80 max-w-2xl mx-auto md:mx-0"
-          initial={{ opacity: 0, y: 20 }}
+          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.1, ease: "easeOut" }}
+          transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.8, delay: 0.1, ease: "easeOut" }}
         >
           {t("home.subtitle")}
         </motion.p>
@@ -75,17 +77,17 @@ export default function Home() {
       {history.length > 0 && (
         <motion.div
           className="space-y-6 pt-12 relative z-10"
-          initial={{ opacity: 0, y: 20 }}
+          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
+          transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.8, delay: 0.4 }}
         >
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-secondary">
               <Clock className="w-5 h-5 text-muted-foreground" />
             </div>
-            <h2 className="text-2xl font-bold tracking-tight font-display">Recent Calculations</h2>
+            <h2 className="text-xl md:text-2xl font-bold tracking-tight font-display">Recent Calculations</h2>
           </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
             {history.slice(0, 4).map((item) => {
               const navItem = getPageConfig(item.page);
               return (

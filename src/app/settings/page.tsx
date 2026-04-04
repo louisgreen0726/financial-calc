@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -13,11 +13,28 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { HISTORY_KEY } from "@/lib/constants";
 
+const SETTINGS_NOTIFICATIONS_KEY = "fincalc-settings-notifications";
+const SETTINGS_AUTO_CALC_KEY = "fincalc-settings-auto-calc";
+
 export default function SettingsPage() {
   const { t, language, setLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
-  const [notifications, setNotifications] = useState(true);
-  const [autoCalculate, setAutoCalculate] = useState(true);
+  const [notifications, setNotifications] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem(SETTINGS_NOTIFICATIONS_KEY) !== "false";
+  });
+  const [autoCalculate, setAutoCalculate] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem(SETTINGS_AUTO_CALC_KEY) !== "false";
+  });
+
+  useEffect(() => {
+    localStorage.setItem(SETTINGS_NOTIFICATIONS_KEY, String(notifications));
+  }, [notifications]);
+
+  useEffect(() => {
+    localStorage.setItem(SETTINGS_AUTO_CALC_KEY, String(autoCalculate));
+  }, [autoCalculate]);
 
   const handleClearHistory = () => {
     if (window.confirm(t("history.confirmClear") || "Clear all calculation history?")) {
@@ -47,7 +64,7 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">{t("settings.title") || "Settings"}</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("settings.title") || "Settings"}</h1>
         <p className="text-muted-foreground mt-2">{t("settings.customizeExperience")}</p>
       </div>
 
