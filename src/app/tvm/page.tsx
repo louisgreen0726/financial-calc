@@ -24,6 +24,21 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 type TVMTarget = "pv" | "fv" | "pmt" | "nper" | "rate";
 
+const TVM_PRESETS = {
+  retirement: {
+    label: "Retirement Savings",
+    values: { target: "fv", rate: "7", nper: "30", pmt: "-500", pv: "0", fv: "0", type: "0" as const },
+  },
+  loanPayoff: {
+    label: "Loan Payoff",
+    values: { target: "pmt", rate: "4.5", nper: "60", pmt: "0", pv: "25000", fv: "0", type: "0" as const },
+  },
+  collegeFund: {
+    label: "College Fund",
+    values: { target: "pmt", rate: "6", nper: "18", pmt: "0", pv: "0", fv: "120000", type: "1" as const },
+  },
+} as const;
+
 function TVMPageContent() {
   const { t } = useLanguage();
   const { state: urlState, setField } = useUrlState({
@@ -262,6 +277,22 @@ function TVMPageContent() {
     clearErrors();
   };
 
+  const applyPreset = (presetKey: keyof typeof TVM_PRESETS) => {
+    const preset = TVM_PRESETS[presetKey].values;
+    setTarget(preset.target as TVMTarget);
+    setRate(preset.rate);
+    setNper(preset.nper);
+    setPmt(preset.pmt);
+    setPv(preset.pv);
+    setFv(preset.fv);
+    setType(preset.type);
+    setResult(null);
+    setCalculationError(null);
+    setCalcSteps(null);
+    setTouchedFields({});
+    clearErrors();
+  };
+
   return (
     <>
       <div className="space-y-6">
@@ -301,6 +332,22 @@ function TVMPageContent() {
                     <SelectItem value="pmt">{t("tvm.pmt")}</SelectItem>
                     <SelectItem value="nper">{t("tvm.nper")}</SelectItem>
                     <SelectItem value="rate">{t("tvm.rate")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Quick preset</Label>
+                <Select onValueChange={(value) => applyPreset(value as keyof typeof TVM_PRESETS)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a starting scenario" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(TVM_PRESETS).map(([key, preset]) => (
+                      <SelectItem key={key} value={key}>
+                        {preset.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

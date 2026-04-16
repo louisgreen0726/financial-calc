@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, Suspense } from "react";
+import { useMemo, Suspense, useState } from "react";
 import { Finance } from "@/lib/finance-math";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -24,15 +24,18 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLanguage } from "@/lib/i18n";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Download, FileText } from "lucide-react";
+import { AlertCircle, Download, FileText, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { generatePDFReport } from "@/lib/pdf-export";
 import { useUrlState } from "@/hooks/use-url-state";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ValidationError } from "@/components/ui/error-display";
+import { ShareDialog } from "@/components/share-dialog";
 
 function LoansPageContent() {
   const { t } = useLanguage();
+  const [shareOpen, setShareOpen] = useState(false);
   const { state: urlState, setField } = useUrlState({
     defaultValues: {
       method: "CPM" as "CPM" | "CAM",
@@ -136,6 +139,10 @@ function LoansPageContent() {
         </div>
         {schedule.length > 0 && (
           <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShareOpen(true)} className="gap-2">
+              <Share2 className="h-4 w-4" />
+              Share
+            </Button>
             <Button variant="outline" size="sm" onClick={exportCSV} className="gap-2">
               <Download className="h-4 w-4" />
               Export CSV
@@ -147,6 +154,18 @@ function LoansPageContent() {
           </div>
         )}
       </div>
+
+      <ShareDialog
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        title={`${t("loans.title")} — ${method}`}
+        results={{
+          [t("loans.monthly")]: stats.monthlyPayment,
+          [t("loans.totalInt")]: stats.totalInterest,
+          [t("loans.totalCost")]: stats.totalPayment,
+        }}
+        inputs={{ amount, rate, years, method }}
+      />
 
       <div className="grid gap-6 lg:grid-cols-12">
         {/* Controls */}
@@ -180,6 +199,9 @@ function LoansPageContent() {
                 onChange={(e) => setAmount(e.target.value)}
                 className={amount && parseFloat(amount) <= 0 ? "border-destructive" : ""}
               />
+              <ValidationError
+                error={amount && parseFloat(amount) <= 0 ? t("loans.errorPositiveAmount") || validationError : null}
+              />
             </div>
 
             <div className="space-y-2">
@@ -193,6 +215,9 @@ function LoansPageContent() {
                 onChange={(e) => setRate(e.target.value)}
                 className={rate && parseFloat(rate) <= 0 ? "border-destructive" : ""}
               />
+              <ValidationError
+                error={rate && parseFloat(rate) <= 0 ? t("loans.errorPositiveRate") || validationError : null}
+              />
             </div>
 
             <div className="space-y-2">
@@ -205,6 +230,9 @@ function LoansPageContent() {
                 value={years}
                 onChange={(e) => setYears(e.target.value)}
                 className={years && parseFloat(years) <= 0 ? "border-destructive" : ""}
+              />
+              <ValidationError
+                error={years && parseFloat(years) <= 0 ? t("loans.errorPositiveYears") || validationError : null}
               />
             </div>
 
