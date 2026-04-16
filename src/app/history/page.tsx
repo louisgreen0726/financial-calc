@@ -11,13 +11,15 @@ import { useLanguage } from "@/lib/i18n";
 import { useCalculationHistory, CalculationHistoryItem } from "@/hooks/use-calculation-history";
 import { NAV_CONFIG } from "@/lib/nav-config";
 import { formatCurrency } from "@/lib/utils";
+import { PENDING_RESTORE_KEY, STORAGE_PREFIX } from "@/lib/constants";
+import { safeGetJSON, safeSetJSON, safeSetSessionJSON } from "@/lib/storage";
 import { Clock, Trash2, RotateCcw, Search, Star, FileSpreadsheet, X, CheckSquare, Square } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useExport } from "@/hooks/use-export";
 
-const FAVORITES_KEY = "fincalc-favorites";
+const FAVORITES_KEY = `${STORAGE_PREFIX}favorites`;
 
 export default function HistoryPage() {
   const { t } = useLanguage();
@@ -46,8 +48,7 @@ export default function HistoryPage() {
   const [favorites, setFavorites] = useState<Set<string>>(() => {
     if (typeof window === "undefined") return new Set();
     try {
-      const stored = localStorage.getItem(FAVORITES_KEY);
-      return stored ? new Set(JSON.parse(stored)) : new Set();
+      return new Set(safeGetJSON<string[]>(FAVORITES_KEY, []));
     } catch {
       return new Set();
     }
@@ -58,7 +59,7 @@ export default function HistoryPage() {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
-      localStorage.setItem(FAVORITES_KEY, JSON.stringify([...next]));
+      safeSetJSON(FAVORITES_KEY, [...next]);
       return next;
     });
   };
@@ -99,6 +100,11 @@ export default function HistoryPage() {
   );
 
   const handleRestore = (item: CalculationHistoryItem) => {
+    safeSetSessionJSON(PENDING_RESTORE_KEY, {
+      page: item.page,
+      inputs: item.inputs,
+      timestamp: Date.now(),
+    });
     router.push(`/${item.page}`);
     toast.success(t("history.restored"));
   };
@@ -234,11 +240,10 @@ export default function HistoryPage() {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0, height: 0 }}
                   className={cn(
-                    "flex items-start justify-between p-4 rounded-xl border bg-card hover:bg-accent/50 cursor-pointer group transition-colors",
+                    "flex items-start justify-between p-4 rounded-xl border bg-card group transition-colors",
                     favorites.has(item.id) && "border-primary/30 bg-primary/5",
                     selectedIds.has(item.id) && "ring-2 ring-primary"
                   )}
-                  onClick={() => !batchMode && handleRestore(item)}
                 >
                   <div className="flex items-start gap-3 flex-1 min-w-0">
                     {batchMode && (
@@ -272,7 +277,9 @@ export default function HistoryPage() {
                   <div
                     className={cn(
                       "flex gap-1 ml-2",
-                      batchMode ? "opacity-100" : "opacity-0 group-hover:opacity-100 transition-opacity"
+                      batchMode
+                        ? "opacity-100"
+                        : "opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                     )}
                   >
                     <Button

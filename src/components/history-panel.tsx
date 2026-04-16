@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useCalculationHistory, CalculationHistoryItem } from "@/hooks/use-calculation-history";
 import { useLanguage } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,8 @@ import { formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { STORAGE_PREFIX } from "@/lib/constants";
+import { PENDING_RESTORE_KEY, STORAGE_PREFIX } from "@/lib/constants";
+import { safeGetJSON, safeGetSessionJSON, safeRemoveSessionItem, safeSetJSON } from "@/lib/storage";
 
 interface HistoryPanelProps {
   page: string;
@@ -34,8 +35,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
   const [favorites, setFavorites] = useState<Set<string>>(() => {
     if (typeof window === "undefined") return new Set();
     try {
-      const stored = localStorage.getItem(FAVORITES_KEY);
-      return stored ? new Set(JSON.parse(stored)) : new Set();
+      return new Set(safeGetJSON<string[]>(FAVORITES_KEY, []));
     } catch {
       return new Set();
     }
@@ -46,7 +46,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
-      localStorage.setItem(FAVORITES_KEY, JSON.stringify([...next]));
+      safeSetJSON(FAVORITES_KEY, [...next]);
       return next;
     });
   };
@@ -73,6 +73,35 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
       toast.success(t("history.restored"));
     }
   };
+
+  useEffect(() => {
+    if (!onRestore) {
+      return;
+    }
+
+    try {
+      const parsed = safeGetSessionJSON<{
+        page?: string;
+        inputs?: Record<string, number | string>;
+        timestamp?: number;
+      } | null>(PENDING_RESTORE_KEY, null);
+
+      if (!parsed) {
+        return;
+      }
+
+      const isExpired = typeof parsed.timestamp === "number" && Date.now() - parsed.timestamp > 5 * 60 * 1000;
+      if (parsed.page !== page || !parsed.inputs || isExpired) {
+        safeRemoveSessionItem(PENDING_RESTORE_KEY);
+        return;
+      }
+
+      onRestore(parsed.inputs);
+      safeRemoveSessionItem(PENDING_RESTORE_KEY);
+    } catch {
+      safeRemoveSessionItem(PENDING_RESTORE_KEY);
+    }
+  }, [onRestore, page]);
 
   const handleClear = () => {
     if (window.confirm(t("history.confirmClear") || "Clear all history?")) {
@@ -134,7 +163,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             className={cn(
-              "fixed bottom-16 right-4 z-50 w-[420px] max-h-[600px] shadow-xl rounded-xl border bg-card",
+              "fixed bottom-16 right-4 z-50 w-[calc(100vw-2rem)] max-w-[420px] max-h-[600px] shadow-xl rounded-xl border bg-card",
               className
             )}
           >
@@ -218,11 +247,10 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0, height: 0 }}
                       className={cn(
-                        "flex items-start justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 cursor-pointer group transition-colors",
+                        "flex items-start justify-between p-3 rounded-lg border bg-card group transition-colors",
                         favorites.has(item.id) && "border-primary/30 bg-primary/5",
                         selectedIds.has(item.id) && "ring-2 ring-primary"
                       )}
-                      onClick={() => !batchMode && handleRestore(item)}
                     >
                       <div className="flex items-start gap-2 flex-1 min-w-0">
                         {batchMode && (
@@ -253,7 +281,9 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
                       <div
                         className={cn(
                           "flex gap-1 ml-2",
-                          batchMode ? "opacity-100" : "opacity-0 group-hover:opacity-100 transition-opacity"
+                          batchMode
+                            ? "opacity-100"
+                            : "opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                         )}
                       >
                         <Button
