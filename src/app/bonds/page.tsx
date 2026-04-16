@@ -12,8 +12,9 @@ import { useLanguage } from "@/lib/i18n";
 import { SensitivityHeatmap } from "@/components/sensitivity-heatmap";
 import { ExportMenu } from "@/components/export-menu";
 import { useCalculationHistory } from "@/hooks/use-calculation-history";
+import { useHistoryRecorder } from "@/hooks/use-history-recorder";
 import { HistoryPanel } from "@/components/history-panel";
-import { useEffect } from "react";
+import { ClientOnlyChart } from "@/components/client-only-chart";
 
 export default function BondsPage() {
   const { t } = useLanguage();
@@ -39,12 +40,12 @@ export default function BondsPage() {
 
   const { addToHistory } = useCalculationHistory({ page: "bonds" });
 
-  useEffect(() => {
-    if (isFinite(metrics.price) && !isNaN(metrics.price)) {
-      addToHistory({ faceValue, couponRate, years, ytm, frequency }, metrics.price, "Price");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [metrics.price]);
+  useHistoryRecorder({
+    addToHistory,
+    inputs: { faceValue, couponRate, years, ytm, frequency },
+    result: metrics.price,
+    label: "Price",
+  });
 
   // Generate Price-Yield Curve
   const chartData = useMemo(() => {
@@ -270,36 +271,38 @@ export default function BondsPage() {
               <CardDescription>{t("bonds.subtitle")}</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 min-h-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                  <XAxis
-                    dataKey="yield"
-                    label={{ value: `${t("bonds.ytm")}`, position: "bottom", offset: 0 }}
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={12}
-                  />
-                  <YAxis
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={12}
-                    domain={["auto", "auto"]}
-                    tickFormatter={(val) => `$${val}`}
-                  />
-                  <Tooltip
-                    formatter={(value: number) => formatCurrency(value)}
-                    labelFormatter={(l) => `Yield: ${l}%`}
-                    contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))" }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="price"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth={3}
-                    dot={false}
-                    activeDot={{ r: 6 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              <ClientOnlyChart>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                    <XAxis
+                      dataKey="yield"
+                      label={{ value: `${t("bonds.ytm")}`, position: "bottom", offset: 0 }}
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={12}
+                    />
+                    <YAxis
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={12}
+                      domain={["auto", "auto"]}
+                      tickFormatter={(val) => `$${val}`}
+                    />
+                    <Tooltip
+                      formatter={(value: number) => formatCurrency(value)}
+                      labelFormatter={(l) => `Yield: ${l}%`}
+                      contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))" }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="price"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={3}
+                      dot={false}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ClientOnlyChart>
             </CardContent>
           </Card>
 

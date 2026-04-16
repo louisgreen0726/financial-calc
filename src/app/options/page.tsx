@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Finance } from "@/lib/finance-math";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,9 @@ import { formatCurrency } from "@/lib/utils";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { useLanguage } from "@/lib/i18n";
 import { useCalculationHistory } from "@/hooks/use-calculation-history";
+import { useHistoryRecorder } from "@/hooks/use-history-recorder";
 import { HistoryPanel } from "@/components/history-panel";
+import { ClientOnlyChart } from "@/components/client-only-chart";
 
 export default function OptionsPage() {
   const { t } = useLanguage();
@@ -36,12 +38,13 @@ export default function OptionsPage() {
   }, [spot, strike, time, rate, volatility]);
 
   const { addToHistory } = useCalculationHistory({ page: "options" });
-  useEffect(() => {
-    if (isFinite(results.callPrice) && !isNaN(results.callPrice)) {
-      addToHistory({ spot, strike, time, rate, volatility }, results.callPrice, "Call Price");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [results.callPrice]);
+
+  useHistoryRecorder({
+    addToHistory,
+    inputs: { spot, strike, time, rate, volatility },
+    result: results.callPrice,
+    label: "Call Price",
+  });
 
   // Payoff Diagram (Price vs Spot)
   const chartData = useMemo(() => {
@@ -180,44 +183,46 @@ export default function OptionsPage() {
                 <CardDescription>{t("options.intrinsic")}</CardDescription>
               </CardHeader>
               <CardContent className="flex-1 min-h-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                    <XAxis
-                      dataKey="spot"
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={12}
-                      tickFormatter={(v) => v.toFixed(0)}
-                    />
-                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))" }}
-                      formatter={(v: number) => formatCurrency(v)}
-                    />
-                    <ReferenceLine
-                      x={parseFloat(strike)}
-                      stroke="hsl(var(--muted-foreground))"
-                      strokeDasharray="3 3"
-                      label="K"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="intrinsicCall"
-                      stroke="hsl(var(--primary))"
-                      name={t("options.call")}
-                      dot={false}
-                      strokeWidth={2}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="intrinsicPut"
-                      stroke="hsl(var(--destructive))"
-                      name={t("options.put")}
-                      dot={false}
-                      strokeWidth={2}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                <ClientOnlyChart>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                      <XAxis
+                        dataKey="spot"
+                        stroke="hsl(var(--muted-foreground))"
+                        fontSize={12}
+                        tickFormatter={(v) => v.toFixed(0)}
+                      />
+                      <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))" }}
+                        formatter={(v: number) => formatCurrency(v)}
+                      />
+                      <ReferenceLine
+                        x={parseFloat(strike)}
+                        stroke="hsl(var(--muted-foreground))"
+                        strokeDasharray="3 3"
+                        label="K"
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="intrinsicCall"
+                        stroke="hsl(var(--primary))"
+                        name={t("options.call")}
+                        dot={false}
+                        strokeWidth={2}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="intrinsicPut"
+                        stroke="hsl(var(--destructive))"
+                        name={t("options.put")}
+                        dot={false}
+                        strokeWidth={2}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </ClientOnlyChart>
               </CardContent>
             </Card>
           </div>

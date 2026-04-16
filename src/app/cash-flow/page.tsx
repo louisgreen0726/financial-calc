@@ -21,8 +21,10 @@ import {
 } from "recharts";
 import { useLanguage } from "@/lib/i18n";
 import { useCalculationHistory } from "@/hooks/use-calculation-history";
+import { useHistoryRecorder } from "@/hooks/use-history-recorder";
 import { HistoryPanel } from "@/components/history-panel";
 import { ExportMenu } from "@/components/export-menu";
+import { ClientOnlyChart } from "@/components/client-only-chart";
 
 export default function CashFlowPage() {
   const { t } = useLanguage();
@@ -58,13 +60,15 @@ export default function CashFlowPage() {
       }
     }
 
-    const result = { npv, irr, payback };
-    // Record NPV to history whenever calculation updates
-    if (isFinite(npv) && !isNaN(npv)) {
-      addToHistory({ rate, flows: flows.join(",") }, npv, "NPV");
-    }
-    return result;
-  }, [rate, flows, addToHistory]);
+    return { npv, irr, payback };
+  }, [rate, flows]);
+
+  useHistoryRecorder({
+    addToHistory,
+    inputs: { rate, flows: flows.join(",") },
+    result: calculateMetrics.npv,
+    label: "NPV",
+  });
 
   const chartData = flows.map((val, i) => ({
     period: `${t("common.year")} ${i}`,
@@ -190,40 +194,42 @@ export default function CashFlowPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex-1 w-full min-h-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                    <XAxis
-                      dataKey="period"
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(value) => `$${value}`}
-                    />
-                    <Tooltip
-                      cursor={{ fill: "hsl(var(--muted)/0.3)" }}
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        borderColor: "hsl(var(--border))",
-                        borderRadius: "8px",
-                      }}
-                      itemStyle={{ color: "hsl(var(--foreground))" }}
-                    />
-                    <ReferenceLine y={0} stroke="hsl(var(--border))" />
-                    <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
-                      {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                <ClientOnlyChart>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                      <XAxis
+                        dataKey="period"
+                        stroke="hsl(var(--muted-foreground))"
+                        fontSize={12}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        stroke="hsl(var(--muted-foreground))"
+                        fontSize={12}
+                        tickLine={false}
+                        axisLine={false}
+                        tickFormatter={(value) => `$${value}`}
+                      />
+                      <Tooltip
+                        cursor={{ fill: "hsl(var(--muted)/0.3)" }}
+                        contentStyle={{
+                          backgroundColor: "hsl(var(--card))",
+                          borderColor: "hsl(var(--border))",
+                          borderRadius: "8px",
+                        }}
+                        itemStyle={{ color: "hsl(var(--foreground))" }}
+                      />
+                      <ReferenceLine y={0} stroke="hsl(var(--border))" />
+                      <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
+                        {chartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ClientOnlyChart>
               </CardContent>
             </Card>
 
@@ -240,6 +246,16 @@ export default function CashFlowPage() {
         page="cash-flow"
         onRestore={(inputs) => {
           if (inputs.rate !== undefined) setRate(String(inputs.rate));
+          if (inputs.flows !== undefined) {
+            const restoredFlows = String(inputs.flows)
+              .split(",")
+              .map((value) => parseFloat(value))
+              .filter((value) => !Number.isNaN(value));
+
+            if (restoredFlows.length > 0) {
+              setFlows(restoredFlows);
+            }
+          }
         }}
       />
     </>
