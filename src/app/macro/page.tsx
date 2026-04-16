@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from "@/lib/i18n";
 import { TrendingUp, DollarSign, Percent, Scale, Globe, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ValidationError } from "@/components/ui/error-display";
 
 interface ValidationError {
   field: string;
@@ -211,11 +212,7 @@ export default function MacroPage() {
                     min="0"
                     step="0.01"
                   />
-                  {inflationErrors.find((e) => e.field === "startPrice") && (
-                    <p className="text-sm text-red-500">
-                      {inflationErrors.find((e) => e.field === "startPrice")?.message}
-                    </p>
-                  )}
+                  <ValidationError error={inflationErrors.find((e) => e.field === "startPrice")?.message ?? null} />
                 </div>
                 <div className="space-y-2">
                   <Label>{t("macro.inflation.endPrice")}</Label>
@@ -226,11 +223,7 @@ export default function MacroPage() {
                     min="0"
                     step="0.01"
                   />
-                  {inflationErrors.find((e) => e.field === "endPrice") && (
-                    <p className="text-sm text-red-500">
-                      {inflationErrors.find((e) => e.field === "endPrice")?.message}
-                    </p>
-                  )}
+                  <ValidationError error={inflationErrors.find((e) => e.field === "endPrice")?.message ?? null} />
                 </div>
                 <div className="space-y-2">
                   <Label>{t("macro.inflation.years")}</Label>
@@ -241,9 +234,7 @@ export default function MacroPage() {
                     min="0"
                     step="0.1"
                   />
-                  {inflationErrors.find((e) => e.field === "years") && (
-                    <p className="text-sm text-red-500">{inflationErrors.find((e) => e.field === "years")?.message}</p>
-                  )}
+                  <ValidationError error={inflationErrors.find((e) => e.field === "years")?.message ?? null} />
                 </div>
                 {inflationErrors.length > 0 && (
                   <Alert variant="destructive" className="py-2">
@@ -286,9 +277,7 @@ export default function MacroPage() {
                     min="0"
                     step="0.01"
                   />
-                  {ppErrors.find((e) => e.field === "amount") && (
-                    <p className="text-sm text-red-500">{ppErrors.find((e) => e.field === "amount")?.message}</p>
-                  )}
+                  <ValidationError error={ppErrors.find((e) => e.field === "amount")?.message ?? null} />
                 </div>
                 <div className="space-y-2">
                   <Label>{t("macro.purchasingPower.inflation")}</Label>
@@ -303,9 +292,7 @@ export default function MacroPage() {
                     min="0"
                     step="0.1"
                   />
-                  {ppErrors.find((e) => e.field === "years") && (
-                    <p className="text-sm text-red-500">{ppErrors.find((e) => e.field === "years")?.message}</p>
-                  )}
+                  <ValidationError error={ppErrors.find((e) => e.field === "years")?.message ?? null} />
                 </div>
                 {ppErrors.length > 0 && (
                   <Alert variant="destructive" className="py-2">

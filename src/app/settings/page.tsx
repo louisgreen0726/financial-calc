@@ -1,50 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { useLanguage } from "@/lib/i18n";
 import { useTheme } from "next-themes";
-import { Moon, Sun, Monitor, Globe, Trash2, Download, Calculator } from "lucide-react";
+import { Moon, Sun, Monitor, Globe, Trash2, Download } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { HISTORY_KEY } from "@/lib/constants";
-
-const SETTINGS_NOTIFICATIONS_KEY = "fincalc-settings-notifications";
-const SETTINGS_AUTO_CALC_KEY = "fincalc-settings-auto-calc";
+import { safeGetItem, safeRemoveItem } from "@/lib/storage";
 
 export default function SettingsPage() {
   const { t, language, setLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
-  const [notifications, setNotifications] = useState(() => {
-    if (typeof window === "undefined") return true;
-    return localStorage.getItem(SETTINGS_NOTIFICATIONS_KEY) !== "false";
-  });
-  const [autoCalculate, setAutoCalculate] = useState(() => {
-    if (typeof window === "undefined") return true;
-    return localStorage.getItem(SETTINGS_AUTO_CALC_KEY) !== "false";
-  });
-
-  useEffect(() => {
-    localStorage.setItem(SETTINGS_NOTIFICATIONS_KEY, String(notifications));
-  }, [notifications]);
-
-  useEffect(() => {
-    localStorage.setItem(SETTINGS_AUTO_CALC_KEY, String(autoCalculate));
-  }, [autoCalculate]);
 
   const handleClearHistory = () => {
     if (window.confirm(t("history.confirmClear") || "Clear all calculation history?")) {
-      localStorage.removeItem(HISTORY_KEY);
+      safeRemoveItem(HISTORY_KEY);
       toast.success(t("history.cleared") || "History cleared");
     }
   };
 
   const handleExportHistory = () => {
-    const history = localStorage.getItem(HISTORY_KEY);
+    const history = safeGetItem(HISTORY_KEY);
     if (!history) {
       toast.error(t("export.noData") || "No data to export");
       return;
@@ -135,36 +115,6 @@ export default function SettingsPage() {
                 中文
               </Button>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Behavior */}
-      <Card className="rounded-xl">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calculator className="h-5 w-5" />
-            {t("settings.behavior")}
-          </CardTitle>
-          <CardDescription>{t("settings.behaviorDesc")}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>{t("settings.autoCalculate")}</Label>
-              <p className="text-sm text-muted-foreground">{t("settings.autoCalculateDesc")}</p>
-            </div>
-            <Switch checked={autoCalculate} onCheckedChange={setAutoCalculate} />
-          </div>
-
-          <Separator />
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>{t("settings.notifications")}</Label>
-              <p className="text-sm text-muted-foreground">{t("settings.notificationsDesc")}</p>
-            </div>
-            <Switch checked={notifications} onCheckedChange={setNotifications} />
           </div>
         </CardContent>
       </Card>

@@ -1,7 +1,9 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
 import { logger } from "@/lib/logger";
 
@@ -43,12 +45,17 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
               <p className="text-sm text-muted-foreground mb-4">
                 {this.state.error?.message || "An unexpected error occurred."}
               </p>
-              <button
-                onClick={() => this.setState({ hasError: false, error: null })}
-                className="text-sm text-primary underline"
-              >
-                Try again
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="default" size="sm" onClick={() => this.setState({ hasError: false, error: null })}>
+                  Try again
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+                  Refresh page
+                </Button>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/">Go home</Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>

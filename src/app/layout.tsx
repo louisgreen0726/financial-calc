@@ -41,10 +41,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // Note: Server components cannot access client i18n hooks to set dynamic language.
-    // The current language is managed on the client by the i18n hook in src/lib/i18n.tsx.
-    // If you need a dynamic lang attribute server-side, pass the lang value from a LanguageProvider
-    // or expose via a server-side prop. See i18n.tsx for the client-side update mechanics.
+    // Static-export boundary note:
+    // - This root layout is a server component and cannot read client-side language/theme state.
+    // - The initial HTML is rendered with lang="en" as a safe default.
+    // - LanguageProvider updates document.documentElement.lang on the client after hydration.
+    // - Any browser-only behavior (theme, local/session storage, service worker) must stay behind client boundaries.
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${outfit.variable} font-sans antialiased`} suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
