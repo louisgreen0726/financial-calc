@@ -42,6 +42,8 @@ export const STORAGE_PREFIX = "financial-calc-";
 export const HISTORY_KEY = `${STORAGE_PREFIX}history`;
 export const SETTINGS_KEY = `${STORAGE_PREFIX}settings`;
 export const DRAFTS_KEY = `${STORAGE_PREFIX}drafts`;
+export const PENDING_RESTORE_KEY = `${STORAGE_PREFIX}pending-restore`;
+export const LANGUAGE_KEY = `${STORAGE_PREFIX}language`;
 
 // URL parameters
 export const URL_PARAM_PREFIX = "fc_";
