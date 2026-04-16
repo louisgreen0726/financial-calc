@@ -10,6 +10,7 @@ import { formatCurrency } from "@/lib/utils";
 import { BarChart, Activity, DollarSign } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
 import { useCalculationHistory } from "@/hooks/use-calculation-history";
+import { useHistoryRecorder } from "@/hooks/use-history-recorder";
 import { HistoryPanel } from "@/components/history-panel";
 
 export default function EquityPage() {
@@ -52,34 +53,26 @@ export default function EquityPage() {
 
   const { addToHistory } = useCalculationHistory({ page: "equity" });
 
-  // Track last saved results to avoid duplicate history entries on re-renders
-  const lastCapmRef = useRef<number | null>(null);
-  const lastWaccRef = useRef<number | null>(null);
-  const lastDdmRef = useRef<number | null>(null);
+  useHistoryRecorder({
+    addToHistory,
+    inputs: { rf, beta, rm },
+    result: capmResult,
+    label: "CAPM",
+  });
 
-  useEffect(() => {
-    if (isFinite(capmResult) && !isNaN(capmResult) && capmResult !== lastCapmRef.current) {
-      lastCapmRef.current = capmResult;
-      addToHistory({ rf, beta, rm }, capmResult, "CAPM");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [capmResult]);
+  useHistoryRecorder({
+    addToHistory,
+    inputs: { equity, debt, costEquity, costDebt, taxRate },
+    result: waccResult,
+    label: "WACC",
+  });
 
-  useEffect(() => {
-    if (isFinite(waccResult) && !isNaN(waccResult) && waccResult !== lastWaccRef.current) {
-      lastWaccRef.current = waccResult;
-      addToHistory({ equity, debt, costEquity, costDebt, taxRate }, waccResult, "WACC");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [waccResult]);
-
-  useEffect(() => {
-    if (isFinite(ddmResult) && !isNaN(ddmResult) && ddmResult !== lastDdmRef.current) {
-      lastDdmRef.current = ddmResult;
-      addToHistory({ div, growth, reqReturn }, ddmResult, "DDM");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ddmResult]);
+  useHistoryRecorder({
+    addToHistory,
+    inputs: { div, growth, reqReturn },
+    result: ddmResult,
+    label: "DDM",
+  });
 
   return (
     <div className="space-y-6">
