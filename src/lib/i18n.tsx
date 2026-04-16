@@ -1,6 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { LANGUAGE_KEY } from "@/lib/constants";
+import { safeGetItem, safeSetItem } from "@/lib/storage";
 
 // --- Types ---
 type Language = "en" | "zh";
@@ -1374,13 +1376,13 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>(() => {
     if (typeof window === "undefined") return "en";
-    const saved = localStorage.getItem("app-language");
+    const saved = safeGetItem(LANGUAGE_KEY);
     return saved === "en" || saved === "zh" ? saved : "en";
   });
 
   const handleSetLanguage = (lang: Language) => {
     setLanguage(lang);
-    localStorage.setItem("app-language", lang);
+    safeSetItem(LANGUAGE_KEY, lang);
   };
 
   const currentDictionary = dictionaries[language];

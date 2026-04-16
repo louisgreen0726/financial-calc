@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { HISTORY_KEY, MAX_HISTORY_ITEMS, HISTORY_EXPIRY_DAYS } from "@/lib/constants";
+import { safeGetJSON, safeSetJSON } from "@/lib/storage";
 import { logger } from "@/lib/logger";
 
 export interface CalculationHistoryItem {
@@ -26,25 +27,20 @@ export function useCalculationHistory({ page, maxItems = MAX_HISTORY_ITEMS }: Us
   useEffect(() => {
     const loadHistory = () => {
       try {
-        const stored = localStorage.getItem(HISTORY_KEY);
-        if (stored) {
-          const parsed: CalculationHistoryItem[] = JSON.parse(stored);
-          // Filter out expired items
+        const stored = safeGetJSON<CalculationHistoryItem[]>(HISTORY_KEY, []);
+        if (Array.isArray(stored)) {
           const now = Date.now();
           const expiryMs = HISTORY_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
-          const validItems = parsed.filter((item) => now - item.timestamp < expiryMs);
-
-          // Save back if we removed expired items
-          if (validItems.length !== parsed.length) {
-            localStorage.setItem(HISTORY_KEY, JSON.stringify(validItems));
+          const validItems = stored.filter((item) => now - item.timestamp < expiryMs);
+          if (validItems.length !== stored.length) {
+            safeSetJSON(HISTORY_KEY, validItems);
           }
-
           return validItems;
         }
       } catch (error) {
         logger.warn("Error loading calculation history:", error);
       }
-      return [];
+      return [] as CalculationHistoryItem[];
     };
 
     const initialHistory = loadHistory();
@@ -58,7 +54,7 @@ export function useCalculationHistory({ page, maxItems = MAX_HISTORY_ITEMS }: Us
   useEffect(() => {
     if (isInitialized) {
       try {
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+        safeSetJSON(HISTORY_KEY, history);
       } catch (error) {
         logger.warn("Error saving calculation history:", error);
       }
