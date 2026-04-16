@@ -43,17 +43,20 @@ export default function PortfolioPage() {
   const [simulations, setSimulations] = useState<PortfolioPoint[]>([]);
   const [optimal, setOptimal] = useState<PortfolioPoint | null>(null);
   const [minVol, setMinVol] = useState<PortfolioPoint | null>(null);
+  const [chartsReady, setChartsReady] = useState(false);
 
-  // Monte Carlo simulation hook (replaces inline web worker)
+  // Monte Carlo simulation hook: prefers a real worker, falls back to chunked client execution.
   const { progress, isRunning, run, cancel } = useMonteCarloSimulation();
 
   // Ensure cleanup on unmount
   useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setChartsReady(true));
+
     return () => {
+      window.cancelAnimationFrame(frame);
       cancel();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [cancel]);
 
   const addAsset = () => {
     const id = Math.max(0, ...assets.map((a) => a.id)) + 1;
@@ -82,10 +85,7 @@ export default function PortfolioPage() {
       simulations: 2000,
     } as const;
 
-    // Pass the alias path so the bundler can resolve it correctly in both client and server builds
-    const workerUrl = "@/workers/monte-carlo.worker.ts";
-
-    run(workerUrl, payload, {
+    run(payload, {
       onProgress: () => {
         // progress is surfaced by the hook; no extra action needed
       },
@@ -96,7 +96,7 @@ export default function PortfolioPage() {
         if (d?.minVol) setMinVol(d.minVol);
       },
       onError: () => {
-        // Error handled silently
+        // Fallback handling lives inside the hook; keep the UI responsive even if worker setup fails.
       },
     });
   };
@@ -203,60 +203,64 @@ export default function PortfolioPage() {
             </CardHeader>
             <CardContent className="flex-1 min-h-0">
               {simulations.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <ScatterChart margin={{ top: 20, right: 30, bottom: 20, left: 10 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                    <XAxis
-                      type="number"
-                      dataKey="risk"
-                      name="Risk"
-                      label={{ value: `${t("portfolio.risk")}`, position: "bottom", offset: 0 }}
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={12}
-                      domain={["auto", "auto"]}
-                    />
-                    <YAxis
-                      type="number"
-                      dataKey="ret"
-                      name="Return"
-                      label={{ value: `${t("portfolio.ret")}`, angle: -90, position: "insideLeft" }}
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={12}
-                      domain={["auto", "auto"]}
-                    />
-                    <ZAxis range={[20, 20]} />
-                    <Tooltip
-                      cursor={{ strokeDasharray: "3 3" }}
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          const data = payload[0].payload;
-                          return (
-                            <div className="rounded-lg border bg-card p-2 shadow-sm">
-                              <p className="font-semibold">{data.type || t("portfolio.title")}</p>
-                              <p className="text-sm">
-                                {t("portfolio.ret")}: {formatNumber(data.ret)}%
-                              </p>
-                              <p className="text-sm">
-                                {t("portfolio.risk")}: {formatNumber(data.risk)}%
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                {t("portfolio.ratio")}: {formatNumber(data.sharpe)}
-                              </p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Scatter name="Portfolios" data={simulations} fill="hsl(var(--primary))" fillOpacity={0.4} />
-                    {optimal && (
-                      <Scatter name="Max Sharpe" data={[optimal]} fill="hsl(var(--chart-4))" shape="star" r={200} />
-                    )}
-                    {minVol && (
-                      <Scatter name="Min Volatility" data={[minVol]} fill="hsl(var(--chart-2))" shape="diamond" />
-                    )}
-                  </ScatterChart>
-                </ResponsiveContainer>
+                chartsReady ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ScatterChart margin={{ top: 20, right: 30, bottom: 20, left: 10 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                      <XAxis
+                        type="number"
+                        dataKey="risk"
+                        name="Risk"
+                        label={{ value: `${t("portfolio.risk")}`, position: "bottom", offset: 0 }}
+                        stroke="hsl(var(--muted-foreground))"
+                        fontSize={12}
+                        domain={["auto", "auto"]}
+                      />
+                      <YAxis
+                        type="number"
+                        dataKey="ret"
+                        name="Return"
+                        label={{ value: `${t("portfolio.ret")}`, angle: -90, position: "insideLeft" }}
+                        stroke="hsl(var(--muted-foreground))"
+                        fontSize={12}
+                        domain={["auto", "auto"]}
+                      />
+                      <ZAxis range={[20, 20]} />
+                      <Tooltip
+                        cursor={{ strokeDasharray: "3 3" }}
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            return (
+                              <div className="rounded-lg border bg-card p-2 shadow-sm">
+                                <p className="font-semibold">{data.type || t("portfolio.title")}</p>
+                                <p className="text-sm">
+                                  {t("portfolio.ret")}: {formatNumber(data.ret)}%
+                                </p>
+                                <p className="text-sm">
+                                  {t("portfolio.risk")}: {formatNumber(data.risk)}%
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {t("portfolio.ratio")}: {formatNumber(data.sharpe)}
+                                </p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Scatter name="Portfolios" data={simulations} fill="hsl(var(--primary))" fillOpacity={0.4} />
+                      {optimal && (
+                        <Scatter name="Max Sharpe" data={[optimal]} fill="hsl(var(--chart-4))" shape="star" r={200} />
+                      )}
+                      {minVol && (
+                        <Scatter name="Min Volatility" data={[minVol]} fill="hsl(var(--chart-2))" shape="diamond" />
+                      )}
+                    </ScatterChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full w-full" aria-hidden="true" />
+                )
               ) : (
                 <EmptyState
                   icon={RefreshCw}

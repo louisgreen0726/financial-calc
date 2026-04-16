@@ -1,12 +1,37 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 interface UseMonteCarloOptions {
   onProgress?: (progress: number) => void;
   onComplete?: (result: unknown) => void;
   onError?: (error: Error) => void;
 }
+
+interface MonteCarloPayload {
+  assets?: { id: number; name: string; return: number; risk: number }[];
+  simulations?: number;
+  rf?: number;
+  correlation?: number;
+}
+
+interface MonteCarloPoint {
+  ret: number;
+  risk: number;
+  sharpe: number;
+  weights: number[];
+}
+
+interface MonteCarloResult {
+  simulations: MonteCarloPoint[];
+  optimal: MonteCarloPoint | null;
+  minVol: MonteCarloPoint | null;
+}
+
+type WorkerMessage =
+  | { type: "progress"; data: number }
+  | { type: "result"; data: MonteCarloResult }
+  | { type: "error"; data: string };
 
 /**
  * Hook that manages Web Worker for Monte Carlo simulation with progress reporting.
@@ -17,102 +42,172 @@ export function useMonteCarloSimulation() {
   const [isRunning, setIsRunning] = useState(false);
   const [result, setResult] = useState<unknown>(null);
   const [error, setError] = useState<Error | null>(null);
+  const workerRef = useRef<Worker | null>(null);
+  const fallbackRunIdRef = useRef(0);
 
-  const cancel = () => {
-    // In the synthetic in-process mode there is nothing to terminate.
-    // Reset running state to allow fresh runs.
+  const cancel = useCallback(() => {
+    fallbackRunIdRef.current += 1;
+    if (workerRef.current) {
+      workerRef.current.terminate();
+      workerRef.current = null;
+    }
     setIsRunning(false);
     setProgress(0);
-  };
+  }, []);
 
-  const run = (workerUrl: string, payload: Record<string, unknown>, options: UseMonteCarloOptions = {}) => {
-    // NOTE: In this environment, a dedicated Web Worker file may not be resolvable
-    // at build time. Provide a lightweight in-process fallback that simulates
-    // the Monte Carlo computation and reports progress similarly.
-    cancel();
-    setIsRunning(true);
-    setProgress(0);
-    setResult(null);
-    setError(null);
+  const computeInProcess = useCallback(
+    async (payload: MonteCarloPayload, options: UseMonteCarloOptions, runId: number) => {
+      const assets = payload.assets ?? [];
+      const simulationsTarget = payload.simulations ?? 1000;
+      const rf = payload.rf ?? 0;
+      const correlation = payload.correlation ?? 0;
 
-    // In-process simulation using actual asset data
-    const payloadTyped = payload as {
-      assets?: { id: number; name: string; return: number; risk: number }[];
-      simulations?: number;
-      rf?: number;
-      correlation?: number;
-    };
-    const assets = payloadTyped.assets ?? [];
-    const simulationsTarget = payloadTyped.simulations ?? 1000;
-    const rf = payloadTyped.rf ?? 0;
-    const correlation = payloadTyped.correlation ?? 0;
+      if (assets.length === 0) {
+        const emptyResult: MonteCarloResult = { simulations: [], optimal: null, minVol: null };
+        setResult(emptyResult);
+        setIsRunning(false);
+        setProgress(100);
+        options.onComplete?.(emptyResult);
+        return;
+      }
 
-    if (assets.length === 0) {
-      options.onComplete?.({ simulations: [], optimal: null, minVol: null });
-      setIsRunning(false);
-      setProgress(100);
-      return;
-    }
+      const n = assets.length;
+      const returns = assets.map((a) => a.return);
+      const risks = assets.map((a) => a.risk);
+      const cov: number[][] = Array.from({ length: n }, (_, i) =>
+        Array.from({ length: n }, (_, j) => (i === j ? risks[i] * risks[i] : correlation * risks[i] * risks[j]))
+      );
 
-    const n = assets.length;
-    const returns = assets.map((a) => a.return);
-    const risks = assets.map((a) => a.risk);
+      const results: MonteCarloPoint[] = [];
+      const chunkSize = Math.max(50, Math.floor(simulationsTarget / 20));
 
-    // Covariance matrix using scalar pairwise correlation
-    const cov: number[][] = Array.from({ length: n }, (_, i) =>
-      Array.from({ length: n }, (_, j) => (i === j ? risks[i] * risks[i] : correlation * risks[i] * risks[j]))
-    );
+      for (let start = 0; start < simulationsTarget; start += chunkSize) {
+        if (fallbackRunIdRef.current !== runId) {
+          return;
+        }
 
-    const step = Math.max(1, Math.floor(simulationsTarget / 20));
-    const results: { ret: number; risk: number; sharpe: number; weights: number[] }[] = [];
-    for (let i = 0; i < simulationsTarget; i++) {
-      // Dirichlet-like random weights
-      const raw = assets.map(() => -Math.log(Math.random() + 1e-15));
-      const sum = raw.reduce((a: number, b: number) => a + b, 0) || 1;
-      const weights = raw.map((w) => w / sum);
+        const end = Math.min(start + chunkSize, simulationsTarget);
+        for (let i = start; i < end; i++) {
+          const raw = assets.map(() => -Math.log(Math.random() + 1e-15));
+          const sum = raw.reduce((a: number, b: number) => a + b, 0) || 1;
+          const weights = raw.map((w) => w / sum);
 
-      const ret = weights.reduce((acc, w, k) => acc + w * returns[k], 0);
+          const ret = weights.reduce((acc, w, k) => acc + w * returns[k], 0);
 
-      let variance = 0;
-      for (let a = 0; a < n; a++) {
-        for (let b = 0; b < n; b++) {
-          variance += weights[a] * weights[b] * cov[a][b];
+          let variance = 0;
+          for (let a = 0; a < n; a++) {
+            for (let b = 0; b < n; b++) {
+              variance += weights[a] * weights[b] * cov[a][b];
+            }
+          }
+
+          const risk = Math.sqrt(Math.max(0, variance));
+          const sharpe = risk > 0 ? (ret - rf) / risk : 0;
+          results.push({ ret, risk, sharpe, weights });
+        }
+
+        const nextProgress = Math.round((end / simulationsTarget) * 100);
+        setProgress(nextProgress);
+        options.onProgress?.(nextProgress);
+
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+
+      if (fallbackRunIdRef.current !== runId) {
+        return;
+      }
+
+      let optimal: MonteCarloPoint | null = null;
+      let bestSharpe = -Infinity;
+      for (const point of results) {
+        if (point.sharpe > bestSharpe) {
+          bestSharpe = point.sharpe;
+          optimal = point;
         }
       }
-      const risk = Math.sqrt(Math.max(0, variance));
-      const sharpe = risk > 0 ? (ret - rf) / risk : 0;
-      results.push({ ret, risk, sharpe, weights });
-      if (step > 0 && i % step === 0) {
-        const progress = Math.round((i / simulationsTarget) * 100);
-        setProgress(progress);
-        options.onProgress?.(progress);
-      }
-    }
 
-    // Compute aggregates
-    let optimal: { ret: number; risk: number; sharpe: number; weights: number[] } | null = null;
-    let bestSharpe = -Infinity;
-    for (const s of results) {
-      if (s.sharpe > bestSharpe) {
-        bestSharpe = s.sharpe;
-        optimal = s;
-      }
-    }
-    const minVol = results.reduce((min, s) => ((min?.risk ?? Infinity) < s.risk ? min : s), results[0] ?? null);
+      const minVol = results.reduce<MonteCarloPoint | null>(
+        (min, point) => ((min?.risk ?? Infinity) < point.risk ? min : point),
+        results[0] ?? null
+      );
 
-    const final = { simulations: results, optimal, minVol };
-    setResult(final);
-    setIsRunning(false);
-    setProgress(100);
-    options.onComplete?.(final);
-  };
+      const final: MonteCarloResult = { simulations: results, optimal, minVol };
+      setResult(final);
+      setIsRunning(false);
+      setProgress(100);
+      options.onComplete?.(final);
+    },
+    []
+  );
+
+  const run = useCallback(
+    async (payload: MonteCarloPayload, options: UseMonteCarloOptions = {}) => {
+      cancel();
+      setIsRunning(true);
+      setProgress(0);
+      setResult(null);
+      setError(null);
+
+      const runId = fallbackRunIdRef.current;
+
+      try {
+        const worker = new Worker(new URL("../workers/monte-carlo.worker.ts", import.meta.url), { type: "module" });
+        workerRef.current = worker;
+
+        worker.onmessage = (event: MessageEvent<WorkerMessage>) => {
+          const message = event.data;
+          if (message.type === "progress") {
+            setProgress(message.data);
+            options.onProgress?.(message.data);
+            return;
+          }
+
+          if (message.type === "result") {
+            workerRef.current?.terminate();
+            workerRef.current = null;
+            setResult(message.data);
+            setIsRunning(false);
+            setProgress(100);
+            options.onComplete?.(message.data);
+            return;
+          }
+
+          const nextError = new Error(message.data);
+          workerRef.current?.terminate();
+          workerRef.current = null;
+          setError(nextError);
+          setIsRunning(false);
+          options.onError?.(nextError);
+        };
+
+        worker.onerror = (event) => {
+          const nextError = new Error(event.message || "Monte Carlo worker failed");
+          workerRef.current?.terminate();
+          workerRef.current = null;
+          setError(nextError);
+          setIsRunning(false);
+          options.onError?.(nextError);
+          void computeInProcess(payload, options, runId);
+        };
+
+        worker.postMessage(payload);
+      } catch (workerError) {
+        const nextError =
+          workerError instanceof Error ? workerError : new Error("Monte Carlo worker initialization failed");
+        setError(nextError);
+        options.onError?.(nextError);
+        await computeInProcess(payload, options, runId);
+      }
+    },
+    [cancel, computeInProcess]
+  );
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       cancel();
     };
-  }, []);
+  }, [cancel]);
 
   return { progress, isRunning, result, error, cancel, run };
 }
