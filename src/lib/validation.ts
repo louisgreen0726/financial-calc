@@ -74,3 +74,9 @@ export const PortfolioAssetSchema = z.object({
   return: z.number().finite(),
   risk: z.number().finite().min(0),
 });
+
+export const PortfolioInputSchema = z.object({
+  rf: z.number().finite().min(0).max(100),
+  correlation: z.number().finite().min(-1).max(1),
+  assets: z.array(PortfolioAssetSchema).min(2, "At least two assets are required"),
+});

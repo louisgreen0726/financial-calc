@@ -21,6 +21,7 @@ import { HistoryPanel } from "@/components/history-panel";
 import { useUrlState } from "@/hooks/use-url-state";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ResponsiveDisclosure } from "@/components/responsive-disclosure";
 
 type TVMTarget = "pv" | "fv" | "pmt" | "nper" | "rate";
 
@@ -147,7 +148,7 @@ function TVMPageContent() {
     const isValid = validateAll(fieldsToValidate);
 
     if (!isValid) {
-      setCalculationError("Please fix the validation errors before calculating.");
+      setCalculationError(t("tvm.fixValidation"));
       setResult(null);
       return;
     }
@@ -157,26 +158,26 @@ function TVMPageContent() {
     const p = parseFloat(pmt);
     const pres = parseFloat(pv);
     const fut = parseFloat(fv);
-    const t = parseInt(type) as 0 | 1;
+    const paymentType = parseInt(type) as 0 | 1;
 
     let res = 0;
 
     try {
       switch (target) {
         case "fv":
-          res = Finance.fv(r, n, p, pres, t);
+          res = Finance.fv(r, n, p, pres, paymentType);
           break;
         case "pv":
-          res = Finance.pv(r, n, p, fut, t);
+          res = Finance.pv(r, n, p, fut, paymentType);
           break;
         case "pmt":
-          res = Finance.pmt(r, n, pres, fut, t);
+          res = Finance.pmt(r, n, pres, fut, paymentType);
           break;
         case "nper":
-          res = Finance.nper(r, p, pres, fut, t);
+          res = Finance.nper(r, p, pres, fut, paymentType);
           break;
         case "rate":
-          res = Finance.rate(n, p, pres, fut, t);
+          res = Finance.rate(n, p, pres, fut, paymentType);
           break;
       }
 
@@ -296,14 +297,14 @@ function TVMPageContent() {
   return (
     <>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("tvm.title")}</h1>
             <p className="text-muted-foreground mt-2">{t("tvm.subtitle")}</p>
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -337,10 +338,10 @@ function TVMPageContent() {
               </div>
 
               <div className="space-y-2">
-                <Label>Quick preset</Label>
+                <Label>{t("tvm.quickPreset")}</Label>
                 <Select onValueChange={(value) => applyPreset(value as keyof typeof TVM_PRESETS)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Choose a starting scenario" />
+                    <SelectValue placeholder={t("tvm.chooseScenario")} />
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(TVM_PRESETS).map(([key, preset]) => (
@@ -427,26 +428,26 @@ function TVMPageContent() {
                 <RadioGroup
                   value={type}
                   onValueChange={(v) => setType(v as "0" | "1")}
-                  className="flex items-center space-x-4"
+                  className="grid gap-3 sm:grid-cols-2"
                 >
-                  <div className="flex items-center space-x-2">
+                  <div className="flex min-h-11 items-center space-x-2 rounded-xl border border-white/10 px-3 py-2">
                     <RadioGroupItem value="0" id="end" />
                     <Label htmlFor="end">{t("tvm.end")}</Label>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex min-h-11 items-center space-x-2 rounded-xl border border-white/10 px-3 py-2">
                     <RadioGroupItem value="1" id="begin" />
                     <Label htmlFor="begin">{t("tvm.begin")}</Label>
                   </div>
                 </RadioGroup>
               </div>
 
-              <div className="flex gap-3">
-                <Button onClick={handleCalculate} className="flex-1" size="lg">
+              <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+                <Button onClick={handleCalculate} className="w-full" size="lg">
                   {t("common.calculate")} {target.toUpperCase()}
                 </Button>
-                <Button onClick={handleClear} variant="outline" size="lg" className="gap-2">
+                <Button onClick={handleClear} variant="outline" size="lg" className="gap-2 w-full sm:w-auto">
                   <RotateCcw className="h-4 w-4" />
-                  Clear All
+                  {t("common.clear")}
                 </Button>
               </div>
             </CardContent>
@@ -462,12 +463,12 @@ function TVMPageContent() {
             )}
           >
             {result !== null && !isNaN(result) && isFinite(result) ? (
-              <div className="space-y-2 animate-in fade-in zoom-in duration-300">
+              <div className="space-y-3 animate-in fade-in zoom-in duration-300 w-full">
                 <h3 className="text-lg font-medium text-muted-foreground">
                   {t("common.result")} ({target.toUpperCase()})
                 </h3>
-                <div className="flex items-center justify-center gap-3">
-                  <p className="text-3xl sm:text-5xl font-bold tracking-tighter text-primary">
+                <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+                  <p className="text-3xl sm:text-5xl font-bold tracking-tighter text-primary break-all">
                     {target === "nper"
                       ? result.toFixed(2)
                       : target === "rate"
@@ -476,7 +477,7 @@ function TVMPageContent() {
                   </p>
                   <button
                     type="button"
-                    aria-label="Share result"
+                    aria-label={t("share.title")}
                     onClick={() => setShareOpen(true)}
                     className="inline-flex items-center justify-center rounded border border-input p-2 hover:bg-accent transition-colors"
                   >
@@ -497,9 +498,9 @@ function TVMPageContent() {
                   <Calculator className="h-8 w-8 text-destructive" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-medium text-destructive">Calculation Error</h3>
+                  <h3 className="text-lg font-medium text-destructive">{t("tvm.calculationError")}</h3>
                   <p className="text-sm text-muted-foreground mt-1 max-w-xs">
-                    {calculationError || "Unable to calculate result. Please check your inputs and try again."}
+                    {calculationError || t("tvm.calculationErrorDesc")}
                   </p>
                 </div>
               </div>
@@ -509,7 +510,13 @@ function TVMPageContent() {
           </Card>
         </div>
 
-        {calcSteps && <CalculationSteps {...calcSteps} />}
+        {calcSteps && (
+          <ResponsiveDisclosure title={t("tvm.stepsTitle")} description={t("tvm.stepsDesc")} defaultOpen={false}>
+            <div className="rounded-3xl border border-white/10 bg-card/70 p-1">
+              <CalculationSteps {...calcSteps} />
+            </div>
+          </ResponsiveDisclosure>
+        )}
       </div>
 
       <ShareDialog
