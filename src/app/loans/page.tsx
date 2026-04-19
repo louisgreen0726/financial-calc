@@ -167,9 +167,9 @@ function LoansPageContent() {
         inputs={{ amount, rate, years, method }}
       />
 
-      <div className="grid gap-6 lg:grid-cols-12">
+      <div className="grid gap-6 xl:grid-cols-12">
         {/* Controls */}
-        <Card className="lg:col-span-4 h-fit">
+        <Card className="xl:col-span-4 h-fit">
           <CardHeader>
             <CardTitle>{t("loans.details")}</CardTitle>
           </CardHeader>
@@ -272,10 +272,10 @@ function LoansPageContent() {
         </Card>
 
         {/* Visuals */}
-        <div className="lg:col-span-8 flex flex-col gap-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="xl:col-span-8 flex flex-col gap-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {/* Pie Chart */}
-            <Card className="min-h-[300px] flex flex-col">
+            <Card className="min-h-[260px] flex flex-col">
               <CardHeader>
                 <CardTitle className="text-sm font-medium">{t("loans.breakdown")}</CardTitle>
               </CardHeader>
@@ -285,7 +285,7 @@ function LoansPageContent() {
                     {t("loans.noData") || "Enter valid loan details to see breakdown"}
                   </div>
                 ) : (
-                  <ResponsiveContainer width="100%" height={200}>
+                  <ResponsiveContainer width="100%" height={180}>
                     <PieChart>
                       <Pie
                         data={pieData}
@@ -293,8 +293,8 @@ function LoansPageContent() {
                         nameKey="name"
                         cx="50%"
                         cy="50%"
-                        innerRadius={60}
-                        outerRadius={80}
+                        innerRadius={48}
+                        outerRadius={72}
                         paddingAngle={5}
                       >
                         {pieData.map((entry, index) => (
@@ -309,7 +309,7 @@ function LoansPageContent() {
                           border: "1px solid hsl(var(--border))",
                         }}
                       />
-                      <Legend verticalAlign="bottom" height={36} />
+                      <Legend verticalAlign="bottom" height={28} />
                     </PieChart>
                   </ResponsiveContainer>
                 )}
@@ -317,7 +317,7 @@ function LoansPageContent() {
             </Card>
 
             {/* Area Chart: Balance Over Time */}
-            <Card className="min-h-[300px] flex flex-col">
+            <Card className="min-h-[260px] flex flex-col">
               <CardHeader>
                 <CardTitle className="text-sm font-medium">{t("loans.balance")}</CardTitle>
               </CardHeader>
@@ -327,7 +327,7 @@ function LoansPageContent() {
                     {t("loans.noData") || "Enter valid loan details to see breakdown"}
                   </div>
                 ) : (
-                  <ResponsiveContainer width="100%" height={200}>
+                  <ResponsiveContainer width="100%" height={180}>
                     <AreaChart data={schedule.filter((_, i) => i % 12 === 0)}>
                       <defs>
                         <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
@@ -362,7 +362,7 @@ function LoansPageContent() {
           </div>
 
           {/* Schedule Table */}
-          <Card className="flex-1 flex flex-col min-h-[400px]">
+          <Card className="flex-1 flex flex-col min-h-[320px]">
             <CardHeader>
               <CardTitle>{t("loans.schedule")}</CardTitle>
             </CardHeader>
@@ -379,7 +379,7 @@ function LoansPageContent() {
                   </Alert>
                 </div>
               ) : (
-                <ScrollArea className="h-[400px]">
+                <ScrollArea className="max-h-[min(54vh,26rem)]">
                   <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>

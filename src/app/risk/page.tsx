@@ -113,13 +113,15 @@ export default function RiskPage() {
         </Card>
 
         <div className="lg:col-span-8 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-muted-foreground text-sm font-medium uppercase">{t("risk.var")}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-destructive">{formatCurrency(metrics.VaR_val)}</div>
+                <div className="text-2xl sm:text-3xl font-bold text-destructive break-all">
+                  {formatCurrency(metrics.VaR_val)}
+                </div>
                 <p className="text-sm text-muted-foreground">
                   {formatCurrency(metrics.VaR_val)} ({(metrics.VaR_pct * 100).toFixed(2)}% {t("risk.varDesc")})
                 </p>
@@ -130,13 +132,15 @@ export default function RiskPage() {
                 <CardTitle className="text-muted-foreground text-sm font-medium uppercase">{t("risk.cvar")}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-destructive">{formatCurrency(metrics.CVaR_val)}</div>
+                <div className="text-2xl sm:text-3xl font-bold text-destructive break-all">
+                  {formatCurrency(metrics.CVaR_val)}
+                </div>
                 <p className="text-sm text-muted-foreground">{t("risk.cvarDesc")}</p>
               </CardContent>
             </Card>
           </div>
 
-          <Card className="h-[300px] sm:h-[350px] md:h-[400px] flex flex-col">
+          <Card className="h-[260px] sm:h-[320px] md:h-[380px] flex flex-col">
             <CardHeader>
               <CardTitle>{t("risk.dist")}</CardTitle>
               <CardDescription>{t("risk.distDesc")}</CardDescription>
@@ -181,7 +185,7 @@ export default function RiskPage() {
                       tickFormatter={(v) => formatCurrency(v)}
                       stroke="hsl(var(--muted-foreground))"
                       fontSize={10}
-                      minTickGap={30}
+                      minTickGap={22}
                     />
                     <YAxis hide />
                     <Tooltip labelFormatter={() => ""} formatter={(v: number) => v.toFixed(4)} />

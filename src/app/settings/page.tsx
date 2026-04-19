@@ -42,7 +42,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 w-full md:max-w-3xl">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("settings.title") || "Settings"}</h1>
         <p className="text-muted-foreground mt-2">{t("settings.customizeExperience")}</p>
@@ -60,12 +60,12 @@ export default function SettingsPage() {
         <CardContent className="space-y-4">
           <div className="space-y-3">
             <Label>{t("settings.theme")}</Label>
-            <div className="flex gap-2 flex-wrap">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
               <Button
                 variant={theme === "light" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setTheme("light")}
-                className={cn("gap-2", theme === "light" && "bg-primary")}
+                className={cn("min-h-11 justify-start gap-2", theme === "light" && "bg-primary")}
               >
                 <Sun className="h-4 w-4" />
                 {t("settings.light")}
@@ -74,7 +74,7 @@ export default function SettingsPage() {
                 variant={theme === "dark" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setTheme("dark")}
-                className={cn("gap-2", theme === "dark" && "bg-primary")}
+                className={cn("min-h-11 justify-start gap-2", theme === "dark" && "bg-primary")}
               >
                 <Moon className="h-4 w-4" />
                 {t("settings.dark")}
@@ -83,7 +83,7 @@ export default function SettingsPage() {
                 variant={theme === "system" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setTheme("system")}
-                className={cn("gap-2", theme === "system" && "bg-primary")}
+                className={cn("min-h-11 justify-start gap-2", theme === "system" && "bg-primary")}
               >
                 <Monitor className="h-4 w-4" />
                 {t("settings.system")}
@@ -95,12 +95,12 @@ export default function SettingsPage() {
 
           <div className="space-y-3">
             <Label>{t("settings.language")}</Label>
-            <div className="flex gap-2 flex-wrap">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <Button
                 variant={language === "en" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setLanguage("en")}
-                className={cn("gap-2", language === "en" && "bg-primary")}
+                className={cn("min-h-11 justify-start gap-2", language === "en" && "bg-primary")}
               >
                 <Globe className="h-4 w-4" />
                 English
@@ -109,7 +109,7 @@ export default function SettingsPage() {
                 variant={language === "zh" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setLanguage("zh")}
-                className={cn("gap-2", language === "zh" && "bg-primary")}
+                className={cn("min-h-11 justify-start gap-2", language === "zh" && "bg-primary")}
               >
                 <Globe className="h-4 w-4" />
                 中文
@@ -129,7 +129,7 @@ export default function SettingsPage() {
           <CardDescription>{t("settings.dataManagementDesc")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex gap-2 flex-wrap">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <Button variant="outline" size="sm" onClick={handleExportHistory} className="gap-2">
               <Download className="h-4 w-4" />
               {t("settings.exportHistoryJson")}

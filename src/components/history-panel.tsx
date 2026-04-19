@@ -148,7 +148,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
       <Button
         variant="outline"
         size="sm"
-        className="fixed bottom-4 right-4 z-50 gap-2 shadow-lg"
+        className="fixed bottom-24 right-4 lg:bottom-4 z-50 gap-2 shadow-lg"
         onClick={() => setIsOpen(!isOpen)}
       >
         <Clock className="h-4 w-4" />
@@ -163,7 +163,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             className={cn(
-              "fixed bottom-16 right-4 z-50 w-[calc(100vw-2rem)] max-w-[420px] max-h-[600px] shadow-xl rounded-xl border bg-card",
+              "fixed bottom-36 right-4 lg:bottom-20 z-50 w-[calc(100vw-2rem)] max-w-[420px] max-h-[min(65vh,600px)] shadow-xl rounded-xl border bg-card",
               className
             )}
           >
