@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useMemo, useState } from "react";
 import { Finance } from "@/lib/finance-math";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,9 +12,14 @@ import { useLanguage } from "@/lib/i18n";
 import { useCalculationHistory } from "@/hooks/use-calculation-history";
 import { useHistoryRecorder } from "@/hooks/use-history-recorder";
 import { HistoryPanel } from "@/components/history-panel";
+import { parseRequiredNumber } from "@/lib/input-utils";
+import { ResponsiveDisclosure } from "@/components/responsive-disclosure";
+import { ErrorDisplay, ValidationError } from "@/components/ui/error-display";
+import { EquityCAPMSchema, EquityDDMSchema, EquityWACCSchema } from "@/lib/validation";
 
 export default function EquityPage() {
   const { t } = useLanguage();
+  const [showErrors, setShowErrors] = useState(false);
   // CAPM State
   const [rf, setRf] = useState("3.5");
   const [beta, setBeta] = useState("1.2");
@@ -34,22 +39,66 @@ export default function EquityPage() {
 
   // Memoized calculations for performance
   const capmResult = useMemo(() => {
-    return Finance.capm(parseFloat(rf) / 100 || 0, parseFloat(beta) || 0, parseFloat(rm) / 100 || 0);
+    return Finance.capm(parseRequiredNumber(rf) / 100, parseRequiredNumber(beta), parseRequiredNumber(rm) / 100);
   }, [rf, beta, rm]);
 
   const waccResult = useMemo(() => {
     return Finance.wacc(
-      parseFloat(equity) || 0,
-      parseFloat(debt) || 0,
-      (parseFloat(costEquity) || 0) / 100,
-      (parseFloat(costDebt) || 0) / 100,
-      (parseFloat(taxRate) || 0) / 100
+      parseRequiredNumber(equity),
+      parseRequiredNumber(debt),
+      parseRequiredNumber(costEquity) / 100,
+      parseRequiredNumber(costDebt) / 100,
+      parseRequiredNumber(taxRate) / 100
     );
   }, [equity, debt, costEquity, costDebt, taxRate]);
 
   const ddmResult = useMemo(() => {
-    return Finance.ddm(parseFloat(div) || 0, (parseFloat(reqReturn) || 0) / 100, (parseFloat(growth) || 0) / 100);
+    return Finance.ddm(
+      parseRequiredNumber(div),
+      parseRequiredNumber(reqReturn) / 100,
+      parseRequiredNumber(growth) / 100
+    );
   }, [div, reqReturn, growth]);
+
+  const capmValidation = useMemo(() => {
+    const result = EquityCAPMSchema.safeParse({
+      rf: parseRequiredNumber(rf, Number.NaN),
+      beta: parseRequiredNumber(beta, Number.NaN),
+      rm: parseRequiredNumber(rm, Number.NaN),
+    });
+    return result.success
+      ? {}
+      : Object.fromEntries(result.error.issues.map((issue) => [String(issue.path[0]), issue.message]));
+  }, [beta, rf, rm]);
+
+  const waccValidation = useMemo(() => {
+    const result = EquityWACCSchema.safeParse({
+      equityValue: parseRequiredNumber(equity, Number.NaN),
+      debtValue: parseRequiredNumber(debt, Number.NaN),
+      costEquity: parseRequiredNumber(costEquity, Number.NaN) / 100,
+      costDebt: parseRequiredNumber(costDebt, Number.NaN) / 100,
+      taxRate: parseRequiredNumber(taxRate, Number.NaN) / 100,
+    });
+    return result.success
+      ? {}
+      : Object.fromEntries(result.error.issues.map((issue) => [String(issue.path[0]), issue.message]));
+  }, [costDebt, costEquity, debt, equity, taxRate]);
+
+  const ddmValidation = useMemo(() => {
+    const result = EquityDDMSchema.safeParse({
+      d1: parseRequiredNumber(div, Number.NaN),
+      r: parseRequiredNumber(reqReturn, Number.NaN) / 100,
+      g: parseRequiredNumber(growth, Number.NaN) / 100,
+    });
+    return result.success
+      ? {}
+      : Object.fromEntries(result.error.issues.map((issue) => [String(issue.path[0]), issue.message]));
+  }, [div, growth, reqReturn]);
+
+  const hasErrors =
+    Object.keys(capmValidation).length > 0 ||
+    Object.keys(waccValidation).length > 0 ||
+    Object.keys(ddmValidation).length > 0;
 
   const { addToHistory } = useCalculationHistory({ page: "equity" });
 
@@ -103,15 +152,17 @@ export default function EquityPage() {
         </div>
       </div>
 
+      {showErrors && hasErrors && <ErrorDisplay message={t("equity.validation.invalidInputs")} variant="warning" />}
+
       <Tabs defaultValue="capm" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 max-w-md">
+        <TabsList className="grid w-full grid-cols-3 max-w-xl overflow-x-auto">
           <TabsTrigger value="capm">{t("equity.capm.tab")}</TabsTrigger>
           <TabsTrigger value="wacc">{t("equity.wacc.tab")}</TabsTrigger>
           <TabsTrigger value="ddm">{t("equity.ddm.tab")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="capm" className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 xl:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -127,9 +178,11 @@ export default function EquityPage() {
                     id="capm-rf"
                     value={rf}
                     onChange={(e) => setRf(e.target.value)}
+                    onBlur={() => setShowErrors(true)}
                     type="number"
                     aria-describedby="capm-rf-help"
                   />
+                  <ValidationError error={showErrors ? (capmValidation.rf as string | null) : null} />
                   <p id="capm-rf-help" className="sr-only">
                     Risk-free rate used in the CAPM calculation.
                   </p>
@@ -140,10 +193,12 @@ export default function EquityPage() {
                     id="capm-beta"
                     value={beta}
                     onChange={(e) => setBeta(e.target.value)}
+                    onBlur={() => setShowErrors(true)}
                     type="number"
                     step="0.1"
                     aria-describedby="capm-beta-help"
                   />
+                  <ValidationError error={showErrors ? (capmValidation.beta as string | null) : null} />
                   <p id="capm-beta-help" className="sr-only">
                     CAPM beta input representing the asset&apos;s sensitivity to market movements.
                   </p>
@@ -154,9 +209,11 @@ export default function EquityPage() {
                     id="capm-rm"
                     value={rm}
                     onChange={(e) => setRm(e.target.value)}
+                    onBlur={() => setShowErrors(true)}
                     type="number"
                     aria-describedby="capm-rm-help"
                   />
+                  <ValidationError error={showErrors ? (capmValidation.rm as string | null) : null} />
                   <p id="capm-rm-help" className="sr-only">
                     CAPM market return input used in the calculation of expected return.
                   </p>
@@ -172,9 +229,13 @@ export default function EquityPage() {
                 aria-label="CAPM calculation result"
               >
                 <h2 className="text-lg font-medium text-muted-foreground">{t("equity.capm.re")}</h2>
-                <div className="text-5xl font-bold text-primary tracking-tighter">{(capmResult * 100).toFixed(2)}%</div>
+                <div className="text-4xl sm:text-5xl font-bold text-primary tracking-tighter break-all">
+                  {Object.keys(capmValidation).length === 0
+                    ? `${(capmResult * 100).toFixed(2)}%`
+                    : t("common.notAvailable")}
+                </div>
                 <p className="text-sm text-muted-foreground max-w-xs mx-auto pt-4">
-                  {t("equity.capm.prem")}: {(parseFloat(rm) - parseFloat(rf)).toFixed(2)}%.
+                  {t("equity.capm.prem")}: {(parseRequiredNumber(rm) - parseRequiredNumber(rf)).toFixed(2)}%.
                 </p>
               </div>
             </Card>
@@ -182,7 +243,7 @@ export default function EquityPage() {
         </TabsContent>
 
         <TabsContent value="wacc" className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 xl:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -191,10 +252,17 @@ export default function EquityPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="wacc-equity">{t("equity.wacc.eqVal")}</Label>
-                    <Input id="wacc-equity" value={equity} onChange={(e) => setEquity(e.target.value)} type="number" />
+                    <Input
+                      id="wacc-equity"
+                      value={equity}
+                      onChange={(e) => setEquity(e.target.value)}
+                      onBlur={() => setShowErrors(true)}
+                      type="number"
+                    />
+                    <ValidationError error={showErrors ? (waccValidation.equityValue as string | null) : null} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="wacc-cost-eq">{t("equity.wacc.costEq")}</Label>
@@ -202,14 +270,23 @@ export default function EquityPage() {
                       id="wacc-cost-eq"
                       value={costEquity}
                       onChange={(e) => setCostEquity(e.target.value)}
+                      onBlur={() => setShowErrors(true)}
                       type="number"
                     />
+                    <ValidationError error={showErrors ? (waccValidation.costEquity as string | null) : null} />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="wacc-debt">{t("equity.wacc.debtVal")}</Label>
-                    <Input id="wacc-debt" value={debt} onChange={(e) => setDebt(e.target.value)} type="number" />
+                    <Input
+                      id="wacc-debt"
+                      value={debt}
+                      onChange={(e) => setDebt(e.target.value)}
+                      onBlur={() => setShowErrors(true)}
+                      type="number"
+                    />
+                    <ValidationError error={showErrors ? (waccValidation.debtValue as string | null) : null} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="wacc-cost-debt">{t("equity.wacc.costDebt")}</Label>
@@ -217,13 +294,22 @@ export default function EquityPage() {
                       id="wacc-cost-debt"
                       value={costDebt}
                       onChange={(e) => setCostDebt(e.target.value)}
+                      onBlur={() => setShowErrors(true)}
                       type="number"
                     />
+                    <ValidationError error={showErrors ? (waccValidation.costDebt as string | null) : null} />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="wacc-tax">{t("equity.wacc.tax")}</Label>
-                  <Input id="wacc-tax" value={taxRate} onChange={(e) => setTaxRate(e.target.value)} type="number" />
+                  <Input
+                    id="wacc-tax"
+                    value={taxRate}
+                    onChange={(e) => setTaxRate(e.target.value)}
+                    onBlur={() => setShowErrors(true)}
+                    type="number"
+                  />
+                  <ValidationError error={showErrors ? (waccValidation.taxRate as string | null) : null} />
                 </div>
               </CardContent>
             </Card>
@@ -236,7 +322,11 @@ export default function EquityPage() {
                 aria-label="WACC calculation result"
               >
                 <h2 className="text-lg font-medium text-muted-foreground">{t("equity.wacc.result")}</h2>
-                <div className="text-5xl font-bold text-primary tracking-tighter">{(waccResult * 100).toFixed(2)}%</div>
+                <div className="text-4xl sm:text-5xl font-bold text-primary tracking-tighter break-all">
+                  {Object.keys(waccValidation).length === 0
+                    ? `${(waccResult * 100).toFixed(2)}%`
+                    : t("common.notAvailable")}
+                </div>
                 <p className="text-sm text-muted-foreground max-w-xs mx-auto pt-4">{t("equity.wacc.desc")}</p>
               </div>
             </Card>
@@ -244,7 +334,7 @@ export default function EquityPage() {
         </TabsContent>
 
         <TabsContent value="ddm" className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 xl:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -254,18 +344,48 @@ export default function EquityPage() {
                 <CardDescription>{t("equity.ddm.desc")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="ddm-div">{t("equity.ddm.d1")}</Label>
-                  <Input id="ddm-div" value={div} onChange={(e) => setDiv(e.target.value)} type="number" step="0.01" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="ddm-req">{t("equity.ddm.req")}</Label>
-                  <Input id="ddm-req" value={reqReturn} onChange={(e) => setReqReturn(e.target.value)} type="number" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="ddm-growth">{t("equity.ddm.g")}</Label>
-                  <Input id="ddm-growth" value={growth} onChange={(e) => setGrowth(e.target.value)} type="number" />
-                </div>
+                <ResponsiveDisclosure
+                  title={t("equity.ddm.title")}
+                  description={t("equity.validation.ddmDisclosure")}
+                  defaultOpen={true}
+                >
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="ddm-div">{t("equity.ddm.d1")}</Label>
+                      <Input
+                        id="ddm-div"
+                        value={div}
+                        onChange={(e) => setDiv(e.target.value)}
+                        onBlur={() => setShowErrors(true)}
+                        type="number"
+                        step="0.01"
+                      />
+                      <ValidationError error={showErrors ? (ddmValidation.d1 as string | null) : null} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="ddm-req">{t("equity.ddm.req")}</Label>
+                      <Input
+                        id="ddm-req"
+                        value={reqReturn}
+                        onChange={(e) => setReqReturn(e.target.value)}
+                        onBlur={() => setShowErrors(true)}
+                        type="number"
+                      />
+                      <ValidationError error={showErrors ? (ddmValidation.r as string | null) : null} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="ddm-growth">{t("equity.ddm.g")}</Label>
+                      <Input
+                        id="ddm-growth"
+                        value={growth}
+                        onChange={(e) => setGrowth(e.target.value)}
+                        onBlur={() => setShowErrors(true)}
+                        type="number"
+                      />
+                      <ValidationError error={showErrors ? (ddmValidation.g as string | null) : null} />
+                    </div>
+                  </div>
+                </ResponsiveDisclosure>
               </CardContent>
             </Card>
 
@@ -278,9 +398,11 @@ export default function EquityPage() {
               >
                 <h2 className="text-lg font-medium text-muted-foreground">{t("equity.ddm.intrinsic")}</h2>
                 <div
-                  className={`text-5xl font-bold tracking-tighter ${ddmResult <= 0 ? "text-muted-foreground" : "text-primary"}`}
+                  className={`text-4xl sm:text-5xl font-bold tracking-tighter break-all ${ddmResult <= 0 ? "text-muted-foreground" : "text-primary"}`}
                 >
-                  {ddmResult > 0 ? formatCurrency(ddmResult) : "N/A"}
+                  {Object.keys(ddmValidation).length === 0 && ddmResult > 0
+                    ? formatCurrency(ddmResult)
+                    : t("common.notAvailable")}
                 </div>
                 <p className="text-sm text-muted-foreground max-w-xs mx-auto pt-4">
                   {ddmResult <= 0 ? t("equity.ddm.growthError") : t("equity.ddm.resultDesc")}

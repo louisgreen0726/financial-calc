@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Finance } from "@/lib/finance-math";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,24 +25,59 @@ import { useHistoryRecorder } from "@/hooks/use-history-recorder";
 import { HistoryPanel } from "@/components/history-panel";
 import { ExportMenu } from "@/components/export-menu";
 import { ClientOnlyChart } from "@/components/client-only-chart";
+import { ResponsiveDisclosure } from "@/components/responsive-disclosure";
+import { parseOptionalNumber } from "@/lib/input-utils";
+import { CashFlowSchema } from "@/lib/validation";
+import { ErrorDisplay } from "@/components/ui/error-display";
 
 export default function CashFlowPage() {
   const { t } = useLanguage();
   const [rate, setRate] = useState<string>("10");
-  // Initial flows: Investment at Year 0, Returns at 1-4
-  const [flows, setFlows] = useState<number[]>([-10000, 3000, 4000, 5000, 6000]);
+  const [flowInputs, setFlowInputs] = useState<string[]>(["-10000", "3000", "4000", "5000", "6000"]);
   const { addToHistory } = useCalculationHistory({ page: "cash-flow" });
 
-  const addFlow = () => setFlows([...flows, 0]);
-  const removeFlow = (index: number) => setFlows(flows.filter((_, i) => i !== index));
+  const parsedRate = parseOptionalNumber(rate);
+  const parsedFlows = useMemo(() => flowInputs.map((flow) => parseOptionalNumber(flow)), [flowInputs]);
+  const hasInvalidFlow = parsedFlows.some((flow) => flow === null);
+  const flows = parsedFlows.map((flow) => flow ?? 0);
+
+  const validation = useMemo(() => {
+    const result = CashFlowSchema.safeParse({
+      rate: parsedRate ?? Number.NaN,
+      flows,
+    });
+
+    if (!result.success) {
+      return {
+        isValid: false,
+        message: result.error.issues[0]?.message ?? "Invalid cash-flow inputs.",
+      };
+    }
+
+    if (hasInvalidFlow || parsedRate === null) {
+      return {
+        isValid: false,
+        message: "Please enter valid numeric inputs for discount rate and cash flows.",
+      };
+    }
+
+    return { isValid: true, message: null };
+  }, [flows, hasInvalidFlow, parsedRate]);
+
+  const addFlow = () => setFlowInputs([...flowInputs, "0"]);
+  const removeFlow = (index: number) => setFlowInputs(flowInputs.filter((_, i) => i !== index));
   const updateFlow = (index: number, val: string) => {
-    const newFlows = [...flows];
-    newFlows[index] = parseFloat(val) || 0;
-    setFlows(newFlows);
+    const next = [...flowInputs];
+    next[index] = val;
+    setFlowInputs(next);
   };
 
   const calculateMetrics = useMemo(() => {
-    const r = parseFloat(rate) / 100;
+    if (!validation.isValid || parsedRate === null) {
+      return { npv: 0, irr: Number.NaN, payback: -1 };
+    }
+
+    const r = parsedRate / 100;
     const npv = Finance.npv(r, flows);
     const irr = Finance.irr(flows);
 
@@ -55,17 +90,21 @@ export default function CashFlowPage() {
         // Linear interpolation for more precision? Or just period
         // Previous cumulative was negative.
         const prevCum = cumulative - flows[i];
-        payback = i - 1 + -prevCum / flows[i];
+        if (flows[i] === 0) {
+          payback = i;
+        } else {
+          payback = i - 1 + -prevCum / flows[i];
+        }
         break;
       }
     }
 
     return { npv, irr, payback };
-  }, [rate, flows]);
+  }, [flows, parsedRate, validation.isValid]);
 
   useHistoryRecorder({
     addToHistory,
-    inputs: { rate, flows: flows.join(",") },
+    inputs: { rate, flows: flowInputs.join(",") },
     result: calculateMetrics.npv,
     label: "NPV",
   });
@@ -108,6 +147,7 @@ export default function CashFlowPage() {
                   <Input type="number" value={rate} onChange={(e) => setRate(e.target.value)} className="flex-1" />
                   <div className="flex items-center text-sm text-muted-foreground">%</div>
                 </div>
+                {!validation.isValid && <ErrorDisplay message={validation.message} variant="warning" />}
               </div>
 
               <div className="space-y-3">
@@ -116,21 +156,29 @@ export default function CashFlowPage() {
                   <span>{t("cashFlow.flow")}</span>
                 </div>
                 <div className="space-y-2 max-h-[250px] sm:max-h-[400px] pr-2 overflow-y-auto">
-                  {flows.map((flow, i) => (
+                  {flowInputs.map((flow, i) => (
                     <div
                       key={i}
-                      className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300"
+                      className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-xl border border-white/10 bg-background/30 p-3 animate-in fade-in slide-in-from-left-2 duration-300 sm:grid-cols-[72px_minmax(0,1fr)_auto] sm:items-center sm:gap-3"
                     >
-                      <div className="w-16 text-sm text-muted-foreground font-mono">
+                      <div className="text-sm text-muted-foreground font-mono">
                         {i === 0 ? t("common.initial") : `${t("common.year")} ${i}`}
                       </div>
                       <Input
                         type="number"
                         value={flow}
                         onChange={(e) => updateFlow(i, e.target.value)}
-                        className={flow < 0 ? "text-destructive font-medium" : "text-primary font-medium"}
+                        className={
+                          (parsedFlows[i] ?? 0) < 0 ? "text-destructive font-medium" : "text-primary font-medium"
+                        }
                       />
-                      <Button variant="ghost" size="icon" onClick={() => removeFlow(i)} disabled={flows.length <= 1}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-10 w-10"
+                        onClick={() => removeFlow(i)}
+                        disabled={flows.length <= 1}
+                      >
                         <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
                       </Button>
                     </div>
@@ -145,7 +193,7 @@ export default function CashFlowPage() {
 
           {/* Results & Visualization */}
           <div className="lg:col-span-7 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">{t("cashFlow.npv")}</CardTitle>
@@ -186,59 +234,72 @@ export default function CashFlowPage() {
               </Card>
             </div>
 
-            <Card className="h-[300px] sm:h-[350px] md:h-[400px] flex flex-col">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  {t("cashFlow.visualization")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1 w-full min-h-0">
-                <ClientOnlyChart>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                      <XAxis
-                        dataKey="period"
-                        stroke="hsl(var(--muted-foreground))"
-                        fontSize={12}
-                        tickLine={false}
-                        axisLine={false}
-                      />
-                      <YAxis
-                        stroke="hsl(var(--muted-foreground))"
-                        fontSize={12}
-                        tickLine={false}
-                        axisLine={false}
-                        tickFormatter={(value) => `$${value}`}
-                      />
-                      <Tooltip
-                        cursor={{ fill: "hsl(var(--muted)/0.3)" }}
-                        contentStyle={{
-                          backgroundColor: "hsl(var(--card))",
-                          borderColor: "hsl(var(--border))",
-                          borderRadius: "8px",
-                        }}
-                        itemStyle={{ color: "hsl(var(--foreground))" }}
-                      />
-                      <ReferenceLine y={0} stroke="hsl(var(--border))" />
-                      <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
-                        {chartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </ClientOnlyChart>
-              </CardContent>
-            </Card>
+            <ResponsiveDisclosure
+              title={t("cashFlow.visualization")}
+              description={t("cashFlow.chartDisclosure")}
+              defaultOpen={false}
+            >
+              <Card className="h-[260px] sm:h-[320px] md:h-[380px] flex flex-col order-first lg:order-none">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    {t("cashFlow.visualization")}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1 w-full min-h-0">
+                  <ClientOnlyChart>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                        <XAxis
+                          dataKey="period"
+                          stroke="hsl(var(--muted-foreground))"
+                          fontSize={10}
+                          minTickGap={18}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis
+                          stroke="hsl(var(--muted-foreground))"
+                          fontSize={10}
+                          tickLine={false}
+                          axisLine={false}
+                          tickFormatter={(value) => `$${value}`}
+                        />
+                        <Tooltip
+                          cursor={{ fill: "hsl(var(--muted)/0.3)" }}
+                          contentStyle={{
+                            backgroundColor: "hsl(var(--card))",
+                            borderColor: "hsl(var(--border))",
+                            borderRadius: "8px",
+                          }}
+                          itemStyle={{ color: "hsl(var(--foreground))" }}
+                        />
+                        <ReferenceLine y={0} stroke="hsl(var(--border))" />
+                        <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
+                          {chartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </ClientOnlyChart>
+                </CardContent>
+              </Card>
+            </ResponsiveDisclosure>
 
-            <Card className="bg-muted/30">
-              <CardContent className="pt-6 flex gap-4 text-sm text-muted-foreground">
-                <AlertCircle className="h-5 w-5 shrink-0" />
-                <p>{t("cashFlow.info")}</p>
-              </CardContent>
-            </Card>
+            <ResponsiveDisclosure
+              title={t("common.analysis")}
+              description={t("cashFlow.infoDisclosure")}
+              defaultOpen={false}
+            >
+              <Card className="bg-muted/30">
+                <CardContent className="pt-6 flex gap-4 text-sm text-muted-foreground">
+                  <AlertCircle className="h-5 w-5 shrink-0" />
+                  <p>{t("cashFlow.info")}</p>
+                </CardContent>
+              </Card>
+            </ResponsiveDisclosure>
           </div>
         </div>
       </div>
@@ -249,11 +310,11 @@ export default function CashFlowPage() {
           if (inputs.flows !== undefined) {
             const restoredFlows = String(inputs.flows)
               .split(",")
-              .map((value) => parseFloat(value))
+              .map((value) => Number(value))
               .filter((value) => !Number.isNaN(value));
 
             if (restoredFlows.length > 0) {
-              setFlows(restoredFlows);
+              setFlowInputs(restoredFlows.map((value) => String(value)));
             }
           }
         }}
