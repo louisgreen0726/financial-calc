@@ -185,8 +185,8 @@ export default function HistoryPage() {
   const renderHistoryList = () => (
     <Card className="rounded-xl">
       <CardHeader className="pb-3">
-        <div className="flex flex-col sm:flex-row gap-3 justify-between">
-          <div className="relative flex-1 max-w-md">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <div className="relative flex-1 xl:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder={t("history.searchPlaceholder")}
@@ -196,7 +196,7 @@ export default function HistoryPage() {
             />
           </div>
           {batchMode ? (
-            <div className="flex gap-2 items-center">
+            <div className="flex flex-wrap gap-2 items-center">
               <span className="text-sm text-muted-foreground">
                 {selectedIds.size} {t("history.itemsSelected")}
               </span>
@@ -226,7 +226,7 @@ export default function HistoryPage() {
         </div>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[300px] sm:h-[400px] md:h-[500px]">
+        <ScrollArea className="max-h-[min(62vh,42rem)] pr-1">
           <div className="space-y-2">
             {sortedHistory.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">{t("history.noResults")}</div>
@@ -262,21 +262,23 @@ export default function HistoryPage() {
                       </button>
                     )}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <span className="font-bold text-lg">{formatCurrency(item.result)}</span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-base sm:text-lg break-all">{formatCurrency(item.result)}</span>
                         <span className="text-sm px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
                           {pageTitleMap[item.page] || item.page}
                         </span>
                         <span className="text-xs text-muted-foreground">{formatDate(item.timestamp)}</span>
                         {favorites.has(item.id) && <Star className="h-4 w-4 fill-primary text-primary shrink-0" />}
                       </div>
-                      <p className="text-sm text-muted-foreground truncate mt-1">{formatInputs(item.inputs)}</p>
+                      <p className="text-sm text-muted-foreground mt-1 break-words leading-5">
+                        {formatInputs(item.inputs)}
+                      </p>
                       {item.label && <span className="text-xs text-primary font-medium mt-1 block">{item.label}</span>}
                     </div>
                   </div>
                   <div
                     className={cn(
-                      "flex gap-1 ml-2",
+                      "flex gap-1 ml-2 shrink-0",
                       batchMode
                         ? "opacity-100"
                         : "opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
@@ -285,7 +287,7 @@ export default function HistoryPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8"
+                      className="h-9 w-9"
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleFavorite(item.id);
@@ -298,7 +300,7 @@ export default function HistoryPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8"
+                          className="h-9 w-9"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleRestore(item);
@@ -310,7 +312,7 @@ export default function HistoryPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          className="h-9 w-9 text-destructive hover:text-destructive"
                           onClick={(e) => {
                             e.stopPropagation();
                             removeFromHistory(item.id);
@@ -339,7 +341,7 @@ export default function HistoryPage() {
           </h1>
           <p className="text-muted-foreground mt-2">{history.length} calculations recorded</p>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="grid w-full gap-2 sm:flex sm:w-auto sm:flex-wrap">
           <Button variant="outline" size="sm" onClick={exportAllHistory} className="gap-2">
             <FileSpreadsheet className="h-4 w-4" />
             {t("export.csv")}
@@ -360,7 +362,7 @@ export default function HistoryPage() {
         renderEmptyState()
       ) : (
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-4 flex-wrap md:flex-nowrap overflow-x-auto whitespace-nowrap">
+          <TabsList className="mb-4 flex-nowrap overflow-x-auto whitespace-nowrap px-1 py-1">
             <TabsTrigger value="all" className="gap-2">
               <Clock className="h-4 w-4" />
               {t("history.all")} ({history.length})

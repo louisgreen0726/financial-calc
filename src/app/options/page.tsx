@@ -109,7 +109,7 @@ export default function OptionsPage() {
 
           {/* Results */}
           <div className="lg:col-span-8 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {/* Call Option */}
               <Card className="border-l-4 border-l-primary">
                 <CardHeader className="pb-2">
@@ -118,7 +118,7 @@ export default function OptionsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold mb-4">{formatCurrency(results.callPrice)}</div>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                  <div className="grid grid-cols-1 gap-y-2 text-sm sm:grid-cols-2 sm:gap-x-4">
                     <div className="flex justify-between">
                       <span>{t("options.greeks.delta")}</span>
                       <span className="font-mono">{results.callGreeks.delta.toFixed(4)}</span>
@@ -151,7 +151,7 @@ export default function OptionsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold mb-4">{formatCurrency(results.putPrice)}</div>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                  <div className="grid grid-cols-1 gap-y-2 text-sm sm:grid-cols-2 sm:gap-x-4">
                     <div className="flex justify-between">
                       <span>{t("options.greeks.delta")}</span>
                       <span className="font-mono">{results.putGreeks.delta.toFixed(4)}</span>
@@ -177,7 +177,7 @@ export default function OptionsPage() {
               </Card>
             </div>
 
-            <Card className="h-[280px] sm:h-[350px] flex flex-col">
+            <Card className="h-[250px] sm:h-[320px] flex flex-col">
               <CardHeader>
                 <CardTitle>{t("options.payoff")}</CardTitle>
                 <CardDescription>{t("options.intrinsic")}</CardDescription>
@@ -185,15 +185,16 @@ export default function OptionsPage() {
               <CardContent className="flex-1 min-h-0">
                 <ClientOnlyChart>
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                    <LineChart data={chartData} margin={{ top: 12, right: 12, left: 0, bottom: 8 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                       <XAxis
                         dataKey="spot"
                         stroke="hsl(var(--muted-foreground))"
-                        fontSize={12}
+                        fontSize={10}
+                        minTickGap={18}
                         tickFormatter={(v) => v.toFixed(0)}
                       />
-                      <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                      <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
                       <Tooltip
                         contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))" }}
                         formatter={(v: number) => formatCurrency(v)}
