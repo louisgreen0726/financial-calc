@@ -13,20 +13,14 @@ export const MobileSidebar = React.memo(function MobileSidebar() {
   const [open, setOpen] = useState(false);
   const { t } = useLanguage();
 
-  const handleClose = () => setOpen(false);
-
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" className="md:hidden pr-4 hover:bg-transparent" aria-label={t("common.toggleMenu")}>
+        <Button variant="ghost" className="lg:hidden pr-3 hover:bg-transparent" aria-label={t("common.toggleMenu")}>
           <Menu className="w-6 h-6" />
         </Button>
       </SheetTrigger>
-      <SheetContent
-        side="left"
-        className="p-0 w-[280px] sm:w-72 bg-background border-r flex flex-col"
-        onClick={handleClose}
-      >
+      <SheetContent side="left" className="p-0 w-[86vw] max-w-[320px] bg-background border-r flex flex-col">
         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
           <Sidebar className="border-none w-full h-full bg-transparent" />
         </div>
