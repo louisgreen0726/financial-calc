@@ -2,102 +2,147 @@
 
 English | [中文](README_zh.md)
 
-A bilingual financial calculator built with Next.js 16, React 19, and TypeScript.
+Financial Calc is a bilingual, static-export-friendly financial calculator built with Next.js 16, React 19, and TypeScript.
 
-It includes practical tools for time value of money, cash flow analysis, equity valuation, bonds, portfolio simulation, options pricing, risk metrics, loans, and macro / FX calculations.
+It combines practical calculator workflows with a more polished app shell: mobile-first navigation, responsive disclosures for dense analysis screens, calculation history and restore flows, share/export actions, and offline-friendly service worker wiring.
 
-## Highlights
+## Current Project Status
 
-- 9 calculator modules
-- English / Chinese UI
-- Static-export friendly Next.js app
-- Calculation history with restore
+The project is already usable as a multi-module financial analysis app, not just a component demo. The current focus areas that are already implemented include:
+
+- responsive calculator UX across desktop and mobile
+- bilingual English / Chinese interface
+- explicit validation feedback on key calculator pages
+- calculation history with cross-page restore
 - CSV / JSON / PDF export
-- Shareable URL state on selected pages
-- Unit and interaction tests with Vitest
+- shareable state on supported flows
+- Monte Carlo portfolio simulation via worker + client fallback
+- static-export deployment with manual service worker registration
 
-## Modules
+## Included Modules
 
-- TVM: PV / FV / PMT / NPER / RATE
-- Cash Flow: NPV / IRR / payback period
-- Equity: CAPM / WACC / DDM
-- Bonds: price / duration / convexity / yield curve
-- Portfolio: Monte Carlo frontier simulation
-- Options: Black-Scholes + Greeks
-- Risk: VaR / CVaR distribution view
-- Loans: CPM / CAM amortization
-- Macro: inflation / purchasing power / real rate / CPI / PPP
+### Core calculators
+
+- **TVM** — PV / FV / PMT / NPER / RATE
+- **Cash Flow** — NPV / IRR / payback period
+- **Equity** — CAPM / WACC / DDM
+- **Bonds** — price / duration / convexity / yield curve / sensitivity view
+- **Portfolio** — Monte Carlo frontier simulation
+- **Options** — Black-Scholes pricing + Greeks
+- **Risk** — VaR / CVaR distribution view
+- **Loans** — CPM / CAM amortization
+- **Macro** — inflation / purchasing power / real rate / CPI / PPP
+
+### Supporting pages
+
+- **History** — saved calculation browsing and restore
+- **Settings** — language, theme, and data-management controls
+- **Help** — user guidance and supporting app information
+
+## What Has Recently Improved
+
+- mobile bottom navigation and app chrome were reworked for better access to all modules
+- dense calculator pages now use more progressive disclosure on smaller screens
+- equity, bonds, cash-flow, portfolio, and TVM flows now have stronger validation and clearer invalid-result states
+- portfolio asset editing is more usable on mobile
+- service worker behavior and registration flow were tightened for static deployment
+- finance and service-worker related tests were expanded
 
 ## Tech Stack
 
-- Next.js 16 (App Router, static export)
-- React 19
-- TypeScript 5
-- Tailwind CSS 4
-- shadcn/ui
-- Recharts
-- Framer Motion
-- Vitest + Testing Library
+- **Framework**: Next.js 16 App Router (`output: "export"`)
+- **UI**: React 19, Tailwind CSS 4, shadcn/ui, Radix UI
+- **Charts / Motion**: Recharts, Framer Motion
+- **Validation / Forms**: Zod, React Hook Form utilities where needed
+- **Testing**: Vitest, Testing Library, jsdom
+- **Offline / Export**: manual service worker, html2canvas, jsPDF, PapaParse
 
 ## Getting Started
 
-Requirements:
+### Requirements
 
 - Node.js >= 20
 - npm
 
-Install and run:
+### Install
 
 ```bash
 npm install
+```
+
+### Run locally
+
+```bash
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open:
+
+```text
+http://localhost:3000
+```
 
 ## Useful Commands
 
 ```bash
 npm run dev
-npm run build
 npm run lint
-npm run test
 npx tsc --noEmit
+npm run test
+npm run build
 npm run format
+npm run format:check
 ```
 
-## Build Notes
+## Recommended Verification Order
 
-- `next.config.ts` uses `output: "export"`.
-- Production build output is generated into `out/`.
-- This project is designed to be deployed as a static site.
-- PWA behavior is handled manually via `public/sw.js` and `src/components/service-worker-registration.tsx`.
+Before pushing changes, the current recommended verification path is:
+
+```bash
+npx tsc --noEmit
+npm run test
+npm run build
+```
+
+If you changed formatting-sensitive files, also run:
+
+```bash
+npm run format:check
+```
+
+## Build and Deployment Notes
+
+- `next.config.ts` uses `output: "export"`
+- production output is generated into `out/`
+- the app is intended for static hosting
+- there is **no server-side API runtime assumption** for production use
+- service worker behavior is manually wired through:
+  - `public/sw.js`
+  - `src/components/service-worker-registration.tsx`
+- `next-pwa` is installed, but the current app behavior relies on the manual integration path instead
 
 ## Project Structure
 
 ```text
 financial-calc/
-├─ public/                # Static assets and service worker
+├─ public/                # Static assets, manifest, service worker
 ├─ src/
-│  ├─ app/                # App Router pages
-│  ├─ components/         # UI and shared components
-│  ├─ hooks/              # Custom hooks
-│  ├─ lib/                # Core math, storage, i18n, utils
+│  ├─ app/                # App Router routes
+│  ├─ components/         # Shared UI and feature components
+│  ├─ hooks/              # State, history, export, URL, simulation hooks
+│  ├─ lib/                # Finance math, validation, i18n, storage, utils
+│  ├─ test/               # Test setup utilities
 │  └─ workers/            # Monte Carlo worker
 ├─ README.md
 ├─ README_zh.md
 └─ package.json
 ```
 
-## Verification
+## Quality Notes
 
-Current recommended checks before pushing:
-
-```bash
-npx tsc --noEmit
-npm run test
-npm run build
-```
+- the app currently passes typecheck, test, and build verification
+- there is still one known non-blocking lint warning related to `@tanstack/react-virtual`
+- build may still print a `baseline-browser-mapping` freshness reminder, which is a maintenance issue rather than a product regression
 
 ## License
 
