@@ -1,58 +1,89 @@
-const CACHE_NAME = 'financial-calc-v1';
+const VERSION = 'v2';
+const STATIC_CACHE = `financial-calc-static-${VERSION}`;
+const RUNTIME_CACHE = `financial-calc-runtime-${VERSION}`;
 
-// Assets to cache
-const STATIC_ASSETS = [
-  '/',
-  '/tvm',
-  '/equity',
-  '/bonds',
-  '/options',
-  '/loans',
-  '/cash-flow',
-  '/portfolio',
-  '/risk',
-  '/macro',
-];
+const APP_SHELL = ['/', '/manifest.json'];
 
-// Install event - cache static assets
+function shouldHandle(request) {
+  if (request.method !== 'GET') return false;
+  const url = new URL(request.url);
+  return url.origin === self.location.origin;
+}
+
+function isStaticAsset(request) {
+  const url = new URL(request.url);
+  return /\.(js|css|png|jpg|jpeg|svg|webp|woff2?|json)$/.test(url.pathname);
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    })
+    caches.open(STATIC_CACHE).then((cache) => cache.addAll(APP_SHELL))
   );
   self.skipWaiting();
 });
 
-// Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
+    caches.keys().then((cacheNames) =>
+      Promise.all(
         cacheNames
-          .filter((name) => name !== CACHE_NAME)
+          .filter((name) => ![STATIC_CACHE, RUNTIME_CACHE].includes(name))
           .map((name) => caches.delete(name))
-      );
-    })
+      )
+    )
   );
   self.clients.claim();
 });
 
-// Fetch event - serve from cache or network
 self.addEventListener('fetch', (event) => {
+  if (!shouldHandle(event.request)) return;
+
+  const request = event.request;
+  const url = new URL(request.url);
+
+  if (isStaticAsset(request)) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
+        return fetch(request).then((response) => {
+          if (!response || response.status !== 200 || response.type !== 'basic') {
+            return response;
+          }
+          const copy = response.clone();
+          caches.open(STATIC_CACHE).then((cache) => cache.put(request, copy));
+          return response;
+        });
+      })
+    );
+    return;
+  }
+
+  if (request.mode === 'navigate' || url.pathname === '/') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, copy));
+          return response;
+        })
+        .catch(async () => {
+          const cachedPage = await caches.match(request);
+          if (cachedPage) return cachedPage;
+          return caches.match('/');
+        })
+    );
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      if (response) {
-        return response;
-      }
-      return fetch(event.request).then((response) => {
+    caches.match(request).then((cached) => {
+      if (cached) return cached;
+      return fetch(request).then((response) => {
         if (!response || response.status !== 200 || response.type !== 'basic') {
           return response;
         }
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
+        const copy = response.clone();
+        caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, copy));
         return response;
       });
     })

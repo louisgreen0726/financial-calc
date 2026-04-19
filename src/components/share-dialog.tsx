@@ -23,6 +23,7 @@ interface ShareDialogProps {
 export function ShareDialog({ open, onOpenChange, title, results, inputs, className }: ShareDialogProps) {
   const { t } = useLanguage();
   const [copied, setCopied] = useState<string | null>(null);
+  const canNativeShare = typeof navigator !== "undefined" && "share" in navigator;
 
   const generateMarkdown = (): string => {
     const lines = [`## ${title}\n`];
@@ -54,6 +55,8 @@ export function ShareDialog({ open, onOpenChange, title, results, inputs, classN
     return lines.join("\n");
   };
 
+  const shareText = generatePlainText();
+
   const copyToClipboard = async (text: string, key: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -78,6 +81,23 @@ export function ShareDialog({ open, onOpenChange, title, results, inputs, classN
     copyToClipboard(generatePlainText(), "text");
   };
 
+  const shareNative = async () => {
+    if (!canNativeShare) {
+      copyPlainText();
+      return;
+    }
+
+    try {
+      await navigator.share({
+        title,
+        text: shareText,
+        url: window.location.href,
+      });
+    } catch {
+      // user cancelled or unsupported payload; keep silent
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn("sm:max-w-md", className)}>
@@ -88,6 +108,13 @@ export function ShareDialog({ open, onOpenChange, title, results, inputs, classN
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
+          {canNativeShare && (
+            <Button className="w-full justify-start gap-3" onClick={shareNative}>
+              <Share2 className="h-4 w-4" />
+              <span>{t("share.title") || "Share Results"}</span>
+            </Button>
+          )}
+
           {/* Copy Link */}
           <Button variant="outline" className="w-full justify-start gap-3" onClick={copyLink}>
             {copied === "link" ? <Check className="h-4 w-4 text-emerald-500" /> : <Link2 className="h-4 w-4" />}
