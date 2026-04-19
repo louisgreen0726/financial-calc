@@ -2,6 +2,14 @@
 
 English | [中文](README_zh.md)
 
+> [!IMPORTANT]
+> **This project was generated entirely with AI using OpenCode.**
+> It should be understood as an AI-generated software project rather than a hand-built production system authored line-by-line by a human developer.
+
+> [!NOTE]
+> The current codebase, documentation, UX refinements, validation flows, and deployment-oriented adjustments were produced through AI-driven iteration inside OpenCode.
+> If you plan to use this repository in production, you should still perform your own code review, verification, security review, and business-domain validation.
+
 Financial Calc is a bilingual, static-export-friendly financial calculator built with Next.js 16, React 19, and TypeScript.
 
 It combines practical calculator workflows with a more polished app shell: mobile-first navigation, responsive disclosures for dense analysis screens, calculation history and restore flows, share/export actions, and offline-friendly service worker wiring.
@@ -18,6 +26,12 @@ The project is already usable as a multi-module financial analysis app, not just
 - shareable state on supported flows
 - Monte Carlo portfolio simulation via worker + client fallback
 - static-export deployment with manual service worker registration
+
+## AI Generation Disclosure
+
+- The repository was built through OpenCode-driven AI generation and iterative AI-assisted refinement.
+- Architecture, UI structure, validation flows, documentation, and many implementation details were generated and revised by AI rather than authored manually from scratch.
+- The project is useful as a working application, learning reference, and experimentation base, but it should still be reviewed with normal engineering standards before serious production use.
 
 ## Included Modules
 
