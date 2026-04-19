@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { LANGUAGE_KEY } from "@/lib/constants";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -9,7 +10,7 @@ export function cn(...inputs: ClassValue[]) {
 export function formatCurrency(value: number, locale?: string) {
   // Determine locale if not provided
   const determinedLocale =
-    locale || (typeof window !== "undefined" ? (localStorage.getItem("app-language") ?? "en") : "en");
+    locale || (typeof window !== "undefined" ? (localStorage.getItem(LANGUAGE_KEY) ?? "en") : "en");
   const enLocale = determinedLocale === "zh" ? "zh-CN" : "en-US";
   const currency = determinedLocale === "zh" ? "CNY" : "USD";
   return new Intl.NumberFormat(enLocale, {
@@ -21,7 +22,7 @@ export function formatCurrency(value: number, locale?: string) {
 // Locale-aware number formatting
 export function formatNumber(value: number, maximumFractionDigits = 2, locale?: string) {
   const determinedLocale =
-    locale || (typeof window !== "undefined" ? (localStorage.getItem("app-language") ?? "en") : "en");
+    locale || (typeof window !== "undefined" ? (localStorage.getItem(LANGUAGE_KEY) ?? "en") : "en");
   const enLocale = determinedLocale === "zh" ? "zh-CN" : "en-US";
   return new Intl.NumberFormat(enLocale, {
     maximumFractionDigits,

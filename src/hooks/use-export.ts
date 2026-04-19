@@ -56,7 +56,7 @@ export function useExport({ filename = "export" }: UseExportOptions = {}) {
         toast.success(t("export.csvSuccess"));
       } catch (error) {
         logger.error("Export error:", error);
-        toast.error(t("export.error"));
+        toast.error(t("export.pdfError"));
       }
     },
     [filename, t]
@@ -80,7 +80,7 @@ export function useExport({ filename = "export" }: UseExportOptions = {}) {
         toast.success(t("export.jsonSuccess"));
       } catch (error) {
         logger.error("Export error:", error);
-        toast.error(t("export.error"));
+        toast.error(t("export.pdfError"));
       }
     },
     [filename, t]

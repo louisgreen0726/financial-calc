@@ -39,6 +39,8 @@ type Translations = {
     copied: string;
     copySuccess: string;
     copyError: string;
+    more: string;
+    notAvailable: string;
   };
   sidebar: {
     edition: string;
@@ -103,6 +105,13 @@ type Translations = {
       rate: string;
     };
     emptyState: string;
+    quickPreset: string;
+    chooseScenario: string;
+    fixValidation: string;
+    calculationError: string;
+    calculationErrorDesc: string;
+    stepsTitle: string;
+    stepsDesc: string;
   };
   cashFlow: {
     title: string;
@@ -118,6 +127,9 @@ type Translations = {
     payback: string;
     visualization: string;
     info: string;
+    chartDisclosure: string;
+    infoDisclosure: string;
+    invalidInputs: string;
   };
   equity: {
     title: string;
@@ -145,6 +157,10 @@ type Translations = {
       resultDesc: string;
       growthError: string;
     };
+    validation: {
+      invalidInputs: string;
+      ddmDisclosure: string;
+    };
   };
   bonds: {
     title: string;
@@ -166,6 +182,12 @@ type Translations = {
     curve: string;
     metrics: string;
     priceSensitivity: string;
+    validation: {
+      invalidInputs: string;
+      curveDisclosure: string;
+      heatmapDisclosure: string;
+      mobileHeatmapTitle: string;
+    };
   };
   portfolio: {
     title: string;
@@ -186,6 +208,12 @@ type Translations = {
     ratio: string;
     retRisk: string;
     empty: string;
+    validation: {
+      invalidInputs: string;
+      universeDisclosure: string;
+      frontierDisclosure: string;
+      assetCardTitle: string;
+    };
   };
   options: {
     title: string;
@@ -479,6 +507,8 @@ const en: Translations = {
     copied: "Copied",
     copySuccess: "Copied to clipboard",
     copyError: "Failed to copy",
+    more: "More",
+    notAvailable: "N/A",
   },
   sidebar: {
     edition: "Professional Edition",
@@ -543,6 +573,13 @@ const en: Translations = {
       rate: "The interest rate per period.",
     },
     emptyState: "Enter values and press Calculate",
+    quickPreset: "Quick preset",
+    chooseScenario: "Choose a starting scenario",
+    fixValidation: "Please fix the validation errors before calculating.",
+    calculationError: "Calculation Error",
+    calculationErrorDesc: "Unable to calculate result. Please check your inputs and try again.",
+    stepsTitle: "Calculation steps",
+    stepsDesc: "Open the detailed derivation when you want to inspect the formula path.",
   },
   cashFlow: {
     title: "Cash Flow Analysis",
@@ -558,6 +595,9 @@ const en: Translations = {
     payback: "Payback Period",
     visualization: "Cash Flow Visualization",
     info: "NPV compares the present value of all cash inflows with outflows. A positive NPV generally indicates a profitable investment. IRR is the break-even discount rate.",
+    chartDisclosure: "Open the chart when you need period-by-period detail.",
+    infoDisclosure: "Show guidance for reading these results.",
+    invalidInputs: "Please enter valid numeric inputs for discount rate and cash flows.",
   },
   equity: {
     title: "Equity Valuation",
@@ -594,6 +634,10 @@ const en: Translations = {
       resultDesc: "Fair price based on dividend growth perpetuity.",
       growthError: "Growth rate must be less than the required return.",
     },
+    validation: {
+      invalidInputs: "Please correct the highlighted inputs to view a reliable result.",
+      ddmDisclosure: "Open to edit dividend growth assumptions on smaller screens.",
+    },
   },
   bonds: {
     title: "Bond Valuation",
@@ -614,6 +658,12 @@ const en: Translations = {
     curve: "Price vs Yield Relationship",
     metrics: "Key Metrics",
     priceSensitivity: "Price Sensitivity",
+    validation: {
+      invalidInputs: "Please correct the highlighted bond inputs before relying on the outputs.",
+      curveDisclosure: "Open the price-yield curve when you want sensitivity detail on smaller screens.",
+      heatmapDisclosure: "The heatmap is optional on mobile; open it only when comparing scenarios.",
+      mobileHeatmapTitle: "Mobile sensitivity cards",
+    },
   },
   portfolio: {
     title: "Portfolio Optimization",
@@ -634,6 +684,12 @@ const en: Translations = {
     ratio: "Ratio",
     retRisk: "Return / Risk",
     empty: "Add assets and click Run Monte Carlo",
+    validation: {
+      invalidInputs: "Please correct the highlighted asset inputs before running the simulation.",
+      universeDisclosure: "Manage assets here. Keep at least two assets with valid risk and return values.",
+      frontierDisclosure: "Keep the chart collapsed on phones until you need detailed frontier exploration.",
+      assetCardTitle: "Asset details",
+    },
   },
   options: {
     title: "Options Pricing",
@@ -933,6 +989,8 @@ const zh: Translations = {
     copied: "已复制",
     copySuccess: "已复制到剪贴板",
     copyError: "复制失败",
+    more: "更多",
+    notAvailable: "暂无",
   },
   sidebar: {
     edition: "专业版",
@@ -997,6 +1055,13 @@ const zh: Translations = {
       rate: "每期的利率。",
     },
     emptyState: "请输入参数并点击开始计算",
+    quickPreset: "快速预设",
+    chooseScenario: "选择一个起始场景",
+    fixValidation: "请先修正校验错误，再执行计算。",
+    calculationError: "计算错误",
+    calculationErrorDesc: "暂时无法计算结果，请检查输入后重试。",
+    stepsTitle: "计算步骤",
+    stepsDesc: "需要查看公式推导时，可展开详细步骤。",
   },
   cashFlow: {
     title: "现金流分析",
@@ -1012,6 +1077,9 @@ const zh: Translations = {
     payback: "投资回收期",
     visualization: "现金流图示",
     info: "NPV 将所有未来现金流折现至当前价值。NPV > 0 通常意味着投资获利。IRR 是使 NPV 为 0 的折现率，代表项目的内在回报能力。",
+    chartDisclosure: "需要逐期查看现金流时，再展开图表。",
+    infoDisclosure: "展开查看这些指标的解读说明。",
+    invalidInputs: "请输入有效的折现率与现金流数值。",
   },
   equity: {
     title: "股票估值",
@@ -1048,6 +1116,10 @@ const zh: Translations = {
       resultDesc: "基于股利永续增长假设推算的每股公允价值。",
       growthError: "增长率必须低于要求回报率。",
     },
+    validation: {
+      invalidInputs: "请先修正高亮输入项，再查看可信结果。",
+      ddmDisclosure: "在较小屏幕上可展开编辑股利增长假设。",
+    },
   },
   bonds: {
     title: "债券估值",
@@ -1068,6 +1140,12 @@ const zh: Translations = {
     curve: "价格-收益率曲线",
     metrics: "关键指标",
     priceSensitivity: "价格敏感性分析",
+    validation: {
+      invalidInputs: "请先修正高亮债券输入，再参考输出结果。",
+      curveDisclosure: "在小屏幕上需要查看敏感性细节时，再展开价格-收益率曲线。",
+      heatmapDisclosure: "热力图在移动端可按需展开，便于比较不同情景。",
+      mobileHeatmapTitle: "移动端敏感性卡片",
+    },
   },
   portfolio: {
     title: "投资组合优化",
@@ -1088,6 +1166,12 @@ const zh: Translations = {
     ratio: "夏普比率",
     retRisk: "回报 / 风险",
     empty: "请添加至少两个资产并点击执行模拟",
+    validation: {
+      invalidInputs: "请先修正高亮资产输入，再运行模拟。",
+      universeDisclosure: "在这里管理资产，至少保留两个具有有效风险与回报数据的资产。",
+      frontierDisclosure: "手机上默认折叠图表，需要深入查看有效前沿时再展开。",
+      assetCardTitle: "资产明细",
+    },
   },
   options: {
     title: "期权定价",

@@ -43,10 +43,10 @@ export function useMonteCarloSimulation() {
   const [result, setResult] = useState<unknown>(null);
   const [error, setError] = useState<Error | null>(null);
   const workerRef = useRef<Worker | null>(null);
-  const fallbackRunIdRef = useRef(0);
+  const activeRunIdRef = useRef(0);
 
   const cancel = useCallback(() => {
-    fallbackRunIdRef.current += 1;
+    activeRunIdRef.current += 1;
     if (workerRef.current) {
       workerRef.current.terminate();
       workerRef.current = null;
@@ -82,7 +82,7 @@ export function useMonteCarloSimulation() {
       const chunkSize = Math.max(50, Math.floor(simulationsTarget / 20));
 
       for (let start = 0; start < simulationsTarget; start += chunkSize) {
-        if (fallbackRunIdRef.current !== runId) {
+        if (activeRunIdRef.current !== runId) {
           return;
         }
 
@@ -113,7 +113,7 @@ export function useMonteCarloSimulation() {
         await new Promise((resolve) => setTimeout(resolve, 0));
       }
 
-      if (fallbackRunIdRef.current !== runId) {
+      if (activeRunIdRef.current !== runId) {
         return;
       }
 
@@ -132,6 +132,7 @@ export function useMonteCarloSimulation() {
       );
 
       const final: MonteCarloResult = { simulations: results, optimal, minVol };
+      setError(null);
       setResult(final);
       setIsRunning(false);
       setProgress(100);
@@ -148,13 +149,18 @@ export function useMonteCarloSimulation() {
       setResult(null);
       setError(null);
 
-      const runId = fallbackRunIdRef.current;
+      const runId = activeRunIdRef.current + 1;
+      activeRunIdRef.current = runId;
 
       try {
         const worker = new Worker(new URL("../workers/monte-carlo.worker.ts", import.meta.url), { type: "module" });
         workerRef.current = worker;
 
         worker.onmessage = (event: MessageEvent<WorkerMessage>) => {
+          if (activeRunIdRef.current !== runId) {
+            return;
+          }
+
           const message = event.data;
           if (message.type === "progress") {
             setProgress(message.data);
@@ -165,6 +171,7 @@ export function useMonteCarloSimulation() {
           if (message.type === "result") {
             workerRef.current?.terminate();
             workerRef.current = null;
+            setError(null);
             setResult(message.data);
             setIsRunning(false);
             setProgress(100);
@@ -175,18 +182,17 @@ export function useMonteCarloSimulation() {
           const nextError = new Error(message.data);
           workerRef.current?.terminate();
           workerRef.current = null;
-          setError(nextError);
-          setIsRunning(false);
-          options.onError?.(nextError);
+          void computeInProcess(payload, options, runId).catch(() => {
+            if (activeRunIdRef.current !== runId) return;
+            setError(nextError);
+            setIsRunning(false);
+            options.onError?.(nextError);
+          });
         };
 
-        worker.onerror = (event) => {
-          const nextError = new Error(event.message || "Monte Carlo worker failed");
+        worker.onerror = () => {
           workerRef.current?.terminate();
           workerRef.current = null;
-          setError(nextError);
-          setIsRunning(false);
-          options.onError?.(nextError);
           void computeInProcess(payload, options, runId);
         };
 
@@ -194,9 +200,14 @@ export function useMonteCarloSimulation() {
       } catch (workerError) {
         const nextError =
           workerError instanceof Error ? workerError : new Error("Monte Carlo worker initialization failed");
-        setError(nextError);
-        options.onError?.(nextError);
-        await computeInProcess(payload, options, runId);
+        try {
+          await computeInProcess(payload, options, runId);
+        } catch {
+          if (activeRunIdRef.current !== runId) return;
+          setError(nextError);
+          setIsRunning(false);
+          options.onError?.(nextError);
+        }
       }
     },
     [cancel, computeInProcess]
