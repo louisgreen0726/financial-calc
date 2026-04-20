@@ -52,11 +52,12 @@ export function useExport({ filename = "export" }: UseExportOptions = {}) {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        URL.revokeObjectURL(url);
 
         toast.success(t("export.csvSuccess"));
       } catch (error) {
         logger.error("Export error:", error);
-        toast.error(t("export.pdfError"));
+        toast.error(t("export.csvError"));
       }
     },
     [filename, t]
@@ -76,11 +77,12 @@ export function useExport({ filename = "export" }: UseExportOptions = {}) {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        URL.revokeObjectURL(url);
 
         toast.success(t("export.jsonSuccess"));
       } catch (error) {
         logger.error("Export error:", error);
-        toast.error(t("export.pdfError"));
+        toast.error(t("export.jsonError"));
       }
     },
     [filename, t]

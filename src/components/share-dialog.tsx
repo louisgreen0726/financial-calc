@@ -14,29 +14,31 @@ interface ShareDialogProps {
   title: string;
   results: Record<string, number>;
   inputs?: Record<string, number | string>;
+  shareUrl?: string;
   className?: string;
 }
 
 /**
  * Share calculation results as link, markdown, or image.
  */
-export function ShareDialog({ open, onOpenChange, title, results, inputs, className }: ShareDialogProps) {
+export function ShareDialog({ open, onOpenChange, title, results, inputs, shareUrl, className }: ShareDialogProps) {
   const { t } = useLanguage();
   const [copied, setCopied] = useState<string | null>(null);
   const canNativeShare = typeof navigator !== "undefined" && "share" in navigator;
+  const resolvedShareUrl = shareUrl || (typeof window !== "undefined" ? new URL(window.location.href).toString() : "");
 
   const generateMarkdown = (): string => {
     const lines = [`## ${title}\n`];
     if (inputs) {
-      lines.push("### Inputs\n");
-      lines.push("| Parameter | Value |\n|---|---|\n");
+      lines.push(`### ${t("share.inputsHeading")}\n`);
+      lines.push(`| ${t("share.parameterLabel")} | ${t("share.valueLabel")} |\n|---|---|\n`);
       Object.entries(inputs).forEach(([k, v]) => {
         lines.push(`| ${k} | ${v} |\n`);
       });
       lines.push("\n");
     }
-    lines.push("### Results\n");
-    lines.push("| Metric | Value |\n|---|---|\n");
+    lines.push(`### ${t("share.resultsHeading")}\n`);
+    lines.push(`| ${t("share.metricLabel")} | ${t("share.valueLabel")} |\n|---|---|\n`);
     Object.entries(results).forEach(([k, v]) => {
       lines.push(`| ${k} | ${formatCurrency(v)} |\n`);
     });
@@ -46,11 +48,11 @@ export function ShareDialog({ open, onOpenChange, title, results, inputs, classN
   const generatePlainText = (): string => {
     const lines = [`${title}\n${"=".repeat(title.length)}\n`];
     if (inputs) {
-      lines.push("Inputs:");
+      lines.push(`${t("share.inputsHeading")}:`);
       Object.entries(inputs).forEach(([k, v]) => lines.push(`  ${k}: ${v}`));
       lines.push("");
     }
-    lines.push("Results:");
+    lines.push(`${t("share.resultsHeading")}:`);
     Object.entries(results).forEach(([k, v]) => lines.push(`  ${k}: ${formatCurrency(v)}`));
     return lines.join("\n");
   };
@@ -69,8 +71,7 @@ export function ShareDialog({ open, onOpenChange, title, results, inputs, classN
   };
 
   const copyLink = () => {
-    const url = window.location.href;
-    copyToClipboard(url, "link");
+    copyToClipboard(resolvedShareUrl, "link");
   };
 
   const copyMarkdown = () => {
@@ -91,7 +92,7 @@ export function ShareDialog({ open, onOpenChange, title, results, inputs, classN
       await navigator.share({
         title,
         text: shareText,
-        url: window.location.href,
+        url: resolvedShareUrl,
       });
     } catch {
       // user cancelled or unsupported payload; keep silent

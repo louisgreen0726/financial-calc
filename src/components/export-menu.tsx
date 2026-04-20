@@ -14,6 +14,7 @@ import { useLanguage } from "@/lib/i18n";
 import { useExport } from "@/hooks/use-export";
 import { exportToPDF } from "@/lib/pdf-export";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 interface ExportMenuProps {
   data?: Record<string, unknown>[];
@@ -47,7 +48,7 @@ export function ExportMenu({
       toast.success(t("export.pdfSuccess"));
     } catch (error) {
       toast.error(t("export.pdfError"));
-      console.error("PDF export error:", error);
+      logger.error("PDF export error:", error);
     } finally {
       setIsExporting(false);
     }
