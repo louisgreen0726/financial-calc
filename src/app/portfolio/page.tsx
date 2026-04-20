@@ -157,8 +157,8 @@ export default function PortfolioPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="min-w-0 space-y-6">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("portfolio.title")}</h1>
           <p className="text-muted-foreground mt-2">{t("portfolio.subtitle")}</p>
@@ -169,13 +169,13 @@ export default function PortfolioPage() {
         </Button>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-12">
+      <div className="grid min-w-0 gap-6 xl:grid-cols-12">
         <Card className="xl:col-span-4 h-fit">
           <CardHeader>
             <CardTitle>{t("portfolio.workflow.settings")}</CardTitle>
             <CardDescription>{t("portfolio.workflow.runHint")}</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 min-w-0">
             <div className="space-y-2">
               <div className="flex justify-between">
                 <Label>
@@ -195,7 +195,7 @@ export default function PortfolioPage() {
               description={t("portfolio.validation.universeDisclosure")}
               defaultOpen={true}
             >
-              <div className="hidden rounded-2xl border border-white/10 bg-background/30 p-2 sm:block sm:p-3">
+              <div className="hidden overflow-x-auto rounded-2xl border border-white/10 bg-background/30 p-2 sm:block sm:p-3">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -307,7 +307,7 @@ export default function PortfolioPage() {
           </CardContent>
         </Card>
 
-        <div className="xl:col-span-8 space-y-6">
+        <div className="min-w-0 space-y-6 xl:col-span-8">
           {isRunning && <ProgressBar progress={progress} label={t("portfolio.run")} showETA />}
 
           <SectionActionBar
@@ -339,7 +339,7 @@ export default function PortfolioPage() {
           ) : null}
 
           {optimal && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 2xl:grid-cols-2">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-chart-4">
@@ -352,14 +352,14 @@ export default function PortfolioPage() {
                 <CardContent>
                   <div className="space-y-2">
                     {optimal.weights.map((w, i) => (
-                      <div key={i} className="flex justify-between text-sm">
-                        <span>{assets[i]?.name}</span>
-                        <span className="font-bold">{(w * 100).toFixed(1)}%</span>
+                      <div key={i} className="flex items-start justify-between gap-3 text-sm">
+                        <span className="min-w-0 break-words">{assets[i]?.name}</span>
+                        <span className="shrink-0 font-bold">{(w * 100).toFixed(1)}%</span>
                       </div>
                     ))}
-                    <div className="pt-4 mt-4 border-t flex justify-between font-medium">
+                    <div className="mt-4 flex flex-col gap-1 border-t pt-4 text-sm font-medium sm:flex-row sm:items-center sm:justify-between">
                       <span>{t("portfolio.retRisk")}</span>
-                      <span>
+                      <span className="break-words">
                         {formatNumber(optimal.ret)}% / {formatNumber(optimal.risk)}%
                       </span>
                     </div>
@@ -377,14 +377,14 @@ export default function PortfolioPage() {
                 <CardContent>
                   <div className="space-y-2">
                     {minVol?.weights.map((w, i) => (
-                      <div key={i} className="flex justify-between text-sm">
-                        <span>{assets[i]?.name}</span>
-                        <span className="font-bold">{(w * 100).toFixed(1)}%</span>
+                      <div key={i} className="flex items-start justify-between gap-3 text-sm">
+                        <span className="min-w-0 break-words">{assets[i]?.name}</span>
+                        <span className="shrink-0 font-bold">{(w * 100).toFixed(1)}%</span>
                       </div>
                     ))}
-                    <div className="pt-4 mt-4 border-t flex justify-between font-medium">
+                    <div className="mt-4 flex flex-col gap-1 border-t pt-4 text-sm font-medium sm:flex-row sm:items-center sm:justify-between">
                       <span>{t("portfolio.retRisk")}</span>
-                      <span>
+                      <span className="break-words">
                         {formatNumber(minVol?.ret || 0)}% / {formatNumber(minVol?.risk || 0)}%
                       </span>
                     </div>

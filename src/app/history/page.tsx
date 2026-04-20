@@ -341,7 +341,7 @@ export default function HistoryPage() {
           </h1>
           <p className="text-muted-foreground mt-2">{history.length} calculations recorded</p>
         </div>
-        <div className="grid w-full gap-2 sm:flex sm:w-auto sm:flex-wrap">
+        <div className="grid w-full gap-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-end">
           <Button variant="outline" size="sm" onClick={exportAllHistory} className="gap-2">
             <FileSpreadsheet className="h-4 w-4" />
             {t("export.csv")}
@@ -361,8 +361,8 @@ export default function HistoryPage() {
       {history.length === 0 ? (
         renderEmptyState()
       ) : (
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-4 flex-nowrap overflow-x-auto whitespace-nowrap px-1 py-1">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full min-w-0">
+          <TabsList className="mb-4 flex w-full max-w-full flex-nowrap justify-start overflow-x-auto px-1 py-1 whitespace-nowrap">
             <TabsTrigger value="all" className="gap-2">
               <Clock className="h-4 w-4" />
               {t("history.all")} ({history.length})
