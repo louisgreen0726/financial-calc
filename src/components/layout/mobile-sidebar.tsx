@@ -20,7 +20,7 @@ export const MobileSidebar = React.memo(function MobileSidebar() {
           <Menu className="w-6 h-6" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="p-0 w-[86vw] max-w-[320px] bg-background border-r flex flex-col">
+      <SheetContent side="left" className="p-0 w-[82vw] max-w-[300px] bg-background border-r flex flex-col">
         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
           <Sidebar className="border-none w-full h-full bg-transparent" />
         </div>

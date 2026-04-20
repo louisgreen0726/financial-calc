@@ -123,7 +123,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
 
   const deleteSelected = () => {
     selectedIds.forEach((id) => removeFromHistory(id));
-    toast.success(`${selectedIds.size} items deleted`);
+    toast.success(`${selectedIds.size} ${t("history.itemsDeleted")}`);
     setSelectedIds(new Set());
     setBatchMode(false);
   };
@@ -148,7 +148,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
       <Button
         variant="outline"
         size="sm"
-        className="fixed bottom-24 right-4 lg:bottom-4 z-50 gap-2 shadow-lg"
+        className="fixed bottom-22 right-4 lg:bottom-4 z-50 gap-2 shadow-lg"
         onClick={() => setIsOpen(!isOpen)}
       >
         <Clock className="h-4 w-4" />
@@ -163,7 +163,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             className={cn(
-              "fixed bottom-36 right-4 lg:bottom-20 z-50 w-[calc(100vw-2rem)] max-w-[420px] max-h-[min(65vh,600px)] shadow-xl rounded-xl border bg-card",
+              "fixed inset-x-3 bottom-20 z-50 max-h-[75vh] rounded-3xl border bg-card shadow-xl sm:inset-x-auto sm:right-4 sm:bottom-36 sm:w-[calc(100vw-2rem)] sm:max-w-[420px] sm:max-h-[min(65vh,600px)] sm:rounded-xl lg:bottom-20",
               className
             )}
           >
@@ -201,7 +201,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
                       size="icon"
                       className="h-8 w-8"
                       onClick={() => setBatchMode(true)}
-                      title="Batch mode"
+                      title={t("history.select")}
                     >
                       <CheckSquare className="h-4 w-4" />
                     </Button>
@@ -227,7 +227,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
               <div className="relative mb-3">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
-                  placeholder="Search history..."
+                  placeholder={t("history.searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9 h-8 text-sm"
@@ -237,7 +237,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
               <ScrollArea className="h-80">
                 <div className="space-y-2">
                   {sorted.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground text-sm">No results found</div>
+                    <div className="text-center py-8 text-muted-foreground text-sm">{t("history.noResults")}</div>
                   )}
                   {sorted.map((item) => (
                     <motion.div
@@ -294,7 +294,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
                             e.stopPropagation();
                             toggleFavorite(item.id);
                           }}
-                          title="Favorite"
+                          title={t("history.favorites")}
                         >
                           <Star className={cn("h-3 w-3", favorites.has(item.id) ? "fill-primary text-primary" : "")} />
                         </Button>
