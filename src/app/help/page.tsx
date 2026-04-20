@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { HelpCircle, Calculator, Keyboard, BookOpen, Mail, ExternalLink, ChevronRight } from "lucide-react";
+import { HelpCircle, Calculator, BookOpen, Mail, ExternalLink, ChevronRight } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
 
 const FAQ_KEYS = [
@@ -125,32 +125,6 @@ export default function HelpPage() {
                 <p className="text-sm text-muted-foreground mt-2 ml-6">{t(faq.a)}</p>
               </div>
             ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Keyboard Shortcuts */}
-      <Card className="rounded-xl">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Keyboard className="h-5 w-5" />
-            {t("help.keyboardShortcuts")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="flex justify-between items-center p-3 rounded-lg bg-muted">
-              <span>{t("help.showShortcuts")}</span>
-              <kbd className="px-2 py-1 rounded bg-background text-sm font-mono">?</kbd>
-            </div>
-            <div className="flex justify-between items-center p-3 rounded-lg bg-muted">
-              <span>{t("help.navigateCalculator")}</span>
-              <div className="flex gap-1">
-                <kbd className="px-2 py-1 rounded bg-background text-sm font-mono">1</kbd>
-                <kbd className="px-2 py-1 rounded bg-background text-sm font-mono">2</kbd>
-                <kbd className="px-2 py-1 rounded bg-background text-sm font-mono">...</kbd>
-              </div>
-            </div>
           </div>
         </CardContent>
       </Card>
