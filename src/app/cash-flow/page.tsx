@@ -29,6 +29,8 @@ import { ResponsiveDisclosure } from "@/components/responsive-disclosure";
 import { parseOptionalNumber } from "@/lib/input-utils";
 import { CashFlowSchema } from "@/lib/validation";
 import { ErrorDisplay } from "@/components/ui/error-display";
+import { ResultShell } from "@/components/result-shell";
+import { ResultActions } from "@/components/result-actions";
 
 export default function CashFlowPage() {
   const { t } = useLanguage();
@@ -123,14 +125,6 @@ export default function CashFlowPage() {
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("cashFlow.title")}</h1>
             <p className="text-muted-foreground mt-2">{t("cashFlow.subtitle")}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <ExportMenu
-              data={chartData}
-              jsonData={calculateMetrics}
-              pdfElementId="cash-flow-report-content"
-              pdfFilename="cash-flow-analysis"
-            />
-          </div>
         </div>
 
         <div id="cash-flow-report-content" className="grid gap-6 lg:grid-cols-12">
@@ -192,114 +186,142 @@ export default function CashFlowPage() {
           </Card>
 
           {/* Results & Visualization */}
-          <div className="lg:col-span-7 space-y-6">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">{t("cashFlow.npv")}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div
-                    className={`text-2xl font-bold ${calculateMetrics.npv >= 0 ? "text-primary" : "text-destructive"}`}
+          <div className="lg:col-span-7">
+            <ResultShell
+              title={t("common.result")}
+              description={t("cashFlow.subtitle")}
+              isReady={validation.isValid}
+              emptyTitle={t("cashFlow.title")}
+              emptyDescription={validation.message ?? t("cashFlow.invalidInputs")}
+              actions={
+                <ResultActions
+                  title={t("cashFlow.title")}
+                  results={{
+                    [t("cashFlow.npv")]: calculateMetrics.npv,
+                    [t("cashFlow.irr")]: isFinite(calculateMetrics.irr) ? calculateMetrics.irr * 100 : 0,
+                  }}
+                  inputs={{ rate, flows: flowInputs.join(",") }}
+                  exportData={chartData}
+                  exportJson={calculateMetrics}
+                  pdfElementId="cash-flow-report-content"
+                  pdfFilename="cash-flow-analysis"
+                />
+              }
+              summary={
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">{t("cashFlow.npv")}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div
+                        className={`text-2xl font-bold ${calculateMetrics.npv >= 0 ? "text-primary" : "text-destructive"}`}
+                      >
+                        {formatCurrency(calculateMetrics.npv)}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">{t("cashFlow.irr")}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {isNaN(calculateMetrics.irr) || !isFinite(calculateMetrics.irr) ? (
+                          <span className="text-muted-foreground">N/A</span>
+                        ) : (
+                          `${(calculateMetrics.irr * 100).toFixed(2)}%`
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">
+                        {t("cashFlow.payback")}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {calculateMetrics.payback > 0
+                          ? `${calculateMetrics.payback.toFixed(1)} ${t("common.year")}`
+                          : "N/A"}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              }
+              advanced={
+                <div className="space-y-6">
+                  <ResponsiveDisclosure
+                    title={t("cashFlow.visualization")}
+                    description={t("cashFlow.chartDisclosure")}
+                    defaultOpen={false}
                   >
-                    {formatCurrency(calculateMetrics.npv)}
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">{t("cashFlow.irr")}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {isNaN(calculateMetrics.irr) || !isFinite(calculateMetrics.irr) ? (
-                      <span className="text-muted-foreground">N/A</span>
-                    ) : (
-                      `${(calculateMetrics.irr * 100).toFixed(2)}%`
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">{t("cashFlow.payback")}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {calculateMetrics.payback > 0
-                      ? `${calculateMetrics.payback.toFixed(1)} ${t("common.year")}`
-                      : "N/A"}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                    <Card className="h-[260px] sm:h-[320px] md:h-[380px] flex flex-col order-first lg:order-none">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <TrendingUp className="h-5 w-5" />
+                          {t("cashFlow.visualization")}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="flex-1 w-full min-h-0">
+                        <ClientOnlyChart>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={chartData} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                              <XAxis
+                                dataKey="period"
+                                stroke="hsl(var(--muted-foreground))"
+                                fontSize={10}
+                                minTickGap={18}
+                                tickLine={false}
+                                axisLine={false}
+                              />
+                              <YAxis
+                                stroke="hsl(var(--muted-foreground))"
+                                fontSize={10}
+                                tickLine={false}
+                                axisLine={false}
+                                tickFormatter={(value) => `$${value}`}
+                              />
+                              <Tooltip
+                                cursor={{ fill: "hsl(var(--muted)/0.3)" }}
+                                contentStyle={{
+                                  backgroundColor: "hsl(var(--card))",
+                                  borderColor: "hsl(var(--border))",
+                                  borderRadius: "8px",
+                                }}
+                                itemStyle={{ color: "hsl(var(--foreground))" }}
+                              />
+                              <ReferenceLine y={0} stroke="hsl(var(--border))" />
+                              <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
+                                {chartData.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.color} />
+                                ))}
+                              </Bar>
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </ClientOnlyChart>
+                      </CardContent>
+                    </Card>
+                  </ResponsiveDisclosure>
 
-            <ResponsiveDisclosure
-              title={t("cashFlow.visualization")}
-              description={t("cashFlow.chartDisclosure")}
-              defaultOpen={false}
-            >
-              <Card className="h-[260px] sm:h-[320px] md:h-[380px] flex flex-col order-first lg:order-none">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5" />
-                    {t("cashFlow.visualization")}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1 w-full min-h-0">
-                  <ClientOnlyChart>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={chartData} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                        <XAxis
-                          dataKey="period"
-                          stroke="hsl(var(--muted-foreground))"
-                          fontSize={10}
-                          minTickGap={18}
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                        <YAxis
-                          stroke="hsl(var(--muted-foreground))"
-                          fontSize={10}
-                          tickLine={false}
-                          axisLine={false}
-                          tickFormatter={(value) => `$${value}`}
-                        />
-                        <Tooltip
-                          cursor={{ fill: "hsl(var(--muted)/0.3)" }}
-                          contentStyle={{
-                            backgroundColor: "hsl(var(--card))",
-                            borderColor: "hsl(var(--border))",
-                            borderRadius: "8px",
-                          }}
-                          itemStyle={{ color: "hsl(var(--foreground))" }}
-                        />
-                        <ReferenceLine y={0} stroke="hsl(var(--border))" />
-                        <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
-                          {chartData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </ClientOnlyChart>
-                </CardContent>
-              </Card>
-            </ResponsiveDisclosure>
-
-            <ResponsiveDisclosure
-              title={t("common.analysis")}
-              description={t("cashFlow.infoDisclosure")}
-              defaultOpen={false}
-            >
-              <Card className="bg-muted/30">
-                <CardContent className="pt-6 flex gap-4 text-sm text-muted-foreground">
-                  <AlertCircle className="h-5 w-5 shrink-0" />
-                  <p>{t("cashFlow.info")}</p>
-                </CardContent>
-              </Card>
-            </ResponsiveDisclosure>
+                  <ResponsiveDisclosure
+                    title={t("common.analysis")}
+                    description={t("cashFlow.infoDisclosure")}
+                    defaultOpen={false}
+                  >
+                    <Card className="bg-muted/30">
+                      <CardContent className="pt-6 flex gap-4 text-sm text-muted-foreground">
+                        <AlertCircle className="h-5 w-5 shrink-0" />
+                        <p>{t("cashFlow.info")}</p>
+                      </CardContent>
+                    </Card>
+                  </ResponsiveDisclosure>
+                </div>
+              }
+            />
           </div>
         </div>
       </div>

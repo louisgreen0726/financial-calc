@@ -8,9 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Calculator, ArrowRightLeft, RotateCcw, Share2 } from "lucide-react";
+import { Calculator, ArrowRightLeft, RotateCcw } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
-import { ShareDialog } from "@/components/share-dialog";
 import { CalculationSteps } from "@/components/calculation-steps";
 import { InputRangeHint } from "@/components/input-range-hint";
 import { EmptyState } from "@/components/empty-state";
@@ -22,6 +21,9 @@ import { useUrlState } from "@/hooks/use-url-state";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ResponsiveDisclosure } from "@/components/responsive-disclosure";
+import { useLocaleFormat } from "@/hooks/use-locale-format";
+import { ResultShell } from "@/components/result-shell";
+import { ResultActions } from "@/components/result-actions";
 
 type TVMTarget = "pv" | "fv" | "pmt" | "nper" | "rate";
 
@@ -42,7 +44,12 @@ const TVM_PRESETS = {
 
 function TVMPageContent() {
   const { t } = useLanguage();
-  const { state: urlState, setField } = useUrlState({
+  const { formatCurrencyLocale } = useLocaleFormat();
+  const {
+    state: urlState,
+    setField,
+    shareUrl,
+  } = useUrlState({
     defaultValues: {
       target: "fv" as string,
       rate: "5",
@@ -82,7 +89,6 @@ function TVMPageContent() {
 
   const { errors, validateField, validateAll, clearErrors } = useFormValidation();
   const { addToHistory } = useCalculationHistory({ page: "tvm" });
-  const [shareOpen, setShareOpen] = useState(false);
   const [calcSteps, setCalcSteps] = useState<{
     formula: string;
     inputs: Record<string, number>;
@@ -182,7 +188,7 @@ function TVMPageContent() {
       }
 
       if (isNaN(res) || !isFinite(res)) {
-        setCalculationError("Calculation resulted in an invalid value. Please check your inputs.");
+        setCalculationError(t("tvm.invalidResult"));
         setResult(null);
       } else {
         setResult(res);
@@ -259,7 +265,7 @@ function TVMPageContent() {
       }
     } catch (e) {
       console.error(e);
-      setCalculationError("An error occurred during calculation. Please verify your inputs.");
+      setCalculationError(t("tvm.runtimeError"));
       setResult(null);
     }
   };
@@ -453,61 +459,53 @@ function TVMPageContent() {
             </CardContent>
           </Card>
 
-          {/* Result Card */}
-          <Card
-            className={cn(
-              "border-2 flex flex-col justify-center items-center p-6 sm:p-8 text-center",
-              calculationError || (result !== null && (isNaN(result) || !isFinite(result)))
-                ? "bg-destructive/5 border-destructive/20 dark:bg-destructive/10"
-                : "bg-muted/30 border-dashed"
-            )}
-          >
-            {result !== null && !isNaN(result) && isFinite(result) ? (
-              <div className="space-y-3 animate-in fade-in zoom-in duration-300 w-full">
-                <h3 className="text-lg font-medium text-muted-foreground">
-                  {t("common.result")} ({target.toUpperCase()})
-                </h3>
-                <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <ResultShell
+            title={`${t("common.result")} (${target.toUpperCase()})`}
+            description={
+              target === "fv"
+                ? t("tvm.resultDesc.fv")
+                : target === "pv"
+                  ? t("tvm.resultDesc.pv")
+                  : target === "pmt"
+                    ? t("tvm.resultDesc.pmt")
+                    : target === "nper"
+                      ? t("tvm.resultDesc.nper")
+                      : t("tvm.resultDesc.rate")
+            }
+            isReady={result !== null && !isNaN(result) && isFinite(result)}
+            emptyTitle={calculationError ? t("tvm.calculationError") : t("tvm.emptyState")}
+            emptyDescription={calculationError || t("tvm.calculationErrorDesc")}
+            emptyIcon={calculationError ? Calculator : ArrowRightLeft}
+            actions={
+              result !== null && !isNaN(result) && isFinite(result) ? (
+                <ResultActions
+                  title={`${t("tvm.title")} - ${target.toUpperCase()}`}
+                  results={{ [target.toUpperCase()]: result }}
+                  inputs={{ rate, nper, pmt, pv, fv, type }}
+                  shareUrl={shareUrl}
+                  exportJson={{ target, rate, nper, pmt, pv, fv, type, result }}
+                  pdfElementId="tvm-report-content"
+                  pdfFilename={`tvm-${target}`}
+                  pdfTitle={`${t("tvm.title")} - ${target.toUpperCase()}`}
+                />
+              ) : null
+            }
+            summary={
+              <Card className="bg-muted/30 border-dashed">
+                <CardContent className="flex flex-col items-center justify-center p-6 sm:p-8 text-center">
                   <p className="text-3xl sm:text-5xl font-bold tracking-tighter text-primary break-all">
-                    {target === "nper"
-                      ? result.toFixed(2)
-                      : target === "rate"
-                        ? `${(result * 100).toFixed(4)}%`
-                        : new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(result)}
+                    {result === null
+                      ? ""
+                      : target === "nper"
+                        ? result.toFixed(2)
+                        : target === "rate"
+                          ? `${(result * 100).toFixed(4)}%`
+                          : formatCurrencyLocale(result)}
                   </p>
-                  <button
-                    type="button"
-                    aria-label={t("share.title")}
-                    onClick={() => setShareOpen(true)}
-                    className="inline-flex items-center justify-center rounded border border-input p-2 hover:bg-accent transition-colors"
-                  >
-                    <Share2 className="h-4 w-4" />
-                  </button>
-                </div>
-                <p className="text-sm text-muted-foreground mt-4 max-w-xs mx-auto">
-                  {target === "fv" && t("tvm.resultDesc.fv")}
-                  {target === "pv" && t("tvm.resultDesc.pv")}
-                  {target === "pmt" && t("tvm.resultDesc.pmt")}
-                  {target === "nper" && t("tvm.resultDesc.nper")}
-                  {target === "rate" && t("tvm.resultDesc.rate")}
-                </p>
-              </div>
-            ) : calculationError || (result !== null && (isNaN(result) || !isFinite(result))) ? (
-              <div className="space-y-3">
-                <div className="h-16 w-16 rounded-full bg-destructive/10 dark:bg-destructive/20 flex items-center justify-center mx-auto">
-                  <Calculator className="h-8 w-8 text-destructive" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-medium text-destructive">{t("tvm.calculationError")}</h3>
-                  <p className="text-sm text-muted-foreground mt-1 max-w-xs">
-                    {calculationError || t("tvm.calculationErrorDesc")}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <EmptyState icon={ArrowRightLeft} title={t("tvm.emptyState")} />
-            )}
-          </Card>
+                </CardContent>
+              </Card>
+            }
+          />
         </div>
 
         {calcSteps && (
@@ -518,14 +516,6 @@ function TVMPageContent() {
           </ResponsiveDisclosure>
         )}
       </div>
-
-      <ShareDialog
-        open={shareOpen}
-        onOpenChange={setShareOpen}
-        title={`TVM Calculation - ${target.toUpperCase()}`}
-        results={{ [target.toUpperCase()]: result ?? 0 }}
-        inputs={{ rate, nper, pmt, pv, fv, type }}
-      />
       <HistoryPanel
         page="tvm"
         onRestore={(inputs) => {
