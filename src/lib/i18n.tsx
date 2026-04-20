@@ -46,6 +46,7 @@ type Translations = {
     edition: string;
     version: string;
     search: string;
+    featured: string;
   };
   nav: {
     core: {
@@ -80,6 +81,14 @@ type Translations = {
     title: string;
     subtitle: string;
     openModule: string;
+    recentCalculations: string;
+    continueTitle: string;
+    continueDesc: string;
+    featuredTitle: string;
+    featuredDesc: string;
+    directoryTitle: string;
+    directoryDesc: string;
+    continueAction: string;
   };
   tvm: {
     title: string;
@@ -110,6 +119,8 @@ type Translations = {
     fixValidation: string;
     calculationError: string;
     calculationErrorDesc: string;
+    invalidResult: string;
+    runtimeError: string;
     stepsTitle: string;
     stepsDesc: string;
   };
@@ -193,6 +204,7 @@ type Translations = {
     title: string;
     subtitle: string;
     run: string;
+    rerun: string;
     universe: string;
     universeDesc: string;
     rf: string;
@@ -208,6 +220,15 @@ type Translations = {
     ratio: string;
     retRisk: string;
     empty: string;
+    workflow: {
+      settings: string;
+      assets: string;
+      results: string;
+      chart: string;
+      runHint: string;
+      resultsHint: string;
+      chartHint: string;
+    };
     validation: {
       invalidInputs: string;
       universeDisclosure: string;
@@ -339,29 +360,17 @@ type Translations = {
       };
     };
   };
-  shortcuts: {
-    title: string;
-    action: string;
-    key: string;
-    note: string;
-    calculate: string;
-    clear: string;
-    copy: string;
-    reset: string;
-    help: string;
-    save: string;
-    exportCsv: string;
-    exportJson: string;
-    toggleDarkMode: string;
-    zoomIn: string;
-    zoomOut: string;
-  };
   share: {
     title: string;
     copyLink: string;
     copyMarkdown: string;
     copyText: string;
     print: string;
+    inputsHeading: string;
+    resultsHeading: string;
+    parameterLabel: string;
+    metricLabel: string;
+    valueLabel: string;
   };
   history: {
     title: string;
@@ -382,6 +391,7 @@ type Translations = {
     all: string;
     favorites: string;
     itemsDeleted: string;
+    recent: string;
   };
   sensitivity: {
     title: string;
@@ -432,7 +442,6 @@ type Translations = {
     availableCalculators: string;
     calculatorsDesc: string;
     faq: string;
-    keyboardShortcuts: string;
     contactSupport: string;
     contactDesc: string;
     github: string;
@@ -464,8 +473,6 @@ type Translations = {
     faqMobileAns: string;
     faqPrivacy: string;
     faqPrivacyAns: string;
-    showShortcuts: string;
-    navigateCalculator: string;
   };
   export: {
     title: string;
@@ -475,6 +482,8 @@ type Translations = {
     noData: string;
     csvSuccess: string;
     jsonSuccess: string;
+    csvError: string;
+    jsonError: string;
     pdfSuccess: string;
     pdfError: string;
   };
@@ -512,8 +521,9 @@ const en: Translations = {
   },
   sidebar: {
     edition: "Professional Edition",
-    version: "v0.1.0",
+    version: "v0.2.0",
     search: "Search calculators...",
+    featured: "Featured",
   },
   nav: {
     core: {
@@ -548,6 +558,14 @@ const en: Translations = {
     title: "Professional Financial Calculator",
     subtitle: "Comprehensive financial modeling, valuation, and risk analysis tools.",
     openModule: "Open Module",
+    recentCalculations: "Recent Calculations",
+    continueTitle: "Continue working",
+    continueDesc: "Jump back into the calculator you used most recently.",
+    featuredTitle: "Featured workflows",
+    featuredDesc: "Start with the calculators most useful for common finance tasks.",
+    directoryTitle: "All calculators",
+    directoryDesc: "Browse the full toolkit when you need a specific model.",
+    continueAction: "Continue",
   },
   tvm: {
     title: "Time Value of Money",
@@ -578,6 +596,8 @@ const en: Translations = {
     fixValidation: "Please fix the validation errors before calculating.",
     calculationError: "Calculation Error",
     calculationErrorDesc: "Unable to calculate result. Please check your inputs and try again.",
+    invalidResult: "Calculation resulted in an invalid value. Please check your inputs.",
+    runtimeError: "An error occurred during calculation. Please verify your inputs.",
     stepsTitle: "Calculation steps",
     stepsDesc: "Open the detailed derivation when you want to inspect the formula path.",
   },
@@ -669,6 +689,7 @@ const en: Translations = {
     title: "Portfolio Optimization",
     subtitle: "Modern Portfolio Theory simulation (Markowitz). Discover the Efficient Frontier.",
     run: "Run Monte Carlo",
+    rerun: "Run again",
     universe: "Asset Universe",
     universeDesc: "Define assets with Expected Return & Risk (Std Dev).",
     rf: "Risk-Free Rate",
@@ -684,6 +705,15 @@ const en: Translations = {
     ratio: "Ratio",
     retRisk: "Return / Risk",
     empty: "Add assets and click Run Monte Carlo",
+    workflow: {
+      settings: "Simulation settings",
+      assets: "Asset inputs",
+      results: "Portfolio results",
+      chart: "Frontier chart",
+      runHint: "Tune assumptions first, then run the simulation when the asset set looks right.",
+      resultsHint: "Review the best portfolios first, then open the chart for deeper comparison.",
+      chartHint: "Keep the frontier collapsed on small screens until you need deeper comparison detail.",
+    },
     validation: {
       invalidInputs: "Please correct the highlighted asset inputs before running the simulation.",
       universeDisclosure: "Manage assets here. Keep at least two assets with valid risk and return values.",
@@ -815,29 +845,17 @@ const en: Translations = {
       },
     },
   },
-  shortcuts: {
-    title: "Keyboard Shortcuts",
-    action: "Action",
-    key: "Shortcut",
-    note: "Press ? to toggle this dialog",
-    calculate: "Calculate result",
-    clear: "Clear all inputs",
-    copy: "Copy result",
-    reset: "Reset to defaults",
-    help: "Show this help",
-    save: "Save calculation",
-    exportCsv: "Export as CSV",
-    exportJson: "Export as JSON",
-    toggleDarkMode: "Toggle dark mode",
-    zoomIn: "Zoom in",
-    zoomOut: "Zoom out",
-  },
   share: {
     title: "Share Results",
     copyLink: "Copy shareable link",
     copyMarkdown: "Copy as Markdown table",
     copyText: "Copy as plain text",
     print: "Print / Save as PDF",
+    inputsHeading: "Inputs",
+    resultsHeading: "Results",
+    parameterLabel: "Parameter",
+    metricLabel: "Metric",
+    valueLabel: "Value",
   },
   history: {
     title: "History",
@@ -858,6 +876,7 @@ const en: Translations = {
     all: "All",
     favorites: "Favorites",
     itemsDeleted: "items deleted",
+    recent: "Recent Calculations",
   },
   sensitivity: {
     title: "Sensitivity Analysis",
@@ -891,7 +910,7 @@ const en: Translations = {
     clearAllHistory: "Clear All History",
     about: "About",
     aboutDesc: "About FinCalc Pro",
-    version: "v0.1.0",
+    version: "v0.2.0",
     description:
       "A comprehensive suite of financial calculators including TVM, cash flow analysis, stock valuation, portfolio optimization, bonds, options, risk metrics, loans, and macroeconomics.",
   },
@@ -910,7 +929,6 @@ const en: Translations = {
     availableCalculators: "Available Calculators",
     calculatorsDesc: "Overview of each financial tool",
     faq: "Frequently Asked Questions",
-    keyboardShortcuts: "Keyboard Shortcuts",
     contactSupport: "Contact & Support",
     contactDesc: "For questions, bug reports, or feature requests, please visit our GitHub repository.",
     github: "github.com/louisgreen0726/financial-calc",
@@ -947,8 +965,6 @@ const en: Translations = {
     faqPrivacy: "Is my data stored on servers?",
     faqPrivacyAns:
       "No. All calculation history is stored locally in your browser's localStorage. No data is sent to any server. You can export or clear your history at any time from the Settings page.",
-    showShortcuts: "Show keyboard shortcuts",
-    navigateCalculator: "Navigate to calculator",
   },
   export: {
     title: "Export",
@@ -958,6 +974,8 @@ const en: Translations = {
     noData: "No data to export",
     csvSuccess: "CSV exported successfully",
     jsonSuccess: "JSON exported successfully",
+    csvError: "Failed to export CSV",
+    jsonError: "Failed to export JSON",
     pdfSuccess: "PDF exported successfully",
     pdfError: "Failed to export PDF",
   },
@@ -996,6 +1014,7 @@ const zh: Translations = {
     edition: "专业版",
     version: "v0.1.0",
     search: "搜索计算器...",
+    featured: "推荐",
   },
   nav: {
     core: {
@@ -1030,6 +1049,14 @@ const zh: Translations = {
     title: "专业金融计算器",
     subtitle: "全面的金融建模、估值和风险分析工具。",
     openModule: "进入模块",
+    recentCalculations: "最近计算记录",
+    continueTitle: "继续上次工作",
+    continueDesc: "快速回到最近一次使用的计算器。",
+    featuredTitle: "推荐工作流",
+    featuredDesc: "优先展示最常用、最有代表性的金融分析入口。",
+    directoryTitle: "全部计算器",
+    directoryDesc: "当你需要特定模型时，再浏览完整工具目录。",
+    continueAction: "继续",
   },
   tvm: {
     title: "货币时间价值",
@@ -1060,6 +1087,8 @@ const zh: Translations = {
     fixValidation: "请先修正校验错误，再执行计算。",
     calculationError: "计算错误",
     calculationErrorDesc: "暂时无法计算结果，请检查输入后重试。",
+    invalidResult: "计算结果无效，请检查输入参数后重试。",
+    runtimeError: "计算过程中发生错误，请核对输入后重试。",
     stepsTitle: "计算步骤",
     stepsDesc: "需要查看公式推导时，可展开详细步骤。",
   },
@@ -1151,6 +1180,7 @@ const zh: Translations = {
     title: "投资组合优化",
     subtitle: "基于现代投资组合理论 (MPT) 的蒙特卡洛模拟，寻找有效前沿。",
     run: "执行蒙特卡洛模拟",
+    rerun: "重新运行模拟",
     universe: "资产池配置",
     universeDesc: "设定各资产的预期回报率与风险 (标准差)。",
     rf: "无风险利率",
@@ -1166,6 +1196,15 @@ const zh: Translations = {
     ratio: "夏普比率",
     retRisk: "回报 / 风险",
     empty: "请添加至少两个资产并点击执行模拟",
+    workflow: {
+      settings: "模拟参数",
+      assets: "资产输入",
+      results: "组合结果",
+      chart: "前沿图表",
+      runHint: "先调整假设参数，再在资产设置确认后运行模拟。",
+      resultsHint: "先查看最优组合摘要，再按需展开图表做更深入比较。",
+      chartHint: "在小屏上保持图表折叠，只有需要细看时再展开。",
+    },
     validation: {
       invalidInputs: "请先修正高亮资产输入，再运行模拟。",
       universeDisclosure: "在这里管理资产，至少保留两个具有有效风险与回报数据的资产。",
@@ -1297,29 +1336,17 @@ const zh: Translations = {
       },
     },
   },
-  shortcuts: {
-    title: "键盘快捷键",
-    action: "操作",
-    key: "快捷键",
-    note: "按 ? 键打开此对话框",
-    calculate: "计算结果",
-    clear: "清除所有输入",
-    copy: "复制结果",
-    reset: "重置为默认值",
-    help: "显示帮助",
-    save: "保存计算",
-    exportCsv: "导出为 CSV",
-    exportJson: "导出为 JSON",
-    toggleDarkMode: "切换深色模式",
-    zoomIn: "放大",
-    zoomOut: "缩小",
-  },
   share: {
     title: "分享结果",
     copyLink: "复制分享链接",
     copyMarkdown: "复制为 Markdown 表格",
     copyText: "复制为纯文本",
     print: "打印 / 另存为 PDF",
+    inputsHeading: "输入参数",
+    resultsHeading: "结果",
+    parameterLabel: "参数",
+    metricLabel: "指标",
+    valueLabel: "值",
   },
   history: {
     title: "历史记录",
@@ -1340,6 +1367,7 @@ const zh: Translations = {
     all: "全部",
     favorites: "收藏",
     itemsDeleted: "项已删除",
+    recent: "最近计算记录",
   },
   sensitivity: {
     title: "敏感性分析",
@@ -1373,7 +1401,7 @@ const zh: Translations = {
     clearAllHistory: "清除所有历史",
     about: "关于",
     aboutDesc: "关于 FinCalc Pro",
-    version: "v0.1.0",
+    version: "v0.2.0",
     description:
       "全面的金融计算器套件，包括货币时间价值、现金流分析、股票估值、投资组合优化、债券、期权、风险指标、贷款和宏观经济计算工具。",
   },
@@ -1392,7 +1420,6 @@ const zh: Translations = {
     availableCalculators: "可用计算器",
     calculatorsDesc: "各金融工具概述",
     faq: "常见问题",
-    keyboardShortcuts: "键盘快捷键",
     contactSupport: "联系我们",
     contactDesc: "如有问题、错误报告或功能请求，请访问我们的 GitHub 仓库。",
     github: "github.com/louisgreen0726/financial-calc",
@@ -1428,8 +1455,6 @@ const zh: Translations = {
     faqPrivacy: "我的数据是否存储在服务器上？",
     faqPrivacyAns:
       "不会。所有计算历史都存储在浏览器本地存储中。不会向任何服务器发送数据。您可以随时从设置页面导出或清除历史记录。",
-    showShortcuts: "显示键盘快捷键",
-    navigateCalculator: "导航到计算器",
   },
   export: {
     title: "导出",
@@ -1439,6 +1464,8 @@ const zh: Translations = {
     noData: "没有可导出的数据",
     csvSuccess: "CSV 导出成功",
     jsonSuccess: "JSON 导出成功",
+    csvError: "CSV 导出失败",
+    jsonError: "JSON 导出失败",
     pdfSuccess: "PDF 导出成功",
     pdfError: "PDF 导出失败",
   },

@@ -11,12 +11,16 @@ import { useCalculationHistory } from "@/hooks/use-calculation-history";
 import { formatCurrency } from "@/lib/utils";
 import { MotionPage, StaggeredList, MotionListItem, MotionCard } from "@/components/motion-wrappers";
 import { motion } from "framer-motion";
+import { WorkspaceHomeSection } from "@/components/workspace-home-section";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   const allNavItems = useMemo(() => NAV_CONFIG.flatMap((section) => section.items), []);
+  const featuredItems = useMemo(() => allNavItems.filter((item) => item.featured).slice(0, 6), [allNavItems]);
   const shouldReduceMotion = useReducedMotion();
   const { t } = useLanguage();
   const { history } = useCalculationHistory({ page: "home" });
+  const latestHistoryItem = history[0];
 
   const getPageConfig = (pageStr: string) => {
     return allNavItems.find((item) => item.href.includes(pageStr));
@@ -44,34 +48,92 @@ export default function Home() {
         </motion.p>
       </div>
 
-      {/* Main Calculators Grid */}
-      <StaggeredList className="grid gap-5 md:gap-6 relative z-10">
-        {allNavItems.map((item, i) => (
-          <MotionListItem key={item.href} index={i} className="list-none group block h-full">
-            <Link href={item.href} className="group flex-1">
-              <MotionCard className="h-full glass-card rounded-2xl hover:bg-background/80 hover:shadow-[0_12px_40px_-15px_hsl(var(--primary)_/_30%)] hover:-translate-y-1 transition-all duration-300 relative overflow-visible transform-gpu">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none rounded-2xl" />
-                <CardHeader className="pb-2 px-5 pt-5">
-                  <CardTitle className="flex items-center gap-3 font-display text-lg md:text-base">
-                    <div className="p-2.5 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-[0_0_15px_hsl(var(--primary)_/_50%)] transition-all duration-300 shrink-0">
-                      <item.icon className="h-5 w-5" />
+      {latestHistoryItem ? (
+        <WorkspaceHomeSection title={t("home.continueTitle")} description={t("home.continueDesc")}>
+          <div className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-background/40 p-5 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">
+                {getPageConfig(latestHistoryItem.page)
+                  ? t(getPageConfig(latestHistoryItem.page)!.titleKey)
+                  : latestHistoryItem.page}
+              </p>
+              <p className="text-2xl font-display font-bold">
+                {latestHistoryItem.result > 1000 ||
+                latestHistoryItem.result < -1000 ||
+                latestHistoryItem.page === "bonds"
+                  ? formatCurrency(latestHistoryItem.result)
+                  : latestHistoryItem.result.toLocaleString(undefined, { maximumFractionDigits: 4 })}
+              </p>
+              {latestHistoryItem.label ? (
+                <p className="text-sm font-medium text-primary">{latestHistoryItem.label}</p>
+              ) : null}
+            </div>
+            <Button asChild>
+              <Link href={`/${latestHistoryItem.page}`}>{t("home.continueAction")}</Link>
+            </Button>
+          </div>
+        </WorkspaceHomeSection>
+      ) : null}
+
+      <WorkspaceHomeSection title={t("home.featuredTitle")} description={t("home.featuredDesc")}>
+        <StaggeredList className="grid gap-5 md:grid-cols-2 xl:grid-cols-3 relative z-10">
+          {featuredItems.map((item, i) => (
+            <MotionListItem key={item.href} index={i} className="list-none group block h-full">
+              <Link href={item.href} className="group flex-1">
+                <MotionCard className="h-full glass-card rounded-2xl hover:bg-background/80 hover:shadow-[0_12px_40px_-15px_hsl(var(--primary)_/_30%)] hover:-translate-y-1 transition-all duration-300 relative overflow-visible transform-gpu">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none rounded-2xl" />
+                  <CardHeader className="pb-2 px-5 pt-5">
+                    <CardTitle className="flex items-center gap-3 font-display text-lg md:text-base">
+                      <div className="p-2.5 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-[0_0_15px_hsl(var(--primary)_/_50%)] transition-all duration-300 shrink-0">
+                        <item.icon className="h-5 w-5" />
+                      </div>
+                      <span className="truncate">{t(item.titleKey)}</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 pt-0 px-5 pb-5">
+                    <CardDescription className="text-sm font-medium text-muted-foreground/80 leading-relaxed line-clamp-2">
+                      {t(item.descKey)}
+                    </CardDescription>
+                    <div className="flex items-center text-sm font-bold text-primary opacity-0 group-hover:opacity-100 transition-all duration-300 transform -translate-x-4 group-hover:translate-x-0">
+                      {t("home.openModule")} <ArrowRight className="ml-2 h-4 w-4" />
                     </div>
-                    <span className="truncate">{t(item.titleKey)}</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 pt-0 px-5 pb-5">
-                  <CardDescription className="text-sm font-medium text-muted-foreground/80 leading-relaxed line-clamp-2">
-                    {t(item.descKey)}
-                  </CardDescription>
-                  <div className="flex items-center text-sm font-bold text-primary opacity-0 group-hover:opacity-100 transition-all duration-300 transform -translate-x-4 group-hover:translate-x-0">
-                    {t("home.openModule") || "Open Module"} <ArrowRight className="ml-2 h-4 w-4" />
-                  </div>
-                </CardContent>
-              </MotionCard>
-            </Link>
-          </MotionListItem>
-        ))}
-      </StaggeredList>
+                  </CardContent>
+                </MotionCard>
+              </Link>
+            </MotionListItem>
+          ))}
+        </StaggeredList>
+      </WorkspaceHomeSection>
+
+      <WorkspaceHomeSection title={t("home.directoryTitle")} description={t("home.directoryDesc")}>
+        <StaggeredList className="grid gap-5 md:gap-6 relative z-10">
+          {allNavItems.map((item, i) => (
+            <MotionListItem key={item.href} index={i} className="list-none group block h-full">
+              <Link href={item.href} className="group flex-1">
+                <MotionCard className="h-full glass-card rounded-2xl hover:bg-background/80 hover:shadow-[0_12px_40px_-15px_hsl(var(--primary)_/_30%)] hover:-translate-y-1 transition-all duration-300 relative overflow-visible transform-gpu">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none rounded-2xl" />
+                  <CardHeader className="pb-2 px-5 pt-5">
+                    <CardTitle className="flex items-center gap-3 font-display text-lg md:text-base">
+                      <div className="p-2.5 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-[0_0_15px_hsl(var(--primary)_/_50%)] transition-all duration-300 shrink-0">
+                        <item.icon className="h-5 w-5" />
+                      </div>
+                      <span className="truncate">{t(item.titleKey)}</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 pt-0 px-5 pb-5">
+                    <CardDescription className="text-sm font-medium text-muted-foreground/80 leading-relaxed line-clamp-2">
+                      {t(item.descKey)}
+                    </CardDescription>
+                    <div className="flex items-center text-sm font-bold text-primary opacity-0 group-hover:opacity-100 transition-all duration-300 transform -translate-x-4 group-hover:translate-x-0">
+                      {t("home.openModule") || "Open Module"} <ArrowRight className="ml-2 h-4 w-4" />
+                    </div>
+                  </CardContent>
+                </MotionCard>
+              </Link>
+            </MotionListItem>
+          ))}
+        </StaggeredList>
+      </WorkspaceHomeSection>
 
       {/* Recent Activity */}
       {history.length > 0 && (
@@ -85,7 +147,7 @@ export default function Home() {
             <div className="p-2 rounded-lg bg-secondary">
               <Clock className="w-5 h-5 text-muted-foreground" />
             </div>
-            <h2 className="text-xl md:text-2xl font-bold tracking-tight font-display">Recent Calculations</h2>
+            <h2 className="text-xl md:text-2xl font-bold tracking-tight font-display">{t("history.recent")}</h2>
           </div>
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
             {history.slice(0, 4).map((item) => {

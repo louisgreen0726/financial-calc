@@ -18,6 +18,7 @@ export interface NavItem {
   descKey: string;
   href: string;
   icon: LucideIcon;
+  featured?: boolean;
 }
 
 export interface NavSection {
@@ -37,12 +38,14 @@ export const NAV_CONFIG: NavSection[] = [
         descKey: "nav.core.tvm.desc",
         href: "/tvm",
         icon: Calculator,
+        featured: true,
       },
       {
         titleKey: "nav.core.cashFlow.title",
         descKey: "nav.core.cashFlow.desc",
         href: "/cash-flow",
         icon: TrendingUp,
+        featured: true,
       },
     ],
   },
@@ -61,12 +64,14 @@ export const NAV_CONFIG: NavSection[] = [
         descKey: "nav.investing.portfolio.desc",
         href: "/portfolio",
         icon: PieChart,
+        featured: true,
       },
       {
         titleKey: "nav.investing.bonds.title",
         descKey: "nav.investing.bonds.desc",
         href: "/bonds",
         icon: Landmark,
+        featured: true,
       },
     ],
   },
@@ -85,6 +90,7 @@ export const NAV_CONFIG: NavSection[] = [
         descKey: "nav.derivatives.risk.desc",
         href: "/risk",
         icon: Activity,
+        featured: true,
       },
     ],
   },
@@ -97,6 +103,7 @@ export const NAV_CONFIG: NavSection[] = [
         descKey: "nav.banking.loans.desc",
         href: "/loans",
         icon: CreditCard,
+        featured: true,
       },
       {
         titleKey: "nav.banking.macro.title",
@@ -137,6 +144,6 @@ export const NAV_ITEMS = NAV_CONFIG.flatMap((section) => section.items);
 export const MOBILE_PRIMARY_NAV = [
   { href: "/", icon: Calculator, labelKey: "common.home" },
   { href: "/tvm", icon: TrendingUp, labelKey: "nav.core.tvm.title" },
+  { href: "/portfolio", icon: PieChart, labelKey: "nav.investing.portfolio.title" },
   { href: "/history", icon: History, labelKey: "history.title" },
-  { href: "/settings", icon: Settings, labelKey: "settings.title" },
 ] as const;
