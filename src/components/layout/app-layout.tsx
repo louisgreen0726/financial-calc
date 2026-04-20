@@ -10,7 +10,7 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   return (
-    <div className="min-h-screen bg-background relative flex selection:bg-primary/30 overflow-x-hidden">
+    <div className="relative flex min-h-screen overflow-x-clip bg-background selection:bg-primary/30">
       {/* Background Orbs */}
       <div className="bg-glow-orb bg-glow-orb-1" />
       <div className="bg-glow-orb bg-glow-orb-2" />
@@ -24,18 +24,18 @@ export function AppLayout({ children }: AppLayoutProps) {
       </a>
 
       {/* Desktop Sidebar Container (gives padding for floating effect) */}
-      <div className="hidden lg:flex w-72 xl:w-80 flex-col fixed inset-y-0 left-0 p-4 z-[80]">
+      <div className="fixed inset-y-0 left-0 z-[80] hidden w-72 flex-col p-4 lg:flex xl:w-80">
         <Sidebar className="rounded-2xl shadow-2xl border-white/10" />
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 lg:pl-72 xl:pl-80 flex flex-col min-h-screen relative z-10">
-        <div className="px-3 sm:px-4 md:px-6 xl:px-8 pt-3 md:pt-4">
+      <div className="relative z-10 flex min-h-screen min-w-0 flex-1 flex-col lg:pl-72 xl:pl-80">
+        <div className="px-3 pt-3 sm:px-4 md:px-6 md:pt-4 xl:px-8">
           <Header className="rounded-2xl shadow-sm border border-white/10 backdrop-blur-3xl bg-card/60" />
         </div>
         <main
           id="main-content"
-          className="flex-1 px-3 pb-28 pt-4 sm:px-4 md:px-6 md:pb-24 xl:px-8 xl:pb-8 overflow-y-auto w-full max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out"
+          className="mx-auto flex-1 w-full max-w-7xl min-w-0 overflow-y-auto px-3 pb-28 pt-4 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out sm:px-4 md:px-6 md:pb-24 xl:px-8 xl:pb-8"
           tabIndex={-1}
         >
           {children}

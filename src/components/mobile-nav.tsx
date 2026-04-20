@@ -26,8 +26,8 @@ export function MobileNav() {
   );
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-card/95 backdrop-blur-xl supports-[backdrop-filter]:bg-card/80 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_rgba(15,23,42,0.12)]">
-      <div className="grid grid-cols-4 h-17 px-1">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-card/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_rgba(15,23,42,0.12)] backdrop-blur-xl supports-[backdrop-filter]:bg-card/80 lg:hidden">
+      <div className="grid h-17 grid-cols-5 gap-1 px-1 py-1">
         {MOBILE_PRIMARY_NAV.map(({ href, icon: Icon, labelKey }) => {
           const isActive = pathname === href;
           return (
@@ -35,7 +35,7 @@ export function MobileNav() {
               key={href}
               href={href}
               className={cn(
-                "flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-[10px] sm:text-[11px] font-medium transition-all",
+                "flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-[10px] font-medium transition-all sm:text-[11px]",
                 isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
               )}
               aria-current={isActive ? "page" : undefined}
@@ -57,7 +57,7 @@ export function MobileNav() {
           <SheetTrigger asChild>
             <Button
               variant="ghost"
-              className="h-full rounded-2xl px-1 py-2 text-muted-foreground hover:text-foreground"
+              className="h-full min-w-0 rounded-2xl px-1 py-2 text-muted-foreground hover:text-foreground"
               aria-label={t("common.more") || "More"}
             >
               <span className="flex flex-col items-center gap-1">
@@ -68,12 +68,12 @@ export function MobileNav() {
               </span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="rounded-t-3xl border-t border-white/10 px-0 pb-6">
+          <SheetContent side="bottom" className="max-h-[85vh] rounded-t-3xl border-t border-white/10 px-0 pb-6">
             <SheetHeader className="px-4 pb-2 pt-5 text-left">
               <SheetTitle>{t("common.more") || "More modules"}</SheetTitle>
               <SheetDescription>{t("home.subtitle")}</SheetDescription>
             </SheetHeader>
-            <div className="max-h-[70vh] overflow-y-auto px-4">
+            <div className="max-h-[min(70vh,36rem)] overflow-y-auto px-4">
               <div className="space-y-5">
                 {sections.map((section) => (
                   <section key={section.titleKey} className="space-y-2">
