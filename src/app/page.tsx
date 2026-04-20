@@ -16,7 +16,6 @@ import { Button } from "@/components/ui/button";
 
 export default function Home() {
   const allNavItems = useMemo(() => NAV_CONFIG.flatMap((section) => section.items), []);
-  const featuredItems = useMemo(() => allNavItems.filter((item) => item.featured).slice(0, 6), [allNavItems]);
   const shouldReduceMotion = useReducedMotion();
   const { t } = useLanguage();
   const { history } = useCalculationHistory({ page: "home" });
@@ -29,9 +28,9 @@ export default function Home() {
   return (
     <MotionPage className="space-y-10">
       {/* Hero Section */}
-      <div className="space-y-4 md:space-y-6 py-6 md:py-16 text-center md:text-left relative z-10">
+      <div className="relative z-10 space-y-4 py-6 text-center md:space-y-6 md:py-16 md:text-left">
         <motion.h1
-          className="text-3xl sm:text-5xl md:text-7xl font-display font-extrabold tracking-[-0.04em] text-gradient mx-auto md:mx-0 w-fit leading-tight drop-shadow-sm pb-2"
+          className="mx-auto max-w-full text-balance break-words pb-2 text-3xl font-display font-extrabold leading-tight tracking-[-0.04em] text-gradient drop-shadow-sm sm:text-5xl md:mx-0 md:w-fit md:text-7xl"
           initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.8, ease: "easeOut" }}
@@ -39,7 +38,7 @@ export default function Home() {
           {t("home.title")}
         </motion.h1>
         <motion.p
-          className="text-xl md:text-2xl font-medium text-muted-foreground/80 max-w-2xl mx-auto md:mx-0"
+          className="mx-auto max-w-2xl text-base font-medium text-muted-foreground/80 sm:text-xl md:mx-0 md:text-2xl"
           initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.8, delay: 0.1, ease: "easeOut" }}
@@ -75,49 +74,19 @@ export default function Home() {
         </WorkspaceHomeSection>
       ) : null}
 
-      <WorkspaceHomeSection title={t("home.featuredTitle")} description={t("home.featuredDesc")}>
-        <StaggeredList className="grid gap-5 md:grid-cols-2 xl:grid-cols-3 relative z-10">
-          {featuredItems.map((item, i) => (
-            <MotionListItem key={item.href} index={i} className="list-none group block h-full">
-              <Link href={item.href} className="group flex-1">
-                <MotionCard className="h-full glass-card rounded-2xl hover:bg-background/80 hover:shadow-[0_12px_40px_-15px_hsl(var(--primary)_/_30%)] hover:-translate-y-1 transition-all duration-300 relative overflow-visible transform-gpu">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none rounded-2xl" />
-                  <CardHeader className="pb-2 px-5 pt-5">
-                    <CardTitle className="flex items-center gap-3 font-display text-lg md:text-base">
-                      <div className="p-2.5 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-[0_0_15px_hsl(var(--primary)_/_50%)] transition-all duration-300 shrink-0">
-                        <item.icon className="h-5 w-5" />
-                      </div>
-                      <span className="truncate">{t(item.titleKey)}</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3 pt-0 px-5 pb-5">
-                    <CardDescription className="text-sm font-medium text-muted-foreground/80 leading-relaxed line-clamp-2">
-                      {t(item.descKey)}
-                    </CardDescription>
-                    <div className="flex items-center text-sm font-bold text-primary opacity-0 group-hover:opacity-100 transition-all duration-300 transform -translate-x-4 group-hover:translate-x-0">
-                      {t("home.openModule")} <ArrowRight className="ml-2 h-4 w-4" />
-                    </div>
-                  </CardContent>
-                </MotionCard>
-              </Link>
-            </MotionListItem>
-          ))}
-        </StaggeredList>
-      </WorkspaceHomeSection>
-
       <WorkspaceHomeSection title={t("home.directoryTitle")} description={t("home.directoryDesc")}>
-        <StaggeredList className="grid gap-5 md:gap-6 relative z-10">
+        <StaggeredList className="relative z-10 grid gap-5 sm:grid-cols-2 xl:grid-cols-3 md:gap-6">
           {allNavItems.map((item, i) => (
             <MotionListItem key={item.href} index={i} className="list-none group block h-full">
               <Link href={item.href} className="group flex-1">
                 <MotionCard className="h-full glass-card rounded-2xl hover:bg-background/80 hover:shadow-[0_12px_40px_-15px_hsl(var(--primary)_/_30%)] hover:-translate-y-1 transition-all duration-300 relative overflow-visible transform-gpu">
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none rounded-2xl" />
                   <CardHeader className="pb-2 px-5 pt-5">
-                    <CardTitle className="flex items-center gap-3 font-display text-lg md:text-base">
+                    <CardTitle className="flex items-start gap-3 font-display text-base sm:text-lg md:text-base">
                       <div className="p-2.5 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-[0_0_15px_hsl(var(--primary)_/_50%)] transition-all duration-300 shrink-0">
                         <item.icon className="h-5 w-5" />
                       </div>
-                      <span className="truncate">{t(item.titleKey)}</span>
+                      <span className="line-clamp-2 break-words">{t(item.titleKey)}</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3 pt-0 px-5 pb-5">
@@ -143,7 +112,7 @@ export default function Home() {
           animate={{ opacity: 1, y: 0 }}
           transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.8, delay: 0.4 }}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="p-2 rounded-lg bg-secondary">
               <Clock className="w-5 h-5 text-muted-foreground" />
             </div>
