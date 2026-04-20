@@ -1008,7 +1008,7 @@ const zh: Translations = {
   },
   sidebar: {
     edition: "专业版",
-    version: "v0.1.0",
+    version: "v0.2.1",
     search: "搜索计算器...",
     featured: "推荐",
   },
@@ -1395,7 +1395,7 @@ const zh: Translations = {
     clearAllHistory: "清除所有历史",
     about: "关于",
     aboutDesc: "关于 FinCalc Pro",
-    version: "v0.2.0",
+    version: "v0.2.1",
     description:
       "全面的金融计算器套件，包括货币时间价值、现金流分析、股票估值、投资组合优化、债券、期权、风险指标、贷款和宏观经济计算工具。",
   },
