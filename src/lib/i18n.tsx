@@ -84,8 +84,6 @@ type Translations = {
     recentCalculations: string;
     continueTitle: string;
     continueDesc: string;
-    featuredTitle: string;
-    featuredDesc: string;
     directoryTitle: string;
     directoryDesc: string;
     continueAction: string;
@@ -561,8 +559,6 @@ const en: Translations = {
     recentCalculations: "Recent Calculations",
     continueTitle: "Continue working",
     continueDesc: "Jump back into the calculator you used most recently.",
-    featuredTitle: "Featured workflows",
-    featuredDesc: "Start with the calculators most useful for common finance tasks.",
     directoryTitle: "All calculators",
     directoryDesc: "Browse the full toolkit when you need a specific model.",
     continueAction: "Continue",
@@ -1052,8 +1048,6 @@ const zh: Translations = {
     recentCalculations: "最近计算记录",
     continueTitle: "继续上次工作",
     continueDesc: "快速回到最近一次使用的计算器。",
-    featuredTitle: "推荐工作流",
-    featuredDesc: "优先展示最常用、最有代表性的金融分析入口。",
     directoryTitle: "全部计算器",
     directoryDesc: "当你需要特定模型时，再浏览完整工具目录。",
     continueAction: "继续",
