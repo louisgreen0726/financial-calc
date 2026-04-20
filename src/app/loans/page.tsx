@@ -31,12 +31,18 @@ import { generatePDFReport } from "@/lib/pdf-export";
 import { useUrlState } from "@/hooks/use-url-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ValidationError } from "@/components/ui/error-display";
-import { ShareDialog } from "@/components/share-dialog";
+import { useLocaleFormat } from "@/hooks/use-locale-format";
+import { ResultShell } from "@/components/result-shell";
+import { ResultActions } from "@/components/result-actions";
 
 function LoansPageContent() {
   const { t } = useLanguage();
-  const [shareOpen, setShareOpen] = useState(false);
-  const { state: urlState, setField } = useUrlState({
+  const { formatCurrencyLocale } = useLocaleFormat();
+  const {
+    state: urlState,
+    setField,
+    shareUrl,
+  } = useUrlState({
     defaultValues: {
       method: "CPM" as "CPM" | "CAM",
       amount: "500000",
@@ -113,21 +119,21 @@ function LoansPageContent() {
     link.download = `amortization-${method}-${amount}-${rate}pct-${years}yr.csv`;
     link.click();
     URL.revokeObjectURL(url);
-    toast.success("Schedule exported as CSV");
+    toast.success(t("export.csvSuccess"));
   };
 
   const exportPDF = () => {
     if (!schedule.length) return;
     const doc = generatePDFReport(`${t("loans.title")} — ${method}`, [
-      { label: t("loans.amount"), value: `$${parseFloat(amount).toLocaleString()}` },
-      { label: t("loans.rate"), value: `${rate}% per annum` },
-      { label: t("loans.term"), value: `${years} years` },
-      { label: t("loans.monthly"), value: `$${stats.monthlyPayment.toFixed(2)}` },
-      { label: t("loans.totalInt"), value: `$${stats.totalInterest.toFixed(2)}` },
-      { label: t("loans.totalCost"), value: `$${stats.totalPayment.toFixed(2)}` },
+      { label: t("loans.amount"), value: formatCurrencyLocale(parseFloat(amount) || 0) },
+      { label: t("loans.rate"), value: `${rate}%` },
+      { label: t("loans.term"), value: `${years} ${t("common.year")}` },
+      { label: t("loans.monthly"), value: formatCurrencyLocale(stats.monthlyPayment) },
+      { label: t("loans.totalInt"), value: formatCurrencyLocale(stats.totalInterest) },
+      { label: t("loans.totalCost"), value: formatCurrencyLocale(stats.totalPayment) },
     ]);
     doc.save(`loan-summary-${method}-${rate}pct-${years}yr.pdf`);
-    toast.success("Summary exported as PDF");
+    toast.success(t("export.pdfSuccess"));
   };
 
   return (
@@ -137,35 +143,7 @@ function LoansPageContent() {
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("loans.title")}</h1>
           <p className="text-muted-foreground mt-2">{t("loans.subtitle")}</p>
         </div>
-        {schedule.length > 0 && (
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShareOpen(true)} className="gap-2">
-              <Share2 className="h-4 w-4" />
-              Share
-            </Button>
-            <Button variant="outline" size="sm" onClick={exportCSV} className="gap-2">
-              <Download className="h-4 w-4" />
-              Export CSV
-            </Button>
-            <Button variant="outline" size="sm" onClick={exportPDF} className="gap-2">
-              <FileText className="h-4 w-4" />
-              Export PDF
-            </Button>
-          </div>
-        )}
       </div>
-
-      <ShareDialog
-        open={shareOpen}
-        onOpenChange={setShareOpen}
-        title={`${t("loans.title")} — ${method}`}
-        results={{
-          [t("loans.monthly")]: stats.monthlyPayment,
-          [t("loans.totalInt")]: stats.totalInterest,
-          [t("loans.totalCost")]: stats.totalPayment,
-        }}
-        inputs={{ amount, rate, years, method }}
-      />
 
       <div className="grid gap-6 xl:grid-cols-12">
         {/* Controls */}
@@ -271,145 +249,206 @@ function LoansPageContent() {
           </CardContent>
         </Card>
 
-        {/* Visuals */}
-        <div className="xl:col-span-8 flex flex-col gap-6">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {/* Pie Chart */}
-            <Card className="min-h-[260px] flex flex-col">
-              <CardHeader>
-                <CardTitle className="text-sm font-medium">{t("loans.breakdown")}</CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1 min-h-0">
-                {schedule.length === 0 ? (
-                  <div className="flex items-center justify-center h-[150px] sm:h-[200px] text-muted-foreground text-sm">
-                    {t("loans.noData") || "Enter valid loan details to see breakdown"}
+        <div className="xl:col-span-8">
+          <ResultShell
+            title={t("common.result")}
+            description={t("loans.subtitle")}
+            isReady={schedule.length > 0}
+            emptyTitle={t("loans.schedule")}
+            emptyDescription={
+              validationError ||
+              t("loans.emptySchedule") ||
+              "Please enter valid positive values for all fields to generate the amortization schedule."
+            }
+            actions={
+              schedule.length > 0 ? (
+                <ResultActions
+                  title={`${t("loans.title")} — ${method}`}
+                  results={{
+                    [t("loans.monthly")]: stats.monthlyPayment,
+                    [t("loans.totalInt")]: stats.totalInterest,
+                    [t("loans.totalCost")]: stats.totalPayment,
+                  }}
+                  inputs={{ amount, rate, years, method }}
+                  shareUrl={shareUrl}
+                  exportData={schedule as unknown as Record<string, unknown>[]}
+                  exportJson={schedule}
+                  pdfElementId="loans-report-content"
+                  pdfFilename={`loan-summary-${method}-${rate}pct-${years}yr`}
+                  pdfTitle={`${t("loans.title")} — ${method}`}
+                />
+              ) : null
+            }
+            summary={
+              <Card className="bg-muted/30">
+                <CardContent className="pt-6">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <div>
+                      <p className="text-sm text-muted-foreground">{t("loans.monthly")}</p>
+                      <p className="text-xl font-bold">
+                        {method === "CPM"
+                          ? formatCurrency(stats.monthlyPayment)
+                          : schedule.length > 0
+                            ? formatCurrency(stats.firstPayment)
+                            : "-"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">{t("loans.totalInt")}</p>
+                      <p className="text-xl font-bold text-destructive">{formatCurrency(stats.totalInterest)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">{t("loans.totalCost")}</p>
+                      <p className="text-xl font-bold">{formatCurrency(stats.totalPayment)}</p>
+                    </div>
                   </div>
-                ) : (
-                  <ResponsiveContainer width="100%" height={180}>
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={48}
-                        outerRadius={72}
-                        paddingAngle={5}
-                      >
-                        {pieData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(value: number) => formatCurrency(value)}
-                        contentStyle={{
-                          backgroundColor: "hsl(var(--card))",
-                          borderRadius: "8px",
-                          border: "1px solid hsl(var(--border))",
-                        }}
-                      />
-                      <Legend verticalAlign="bottom" height={28} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            }
+            advanced={
+              <div className="flex flex-col gap-6" id="loans-report-content">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  {/* Pie Chart */}
+                  <Card className="min-h-[260px] flex flex-col">
+                    <CardHeader>
+                      <CardTitle className="text-sm font-medium">{t("loans.breakdown")}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex-1 min-h-0">
+                      {schedule.length === 0 ? (
+                        <div className="flex items-center justify-center h-[150px] sm:h-[200px] text-muted-foreground text-sm">
+                          {t("loans.noData") || "Enter valid loan details to see breakdown"}
+                        </div>
+                      ) : (
+                        <ResponsiveContainer width="100%" height={180}>
+                          <PieChart>
+                            <Pie
+                              data={pieData}
+                              dataKey="value"
+                              nameKey="name"
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={48}
+                              outerRadius={72}
+                              paddingAngle={5}
+                            >
+                              {pieData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              formatter={(value: number) => formatCurrency(value)}
+                              contentStyle={{
+                                backgroundColor: "hsl(var(--card))",
+                                borderRadius: "8px",
+                                border: "1px solid hsl(var(--border))",
+                              }}
+                            />
+                            <Legend verticalAlign="bottom" height={28} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      )}
+                    </CardContent>
+                  </Card>
 
-            {/* Area Chart: Balance Over Time */}
-            <Card className="min-h-[260px] flex flex-col">
-              <CardHeader>
-                <CardTitle className="text-sm font-medium">{t("loans.balance")}</CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1 min-h-0">
-                {schedule.length === 0 ? (
-                  <div className="flex items-center justify-center h-[150px] sm:h-[200px] text-muted-foreground text-sm">
-                    {t("loans.noData") || "Enter valid loan details to see breakdown"}
-                  </div>
-                ) : (
-                  <ResponsiveContainer width="100%" height={180}>
-                    <AreaChart data={schedule.filter((_, i) => i % 12 === 0)}>
-                      <defs>
-                        <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                      <XAxis dataKey="period" hide />
-                      <YAxis hide domain={[0, "auto"]} />
-                      <Tooltip
-                        formatter={(value: number) => formatCurrency(value)}
-                        labelFormatter={(label) => `Month ${label}`}
-                        contentStyle={{
-                          backgroundColor: "hsl(var(--card))",
-                          borderRadius: "8px",
-                          border: "1px solid hsl(var(--border))",
-                        }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="balance"
-                        stroke="hsl(var(--primary))"
-                        fillOpacity={1}
-                        fill="url(#colorBalance)"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Schedule Table */}
-          <Card className="flex-1 flex flex-col min-h-[320px]">
-            <CardHeader>
-              <CardTitle>{t("loans.schedule")}</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 p-0">
-              {schedule.length === 0 ? (
-                <div className="flex items-center justify-center h-[400px] text-muted-foreground">
-                  <Alert variant="destructive" className="mx-6">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      {validationError ||
-                        t("loans.emptySchedule") ||
-                        "Please enter valid positive values for all fields to generate the amortization schedule."}
-                    </AlertDescription>
-                  </Alert>
+                  {/* Area Chart: Balance Over Time */}
+                  <Card className="min-h-[260px] flex flex-col">
+                    <CardHeader>
+                      <CardTitle className="text-sm font-medium">{t("loans.balance")}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex-1 min-h-0">
+                      {schedule.length === 0 ? (
+                        <div className="flex items-center justify-center h-[150px] sm:h-[200px] text-muted-foreground text-sm">
+                          {t("loans.noData") || "Enter valid loan details to see breakdown"}
+                        </div>
+                      ) : (
+                        <ResponsiveContainer width="100%" height={180}>
+                          <AreaChart data={schedule.filter((_, i) => i % 12 === 0)}>
+                            <defs>
+                              <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                                <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                            <XAxis dataKey="period" hide />
+                            <YAxis hide domain={[0, "auto"]} />
+                            <Tooltip
+                              formatter={(value: number) => formatCurrency(value)}
+                              labelFormatter={(label) => `Month ${label}`}
+                              contentStyle={{
+                                backgroundColor: "hsl(var(--card))",
+                                borderRadius: "8px",
+                                border: "1px solid hsl(var(--border))",
+                              }}
+                            />
+                            <Area
+                              type="monotone"
+                              dataKey="balance"
+                              stroke="hsl(var(--primary))"
+                              fillOpacity={1}
+                              fill="url(#colorBalance)"
+                            />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      )}
+                    </CardContent>
+                  </Card>
                 </div>
-              ) : (
-                <ScrollArea className="max-h-[min(54vh,26rem)]">
-                  <Table>
-                    <TableHeader className="sticky top-0 bg-background z-10">
-                      <TableRow>
-                        <TableHead className="w-[80px]">{t("cashFlow.period")}</TableHead>
-                        <TableHead>{t("loans.payment")}</TableHead>
-                        <TableHead>{t("loans.principal")}</TableHead>
-                        <TableHead>{t("loans.interest")}</TableHead>
-                        <TableHead className="text-right">{t("loans.remBalance")}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {schedule.map((row) => (
-                        <TableRow key={row.period}>
-                          <TableCell className="font-mono text-xs">{row.period}</TableCell>
-                          <TableCell className="font-mono text-xs">{formatCurrency(row.payment)}</TableCell>
-                          <TableCell className="font-mono text-xs text-primary">
-                            {formatCurrency(row.principal)}
-                          </TableCell>
-                          <TableCell className="font-mono text-xs text-destructive">
-                            {formatCurrency(row.interest)}
-                          </TableCell>
-                          <TableCell className="text-right font-mono text-xs">{formatCurrency(row.balance)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </ScrollArea>
-              )}
-            </CardContent>
-          </Card>
+
+                {/* Schedule Table */}
+                <Card className="flex-1 flex flex-col min-h-[320px]">
+                  <CardHeader>
+                    <CardTitle>{t("loans.schedule")}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex-1 p-0">
+                    {schedule.length === 0 ? (
+                      <div className="flex items-center justify-center h-[400px] text-muted-foreground">
+                        <Alert variant="destructive" className="mx-6">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription>
+                            {validationError ||
+                              t("loans.emptySchedule") ||
+                              "Please enter valid positive values for all fields to generate the amortization schedule."}
+                          </AlertDescription>
+                        </Alert>
+                      </div>
+                    ) : (
+                      <ScrollArea className="max-h-[min(54vh,26rem)]">
+                        <Table>
+                          <TableHeader className="sticky top-0 bg-background z-10">
+                            <TableRow>
+                              <TableHead className="w-[80px]">{t("cashFlow.period")}</TableHead>
+                              <TableHead>{t("loans.payment")}</TableHead>
+                              <TableHead>{t("loans.principal")}</TableHead>
+                              <TableHead>{t("loans.interest")}</TableHead>
+                              <TableHead className="text-right">{t("loans.remBalance")}</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {schedule.map((row) => (
+                              <TableRow key={row.period}>
+                                <TableCell className="font-mono text-xs">{row.period}</TableCell>
+                                <TableCell className="font-mono text-xs">{formatCurrency(row.payment)}</TableCell>
+                                <TableCell className="font-mono text-xs text-primary">
+                                  {formatCurrency(row.principal)}
+                                </TableCell>
+                                <TableCell className="font-mono text-xs text-destructive">
+                                  {formatCurrency(row.interest)}
+                                </TableCell>
+                                <TableCell className="text-right font-mono text-xs">
+                                  {formatCurrency(row.balance)}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </ScrollArea>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            }
+          />
         </div>
       </div>
     </div>

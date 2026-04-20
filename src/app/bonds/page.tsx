@@ -19,6 +19,8 @@ import { ResponsiveDisclosure } from "@/components/responsive-disclosure";
 import { parseOptionalNumber, parseRequiredNumber } from "@/lib/input-utils";
 import { ErrorDisplay, ValidationError } from "@/components/ui/error-display";
 import { BondInputSchema } from "@/lib/validation";
+import { ResultShell } from "@/components/result-shell";
+import { ResultActions } from "@/components/result-actions";
 
 export default function BondsPage() {
   const { t } = useLanguage();
@@ -132,12 +134,6 @@ export default function BondsPage() {
               if (inputs.frequency) setFrequency(String(inputs.frequency));
             }}
           />
-          <ExportMenu
-            data={chartData}
-            jsonData={metrics}
-            pdfElementId="bonds-report-content"
-            pdfFilename={`bond-analysis-${years}yr`}
-          />
         </div>
       </div>
 
@@ -237,169 +233,186 @@ export default function BondsPage() {
           </CardContent>
         </Card>
 
-        <div className="xl:col-span-8 space-y-6">
-          {/* Key Metrics Grid */}
-          <section aria-label="Bond calculation results">
-            <h2 className="text-xl font-semibold mb-2">{t("bonds.metrics")}</h2>
-            <div
-              className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
-              role="region"
-              aria-live="polite"
-              aria-label="Bond calculation results"
-            >
-              <Card>
-                <CardHeader className="p-4 pb-2">
-                  <CardTitle className="text-xs font-medium text-muted-foreground uppercase">
-                    {t("bonds.fairPrice")}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <div className="text-2xl font-bold">
-                    {hasBondErrors ? t("common.notAvailable") : formatCurrency(metrics.price)}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {hasBondErrors
-                      ? t("bonds.validation.invalidInputs")
-                      : metrics.price < parseRequiredNumber(faceValue)
-                        ? t("bonds.discount")
-                        : t("bonds.premium")}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="p-4 pb-2">
-                  <CardTitle className="text-xs font-medium text-muted-foreground uppercase">
-                    {t("bonds.macDur")}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <div className="text-2xl font-bold">
-                    {hasBondErrors ? t("common.notAvailable") : `${metrics.macDuration.toFixed(2)} ${t("common.year")}`}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="p-4 pb-2">
-                  <CardTitle className="text-xs font-medium text-muted-foreground uppercase">
-                    {t("bonds.modDur")}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <div className="text-2xl font-bold">
-                    {hasBondErrors ? t("common.notAvailable") : metrics.modDuration.toFixed(2)}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {hasBondErrors
-                      ? t("bonds.validation.invalidInputs")
-                      : `Sens: ${(metrics.modDuration * 1).toFixed(2)}% / 1% ΔYield`}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="p-4 pb-2">
-                  <CardTitle className="text-xs font-medium text-muted-foreground uppercase">
-                    {t("bonds.convexity")}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <div className="text-2xl font-bold">
-                    {hasBondErrors ? t("common.notAvailable") : metrics.convexity.toFixed(2)}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </section>
-
-          {/* Price-Yield Curve */}
-          <ResponsiveDisclosure
-            title={t("bonds.curve")}
-            description={t("bonds.validation.curveDisclosure")}
-            defaultOpen={false}
-          >
-            <Card className="h-[260px] sm:h-[320px] md:h-[380px] flex flex-col">
-              <CardHeader>
-                <CardTitle>{t("bonds.curve")}</CardTitle>
-                <CardDescription>{t("bonds.subtitle")}</CardDescription>
-              </CardHeader>
-              <CardContent className="flex-1 min-h-0">
-                <ClientOnlyChart>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData} margin={{ top: 12, right: 12, left: 0, bottom: 8 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                      <XAxis
-                        dataKey="yield"
-                        label={{ value: `${t("bonds.ytm")}`, position: "bottom", offset: 0 }}
-                        stroke="hsl(var(--muted-foreground))"
-                        fontSize={10}
-                        minTickGap={18}
-                      />
-                      <YAxis
-                        stroke="hsl(var(--muted-foreground))"
-                        fontSize={10}
-                        domain={["auto", "auto"]}
-                        tickFormatter={(val) => `$${val}`}
-                      />
-                      <Tooltip
-                        formatter={(value: number) => formatCurrency(value)}
-                        labelFormatter={(l) => `Yield: ${l}%`}
-                        contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))" }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="price"
-                        stroke="hsl(var(--primary))"
-                        strokeWidth={3}
-                        dot={false}
-                        activeDot={{ r: 6 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </ClientOnlyChart>
-              </CardContent>
-            </Card>
-          </ResponsiveDisclosure>
-
-          {/* Price Sensitivity Heatmap */}
-          <ResponsiveDisclosure
-            title={t("bonds.priceSensitivity")}
-            description={t("bonds.validation.heatmapDisclosure")}
-            defaultOpen={false}
-          >
-            <Card className="h-auto">
-              <CardHeader>
-                <CardTitle>{t("bonds.priceSensitivity")}</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0 overflow-x-auto">
-                <SensitivityHeatmap
-                  data={sensitivityData}
-                  rowLabels={rowLabels}
-                  colLabels={colLabels}
-                  formatCell={formatCell}
+        <div className="xl:col-span-8">
+          <ResultShell
+            title={t("common.result")}
+            description={t("bonds.subtitle")}
+            isReady={!hasBondErrors}
+            emptyTitle={t("bonds.metrics")}
+            emptyDescription={t("bonds.validation.invalidInputs")}
+            actions={
+              !hasBondErrors ? (
+                <ResultActions
+                  title={t("bonds.title")}
+                  results={{
+                    [t("bonds.fairPrice")]: metrics.price,
+                    [t("bonds.macDur")]: metrics.macDuration,
+                    [t("bonds.modDur")]: metrics.modDuration,
+                    [t("bonds.convexity")]: metrics.convexity,
+                  }}
+                  inputs={{ faceValue, couponRate, years, ytm, frequency }}
+                  exportData={chartData}
+                  exportJson={metrics}
+                  pdfElementId="bonds-report-content"
+                  pdfFilename={`bond-analysis-${years}yr`}
+                  pdfTitle={t("bonds.title")}
                 />
-                <div className="grid gap-3 border-t border-white/10 p-4 sm:hidden">
-                  <p className="text-sm font-semibold text-muted-foreground">
-                    {t("bonds.validation.mobileHeatmapTitle")}
-                  </p>
-                  {rowLabels.map((rowLabel, rowIndex) => (
-                    <div key={rowLabel} className="rounded-2xl border border-white/10 bg-background/30 p-3 space-y-2">
-                      <p className="text-sm font-semibold">{rowLabel}</p>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        {colLabels.map((colLabel, colIndex) => (
-                          <div key={`${rowLabel}-${colLabel}`} className="rounded-xl bg-muted/40 px-3 py-2">
-                            <p className="text-xs text-muted-foreground">{colLabel}</p>
-                            <p className="font-mono font-medium">{formatCell(sensitivityData[rowIndex][colIndex])}</p>
+              ) : null
+            }
+            summary={
+              <section aria-label="Bond calculation results">
+                <h2 className="text-xl font-semibold mb-2">{t("bonds.metrics")}</h2>
+                <div
+                  className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
+                  role="region"
+                  aria-live="polite"
+                  aria-label="Bond calculation results"
+                >
+                  <Card>
+                    <CardHeader className="p-4 pb-2">
+                      <CardTitle className="text-xs font-medium text-muted-foreground uppercase">
+                        {t("bonds.fairPrice")}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                      <div className="text-2xl font-bold">{formatCurrency(metrics.price)}</div>
+                      <p className="text-xs text-muted-foreground">
+                        {metrics.price < parseRequiredNumber(faceValue) ? t("bonds.discount") : t("bonds.premium")}
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="p-4 pb-2">
+                      <CardTitle className="text-xs font-medium text-muted-foreground uppercase">
+                        {t("bonds.macDur")}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                      <div className="text-2xl font-bold">{`${metrics.macDuration.toFixed(2)} ${t("common.year")}`}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="p-4 pb-2">
+                      <CardTitle className="text-xs font-medium text-muted-foreground uppercase">
+                        {t("bonds.modDur")}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                      <div className="text-2xl font-bold">{metrics.modDuration.toFixed(2)}</div>
+                      <p className="text-xs text-muted-foreground">{`Sens: ${(metrics.modDuration * 1).toFixed(2)}% / 1% ΔYield`}</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="p-4 pb-2">
+                      <CardTitle className="text-xs font-medium text-muted-foreground uppercase">
+                        {t("bonds.convexity")}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                      <div className="text-2xl font-bold">{metrics.convexity.toFixed(2)}</div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </section>
+            }
+            advanced={
+              <div className="space-y-6" id="bonds-report-content">
+                {/* Key Metrics Grid */}
+                {/* Price-Yield Curve */}
+                <ResponsiveDisclosure
+                  title={t("bonds.curve")}
+                  description={t("bonds.validation.curveDisclosure")}
+                  defaultOpen={false}
+                >
+                  <Card className="h-[260px] sm:h-[320px] md:h-[380px] flex flex-col">
+                    <CardHeader>
+                      <CardTitle>{t("bonds.curve")}</CardTitle>
+                      <CardDescription>{t("bonds.subtitle")}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex-1 min-h-0">
+                      <ClientOnlyChart>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={chartData} margin={{ top: 12, right: 12, left: 0, bottom: 8 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                            <XAxis
+                              dataKey="yield"
+                              label={{ value: `${t("bonds.ytm")}`, position: "bottom", offset: 0 }}
+                              stroke="hsl(var(--muted-foreground))"
+                              fontSize={10}
+                              minTickGap={18}
+                            />
+                            <YAxis
+                              stroke="hsl(var(--muted-foreground))"
+                              fontSize={10}
+                              domain={["auto", "auto"]}
+                              tickFormatter={(val) => `$${val}`}
+                            />
+                            <Tooltip
+                              formatter={(value: number) => formatCurrency(value)}
+                              labelFormatter={(l) => `Yield: ${l}%`}
+                              contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))" }}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="price"
+                              stroke="hsl(var(--primary))"
+                              strokeWidth={3}
+                              dot={false}
+                              activeDot={{ r: 6 }}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </ClientOnlyChart>
+                    </CardContent>
+                  </Card>
+                </ResponsiveDisclosure>
+
+                {/* Price Sensitivity Heatmap */}
+                <ResponsiveDisclosure
+                  title={t("bonds.priceSensitivity")}
+                  description={t("bonds.validation.heatmapDisclosure")}
+                  defaultOpen={false}
+                >
+                  <Card className="h-auto">
+                    <CardHeader>
+                      <CardTitle>{t("bonds.priceSensitivity")}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0 overflow-x-auto">
+                      <SensitivityHeatmap
+                        data={sensitivityData}
+                        rowLabels={rowLabels}
+                        colLabels={colLabels}
+                        formatCell={formatCell}
+                      />
+                      <div className="grid gap-3 border-t border-white/10 p-4 sm:hidden">
+                        <p className="text-sm font-semibold text-muted-foreground">
+                          {t("bonds.validation.mobileHeatmapTitle")}
+                        </p>
+                        {rowLabels.map((rowLabel, rowIndex) => (
+                          <div
+                            key={rowLabel}
+                            className="rounded-2xl border border-white/10 bg-background/30 p-3 space-y-2"
+                          >
+                            <p className="text-sm font-semibold">{rowLabel}</p>
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                              {colLabels.map((colLabel, colIndex) => (
+                                <div key={`${rowLabel}-${colLabel}`} className="rounded-xl bg-muted/40 px-3 py-2">
+                                  <p className="text-xs text-muted-foreground">{colLabel}</p>
+                                  <p className="font-mono font-medium">
+                                    {formatCell(sensitivityData[rowIndex][colIndex])}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         ))}
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </ResponsiveDisclosure>
+                    </CardContent>
+                  </Card>
+                </ResponsiveDisclosure>
+              </div>
+            }
+          />
         </div>
       </div>
     </div>

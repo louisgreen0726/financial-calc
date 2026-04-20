@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { formatCurrency } from "@/lib/utils";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { useLanguage } from "@/lib/i18n";
+import { ResultShell } from "@/components/result-shell";
 
 export default function RiskPage() {
   const { t } = useLanguage();
@@ -112,103 +113,115 @@ export default function RiskPage() {
           </CardContent>
         </Card>
 
-        <div className="lg:col-span-8 space-y-6">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-muted-foreground text-sm font-medium uppercase">{t("risk.var")}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl sm:text-3xl font-bold text-destructive break-all">
-                  {formatCurrency(metrics.VaR_val)}
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {formatCurrency(metrics.VaR_val)} ({(metrics.VaR_pct * 100).toFixed(2)}% {t("risk.varDesc")})
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-muted-foreground text-sm font-medium uppercase">{t("risk.cvar")}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl sm:text-3xl font-bold text-destructive break-all">
-                  {formatCurrency(metrics.CVaR_val)}
-                </div>
-                <p className="text-sm text-muted-foreground">{t("risk.cvarDesc")}</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card className="h-[260px] sm:h-[320px] md:h-[380px] flex flex-col">
-            <CardHeader>
-              <CardTitle>{t("risk.dist")}</CardTitle>
-              <CardDescription>{t("risk.distDesc")}</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 min-h-0">
-              {chartReady ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData}>
-                    <defs>
-                      <linearGradient id="colorProb" x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stopColor="hsl(var(--destructive))" stopOpacity={0.5} />
-                        <stop
-                          offset={`${Math.max(0, Math.min(100, ((4 - metrics.z) / 8) * 100))}%`}
-                          stopColor="hsl(var(--destructive))"
-                          stopOpacity={0.5}
+        <div className="lg:col-span-8">
+          <ResultShell
+            title={t("common.result")}
+            description={t("risk.subtitle")}
+            isReady={true}
+            summary={
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-muted-foreground text-sm font-medium uppercase">
+                      {t("risk.var")}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl sm:text-3xl font-bold text-destructive break-all">
+                      {formatCurrency(metrics.VaR_val)}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {formatCurrency(metrics.VaR_val)} ({(metrics.VaR_pct * 100).toFixed(2)}% {t("risk.varDesc")})
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-muted-foreground text-sm font-medium uppercase">
+                      {t("risk.cvar")}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl sm:text-3xl font-bold text-destructive break-all">
+                      {formatCurrency(metrics.CVaR_val)}
+                    </div>
+                    <p className="text-sm text-muted-foreground">{t("risk.cvarDesc")}</p>
+                  </CardContent>
+                </Card>
+              </div>
+            }
+            advanced={
+              <Card className="h-[260px] sm:h-[320px] md:h-[380px] flex flex-col">
+                <CardHeader>
+                  <CardTitle>{t("risk.dist")}</CardTitle>
+                  <CardDescription>{t("risk.distDesc")}</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1 min-h-0">
+                  {chartReady ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={chartData}>
+                        <defs>
+                          <linearGradient id="colorProb" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%" stopColor="hsl(var(--destructive))" stopOpacity={0.5} />
+                            <stop
+                              offset={`${Math.max(0, Math.min(100, ((4 - metrics.z) / 8) * 100))}%`}
+                              stopColor="hsl(var(--destructive))"
+                              stopOpacity={0.5}
+                            />
+                            <stop
+                              offset={`${Math.max(0, Math.min(100, ((4 - metrics.z) / 8) * 100))}%`}
+                              stopColor="hsl(var(--primary))"
+                              stopOpacity={0.3}
+                            />
+                            <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                          </linearGradient>
+                          <linearGradient id="strokeProb" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%" stopColor="hsl(var(--destructive))" stopOpacity={1} />
+                            <stop
+                              offset={`${Math.max(0, Math.min(100, ((4 - metrics.z) / 8) * 100))}%`}
+                              stopColor="hsl(var(--destructive))"
+                              stopOpacity={1}
+                            />
+                            <stop
+                              offset={`${Math.max(0, Math.min(100, ((4 - metrics.z) / 8) * 100))}%`}
+                              stopColor="hsl(var(--primary))"
+                              stopOpacity={1}
+                            />
+                            <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={1} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                        <XAxis
+                          dataKey="loss"
+                          tickFormatter={(v) => formatCurrency(v)}
+                          stroke="hsl(var(--muted-foreground))"
+                          fontSize={10}
+                          minTickGap={22}
                         />
-                        <stop
-                          offset={`${Math.max(0, Math.min(100, ((4 - metrics.z) / 8) * 100))}%`}
-                          stopColor="hsl(var(--primary))"
-                          stopOpacity={0.3}
+                        <YAxis hide />
+                        <Tooltip labelFormatter={() => ""} formatter={(v: number) => v.toFixed(4)} />
+                        <Area
+                          type="monotone"
+                          dataKey="prob"
+                          stroke="url(#strokeProb)"
+                          fillOpacity={1}
+                          fill="url(#colorProb)"
                         />
-                        <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                      </linearGradient>
-                      <linearGradient id="strokeProb" x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stopColor="hsl(var(--destructive))" stopOpacity={1} />
-                        <stop
-                          offset={`${Math.max(0, Math.min(100, ((4 - metrics.z) / 8) * 100))}%`}
-                          stopColor="hsl(var(--destructive))"
-                          stopOpacity={1}
+                        <ReferenceLine
+                          x={metrics.VaR_val}
+                          stroke="hsl(var(--destructive))"
+                          strokeWidth={2}
+                          label={{ value: "VaR", fill: "hsl(var(--destructive))", fontSize: 11 }}
                         />
-                        <stop
-                          offset={`${Math.max(0, Math.min(100, ((4 - metrics.z) / 8) * 100))}%`}
-                          stopColor="hsl(var(--primary))"
-                          stopOpacity={1}
-                        />
-                        <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={1} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                    <XAxis
-                      dataKey="loss"
-                      tickFormatter={(v) => formatCurrency(v)}
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={10}
-                      minTickGap={22}
-                    />
-                    <YAxis hide />
-                    <Tooltip labelFormatter={() => ""} formatter={(v: number) => v.toFixed(4)} />
-                    <Area
-                      type="monotone"
-                      dataKey="prob"
-                      stroke="url(#strokeProb)"
-                      fillOpacity={1}
-                      fill="url(#colorProb)"
-                    />
-                    <ReferenceLine
-                      x={metrics.VaR_val}
-                      stroke="hsl(var(--destructive))"
-                      strokeWidth={2}
-                      label={{ value: "VaR", fill: "hsl(var(--destructive))", fontSize: 11 }}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-full w-full" aria-hidden="true" />
-              )}
-            </CardContent>
-          </Card>
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-full w-full" aria-hidden="true" />
+                  )}
+                </CardContent>
+              </Card>
+            }
+          />
         </div>
       </div>
     </div>
