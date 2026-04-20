@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
+import { stableSerialize } from "@/lib/stable-serialize";
 
 interface UseHistoryRecorderOptions {
   addToHistory: (inputs: Record<string, number | string>, result: number, label?: string) => void;
@@ -17,7 +18,7 @@ export function useHistoryRecorder({ addToHistory, inputs, result, label }: UseH
       return null;
     }
 
-    return JSON.stringify({ inputs, result, label });
+    return stableSerialize({ inputs, result, label });
   }, [inputs, label, result]);
 
   useEffect(() => {
