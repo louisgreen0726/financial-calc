@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { HISTORY_KEY, MAX_HISTORY_ITEMS, HISTORY_EXPIRY_DAYS } from "@/lib/constants";
 import { safeGetJSON, safeSetJSON } from "@/lib/storage";
 import { logger } from "@/lib/logger";
+import { createHistoryId, stableSerialize } from "@/lib/stable-serialize";
 
 export interface CalculationHistoryItem {
   id: string;
@@ -64,7 +65,7 @@ export function useCalculationHistory({ page, maxItems = MAX_HISTORY_ITEMS }: Us
   const addToHistory = useCallback(
     (inputs: Record<string, number | string>, result: number, label?: string) => {
       const newItem: CalculationHistoryItem = {
-        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: createHistoryId(),
         page,
         inputs,
         result,
@@ -73,9 +74,8 @@ export function useCalculationHistory({ page, maxItems = MAX_HISTORY_ITEMS }: Us
       };
 
       setHistory((prev) => {
-        const filtered = prev.filter(
-          (item) => item.page !== page || JSON.stringify(item.inputs) !== JSON.stringify(inputs)
-        );
+        const nextSignature = stableSerialize(inputs);
+        const filtered = prev.filter((item) => item.page !== page || stableSerialize(item.inputs) !== nextSignature);
         const updated = [newItem, ...filtered].slice(0, maxItems);
         return updated;
       });

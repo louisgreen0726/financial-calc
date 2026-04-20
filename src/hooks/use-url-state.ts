@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 
 interface UseUrlStateOptions<T> {
@@ -38,16 +38,14 @@ export function useUrlState<T extends Record<string, string | number>>({
     return initialState;
   }, [defaultValues, prefix, searchParams]);
 
-  const [pendingState, setPendingState] = useState<T | null>(null);
-
   const derivedState = useMemo(() => readStateFromParams(), [readStateFromParams]);
-  const state = pendingState ?? derivedState;
+  const state = derivedState;
 
-  const updateUrl = useCallback(
-    (newState: T) => {
+  const buildUrl = useCallback(
+    (nextState: T = state) => {
       const params = new URLSearchParams(searchParams.toString());
 
-      for (const [key, value] of Object.entries(newState)) {
+      for (const [key, value] of Object.entries(nextState)) {
         const paramKey = prefix ? `${prefix}_${key}` : key;
         if (value !== undefined && value !== null && value !== "") {
           params.set(paramKey, String(value));
@@ -57,28 +55,30 @@ export function useUrlState<T extends Record<string, string | number>>({
       }
 
       const nextQuery = params.toString();
-      const newUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
+      return nextQuery ? `${pathname}?${nextQuery}` : pathname;
+    },
+    [pathname, prefix, searchParams, state]
+  );
+
+  const updateUrl = useCallback(
+    (newState: T) => {
+      const newUrl = buildUrl(newState);
       router.replace(newUrl, { scroll: false });
     },
-    [pathname, router, searchParams, prefix]
+    [buildUrl, router]
   );
 
   const setField = useCallback(
     <K extends keyof T>(key: K, value: T[K]) => {
-      setPendingState((prev) => {
-        const baseState = prev ?? derivedState;
-        const newState = { ...baseState, [key]: value };
-        updateUrl(newState);
-        return newState;
-      });
+      const newState = { ...derivedState, [key]: value };
+      updateUrl(newState);
     },
     [derivedState, updateUrl]
   );
 
   const reset = useCallback(() => {
-    setPendingState(defaultValues);
     router.replace(pathname, { scroll: false });
   }, [defaultValues, pathname, router]);
 
-  return { state, setField, reset, updateUrl };
+  return { state, setField, reset, updateUrl, buildUrl, shareUrl: buildUrl(state) };
 }
