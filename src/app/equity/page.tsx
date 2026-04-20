@@ -16,6 +16,7 @@ import { parseRequiredNumber } from "@/lib/input-utils";
 import { ResponsiveDisclosure } from "@/components/responsive-disclosure";
 import { ErrorDisplay, ValidationError } from "@/components/ui/error-display";
 import { EquityCAPMSchema, EquityDDMSchema, EquityWACCSchema } from "@/lib/validation";
+import { ResultShell } from "@/components/result-shell";
 
 export default function EquityPage() {
   const { t } = useLanguage();
@@ -221,24 +222,23 @@ export default function EquityPage() {
               </CardContent>
             </Card>
 
-            <Card className="flex flex-col justify-center items-center bg-muted/30">
-              <div
-                className="text-center space-y-2"
-                role="region"
-                aria-live="polite"
-                aria-label="CAPM calculation result"
-              >
-                <h2 className="text-lg font-medium text-muted-foreground">{t("equity.capm.re")}</h2>
-                <div className="text-4xl sm:text-5xl font-bold text-primary tracking-tighter break-all">
-                  {Object.keys(capmValidation).length === 0
-                    ? `${(capmResult * 100).toFixed(2)}%`
-                    : t("common.notAvailable")}
-                </div>
-                <p className="text-sm text-muted-foreground max-w-xs mx-auto pt-4">
-                  {t("equity.capm.prem")}: {(parseRequiredNumber(rm) - parseRequiredNumber(rf)).toFixed(2)}%.
-                </p>
-              </div>
-            </Card>
+            <ResultShell
+              title={t("equity.capm.re")}
+              description={t("equity.capm.desc")}
+              isReady={Object.keys(capmValidation).length === 0}
+              emptyTitle={t("equity.capm.re")}
+              emptyDescription={t("equity.validation.invalidInputs")}
+              summary={
+                <Card className="flex flex-col justify-center items-center bg-muted/30">
+                  <CardContent className="text-center space-y-2 pt-6">
+                    <div className="text-4xl sm:text-5xl font-bold text-primary tracking-tighter break-all">{`${(capmResult * 100).toFixed(2)}%`}</div>
+                    <p className="text-sm text-muted-foreground max-w-xs mx-auto pt-4">
+                      {t("equity.capm.prem")}: {(parseRequiredNumber(rm) - parseRequiredNumber(rf)).toFixed(2)}%.
+                    </p>
+                  </CardContent>
+                </Card>
+              }
+            />
           </div>
         </TabsContent>
 
@@ -314,22 +314,21 @@ export default function EquityPage() {
               </CardContent>
             </Card>
 
-            <Card className="flex flex-col justify-center items-center bg-muted/30">
-              <div
-                className="text-center space-y-2"
-                role="region"
-                aria-live="polite"
-                aria-label="WACC calculation result"
-              >
-                <h2 className="text-lg font-medium text-muted-foreground">{t("equity.wacc.result")}</h2>
-                <div className="text-4xl sm:text-5xl font-bold text-primary tracking-tighter break-all">
-                  {Object.keys(waccValidation).length === 0
-                    ? `${(waccResult * 100).toFixed(2)}%`
-                    : t("common.notAvailable")}
-                </div>
-                <p className="text-sm text-muted-foreground max-w-xs mx-auto pt-4">{t("equity.wacc.desc")}</p>
-              </div>
-            </Card>
+            <ResultShell
+              title={t("equity.wacc.result")}
+              description={t("equity.wacc.desc")}
+              isReady={Object.keys(waccValidation).length === 0}
+              emptyTitle={t("equity.wacc.result")}
+              emptyDescription={t("equity.validation.invalidInputs")}
+              summary={
+                <Card className="flex flex-col justify-center items-center bg-muted/30">
+                  <CardContent className="text-center space-y-2 pt-6">
+                    <div className="text-4xl sm:text-5xl font-bold text-primary tracking-tighter break-all">{`${(waccResult * 100).toFixed(2)}%`}</div>
+                    <p className="text-sm text-muted-foreground max-w-xs mx-auto pt-4">{t("equity.wacc.desc")}</p>
+                  </CardContent>
+                </Card>
+              }
+            />
           </div>
         </TabsContent>
 
@@ -389,26 +388,25 @@ export default function EquityPage() {
               </CardContent>
             </Card>
 
-            <Card className="flex flex-col justify-center items-center bg-muted/30">
-              <div
-                className="text-center space-y-2"
-                role="region"
-                aria-live="polite"
-                aria-label="DDM calculation result"
-              >
-                <h2 className="text-lg font-medium text-muted-foreground">{t("equity.ddm.intrinsic")}</h2>
-                <div
-                  className={`text-4xl sm:text-5xl font-bold tracking-tighter break-all ${ddmResult <= 0 ? "text-muted-foreground" : "text-primary"}`}
-                >
-                  {Object.keys(ddmValidation).length === 0 && ddmResult > 0
-                    ? formatCurrency(ddmResult)
-                    : t("common.notAvailable")}
-                </div>
-                <p className="text-sm text-muted-foreground max-w-xs mx-auto pt-4">
-                  {ddmResult <= 0 ? t("equity.ddm.growthError") : t("equity.ddm.resultDesc")}
-                </p>
-              </div>
-            </Card>
+            <ResultShell
+              title={t("equity.ddm.intrinsic")}
+              description={t("equity.ddm.desc")}
+              isReady={Object.keys(ddmValidation).length === 0 && ddmResult > 0}
+              emptyTitle={t("equity.ddm.intrinsic")}
+              emptyDescription={ddmResult <= 0 ? t("equity.ddm.growthError") : t("equity.validation.invalidInputs")}
+              summary={
+                <Card className="flex flex-col justify-center items-center bg-muted/30">
+                  <CardContent className="text-center space-y-2 pt-6">
+                    <div
+                      className={`text-4xl sm:text-5xl font-bold tracking-tighter break-all ${ddmResult <= 0 ? "text-muted-foreground" : "text-primary"}`}
+                    >
+                      {formatCurrency(ddmResult)}
+                    </div>
+                    <p className="text-sm text-muted-foreground max-w-xs mx-auto pt-4">{t("equity.ddm.resultDesc")}</p>
+                  </CardContent>
+                </Card>
+              }
+            />
           </div>
         </TabsContent>
       </Tabs>
