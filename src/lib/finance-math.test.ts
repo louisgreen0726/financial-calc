@@ -1,39 +1,33 @@
 import { expect, test } from "vitest";
 import { Finance } from "./finance-math";
 
-test("pv with standard inputs", () => {
-  const res = Finance.pv(0.05 / 12, 12 * 30, 100, 0, 0);
-  // rough sanity: PV should be negative (outflow) and finite
-  expect(isFinite(res)).toBe(true);
+test("pv handles zero-rate case exactly", () => {
+  expect(Finance.pv(0, 10, 100, 500, 0)).toBe(-1500);
 });
 
-test("fv with standard inputs", () => {
-  const res = Finance.fv(0.05 / 12, 12 * 30, -100, 0, 0);
-  expect(isFinite(res)).toBe(true);
+test("fv handles zero-rate case exactly", () => {
+  expect(Finance.fv(0, 10, 100, 500, 0)).toBe(-1500);
 });
 
-test("pmt basic", () => {
+test("pmt matches a standard mortgage payment benchmark", () => {
   const res = Finance.pmt(0.05 / 12, 12 * 30, 100000, 0, 0);
-  expect(isFinite(res)).toBe(true);
+  expect(res).toBeCloseTo(-536.82, 2);
 });
 
-test("nper and rate consistency (basic sanity)", () => {
-  const pv = 1000;
-  const nper = 12; // 1 year
+test("nper and rate are mutually consistent for a typical annuity", () => {
+  const rate = 0.01;
+  const nper = 24;
   const pmt = 50;
-  const fv = 0;
-  const r = Finance.rate(nper, pmt, pv, fv, 0, 0.1);
-  // rate should be a finite number or NaN in some edge cases; we expect finite for typical values
-  if (Number.isFinite(r)) {
-    expect(true).toBe(true);
-  } else {
-    expect(Number.isNaN(r)).toBe(true);
-  }
+  const pv = 1000;
+  const fv = Finance.fv(rate, nper, pmt, pv, 0);
+
+  expect(Finance.nper(rate, pmt, pv, fv, 0)).toBeCloseTo(nper, 6);
+  expect(Finance.rate(nper, pmt, pv, fv, 0, rate)).toBeCloseTo(rate, 6);
 });
 
-test("bondPrice basic sanity", () => {
+test("bondPrice matches a premium-bond benchmark", () => {
   const price = Finance.bondPrice(1000, 0.05, 10, 0.04, 2);
-  expect(isFinite(price)).toBe(true);
+  expect(price).toBeCloseTo(1081.76, 2);
 });
 
 test("loan amortization schedule pays down to zero balance", () => {
@@ -42,8 +36,19 @@ test("loan amortization schedule pays down to zero balance", () => {
   expect(schedule.at(-1)?.balance).toBe(0);
 });
 
+test("CAM amortization keeps principal constant until the final rounding period", () => {
+  const schedule = Finance.amortizationSchedule(1200, 0.01, 12, "CAM");
+  expect(schedule[0]?.principal).toBeCloseTo(100, 8);
+  expect(schedule[10]?.principal).toBeCloseTo(100, 8);
+  expect(schedule.at(-1)?.balance).toBe(0);
+});
+
 test("ddm returns zero when growth exceeds required return", () => {
   expect(Finance.ddm(2.5, 0.08, 0.09)).toBe(0);
+});
+
+test("ddm returns the expected intrinsic value for a stable-growth case", () => {
+  expect(Finance.ddm(2.5, 0.08, 0.03)).toBeCloseTo(50, 8);
 });
 
 test("black scholes returns intrinsic value at zero time", () => {
@@ -51,10 +56,14 @@ test("black scholes returns intrinsic value at zero time", () => {
   expect(Finance.blackScholes("put", 80, 100, 0, 0.05, 0.2)).toBe(20);
 });
 
+test("black scholes matches a standard benchmark at one year", () => {
+  expect(Finance.blackScholes("call", 100, 100, 1, 0.05, 0.2)).toBeCloseTo(10.4506, 4);
+  expect(Finance.blackScholes("put", 100, 100, 1, 0.05, 0.2)).toBeCloseTo(5.5735, 4);
+});
+
 test("risk helpers return finite values in expected ranges", () => {
   const z95 = Finance.normCDFInverse(0.95);
-  expect(z95).toBeGreaterThan(1.6);
-  expect(z95).toBeLessThan(1.7);
+  expect(z95).toBeCloseTo(1.64485, 3);
   expect(Finance.normPDF(0)).toBeGreaterThan(0.39);
   expect(Finance.normPDF(0)).toBeLessThan(0.4);
 });
