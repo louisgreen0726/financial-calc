@@ -19,6 +19,7 @@ import { ResponsiveDisclosure } from "@/components/responsive-disclosure";
 import { parseOptionalNumber } from "@/lib/input-utils";
 import { PortfolioInputSchema } from "@/lib/validation";
 import { ErrorDisplay } from "@/components/ui/error-display";
+import { SectionActionBar } from "@/components/section-action-bar";
 
 interface Asset {
   id: number;
@@ -162,17 +163,17 @@ export default function PortfolioPage() {
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("portfolio.title")}</h1>
           <p className="text-muted-foreground mt-2">{t("portfolio.subtitle")}</p>
         </div>
-        <Button onClick={startSimulation} size="lg" className="gap-2" disabled={isRunning}>
+        <Button onClick={startSimulation} size="lg" className="gap-2 w-full md:w-auto" disabled={isRunning}>
           {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-          {isRunning ? t("common.loading") : t("portfolio.run")}
+          {isRunning ? t("common.loading") : simulations.length > 0 ? t("portfolio.rerun") : t("portfolio.run")}
         </Button>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-12">
         <Card className="xl:col-span-4 h-fit">
           <CardHeader>
-            <CardTitle>{t("portfolio.universe")}</CardTitle>
-            <CardDescription>{t("portfolio.universeDesc")}</CardDescription>
+            <CardTitle>{t("portfolio.workflow.settings")}</CardTitle>
+            <CardDescription>{t("portfolio.workflow.runHint")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
@@ -190,7 +191,7 @@ export default function PortfolioPage() {
             </div>
 
             <ResponsiveDisclosure
-              title={t("portfolio.universe")}
+              title={t("portfolio.workflow.assets")}
               description={t("portfolio.validation.universeDisclosure")}
               defaultOpen={true}
             >
@@ -294,15 +295,109 @@ export default function PortfolioPage() {
             <Button variant="outline" className="w-full border-dashed" onClick={addAsset}>
               <Plus className="mr-2 h-4 w-4" /> {t("portfolio.add")}
             </Button>
+
+            <div className="rounded-2xl border border-dashed border-white/10 bg-background/20 p-4 space-y-3 xl:hidden">
+              <p className="text-sm font-semibold">{t("portfolio.workflow.results")}</p>
+              <p className="text-sm text-muted-foreground">{t("portfolio.workflow.resultsHint")}</p>
+              <Button onClick={startSimulation} className="w-full gap-2" disabled={isRunning}>
+                {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                {isRunning ? t("common.loading") : simulations.length > 0 ? t("portfolio.rerun") : t("portfolio.run")}
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
         <div className="xl:col-span-8 space-y-6">
-          {isRunning && <ProgressBar progress={progress} label="Running Monte Carlo simulation..." showETA />}
+          {isRunning && <ProgressBar progress={progress} label={t("portfolio.run")} showETA />}
+
+          <SectionActionBar
+            title={t("portfolio.workflow.results")}
+            description={t("portfolio.workflow.resultsHint")}
+            actions={
+              <Button
+                onClick={startSimulation}
+                variant="outline"
+                className="gap-2 hidden xl:inline-flex"
+                disabled={isRunning}
+              >
+                {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                {isRunning ? t("common.loading") : simulations.length > 0 ? t("portfolio.rerun") : t("portfolio.run")}
+              </Button>
+            }
+          />
+
+          {simulations.length === 0 && !isRunning ? (
+            <Card className="border-dashed">
+              <CardContent className="pt-6">
+                <EmptyState
+                  icon={RefreshCw}
+                  title={t("portfolio.empty")}
+                  description={t("portfolio.workflow.runHint")}
+                />
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {optimal && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-chart-4">
+                    <PieIcon className="h-5 w-5" /> {t("portfolio.maxSharpe")}
+                  </CardTitle>
+                  <CardDescription>
+                    {t("portfolio.ratio")}: {formatNumber(optimal.sharpe)}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {optimal.weights.map((w, i) => (
+                      <div key={i} className="flex justify-between text-sm">
+                        <span>{assets[i]?.name}</span>
+                        <span className="font-bold">{(w * 100).toFixed(1)}%</span>
+                      </div>
+                    ))}
+                    <div className="pt-4 mt-4 border-t flex justify-between font-medium">
+                      <span>{t("portfolio.retRisk")}</span>
+                      <span>
+                        {formatNumber(optimal.ret)}% / {formatNumber(optimal.risk)}%
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-chart-2">
+                    <PieIcon className="h-5 w-5" /> {t("portfolio.minVol")}
+                  </CardTitle>
+                  <CardDescription>{t("portfolio.minVol")}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {minVol?.weights.map((w, i) => (
+                      <div key={i} className="flex justify-between text-sm">
+                        <span>{assets[i]?.name}</span>
+                        <span className="font-bold">{(w * 100).toFixed(1)}%</span>
+                      </div>
+                    ))}
+                    <div className="pt-4 mt-4 border-t flex justify-between font-medium">
+                      <span>{t("portfolio.retRisk")}</span>
+                      <span>
+                        {formatNumber(minVol?.ret || 0)}% / {formatNumber(minVol?.risk || 0)}%
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
           <ResponsiveDisclosure
-            title={t("portfolio.frontier")}
-            description={t("portfolio.validation.frontierDisclosure")}
-            defaultOpen={false}
+            title={t("portfolio.workflow.chart")}
+            description={t("portfolio.workflow.chartHint")}
+            defaultOpen={simulations.length > 0}
           >
             <Card className="h-[280px] sm:h-[360px] md:h-[430px] flex flex-col">
               <CardHeader>
@@ -379,62 +474,6 @@ export default function PortfolioPage() {
               </CardContent>
             </Card>
           </ResponsiveDisclosure>
-
-          {optimal && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-chart-4">
-                    <PieIcon className="h-5 w-5" /> {t("portfolio.maxSharpe")}
-                  </CardTitle>
-                  <CardDescription>
-                    {t("portfolio.ratio")}: {formatNumber(optimal.sharpe)}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {optimal.weights.map((w, i) => (
-                      <div key={i} className="flex justify-between text-sm">
-                        <span>{assets[i]?.name}</span>
-                        <span className="font-bold">{(w * 100).toFixed(1)}%</span>
-                      </div>
-                    ))}
-                    <div className="pt-4 mt-4 border-t flex justify-between font-medium">
-                      <span>{t("portfolio.retRisk")}</span>
-                      <span>
-                        {formatNumber(optimal.ret)}% / {formatNumber(optimal.risk)}%
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-chart-2">
-                    <PieIcon className="h-5 w-5" /> {t("portfolio.minVol")}
-                  </CardTitle>
-                  <CardDescription>{t("portfolio.minVol")}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {minVol?.weights.map((w, i) => (
-                      <div key={i} className="flex justify-between text-sm">
-                        <span>{assets[i]?.name}</span>
-                        <span className="font-bold">{(w * 100).toFixed(1)}%</span>
-                      </div>
-                    ))}
-                    <div className="pt-4 mt-4 border-t flex justify-between font-medium">
-                      <span>{t("portfolio.retRisk")}</span>
-                      <span>
-                        {formatNumber(minVol?.ret || 0)}% / {formatNumber(minVol?.risk || 0)}%
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
         </div>
       </div>
     </div>
