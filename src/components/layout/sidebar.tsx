@@ -53,7 +53,7 @@ export const Sidebar = React.memo(function Sidebar({ className }: SidebarProps) 
   return (
     <div
       className={cn(
-        "h-full flex flex-col bg-card/60 backdrop-blur-2xl border border-white/10 shadow-2xl relative",
+        "h-full min-h-0 flex flex-col overflow-hidden bg-card/60 backdrop-blur-2xl border border-white/10 shadow-2xl relative",
         className
       )}
     >
@@ -88,8 +88,8 @@ export const Sidebar = React.memo(function Sidebar({ className }: SidebarProps) 
           </div>
         </div>
 
-        <ScrollArea className="flex-1 px-2">
-          <div className="space-y-6 px-2 pb-6 mt-2">
+        <ScrollArea className="min-h-0 flex-1 px-2">
+          <div className="mt-2 space-y-6 px-2 pb-6">
             <AnimatePresence initial={false}>
               {sections.map((section) => {
                 const isExpanded = expanded[section.titleKey] ?? true;
@@ -176,7 +176,7 @@ export const Sidebar = React.memo(function Sidebar({ className }: SidebarProps) 
           </div>
         </ScrollArea>
 
-        <div className="px-6 py-4 mt-auto">
+        <div className="shrink-0 px-6 py-4">
           <div className="p-3 rounded-xl bg-background/30 backdrop-blur-md border border-white/5 flex flex-col items-center justify-center gap-1">
             <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">
               {t("sidebar.edition") || "Pro Edition"}

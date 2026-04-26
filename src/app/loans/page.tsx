@@ -215,7 +215,7 @@ function LoansPageContent() {
           </CardContent>
         </Card>
 
-        <div className="xl:col-span-8">
+        <div className="min-w-0 xl:col-span-8">
           <ResultShell
             title={t("common.result")}
             description={t("loans.subtitle")}
@@ -272,7 +272,7 @@ function LoansPageContent() {
               </Card>
             }
             advanced={
-              <div className="flex flex-col gap-6" id="loans-report-content">
+              <div className="flex min-w-0 flex-col gap-6" id="loans-report-content">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {/* Pie Chart */}
                   <Card className="min-h-[260px] flex flex-col">
@@ -362,7 +362,7 @@ function LoansPageContent() {
                 </div>
 
                 {/* Schedule Table */}
-                <Card className="flex-1 flex flex-col min-h-[320px] overflow-hidden">
+                <Card className="flex min-h-[320px] min-w-0 flex-1 flex-col overflow-hidden">
                   <CardHeader className="pb-3">
                     <CardTitle className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                       <span>{t("loans.schedule")}</span>
@@ -382,7 +382,7 @@ function LoansPageContent() {
                         </Alert>
                       </div>
                     ) : (
-                      <ScrollArea className="h-[22rem] max-h-[52vh] min-h-[18rem] rounded-b-lg border-t">
+                      <ScrollArea className="h-[22rem] max-h-[52vh] min-h-[18rem] w-full max-w-full rounded-b-lg border-t">
                         <div className="min-w-[640px]">
                           <Table>
                             <TableHeader className="sticky top-0 bg-background z-10">

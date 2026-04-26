@@ -373,11 +373,11 @@ export default function BondsPage() {
                   description={t("bonds.validation.heatmapDisclosure")}
                   defaultOpen={false}
                 >
-                  <Card className="h-auto">
+                  <Card className="h-auto min-w-0 overflow-hidden">
                     <CardHeader>
                       <CardTitle>{t("bonds.priceSensitivity")}</CardTitle>
                     </CardHeader>
-                    <CardContent className="p-0 overflow-x-auto">
+                    <CardContent className="min-w-0 overflow-hidden p-0">
                       <SensitivityHeatmap
                         data={sensitivityData}
                         rowLabels={rowLabels}
