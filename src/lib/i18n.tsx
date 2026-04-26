@@ -41,6 +41,7 @@ type Translations = {
     copyError: string;
     more: string;
     notAvailable: string;
+    rows: string;
   };
   sidebar: {
     edition: string;
@@ -121,6 +122,11 @@ type Translations = {
     runtimeError: string;
     stepsTitle: string;
     stepsDesc: string;
+    presets: {
+      retirement: string;
+      loanPayoff: string;
+      collegeFund: string;
+    };
   };
   cashFlow: {
     title: string;
@@ -196,6 +202,11 @@ type Translations = {
       curveDisclosure: string;
       heatmapDisclosure: string;
       mobileHeatmapTitle: string;
+      faceHelp: string;
+      couponHelp: string;
+      ytmHelp: string;
+      yearsHelp: string;
+      frequencyHelp: string;
     };
   };
   portfolio: {
@@ -244,6 +255,7 @@ type Translations = {
     rate: string;
     vol: string;
     call: string;
+    callPrice: string;
     put: string;
     buy: string;
     sell: string;
@@ -516,10 +528,11 @@ const en: Translations = {
     copyError: "Failed to copy",
     more: "More",
     notAvailable: "N/A",
+    rows: "rows",
   },
   sidebar: {
     edition: "Professional Edition",
-    version: "v0.2.0",
+    version: "v0.3.0",
     search: "Search calculators...",
     featured: "Featured",
   },
@@ -596,6 +609,11 @@ const en: Translations = {
     runtimeError: "An error occurred during calculation. Please verify your inputs.",
     stepsTitle: "Calculation steps",
     stepsDesc: "Open the detailed derivation when you want to inspect the formula path.",
+    presets: {
+      retirement: "Retirement Savings",
+      loanPayoff: "Loan Payoff",
+      collegeFund: "College Fund",
+    },
   },
   cashFlow: {
     title: "Cash Flow Analysis",
@@ -679,6 +697,11 @@ const en: Translations = {
       curveDisclosure: "Open the price-yield curve when you want sensitivity detail on smaller screens.",
       heatmapDisclosure: "The heatmap is optional on mobile; open it only when comparing scenarios.",
       mobileHeatmapTitle: "Mobile sensitivity cards",
+      faceHelp: "Face value of the bond, the amount paid at maturity.",
+      couponHelp: "Annual coupon rate expressed as a percentage of face value.",
+      ytmHelp: "Yield to maturity, the expected annualized return if the bond is held to maturity.",
+      yearsHelp: "Number of years until the bond matures.",
+      frequencyHelp: "Coupon payment frequency per year: 1 = annual, 2 = semiannual, 4 = quarterly, 12 = monthly.",
     },
   },
   portfolio: {
@@ -727,6 +750,7 @@ const en: Translations = {
     rate: "Risk-Free Rate (%)",
     vol: "Volatility (σ %)",
     call: "Call Option",
+    callPrice: "Call Price",
     put: "Put Option",
     buy: "Right to Buy",
     sell: "Right to Sell",
@@ -906,7 +930,7 @@ const en: Translations = {
     clearAllHistory: "Clear All History",
     about: "About",
     aboutDesc: "About FinCalc Pro",
-    version: "v0.2.0",
+    version: "v0.3.0",
     description:
       "A comprehensive suite of financial calculators including TVM, cash flow analysis, stock valuation, portfolio optimization, bonds, options, risk metrics, loans, and macroeconomics.",
   },
@@ -946,7 +970,7 @@ const en: Translations = {
     loanCalcDesc: "EMI calculation with amortization schedules (CPM and CAM methods).",
     faqHistory: "How does calculation history work?",
     faqHistoryAns:
-      "Calculation history is stored locally in your browser. Each time you perform a calculation, it's saved with timestamp and inputs. You can access history from the bottom-right corner of any calculator page, or from the dedicated History page.",
+      "Calculation history is stored locally in your browser. Each time you perform a calculation, it is saved with a timestamp and inputs. You can access history from the bottom navigation on mobile or from the dedicated History page.",
     faqExport: "How do I export my calculations?",
     faqExportAns:
       "Click the Export menu button to export in CSV, JSON, or PDF format. The CSV and JSON options will download your data immediately. PDF export captures the calculation results as a formatted document.",
@@ -957,7 +981,7 @@ const en: Translations = {
     faqLanguageAns: "Click the language button in the header to toggle between English and Chinese (中文).",
     faqMobile: "How do I use this on mobile?",
     faqMobileAns:
-      "The app is fully responsive. On mobile devices, use the hamburger menu to access the sidebar navigation, and the bottom tab bar for quick access to Home, Calculator, History, Settings, and Help.",
+      "The app is fully responsive. On mobile devices, the bottom navigation keeps quick access focused on Home and History. Open Home to browse the full calculator directory.",
     faqPrivacy: "Is my data stored on servers?",
     faqPrivacyAns:
       "No. All calculation history is stored locally in your browser's localStorage. No data is sent to any server. You can export or clear your history at any time from the Settings page.",
@@ -1005,10 +1029,11 @@ const zh: Translations = {
     copyError: "复制失败",
     more: "更多",
     notAvailable: "暂无",
+    rows: "行",
   },
   sidebar: {
     edition: "专业版",
-    version: "v0.2.1",
+    version: "v0.3.0",
     search: "搜索计算器...",
     featured: "推荐",
   },
@@ -1085,6 +1110,11 @@ const zh: Translations = {
     runtimeError: "计算过程中发生错误，请核对输入后重试。",
     stepsTitle: "计算步骤",
     stepsDesc: "需要查看公式推导时，可展开详细步骤。",
+    presets: {
+      retirement: "退休储蓄",
+      loanPayoff: "贷款还清",
+      collegeFund: "教育基金",
+    },
   },
   cashFlow: {
     title: "现金流分析",
@@ -1168,6 +1198,11 @@ const zh: Translations = {
       curveDisclosure: "在小屏幕上需要查看敏感性细节时，再展开价格-收益率曲线。",
       heatmapDisclosure: "热力图在移动端可按需展开，便于比较不同情景。",
       mobileHeatmapTitle: "移动端敏感性卡片",
+      faceHelp: "债券票面面值，即到期时偿还的本金金额。",
+      couponHelp: "年票息率，以票面面值百分比表示。",
+      ytmHelp: "到期收益率，表示持有至到期的预期年化回报率。",
+      yearsHelp: "距离债券到期的剩余年数。",
+      frequencyHelp: "每年付息次数：1 = 每年，2 = 每半年，4 = 每季度，12 = 每月。",
     },
   },
   portfolio: {
@@ -1216,6 +1251,7 @@ const zh: Translations = {
     rate: "无风险利率 (%)",
     vol: "波动率 (σ %)",
     call: "看涨期权 (Call)",
+    callPrice: "看涨期权价格",
     put: "看跌期权 (Put)",
     buy: "买入权利",
     sell: "卖出权利",
@@ -1395,7 +1431,7 @@ const zh: Translations = {
     clearAllHistory: "清除所有历史",
     about: "关于",
     aboutDesc: "关于 FinCalc Pro",
-    version: "v0.2.1",
+    version: "v0.3.0",
     description:
       "全面的金融计算器套件，包括货币时间价值、现金流分析、股票估值、投资组合优化、债券、期权、风险指标、贷款和宏观经济计算工具。",
   },
@@ -1433,22 +1469,24 @@ const zh: Translations = {
     riskMetricsDesc: "在险价值 (VaR) 和条件风险价值 (CVaR) 计算。",
     loanCalc: "贷款计算器",
     loanCalcDesc: "等额本息和等额本金还款方式的摊销计划计算。",
-    faqHistory: "计算历史如何工作？",
+    faqHistory: "\u8ba1\u7b97\u5386\u53f2\u5982\u4f55\u5de5\u4f5c\uff1f",
     faqHistoryAns:
-      "计算历史存储在浏览器的本地存储中。每次执行计算时，都会保存时间戳和输入参数。您可以从任意计算器页面的右下角或专用的历史记录页面访问历史记录。",
-    faqExport: "如何导出我的计算结果？",
+      "\u8ba1\u7b97\u5386\u53f2\u5b58\u50a8\u5728\u6d4f\u89c8\u5668\u672c\u5730\u3002\u6bcf\u6b21\u6267\u884c\u8ba1\u7b97\u65f6\uff0c\u90fd\u4f1a\u4fdd\u5b58\u65f6\u95f4\u6233\u548c\u8f93\u5165\u53c2\u6570\u3002\u79fb\u52a8\u7aef\u53ef\u901a\u8fc7\u5e95\u90e8\u5bfc\u822a\u8fdb\u5165\u5386\u53f2\u8bb0\u5f55\uff0c\u4e5f\u53ef\u4ee5\u8bbf\u95ee\u4e13\u7528\u7684\u5386\u53f2\u8bb0\u5f55\u9875\u9762\u3002",
+    faqExport: "\u5982\u4f55\u5bfc\u51fa\u6211\u7684\u8ba1\u7b97\u7ed3\u679c\uff1f",
     faqExportAns:
-      "点击导出菜单按钮可以 CSV、JSON 或 PDF 格式导出。CSV 和 JSON 选项会立即下载您的数据。PDF 导出会将计算结果捕获为格式化文档。",
-    faqTheme: "如何在浅色和深色模式之间切换？",
-    faqThemeAns: "点击顶部的theme切换按钮。您可以选择浅色、深色或跟随系统设置。",
-    faqLanguage: "如何切换语言？",
-    faqLanguageAns: "点击顶部的语言按钮可以在英语和中文之间切换。",
-    faqMobile: "如何在手机上使用？",
+      "\u70b9\u51fb\u5bfc\u51fa\u83dc\u5355\u6309\u94ae\u53ef\u4ee5 CSV\u3001JSON \u6216 PDF \u683c\u5f0f\u5bfc\u51fa\u3002CSV \u548c JSON \u9009\u9879\u4f1a\u7acb\u5373\u4e0b\u8f7d\u60a8\u7684\u6570\u636e\u3002PDF \u5bfc\u51fa\u4f1a\u5c06\u8ba1\u7b97\u7ed3\u679c\u6355\u83b7\u4e3a\u683c\u5f0f\u5316\u6587\u6863\u3002",
+    faqTheme: "\u5982\u4f55\u5728\u6d45\u8272\u548c\u6df1\u8272\u6a21\u5f0f\u4e4b\u95f4\u5207\u6362\uff1f",
+    faqThemeAns:
+      "\u70b9\u51fb\u9876\u90e8\u7684\u4e3b\u9898\u5207\u6362\u6309\u94ae\u3002\u60a8\u53ef\u4ee5\u9009\u62e9\u6d45\u8272\u3001\u6df1\u8272\u6216\u8ddf\u968f\u7cfb\u7edf\u8bbe\u7f6e\u3002",
+    faqLanguage: "\u5982\u4f55\u5207\u6362\u8bed\u8a00\uff1f",
+    faqLanguageAns:
+      "\u70b9\u51fb\u9876\u90e8\u7684\u8bed\u8a00\u6309\u94ae\u53ef\u4ee5\u5728\u82f1\u8bed\u548c\u4e2d\u6587\u4e4b\u95f4\u5207\u6362\u3002",
+    faqMobile: "\u5982\u4f55\u5728\u624b\u673a\u4e0a\u4f7f\u7528\uff1f",
     faqMobileAns:
-      "应用完全响应式。在移动设备上，使用汉堡菜单访问侧边栏导航，底部标签栏可快速访问首页、计算器、历史记录、设置和帮助。",
-    faqPrivacy: "我的数据是否存储在服务器上？",
+      "\u5e94\u7528\u5b8c\u5168\u54cd\u5e94\u5f0f\u3002\u5728\u79fb\u52a8\u8bbe\u5907\u4e0a\uff0c\u5e95\u90e8\u5bfc\u822a\u4ec5\u4fdd\u7559\u9996\u9875\u548c\u5386\u53f2\u8bb0\u5f55\u4e24\u4e2a\u5e38\u7528\u5165\u53e3\uff1b\u8fdb\u5165\u9996\u9875\u5373\u53ef\u6d4f\u89c8\u5b8c\u6574\u8ba1\u7b97\u5668\u76ee\u5f55\u3002",
+    faqPrivacy: "\u6211\u7684\u6570\u636e\u662f\u5426\u5b58\u50a8\u5728\u670d\u52a1\u5668\u4e0a\uff1f",
     faqPrivacyAns:
-      "不会。所有计算历史都存储在浏览器本地存储中。不会向任何服务器发送数据。您可以随时从设置页面导出或清除历史记录。",
+      "\u4e0d\u4f1a\u3002\u6240\u6709\u8ba1\u7b97\u5386\u53f2\u90fd\u5b58\u50a8\u5728\u6d4f\u89c8\u5668\u672c\u5730\u5b58\u50a8\u4e2d\u3002\u4e0d\u4f1a\u5411\u4efb\u4f55\u670d\u52a1\u5668\u53d1\u9001\u6570\u636e\u3002\u60a8\u53ef\u4ee5\u968f\u65f6\u4ece\u8bbe\u7f6e\u9875\u9762\u5bfc\u51fa\u6216\u6e05\u9664\u5386\u53f2\u8bb0\u5f55\u3002",
   },
   export: {
     title: "导出",
