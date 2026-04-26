@@ -23,7 +23,7 @@ import { useLanguage } from "@/lib/i18n";
 import { useCalculationHistory } from "@/hooks/use-calculation-history";
 import { useHistoryRecorder } from "@/hooks/use-history-recorder";
 import { HistoryPanel } from "@/components/history-panel";
-import { ExportMenu } from "@/components/export-menu";
+
 import { ClientOnlyChart } from "@/components/client-only-chart";
 import { ResponsiveDisclosure } from "@/components/responsive-disclosure";
 import { parseOptionalNumber } from "@/lib/input-utils";

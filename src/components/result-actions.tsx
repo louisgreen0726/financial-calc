@@ -2,7 +2,7 @@ import { ExportMenu } from "@/components/export-menu";
 import { ShareDialog } from "@/components/share-dialog";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/lib/i18n";
-import { Download, History, Share2 } from "lucide-react";
+import { History, Share2 } from "lucide-react";
 import { useState } from "react";
 
 interface ResultActionsProps {

@@ -362,14 +362,14 @@ export default function HistoryPage() {
         renderEmptyState()
       ) : (
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full min-w-0">
-          <TabsList className="mb-4 flex w-full max-w-full flex-nowrap justify-start overflow-x-auto px-1 py-1 whitespace-nowrap">
+          <TabsList className="mb-4 flex w-full max-w-full flex-nowrap justify-start overflow-x-auto px-1 py-1 whitespace-nowrap [scrollbar-width:thin]">
             <TabsTrigger value="all" className="gap-2">
               <Clock className="h-4 w-4" />
               {t("history.all")} ({history.length})
             </TabsTrigger>
             <TabsTrigger value="favorites" className="gap-2">
               <Star className="h-4 w-4" />
-              Favorites ({history.filter((h) => favorites.has(h.id)).length})
+              {t("history.favorites")} ({history.filter((h) => favorites.has(h.id)).length})
             </TabsTrigger>
             {Object.entries(groupedHistory).map(([page, items]) => (
               <TabsTrigger key={page} value={page} className="gap-2">

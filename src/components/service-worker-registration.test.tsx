@@ -28,7 +28,7 @@ describe("ServiceWorkerRegistration", () => {
     render(<ServiceWorkerRegistration />);
 
     await waitFor(() => {
-      expect(register).toHaveBeenCalledWith("/sw.js");
+      expect(register).toHaveBeenCalledWith("/sw.js", { scope: "/" });
       expect(update).toHaveBeenCalled();
     });
   });
@@ -56,7 +56,7 @@ describe("ServiceWorkerRegistration", () => {
     render(<ServiceWorkerRegistration />);
 
     await waitFor(() => {
-      expect(register).toHaveBeenCalledWith("/sw.js");
+      expect(register).toHaveBeenCalledWith("/sw.js", { scope: "/" });
       expect(logger.error).toHaveBeenCalled();
     });
   });
@@ -72,7 +72,7 @@ describe("ServiceWorkerRegistration", () => {
     render(<ServiceWorkerRegistration />);
 
     await waitFor(() => {
-      expect(register).toHaveBeenCalledWith("/sw.js");
+      expect(register).toHaveBeenCalledWith("/sw.js", { scope: "/" });
       expect(update).toHaveBeenCalled();
       expect(logger.warn).toHaveBeenCalled();
     });

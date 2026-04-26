@@ -10,8 +10,12 @@ import { logger } from "@/lib/logger";
 export function ServiceWorkerRegistration() {
   useEffect(() => {
     if ("serviceWorker" in navigator && navigator.serviceWorker) {
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+      const serviceWorkerUrl = `${basePath}/sw.js` || "/sw.js";
+      const scope = `${basePath}/` || "/";
+
       navigator.serviceWorker
-        .register("/sw.js")
+        .register(serviceWorkerUrl, { scope })
         .then((registration) => {
           logger.info("[PWA] Service Worker registered:", registration.scope);
 

@@ -1,9 +1,16 @@
 export function parseOptionalNumber(value: string): number | null {
-  if (value.trim() === "") {
+  const normalized = value.trim().replace(/[,\s_]/g, "");
+
+  if (normalized === "") {
     return null;
   }
 
-  const parsed = Number(value);
+  const numericPattern = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i;
+  if (!numericPattern.test(normalized)) {
+    return null;
+  }
+
+  const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : null;
 }
 

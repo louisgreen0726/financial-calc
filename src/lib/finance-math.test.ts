@@ -74,3 +74,17 @@ test("bond duration and convexity are finite for standard inputs", () => {
   expect(Number.isFinite(modDuration)).toBe(true);
   expect(Number.isFinite(Finance.bondConvexity(1000, 0.05, 10, 0.04, 2))).toBe(true);
 });
+
+test("irr rejects cash flows without a sign change", () => {
+  expect(Number.isNaN(Finance.irr([100, 200, 300]))).toBe(true);
+  expect(Number.isNaN(Finance.irr([-100, -50, -25]))).toBe(true);
+});
+
+test("irr falls back to a bracketed solver when the initial guess is poor", () => {
+  expect(Finance.irr([-1000, 300, 420, 680], 9)).toBeCloseTo(0.1634, 4);
+});
+
+test("rate falls back to a bracketed solver when the initial guess is poor", () => {
+  const result = Finance.rate(36, -300, 9000, 0, 0, 9);
+  expect(result).toBeCloseTo(0.0102075, 6);
+});

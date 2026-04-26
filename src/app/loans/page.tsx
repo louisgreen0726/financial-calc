@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, Suspense, useState } from "react";
+import { useMemo, Suspense } from "react";
 import { Finance } from "@/lib/finance-math";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -24,20 +24,15 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLanguage } from "@/lib/i18n";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Download, FileText, Share2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import { generatePDFReport } from "@/lib/pdf-export";
+import { AlertCircle } from "lucide-react";
 import { useUrlState } from "@/hooks/use-url-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ValidationError } from "@/components/ui/error-display";
-import { useLocaleFormat } from "@/hooks/use-locale-format";
 import { ResultShell } from "@/components/result-shell";
 import { ResultActions } from "@/components/result-actions";
 
 function LoansPageContent() {
   const { t } = useLanguage();
-  const { formatCurrencyLocale } = useLocaleFormat();
   const {
     state: urlState,
     setField,
@@ -105,36 +100,7 @@ function LoansPageContent() {
     { name: t("loans.totalInt"), value: stats.totalInterest, color: "hsl(var(--destructive))" },
   ];
 
-  const exportCSV = () => {
-    if (!schedule.length) return;
-    const headers = [t("loans.payment"), t("loans.principal"), t("loans.interest"), t("loans.remBalance")];
-    const rows = schedule.map((row) =>
-      [row.payment.toFixed(2), row.principal.toFixed(2), row.interest.toFixed(2), row.balance.toFixed(2)].join(",")
-    );
-    const csv = [headers.join(","), ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `amortization-${method}-${amount}-${rate}pct-${years}yr.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-    toast.success(t("export.csvSuccess"));
-  };
-
-  const exportPDF = () => {
-    if (!schedule.length) return;
-    const doc = generatePDFReport(`${t("loans.title")} — ${method}`, [
-      { label: t("loans.amount"), value: formatCurrencyLocale(parseFloat(amount) || 0) },
-      { label: t("loans.rate"), value: `${rate}%` },
-      { label: t("loans.term"), value: `${years} ${t("common.year")}` },
-      { label: t("loans.monthly"), value: formatCurrencyLocale(stats.monthlyPayment) },
-      { label: t("loans.totalInt"), value: formatCurrencyLocale(stats.totalInterest) },
-      { label: t("loans.totalCost"), value: formatCurrencyLocale(stats.totalPayment) },
-    ]);
-    doc.save(`loan-summary-${method}-${rate}pct-${years}yr.pdf`);
-    toast.success(t("export.pdfSuccess"));
-  };
+  const reportTitle = `${t("loans.title")} - ${method}`;
 
   return (
     <div className="space-y-6">
@@ -230,7 +196,7 @@ function LoansPageContent() {
                   ) : schedule.length > 0 ? (
                     <span className="flex flex-col items-end">
                       <span>{formatCurrency(stats.firstPayment)}</span>
-                      <span className="text-xs text-muted-foreground">↓ {formatCurrency(stats.lastPayment)}</span>
+                      <span className="text-xs text-muted-foreground">鈫?{formatCurrency(stats.lastPayment)}</span>
                     </span>
                   ) : (
                     "-"
@@ -263,7 +229,7 @@ function LoansPageContent() {
             actions={
               schedule.length > 0 ? (
                 <ResultActions
-                  title={`${t("loans.title")} — ${method}`}
+                  title={reportTitle}
                   results={{
                     [t("loans.monthly")]: stats.monthlyPayment,
                     [t("loans.totalInt")]: stats.totalInterest,
@@ -275,7 +241,7 @@ function LoansPageContent() {
                   exportJson={schedule}
                   pdfElementId="loans-report-content"
                   pdfFilename={`loan-summary-${method}-${rate}pct-${years}yr`}
-                  pdfTitle={`${t("loans.title")} — ${method}`}
+                  pdfTitle={reportTitle}
                 />
               ) : null
             }
