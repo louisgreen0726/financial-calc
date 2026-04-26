@@ -10,7 +10,7 @@ import { formatCurrency } from "@/lib/utils";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useLanguage } from "@/lib/i18n";
 import { SensitivityHeatmap } from "@/components/sensitivity-heatmap";
-import { ExportMenu } from "@/components/export-menu";
+
 import { useCalculationHistory } from "@/hooks/use-calculation-history";
 import { useHistoryRecorder } from "@/hooks/use-history-recorder";
 import { HistoryPanel } from "@/components/history-panel";
@@ -299,7 +299,7 @@ export default function BondsPage() {
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
                       <div className="text-2xl font-bold">{metrics.modDuration.toFixed(2)}</div>
-                      <p className="text-xs text-muted-foreground">{`Sens: ${(metrics.modDuration * 1).toFixed(2)}% / 1% ΔYield`}</p>
+                      <p className="text-xs text-muted-foreground">{`Sens: ${(metrics.modDuration * 1).toFixed(2)}% / 1% 螖Yield`}</p>
                     </CardContent>
                   </Card>
                   <Card>

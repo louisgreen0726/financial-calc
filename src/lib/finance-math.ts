@@ -5,6 +5,70 @@
 
 const isValid = (n: number): boolean => Number.isFinite(n) && !Number.isNaN(n);
 
+const solveByBisection = (
+  fn: (rate: number) => number,
+  lowerBound = -0.999999,
+  upperBound = 10,
+  eps = 1e-7,
+  maxIter = 200
+): number => {
+  let lower = lowerBound;
+  let upper = upperBound;
+  let lowerValue = fn(lower);
+  let upperValue = fn(upper);
+
+  if (!isValid(lowerValue) || !isValid(upperValue)) return NaN;
+  if (Math.abs(lowerValue) < eps) return lower;
+  if (Math.abs(upperValue) < eps) return upper;
+  if (lowerValue * upperValue > 0) return NaN;
+
+  for (let i = 0; i < maxIter; i++) {
+    const midpoint = (lower + upper) / 2;
+    const midpointValue = fn(midpoint);
+
+    if (!isValid(midpointValue)) return NaN;
+    if (Math.abs(midpointValue) < eps || Math.abs(upper - lower) < eps) return midpoint;
+
+    if (lowerValue * midpointValue <= 0) {
+      upper = midpoint;
+      upperValue = midpointValue;
+    } else {
+      lower = midpoint;
+      lowerValue = midpointValue;
+    }
+  }
+
+  return (lower + upper) / 2;
+};
+
+const findBracketedRoot = (fn: (rate: number) => number): number => {
+  const candidates = [
+    -0.999999, -0.95, -0.9, -0.75, -0.5, -0.25, -0.1, -0.01, 0, 0.01, 0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10,
+  ];
+  let previousRate = candidates[0];
+  let previousValue = fn(previousRate);
+
+  for (let i = 1; i < candidates.length; i++) {
+    const nextRate = candidates[i];
+    const nextValue = fn(nextRate);
+
+    if (!isValid(previousValue)) {
+      previousRate = nextRate;
+      previousValue = nextValue;
+      continue;
+    }
+
+    if (isValid(nextValue) && previousValue * nextValue <= 0) {
+      return solveByBisection(fn, previousRate, nextRate);
+    }
+
+    previousRate = nextRate;
+    previousValue = nextValue;
+  }
+
+  return NaN;
+};
+
 // Type definitions
 export interface AmortizationItem {
   period: number;
@@ -82,48 +146,47 @@ export const Finance = {
     type: PaymentTiming = 0,
     guess: number = 0.1
   ): number => {
-    if (!isValid(nper) || !isValid(pmt) || !isValid(pv) || !isValid(fv)) return NaN;
+    if (!isValid(nper) || !isValid(pmt) || !isValid(pv) || !isValid(fv) || !isValid(guess)) return NaN;
     if (nper === 0) return NaN;
 
-    // Use Newton-Raphson method to solve for rate
+    const cashFlowValue = (candidateRate: number): number => {
+      if (candidateRate <= -1) return NaN;
+      if (Math.abs(candidateRate) < 1e-10) return pv + pmt * nper + fv;
+
+      const term = Math.pow(1 + candidateRate, nper);
+      if (!isFinite(term)) return NaN;
+
+      return pv * term + pmt * (1 + candidateRate * type) * ((term - 1) / candidateRate) + fv;
+    };
+
     const eps = 1e-6;
-    const maxIter = 1000;
+    const maxIter = 100;
     let rate = guess;
 
     for (let i = 0; i < maxIter; i++) {
-      if (rate <= -1) return NaN;
+      if (rate <= -1) break;
 
       const term = Math.pow(1 + rate, nper);
-      if (!isFinite(term)) return NaN;
+      if (!isFinite(term)) break;
 
-      // f(rate) = pv * (1 + rate)^nper + pmt * (1 + rate * type) * ((1 + rate)^nper - 1) / rate + fv
-      let f: number;
-      let df: number;
-
+      let derivative: number;
       if (Math.abs(rate) < 1e-10) {
-        // Handle near-zero rate case
-        f = pv + pmt * nper + fv;
-        df = pv * nper + (pmt * nper * (nper + 1)) / 2;
+        derivative = pv * nper + (pmt * nper * (nper + 1)) / 2;
       } else {
         const annuityFactor = (term - 1) / rate;
-        f = pv * term + pmt * (1 + rate * type) * annuityFactor + fv;
-
-        // Derivative
         const dAnnuity = (nper * term * rate - (term - 1)) / (rate * rate);
-        df = pv * nper * term + pmt * (type * annuityFactor + (1 + rate * type) * dAnnuity);
+        derivative = pv * nper * term + pmt * (type * annuityFactor + (1 + rate * type) * dAnnuity);
       }
 
-      if (Math.abs(df) < 1e-10) return NaN;
+      if (Math.abs(derivative) < 1e-10) break;
 
-      const newRate = rate - f / df;
-
-      if (!isFinite(newRate)) return NaN;
+      const newRate = rate - cashFlowValue(rate) / derivative;
+      if (!isFinite(newRate)) break;
       if (Math.abs(newRate - rate) < eps) return newRate;
-
       rate = newRate;
     }
 
-    return rate;
+    return findBracketedRoot(cashFlowValue);
   },
   npv: (rate: number, values: number[]): number => {
     if (!isValid(rate) || !Array.isArray(values) || values.length === 0) return NaN;
@@ -134,25 +197,42 @@ export const Finance = {
   },
   irr: (values: number[], guess: number = 0.1): number => {
     if (!Array.isArray(values) || values.length < 2) return NaN;
-    if (!isValid(guess)) return NaN;
+    if (!isValid(guess) || values.some((value) => !isValid(value))) return NaN;
+    if (!values.some((value) => value < 0) || !values.some((value) => value > 0)) return NaN;
+
+    const npvAtRate = (candidateRate: number): number => {
+      if (candidateRate <= -1) return NaN;
+      return values.reduce((acc, value, period) => acc + value / Math.pow(1 + candidateRate, period), 0);
+    };
+
     const eps = 1e-6;
-    const maxIter = 1000;
+    const maxIter = 100;
     let rate = guess;
+
     for (let i = 0; i < maxIter; i++) {
+      if (rate <= -1) break;
+
       let npv = 0;
       let dNpv = 0;
-      for (let j = 0; j < values.length; j++) {
-        const term = Math.pow(1 + rate, j);
-        npv += values[j] / term;
-        dNpv -= (j * values[j]) / (term * (1 + rate));
+      for (let period = 0; period < values.length; period++) {
+        const term = Math.pow(1 + rate, period);
+        if (!isFinite(term) || term === 0) {
+          npv = NaN;
+          break;
+        }
+        npv += values[period] / term;
+        dNpv -= (period * values[period]) / (term * (1 + rate));
       }
-      if (dNpv === 0 || !isFinite(dNpv)) return NaN;
+
+      if (!isValid(npv) || Math.abs(dNpv) < 1e-10 || !isFinite(dNpv)) break;
+
       const newRate = rate - npv / dNpv;
-      if (!isFinite(newRate)) return NaN;
+      if (!isFinite(newRate)) break;
       if (Math.abs(newRate - rate) < eps) return newRate;
       rate = newRate;
     }
-    return rate;
+
+    return findBracketedRoot(npvAtRate);
   },
   effectiveRate: (nominalRate: number, periodsPerYear: number): number => {
     if (!isValid(nominalRate) || !isValid(periodsPerYear) || periodsPerYear <= 0) return NaN;

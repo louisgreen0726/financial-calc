@@ -9,6 +9,19 @@ describe("input-utils", () => {
     expect(parseOptionalNumber("abc")).toBeNull();
   });
 
+  it("normalizes common numeric separators", () => {
+    expect(parseOptionalNumber("1,234.56")).toBe(1234.56);
+    expect(parseOptionalNumber("1 234.56")).toBe(1234.56);
+    expect(parseOptionalNumber("1_234.56")).toBe(1234.56);
+  });
+
+  it("rejects incomplete or non-finite numeric strings", () => {
+    expect(parseOptionalNumber("1.2.3")).toBeNull();
+    expect(parseOptionalNumber("1e")).toBeNull();
+    expect(parseOptionalNumber("Infinity")).toBeNull();
+    expect(parseOptionalNumber("NaN")).toBeNull();
+  });
+
   it("provides fallback for required number parsing", () => {
     expect(parseRequiredNumber("12")).toBe(12);
     expect(parseRequiredNumber("bad", 7)).toBe(7);

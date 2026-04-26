@@ -12,7 +12,7 @@ import { Calculator, ArrowRightLeft, RotateCcw } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
 import { CalculationSteps } from "@/components/calculation-steps";
 import { InputRangeHint } from "@/components/input-range-hint";
-import { EmptyState } from "@/components/empty-state";
+
 import { ErrorDisplay, ValidationError } from "@/components/ui/error-display";
 import { useFormValidation } from "@/hooks/use-validation";
 import { useCalculationHistory } from "@/hooks/use-calculation-history";
@@ -193,55 +193,55 @@ function TVMPageContent() {
       } else {
         setResult(res);
         setCalculationError(null);
-        addToHistory({ rate, nper, pmt, pv, fv, type, target }, res, `TVM → ${target.toUpperCase()}`);
+        addToHistory({ rate, nper, pmt, pv, fv, type, target }, res, `TVM 鈫?${target.toUpperCase()}`);
 
         const compoundFactor = Math.pow(1 + r, n);
 
         const stepData = {
           fv: {
-            formula: "FV = PV(1+r)^n + PMT × [(1+r)^n - 1] / r",
+            formula: "FV = PV(1+r)^n + PMT 脳 [(1+r)^n - 1] / r",
             steps: [
-              { label: "Rate as decimal", value: `${rate}% → ${r.toFixed(4)}`, formula: "r = rate / 100" },
+              { label: "Rate as decimal", value: `${rate}% 鈫?${r.toFixed(4)}`, formula: "r = rate / 100" },
               {
                 label: "Compound factor",
                 value: `(1+${r.toFixed(4)})^${n} = ${compoundFactor.toFixed(4)}`,
                 formula: "(1+r)^n",
               },
-              { label: "Future Value", value: `$${res.toFixed(2)}`, formula: "PV(1+r)^n + PMT × annuity" },
+              { label: "Future Value", value: `$${res.toFixed(2)}`, formula: "PV(1+r)^n + PMT 脳 annuity" },
             ],
           },
           pv: {
-            formula: "PV = FV / (1+r)^n + PMT × [(1+r)^n - 1] / r",
+            formula: "PV = FV / (1+r)^n + PMT 脳 [(1+r)^n - 1] / r",
             steps: [
-              { label: "Rate as decimal", value: `${rate}% → ${r.toFixed(4)}`, formula: "r = rate / 100" },
+              { label: "Rate as decimal", value: `${rate}% 鈫?${r.toFixed(4)}`, formula: "r = rate / 100" },
               {
                 label: "Discount factor",
                 value: `1 / ${compoundFactor.toFixed(4)} = ${(1 / compoundFactor).toFixed(4)}`,
                 formula: "1/(1+r)^n",
               },
-              { label: "Present Value", value: `$${res.toFixed(2)}`, formula: "PV = FV/(1+r)^n + PMT × factor" },
+              { label: "Present Value", value: `$${res.toFixed(2)}`, formula: "PV = FV/(1+r)^n + PMT 脳 factor" },
             ],
           },
           pmt: {
             formula: "PMT = (FV - PV(1+r)^n) / annuity_factor",
             steps: [
-              { label: "Rate as decimal", value: `${rate}% → ${r.toFixed(4)}`, formula: "r = rate / 100" },
+              { label: "Rate as decimal", value: `${rate}% 鈫?${r.toFixed(4)}`, formula: "r = rate / 100" },
               {
                 label: "Compound factor",
                 value: `(1+${r.toFixed(4)})^${n} = ${compoundFactor.toFixed(4)}`,
                 formula: "(1+r)^n",
               },
-              { label: "Payment", value: `$${res.toFixed(2)}`, formula: "PMT = (FV-PV×factor) / annuity" },
+              { label: "Payment", value: `$${res.toFixed(2)}`, formula: "PMT = (FV-PV脳factor) / annuity" },
             ],
           },
           nper: {
-            formula: "n = ln[(FV×r+PMT)/(PV×r+PMT)] / ln(1+r)",
+            formula: "n = ln[(FV脳r+PMT)/(PV脳r+PMT)] / ln(1+r)",
             steps: [
-              { label: "Rate as decimal", value: `${rate}% → ${r.toFixed(4)}`, formula: "r = rate / 100" },
+              { label: "Rate as decimal", value: `${rate}% 鈫?${r.toFixed(4)}`, formula: "r = rate / 100" },
               {
                 label: "Cash flow ratio",
-                value: `${fut}×${r}+${p} vs ${pres}×${r}+${p}`,
-                formula: "(FV×r+PMT)/(PV×r+PMT)",
+                value: `${fut}脳${r}+${p} vs ${pres}脳${r}+${p}`,
+                formula: "(FV脳r+PMT)/(PV脳r+PMT)",
               },
               { label: "Periods", value: `${res.toFixed(2)} years`, formula: "n = ln(ratio) / ln(1+r)" },
             ],
@@ -250,8 +250,8 @@ function TVMPageContent() {
             formula: "Iterative Newton-Raphson approximation",
             steps: [
               { label: "Initial guess", value: "2% per period" },
-              { label: "NPV iteration", value: "Refine until NPV ≈ 0" },
-              { label: "Annual rate", value: `${(res * 100).toFixed(4)}%`, formula: "rate × 100" },
+              { label: "NPV iteration", value: "Refine until NPV 鈮?0" },
+              { label: "Annual rate", value: `${(res * 100).toFixed(4)}%`, formula: "rate 脳 100" },
             ],
           },
         };

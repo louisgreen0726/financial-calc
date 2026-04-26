@@ -13,6 +13,7 @@ interface VirtualTableProps<T> {
 export function VirtualTable<T>({ data, rowHeight = 48, renderRow, className }: VirtualTableProps<T>) {
   const parentRef = useRef<HTMLDivElement>(null);
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual exposes imperative helpers by design.
   const virtualizer = useVirtualizer({
     count: data.length,
     getScrollElement: () => parentRef.current,

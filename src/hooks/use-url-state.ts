@@ -78,7 +78,7 @@ export function useUrlState<T extends Record<string, string | number>>({
 
   const reset = useCallback(() => {
     router.replace(pathname, { scroll: false });
-  }, [defaultValues, pathname, router]);
+  }, [pathname, router]);
 
   return { state, setField, reset, updateUrl, buildUrl, shareUrl: buildUrl(state) };
 }
