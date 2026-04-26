@@ -21,7 +21,7 @@ import {
   YAxis,
   CartesianGrid,
 } from "recharts";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useLanguage } from "@/lib/i18n";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
@@ -362,9 +362,12 @@ function LoansPageContent() {
                 </div>
 
                 {/* Schedule Table */}
-                <Card className="flex-1 flex flex-col min-h-[320px]">
-                  <CardHeader>
-                    <CardTitle>{t("loans.schedule")}</CardTitle>
+                <Card className="flex-1 flex flex-col min-h-[320px] overflow-hidden">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                      <span>{t("loans.schedule")}</span>
+                      <span className="text-xs font-normal text-muted-foreground">{schedule.length} rows</span>
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="flex-1 p-0">
                     {schedule.length === 0 ? (
@@ -379,35 +382,38 @@ function LoansPageContent() {
                         </Alert>
                       </div>
                     ) : (
-                      <ScrollArea className="max-h-[min(54vh,26rem)]">
-                        <Table>
-                          <TableHeader className="sticky top-0 bg-background z-10">
-                            <TableRow>
-                              <TableHead className="w-[80px]">{t("cashFlow.period")}</TableHead>
-                              <TableHead>{t("loans.payment")}</TableHead>
-                              <TableHead>{t("loans.principal")}</TableHead>
-                              <TableHead>{t("loans.interest")}</TableHead>
-                              <TableHead className="text-right">{t("loans.remBalance")}</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {schedule.map((row) => (
-                              <TableRow key={row.period}>
-                                <TableCell className="font-mono text-xs">{row.period}</TableCell>
-                                <TableCell className="font-mono text-xs">{formatCurrency(row.payment)}</TableCell>
-                                <TableCell className="font-mono text-xs text-primary">
-                                  {formatCurrency(row.principal)}
-                                </TableCell>
-                                <TableCell className="font-mono text-xs text-destructive">
-                                  {formatCurrency(row.interest)}
-                                </TableCell>
-                                <TableCell className="text-right font-mono text-xs">
-                                  {formatCurrency(row.balance)}
-                                </TableCell>
+                      <ScrollArea className="h-[22rem] max-h-[52vh] min-h-[18rem] rounded-b-lg border-t">
+                        <div className="min-w-[640px]">
+                          <Table>
+                            <TableHeader className="sticky top-0 bg-background z-10">
+                              <TableRow>
+                                <TableHead className="w-[80px]">{t("cashFlow.period")}</TableHead>
+                                <TableHead>{t("loans.payment")}</TableHead>
+                                <TableHead>{t("loans.principal")}</TableHead>
+                                <TableHead>{t("loans.interest")}</TableHead>
+                                <TableHead className="text-right">{t("loans.remBalance")}</TableHead>
                               </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
+                            </TableHeader>
+                            <TableBody>
+                              {schedule.map((row) => (
+                                <TableRow key={row.period}>
+                                  <TableCell className="font-mono text-xs">{row.period}</TableCell>
+                                  <TableCell className="font-mono text-xs">{formatCurrency(row.payment)}</TableCell>
+                                  <TableCell className="font-mono text-xs text-primary">
+                                    {formatCurrency(row.principal)}
+                                  </TableCell>
+                                  <TableCell className="font-mono text-xs text-destructive">
+                                    {formatCurrency(row.interest)}
+                                  </TableCell>
+                                  <TableCell className="text-right font-mono text-xs">
+                                    {formatCurrency(row.balance)}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                        <ScrollBar orientation="horizontal" />
                       </ScrollArea>
                     )}
                   </CardContent>
