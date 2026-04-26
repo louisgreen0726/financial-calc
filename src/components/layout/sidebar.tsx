@@ -181,7 +181,7 @@ export const Sidebar = React.memo(function Sidebar({ className }: SidebarProps) 
             <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">
               {t("sidebar.edition") || "Pro Edition"}
             </p>
-            <p className="text-xs font-mono text-muted-foreground/30">{t("sidebar.version") || "v0.2.1"}</p>
+            <p className="text-xs font-mono text-muted-foreground/30">{t("sidebar.version") || "v0.3.0"}</p>
           </div>
         </div>
       </div>

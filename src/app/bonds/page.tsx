@@ -66,7 +66,7 @@ export default function BondsPage() {
     addToHistory,
     inputs: { faceValue, couponRate, years, ytm, frequency },
     result: metrics.price,
-    label: "Price",
+    label: t("bonds.fairPrice"),
   });
 
   // Generate Price-Yield Curve
@@ -157,7 +157,7 @@ export default function BondsPage() {
               />
               <ValidationError error={showErrors ? (bondValidation.faceValue as string | null) : null} />
               <p id="bond-face-help" className="sr-only">
-                Face value of the bond, the amount paid at maturity.
+                {t("bonds.validation.faceHelp")}
               </p>
             </div>
 
@@ -173,7 +173,7 @@ export default function BondsPage() {
               />
               <ValidationError error={showErrors ? (bondValidation.couponRate as string | null) : null} />
               <p id="bond-coupon-help" className="sr-only">
-                Annual coupon rate expressed as a percentage of face value.
+                {t("bonds.validation.couponHelp")}
               </p>
             </div>
             <div className="space-y-2">
@@ -188,7 +188,7 @@ export default function BondsPage() {
               />
               <ValidationError error={showErrors ? (bondValidation.ytm as string | null) : null} />
               <p id="bond-ytm-help" className="sr-only">
-                Yield to maturity, the overall expected return if the bond is held to maturity.
+                {t("bonds.validation.ytmHelp")}
               </p>
             </div>
             <div className="space-y-2">
@@ -203,7 +203,7 @@ export default function BondsPage() {
               />
               <ValidationError error={showErrors ? (bondValidation.yearsToMaturity as string | null) : null} />
               <p id="bond-years-help" className="sr-only">
-                Number of years until the bond matures.
+                {t("bonds.validation.yearsHelp")}
               </p>
             </div>
             <div className="space-y-2">
@@ -226,7 +226,7 @@ export default function BondsPage() {
                 </SelectContent>
               </Select>
               <p id="bond-freq-help" className="sr-only">
-                Coupon payment frequency per year: 1=annual, 2=semiannual, 4=quarterly, 12=monthly.
+                {t("bonds.validation.frequencyHelp")}
               </p>
               <ValidationError error={showErrors ? (bondValidation.frequency as string | null) : null} />
             </div>
@@ -349,7 +349,7 @@ export default function BondsPage() {
                             />
                             <Tooltip
                               formatter={(value: number) => formatCurrency(value)}
-                              labelFormatter={(l) => `Yield: ${l}%`}
+                              labelFormatter={(label) => `${t("bonds.ytm")}: ${label}%`}
                               contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))" }}
                             />
                             <Line

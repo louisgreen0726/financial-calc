@@ -45,7 +45,7 @@ export default function OptionsPage() {
     addToHistory,
     inputs: { spot, strike, time, rate, volatility },
     result: results.callPrice,
-    label: "Call Price",
+    label: t("options.callPrice"),
   });
 
   // Payoff Diagram (Price vs Spot)

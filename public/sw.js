@@ -1,4 +1,4 @@
-const VERSION = "v3";
+const VERSION = "v0.3.0";
 const STATIC_CACHE = `financial-calc-static-${VERSION}`;
 const RUNTIME_CACHE = `financial-calc-runtime-${VERSION}`;
 
@@ -38,11 +38,13 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) =>
-      Promise.all(
-        cacheNames.filter((name) => ![STATIC_CACHE, RUNTIME_CACHE].includes(name)).map((name) => caches.delete(name))
+    caches
+      .keys()
+      .then((cacheNames) =>
+        Promise.all(
+          cacheNames.filter((name) => ![STATIC_CACHE, RUNTIME_CACHE].includes(name)).map((name) => caches.delete(name))
+        )
       )
-    )
   );
   self.clients.claim();
 });

@@ -196,7 +196,7 @@ function LoansPageContent() {
                   ) : schedule.length > 0 ? (
                     <span className="flex flex-col items-end">
                       <span>{formatCurrency(stats.firstPayment)}</span>
-                      <span className="text-xs text-muted-foreground">鈫?{formatCurrency(stats.lastPayment)}</span>
+                      <span className="text-xs text-muted-foreground">? {formatCurrency(stats.lastPayment)}</span>
                     </span>
                   ) : (
                     "-"
@@ -366,7 +366,9 @@ function LoansPageContent() {
                   <CardHeader className="pb-3">
                     <CardTitle className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                       <span>{t("loans.schedule")}</span>
-                      <span className="text-xs font-normal text-muted-foreground">{schedule.length} rows</span>
+                      <span className="text-xs font-normal text-muted-foreground">
+                        {schedule.length} {t("common.rows") || "rows"}
+                      </span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="flex-1 p-0">
