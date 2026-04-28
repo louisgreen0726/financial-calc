@@ -196,7 +196,9 @@ function LoansPageContent() {
                   ) : schedule.length > 0 ? (
                     <span className="flex flex-col items-end">
                       <span>{formatCurrency(stats.firstPayment)}</span>
-                      <span className="text-xs text-muted-foreground">? {formatCurrency(stats.lastPayment)}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {"\u2192"} {formatCurrency(stats.lastPayment)}
+                      </span>
                     </span>
                   ) : (
                     "-"

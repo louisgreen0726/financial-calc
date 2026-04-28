@@ -299,7 +299,7 @@ export default function BondsPage() {
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
                       <div className="text-2xl font-bold">{metrics.modDuration.toFixed(2)}</div>
-                      <p className="text-xs text-muted-foreground">{`Sens: ${(metrics.modDuration * 1).toFixed(2)}% / 1% 螖Yield`}</p>
+                      <p className="text-xs text-muted-foreground">{`Sens: ${(metrics.modDuration * 1).toFixed(2)}% / 1% ${"\u0394"}Yield`}</p>
                     </CardContent>
                   </Card>
                   <Card>

@@ -44,7 +44,7 @@ export function InputRangeHint({ min, max, unit, example, currentValue, classNam
         {min !== undefined && max !== undefined && (
           <>
             Range: {min}
-            {unit ? ` ${unit}` : ""} – {max}
+            {unit ? ` ${unit}` : ""} {"\u2013"} {max}
             {unit ? ` ${unit}` : ""}
           </>
         )}
@@ -63,7 +63,7 @@ export function InputRangeHint({ min, max, unit, example, currentValue, classNam
         {example && (
           <>
             {" "}
-            · Example: {example}
+            {"\u00B7"} Example: {example}
             {unit ? ` ${unit}` : ""}
           </>
         )}

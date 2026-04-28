@@ -16,6 +16,8 @@ interface ValidationError {
   message: string;
 }
 
+const EMPTY_RESULT = "\u2014";
+
 export default function MacroPage() {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState("inflation");
@@ -249,7 +251,7 @@ export default function MacroPage() {
               <div className="text-center space-y-2">
                 <h3 className="text-lg font-medium text-muted-foreground">{t("macro.inflation.rate")}</h3>
                 <div className="text-5xl font-bold text-primary tracking-tighter">
-                  {infResult !== null && !isNaN(infResult) ? `${(infResult * 100).toFixed(4)}%` : "—"}
+                  {infResult !== null && !isNaN(infResult) ? `${(infResult * 100).toFixed(4)}%` : EMPTY_RESULT}
                 </div>
               </div>
             </Card>
@@ -312,7 +314,7 @@ export default function MacroPage() {
                   <div className="text-4xl font-bold text-primary tracking-tighter mt-2">
                     {ppResult !== null && !isNaN(ppResult)
                       ? `$${ppResult.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                      : "—"}
+                      : EMPTY_RESULT}
                   </div>
                 </div>
                 {ppResult !== null && !isNaN(ppResult) && (
@@ -369,7 +371,7 @@ export default function MacroPage() {
               <div className="text-center space-y-2">
                 <h3 className="text-lg font-medium text-muted-foreground">{t("macro.realRate.real")}</h3>
                 <div className="text-5xl font-bold text-primary tracking-tighter">
-                  {realResult !== null && !isNaN(realResult) ? `${(realResult * 100).toFixed(4)}%` : "—"}
+                  {realResult !== null && !isNaN(realResult) ? `${(realResult * 100).toFixed(4)}%` : EMPTY_RESULT}
                 </div>
               </div>
             </Card>
@@ -436,7 +438,7 @@ export default function MacroPage() {
                 <div className="text-5xl font-bold text-primary tracking-tighter">
                   {cpiResult !== null && !isNaN(cpiResult)
                     ? `$${cpiResult.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                    : "—"}
+                    : EMPTY_RESULT}
                 </div>
               </div>
             </Card>
@@ -494,7 +496,7 @@ export default function MacroPage() {
               <div className="text-center space-y-2">
                 <h3 className="text-lg font-medium text-muted-foreground">{t("macro.ppp.rate")}</h3>
                 <div className="text-5xl font-bold text-primary tracking-tighter">
-                  {pppResult !== null && !isNaN(pppResult) ? pppResult.toFixed(4) : "—"}
+                  {pppResult !== null && !isNaN(pppResult) ? pppResult.toFixed(4) : EMPTY_RESULT}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">{t("macro.ppp.rateDesc")}</p>
               </div>
