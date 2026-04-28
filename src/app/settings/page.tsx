@@ -5,12 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useLanguage } from "@/lib/i18n";
-import { useTheme } from "next-themes";
 import { Moon, Sun, Monitor, Globe, Trash2, Download } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { HISTORY_KEY } from "@/lib/constants";
 import { safeGetItem, safeRemoveItem } from "@/lib/storage";
+import { useTheme } from "@/components/theme-provider";
 
 export default function SettingsPage() {
   const { t, language, setLanguage } = useLanguage();
@@ -19,6 +19,7 @@ export default function SettingsPage() {
   const handleClearHistory = () => {
     if (window.confirm(t("history.confirmClear") || "Clear all calculation history?")) {
       safeRemoveItem(HISTORY_KEY);
+      window.dispatchEvent(new CustomEvent("financial-calc-history-changed"));
       toast.success(t("history.cleared") || "History cleared");
     }
   };
@@ -60,8 +61,8 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-3">
-            <Label>{t("settings.theme")}</Label>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <Label id="settings-theme-label">{t("settings.theme")}</Label>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3" role="group" aria-labelledby="settings-theme-label">
               <Button
                 variant={theme === "light" ? "default" : "outline"}
                 size="sm"
@@ -95,8 +96,12 @@ export default function SettingsPage() {
           <Separator />
 
           <div className="space-y-3">
-            <Label>{t("settings.language")}</Label>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <Label id="settings-language-label">{t("settings.language")}</Label>
+            <div
+              className="grid grid-cols-1 gap-2 sm:grid-cols-2"
+              role="group"
+              aria-labelledby="settings-language-label"
+            >
               <Button
                 variant={language === "en" ? "default" : "outline"}
                 size="sm"

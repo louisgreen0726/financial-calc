@@ -36,6 +36,14 @@ test("loan amortization schedule pays down to zero balance", () => {
   expect(schedule.at(-1)?.balance).toBe(0);
 });
 
+test("loan amortization supports zero-interest fixed payments", () => {
+  const schedule = Finance.amortizationSchedule(1200, 0, 12, "CPM");
+  expect(schedule.length).toBe(12);
+  expect(schedule[0]?.payment).toBeCloseTo(100, 8);
+  expect(schedule[0]?.interest).toBe(0);
+  expect(schedule.at(-1)?.balance).toBe(0);
+});
+
 test("CAM amortization keeps principal constant until the final rounding period", () => {
   const schedule = Finance.amortizationSchedule(1200, 0.01, 12, "CAM");
   expect(schedule[0]?.principal).toBeCloseTo(100, 8);
@@ -78,6 +86,14 @@ test("bond duration and convexity are finite for standard inputs", () => {
 test("irr rejects cash flows without a sign change", () => {
   expect(Number.isNaN(Finance.irr([100, 200, 300]))).toBe(true);
   expect(Number.isNaN(Finance.irr([-100, -50, -25]))).toBe(true);
+});
+
+test("npv treats the first cash flow as period zero", () => {
+  expect(Finance.npv(0.1, [-10000, 3000, 4000, 5000, 6000])).toBeCloseTo(3887.7126, 4);
+});
+
+test("npv rejects rates at or below -100 percent", () => {
+  expect(Number.isNaN(Finance.npv(-1, [-100, 110]))).toBe(true);
 });
 
 test("irr falls back to a bracketed solver when the initial guess is poor", () => {

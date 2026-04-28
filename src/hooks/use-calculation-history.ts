@@ -6,6 +6,8 @@ import { safeGetJSON, safeSetJSON } from "@/lib/storage";
 import { logger } from "@/lib/logger";
 import { createHistoryId, stableSerialize } from "@/lib/stable-serialize";
 
+const HISTORY_CHANGED_EVENT = "financial-calc-history-changed";
+
 export interface CalculationHistoryItem {
   id: string;
   page: string;
@@ -24,43 +26,66 @@ export function useCalculationHistory({ page, maxItems = MAX_HISTORY_ITEMS }: Us
   const [history, setHistory] = useState<CalculationHistoryItem[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
+  const loadHistory = useCallback(() => {
+    try {
+      const stored = safeGetJSON<CalculationHistoryItem[]>(HISTORY_KEY, []);
+      if (Array.isArray(stored)) {
+        const now = Date.now();
+        const expiryMs = HISTORY_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+        const validItems = stored.filter((item) => now - item.timestamp < expiryMs);
+        if (validItems.length !== stored.length) {
+          safeSetJSON(HISTORY_KEY, validItems);
+        }
+        return validItems;
+      }
+    } catch (error) {
+      logger.warn("Error loading calculation history:", error);
+    }
+    return [] as CalculationHistoryItem[];
+  }, []);
+
+  const persistHistory = useCallback((nextHistory: CalculationHistoryItem[]) => {
+    try {
+      safeSetJSON(HISTORY_KEY, nextHistory);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent(HISTORY_CHANGED_EVENT));
+      }
+    } catch (error) {
+      logger.warn("Error saving calculation history:", error);
+    }
+  }, []);
+
   // Load history from localStorage on mount
   useEffect(() => {
-    const loadHistory = () => {
-      try {
-        const stored = safeGetJSON<CalculationHistoryItem[]>(HISTORY_KEY, []);
-        if (Array.isArray(stored)) {
-          const now = Date.now();
-          const expiryMs = HISTORY_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
-          const validItems = stored.filter((item) => now - item.timestamp < expiryMs);
-          if (validItems.length !== stored.length) {
-            safeSetJSON(HISTORY_KEY, validItems);
-          }
-          return validItems;
-        }
-      } catch (error) {
-        logger.warn("Error loading calculation history:", error);
-      }
-      return [] as CalculationHistoryItem[];
-    };
-
     const initialHistory = loadHistory();
     queueMicrotask(() => {
       setHistory(initialHistory);
       setIsInitialized(true);
     });
-  }, []);
+  }, [loadHistory]);
 
-  // Save history to localStorage whenever it changes
   useEffect(() => {
-    if (isInitialized) {
-      try {
-        safeSetJSON(HISTORY_KEY, history);
-      } catch (error) {
-        logger.warn("Error saving calculation history:", error);
-      }
+    if (typeof window === "undefined") {
+      return;
     }
-  }, [history, isInitialized]);
+
+    const refreshHistory = () => {
+      setHistory(loadHistory());
+      setIsInitialized(true);
+    };
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === HISTORY_KEY) {
+        refreshHistory();
+      }
+    };
+
+    window.addEventListener(HISTORY_CHANGED_EVENT, refreshHistory);
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener(HISTORY_CHANGED_EVENT, refreshHistory);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, [loadHistory]);
 
   const addToHistory = useCallback(
     (inputs: Record<string, number | string>, result: number, label?: string) => {
@@ -77,23 +102,36 @@ export function useCalculationHistory({ page, maxItems = MAX_HISTORY_ITEMS }: Us
         const nextSignature = stableSerialize(inputs);
         const filtered = prev.filter((item) => item.page !== page || stableSerialize(item.inputs) !== nextSignature);
         const updated = [newItem, ...filtered].slice(0, maxItems);
+        queueMicrotask(() => persistHistory(updated));
         return updated;
       });
     },
-    [page, maxItems]
+    [page, maxItems, persistHistory]
   );
 
-  const removeFromHistory = useCallback((id: string) => {
-    setHistory((prev) => prev.filter((item) => item.id !== id));
-  }, []);
+  const removeFromHistory = useCallback(
+    (id: string) => {
+      setHistory((prev) => {
+        const updated = prev.filter((item) => item.id !== id);
+        queueMicrotask(() => persistHistory(updated));
+        return updated;
+      });
+    },
+    [persistHistory]
+  );
 
   const clearHistory = useCallback(() => {
-    setHistory((prev) => prev.filter((item) => item.page !== page));
-  }, [page]);
+    setHistory((prev) => {
+      const updated = prev.filter((item) => item.page !== page);
+      queueMicrotask(() => persistHistory(updated));
+      return updated;
+    });
+  }, [page, persistHistory]);
 
   const clearAllHistory = useCallback(() => {
     setHistory([]);
-  }, []);
+    queueMicrotask(() => persistHistory([]));
+  }, [persistHistory]);
 
   const getPageHistory = useCallback(() => {
     return history.filter((item) => item.page === page);

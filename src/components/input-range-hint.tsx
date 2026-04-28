@@ -29,9 +29,9 @@ export function InputRangeHint({ min, max, unit, example, currentValue, classNam
   return (
     <div
       className={cn(
-        "flex items-center gap-1.5 text-xs text-muted-foreground/70 mt-1",
-        isOutOfRange && "text-destructive/80",
-        isInValidRange && "text-emerald-600/70 dark:text-emerald-400/70",
+        "mt-1 flex items-center gap-1.5 text-xs text-muted-foreground",
+        isOutOfRange && "text-destructive",
+        isInValidRange && "text-emerald-700 dark:text-emerald-300",
         className
       )}
     >

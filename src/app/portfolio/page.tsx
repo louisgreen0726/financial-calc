@@ -20,6 +20,7 @@ import { parseOptionalNumber } from "@/lib/input-utils";
 import { PortfolioInputSchema } from "@/lib/validation";
 import { ErrorDisplay } from "@/components/ui/error-display";
 import { SectionActionBar } from "@/components/section-action-bar";
+import { ResultActions } from "@/components/result-actions";
 
 interface Asset {
   id: number;
@@ -48,6 +49,7 @@ export default function PortfolioPage() {
   const [simulations, setSimulations] = useState<PortfolioPoint[]>([]);
   const [optimal, setOptimal] = useState<PortfolioPoint | null>(null);
   const [minVol, setMinVol] = useState<PortfolioPoint | null>(null);
+  const [resultSignature, setResultSignature] = useState("");
   const [chartsReady, setChartsReady] = useState(false);
 
   const parsedAssets = useMemo(
@@ -58,6 +60,11 @@ export default function PortfolioPage() {
         risk: parseOptionalNumber(asset.risk),
       })),
     [assets]
+  );
+
+  const inputSignature = useMemo(
+    () => JSON.stringify({ assets: parsedAssets, correlation, rf }),
+    [correlation, parsedAssets, rf]
   );
 
   const portfolioValidation = useMemo(() => {
@@ -103,6 +110,12 @@ export default function PortfolioPage() {
     };
   }, [cancel]);
 
+  const resultsAreFresh = resultSignature === inputSignature;
+  const visibleSimulations = resultsAreFresh ? simulations : [];
+  const visibleOptimal = resultsAreFresh ? optimal : null;
+  const visibleMinVol = resultsAreFresh ? minVol : null;
+  const hasVisibleResults = Boolean(visibleOptimal && visibleMinVol && visibleSimulations.length > 0);
+
   const addAsset = () => {
     const id = Math.max(0, ...assets.map((a) => a.id)) + 1;
     setAssets([...assets, { id, name: `${t("portfolio.asset")} ${id}`, return: "8", risk: "10" }]);
@@ -128,6 +141,7 @@ export default function PortfolioPage() {
 
   const startSimulation = () => {
     if (!portfolioValidation.isValid || assets.length < 2) return;
+    const runSignature = inputSignature;
     const payload = {
       assets: parsedAssets.map((asset, index) => ({
         id: assets[index].id,
@@ -149,6 +163,7 @@ export default function PortfolioPage() {
         if (d?.simulations) setSimulations(d.simulations);
         if (d?.optimal) setOptimal(d.optimal);
         if (d?.minVol) setMinVol(d.minVol);
+        setResultSignature(runSignature);
       },
       onError: () => {
         // Fallback handling lives inside the hook; keep the UI responsive even if worker setup fails.
@@ -165,7 +180,7 @@ export default function PortfolioPage() {
         </div>
         <Button onClick={startSimulation} size="lg" className="gap-2 w-full md:w-auto" disabled={isRunning}>
           {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-          {isRunning ? t("common.loading") : simulations.length > 0 ? t("portfolio.rerun") : t("portfolio.run")}
+          {isRunning ? t("common.loading") : visibleSimulations.length > 0 ? t("portfolio.rerun") : t("portfolio.run")}
         </Button>
       </div>
 
@@ -178,15 +193,29 @@ export default function PortfolioPage() {
           <CardContent className="space-y-6 min-w-0">
             <div className="space-y-2">
               <div className="flex justify-between">
-                <Label>
+                <Label id="portfolio-rf-label">
                   {t("portfolio.rf")}: {rf}%
                 </Label>
-                <Label>
+                <Label id="portfolio-correlation-label">
                   {t("portfolio.corr")}: {correlation}
                 </Label>
               </div>
-              <Slider value={[rf]} onValueChange={(v) => setRf(v[0])} max={10} step={0.1} className="pb-4" />
-              <Slider value={[correlation]} onValueChange={(v) => setCorrelation(v[0])} min={-1} max={1} step={0.1} />
+              <Slider
+                aria-labelledby="portfolio-rf-label"
+                value={[rf]}
+                onValueChange={(v) => setRf(v[0])}
+                max={10}
+                step={0.1}
+                className="pb-4"
+              />
+              <Slider
+                aria-labelledby="portfolio-correlation-label"
+                value={[correlation]}
+                onValueChange={(v) => setCorrelation(v[0])}
+                min={-1}
+                max={1}
+                step={0.1}
+              />
               {!portfolioValidation.isValid && <ErrorDisplay message={portfolioValidation.message} variant="warning" />}
             </div>
 
@@ -266,21 +295,30 @@ export default function PortfolioPage() {
                       </Button>
                     </div>
                     <div className="space-y-2">
-                      <Label>{t("portfolio.asset")}</Label>
-                      <Input value={asset.name} onChange={(e) => updateAsset(asset.id, "name", e.target.value)} />
+                      <Label htmlFor={`portfolio-asset-name-${asset.id}`}>{t("portfolio.asset")}</Label>
+                      <Input
+                        id={`portfolio-asset-name-${asset.id}`}
+                        aria-label={t("portfolio.asset")}
+                        value={asset.name}
+                        onChange={(e) => updateAsset(asset.id, "name", e.target.value)}
+                      />
                     </div>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div className="space-y-2">
-                        <Label>{t("portfolio.ret")}</Label>
+                        <Label htmlFor={`portfolio-asset-return-${asset.id}`}>{t("portfolio.ret")}</Label>
                         <Input
+                          id={`portfolio-asset-return-${asset.id}`}
+                          aria-label={`${t("portfolio.ret")} for ${asset.name}`}
                           type="number"
                           value={asset.return}
                           onChange={(e) => updateAsset(asset.id, "return", e.target.value)}
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>{t("portfolio.risk")}</Label>
+                        <Label htmlFor={`portfolio-asset-risk-${asset.id}`}>{t("portfolio.risk")}</Label>
                         <Input
+                          id={`portfolio-asset-risk-${asset.id}`}
+                          aria-label={`${t("portfolio.risk")} for ${asset.name}`}
                           type="number"
                           value={asset.risk}
                           onChange={(e) => updateAsset(asset.id, "risk", e.target.value)}
@@ -301,32 +339,69 @@ export default function PortfolioPage() {
               <p className="text-sm text-muted-foreground">{t("portfolio.workflow.resultsHint")}</p>
               <Button onClick={startSimulation} className="w-full gap-2" disabled={isRunning}>
                 {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                {isRunning ? t("common.loading") : simulations.length > 0 ? t("portfolio.rerun") : t("portfolio.run")}
+                {isRunning
+                  ? t("common.loading")
+                  : visibleSimulations.length > 0
+                    ? t("portfolio.rerun")
+                    : t("portfolio.run")}
               </Button>
             </div>
           </CardContent>
         </Card>
 
-        <div className="min-w-0 space-y-6 xl:col-span-8">
+        <div id="portfolio-report-content" className="min-w-0 space-y-6 xl:col-span-8">
           {isRunning && <ProgressBar progress={progress} label={t("portfolio.run")} showETA />}
 
           <SectionActionBar
             title={t("portfolio.workflow.results")}
             description={t("portfolio.workflow.resultsHint")}
             actions={
-              <Button
-                onClick={startSimulation}
-                variant="outline"
-                className="gap-2 hidden xl:inline-flex"
-                disabled={isRunning}
-              >
-                {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                {isRunning ? t("common.loading") : simulations.length > 0 ? t("portfolio.rerun") : t("portfolio.run")}
-              </Button>
+              <>
+                <Button
+                  onClick={startSimulation}
+                  variant="outline"
+                  className="gap-2 hidden xl:inline-flex"
+                  disabled={isRunning}
+                >
+                  {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                  {isRunning
+                    ? t("common.loading")
+                    : visibleSimulations.length > 0
+                      ? t("portfolio.rerun")
+                      : t("portfolio.run")}
+                </Button>
+                {hasVisibleResults && visibleOptimal && visibleMinVol ? (
+                  <ResultActions
+                    title={t("portfolio.title")}
+                    results={{
+                      [t("portfolio.maxSharpe")]: `${t("portfolio.ratio")}: ${formatNumber(visibleOptimal.sharpe)}`,
+                      [t("portfolio.minVol")]:
+                        `${formatNumber(visibleMinVol.ret)}% / ${formatNumber(visibleMinVol.risk)}%`,
+                    }}
+                    inputs={{
+                      [t("portfolio.rf")]: `${rf}%`,
+                      [t("portfolio.corr")]: correlation,
+                      [t("portfolio.asset")]: assets.map((asset) => asset.name).join(", "),
+                    }}
+                    exportData={visibleSimulations as unknown as Record<string, unknown>[]}
+                    exportJson={{
+                      assets,
+                      rf,
+                      correlation,
+                      optimal: visibleOptimal,
+                      minVol: visibleMinVol,
+                      simulations: visibleSimulations,
+                    }}
+                    pdfElementId="portfolio-report-content"
+                    pdfFilename="portfolio-optimization"
+                    pdfTitle={t("portfolio.title")}
+                  />
+                ) : null}
+              </>
             }
           />
 
-          {simulations.length === 0 && !isRunning ? (
+          {visibleSimulations.length === 0 && !isRunning ? (
             <Card className="border-dashed">
               <CardContent className="pt-6">
                 <EmptyState
@@ -338,7 +413,7 @@ export default function PortfolioPage() {
             </Card>
           ) : null}
 
-          {optimal && (
+          {visibleOptimal && (
             <div className="grid grid-cols-1 gap-6 2xl:grid-cols-2">
               <Card>
                 <CardHeader>
@@ -346,12 +421,12 @@ export default function PortfolioPage() {
                     <PieIcon className="h-5 w-5" /> {t("portfolio.maxSharpe")}
                   </CardTitle>
                   <CardDescription>
-                    {t("portfolio.ratio")}: {formatNumber(optimal.sharpe)}
+                    {t("portfolio.ratio")}: {formatNumber(visibleOptimal.sharpe)}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {optimal.weights.map((w, i) => (
+                    {visibleOptimal.weights.map((w, i) => (
                       <div key={i} className="flex items-start justify-between gap-3 text-sm">
                         <span className="min-w-0 break-words">{assets[i]?.name}</span>
                         <span className="shrink-0 font-bold">{(w * 100).toFixed(1)}%</span>
@@ -360,7 +435,7 @@ export default function PortfolioPage() {
                     <div className="mt-4 flex flex-col gap-1 border-t pt-4 text-sm font-medium sm:flex-row sm:items-center sm:justify-between">
                       <span>{t("portfolio.retRisk")}</span>
                       <span className="break-words">
-                        {formatNumber(optimal.ret)}% / {formatNumber(optimal.risk)}%
+                        {formatNumber(visibleOptimal.ret)}% / {formatNumber(visibleOptimal.risk)}%
                       </span>
                     </div>
                   </div>
@@ -376,7 +451,7 @@ export default function PortfolioPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {minVol?.weights.map((w, i) => (
+                    {visibleMinVol?.weights.map((w, i) => (
                       <div key={i} className="flex items-start justify-between gap-3 text-sm">
                         <span className="min-w-0 break-words">{assets[i]?.name}</span>
                         <span className="shrink-0 font-bold">{(w * 100).toFixed(1)}%</span>
@@ -385,7 +460,7 @@ export default function PortfolioPage() {
                     <div className="mt-4 flex flex-col gap-1 border-t pt-4 text-sm font-medium sm:flex-row sm:items-center sm:justify-between">
                       <span>{t("portfolio.retRisk")}</span>
                       <span className="break-words">
-                        {formatNumber(minVol?.ret || 0)}% / {formatNumber(minVol?.risk || 0)}%
+                        {formatNumber(visibleMinVol?.ret || 0)}% / {formatNumber(visibleMinVol?.risk || 0)}%
                       </span>
                     </div>
                   </div>
@@ -397,7 +472,7 @@ export default function PortfolioPage() {
           <ResponsiveDisclosure
             title={t("portfolio.workflow.chart")}
             description={t("portfolio.workflow.chartHint")}
-            defaultOpen={simulations.length > 0}
+            defaultOpen={visibleSimulations.length > 0}
           >
             <Card className="h-[280px] sm:h-[360px] md:h-[430px] flex flex-col">
               <CardHeader>
@@ -405,7 +480,7 @@ export default function PortfolioPage() {
                 <CardDescription>{t("portfolio.frontierDesc")}</CardDescription>
               </CardHeader>
               <CardContent className="flex-1 min-h-0">
-                {simulations.length > 0 ? (
+                {visibleSimulations.length > 0 ? (
                   chartsReady ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <ScatterChart margin={{ top: 12, right: 12, bottom: 12, left: 0 }}>
@@ -452,12 +527,28 @@ export default function PortfolioPage() {
                             return null;
                           }}
                         />
-                        <Scatter name="Portfolios" data={simulations} fill="hsl(var(--primary))" fillOpacity={0.4} />
-                        {optimal && (
-                          <Scatter name="Max Sharpe" data={[optimal]} fill="hsl(var(--chart-4))" shape="star" r={200} />
+                        <Scatter
+                          name="Portfolios"
+                          data={visibleSimulations}
+                          fill="hsl(var(--primary))"
+                          fillOpacity={0.4}
+                        />
+                        {visibleOptimal && (
+                          <Scatter
+                            name="Max Sharpe"
+                            data={[visibleOptimal]}
+                            fill="hsl(var(--chart-4))"
+                            shape="star"
+                            r={200}
+                          />
                         )}
-                        {minVol && (
-                          <Scatter name="Min Volatility" data={[minVol]} fill="hsl(var(--chart-2))" shape="diamond" />
+                        {visibleMinVol && (
+                          <Scatter
+                            name="Min Volatility"
+                            data={[visibleMinVol]}
+                            fill="hsl(var(--chart-2))"
+                            shape="diamond"
+                          />
                         )}
                       </ScatterChart>
                     </ResponsiveContainer>

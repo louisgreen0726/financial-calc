@@ -51,7 +51,7 @@ export const OptionsInputSchema = z.object({
 });
 
 export const CashFlowSchema = z.object({
-  rate: z.number().finite(),
+  rate: z.number().finite().gt(-100, "Discount rate must be greater than -100%"),
   flows: z.array(z.number().finite()).min(1, "At least one cash flow required"),
 });
 

@@ -136,9 +136,15 @@ export default function CashFlowPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label>{t("cashFlow.discountRate")}</Label>
+                <Label htmlFor="cash-flow-discount-rate">{t("cashFlow.discountRate")}</Label>
                 <div className="flex gap-2">
-                  <Input type="number" value={rate} onChange={(e) => setRate(e.target.value)} className="flex-1" />
+                  <Input
+                    id="cash-flow-discount-rate"
+                    type="number"
+                    value={rate}
+                    onChange={(e) => setRate(e.target.value)}
+                    className="flex-1"
+                  />
                   <div className="flex items-center text-sm text-muted-foreground">%</div>
                 </div>
                 {!validation.isValid && <ErrorDisplay message={validation.message} variant="warning" />}
@@ -198,7 +204,9 @@ export default function CashFlowPage() {
                   title={t("cashFlow.title")}
                   results={{
                     [t("cashFlow.npv")]: calculateMetrics.npv,
-                    [t("cashFlow.irr")]: isFinite(calculateMetrics.irr) ? calculateMetrics.irr * 100 : 0,
+                    [t("cashFlow.irr")]: isFinite(calculateMetrics.irr)
+                      ? `${(calculateMetrics.irr * 100).toFixed(2)}%`
+                      : t("common.notAvailable"),
                   }}
                   inputs={{ rate, flows: flowInputs.join(",") }}
                   exportData={chartData}
@@ -243,7 +251,7 @@ export default function CashFlowPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">
-                        {calculateMetrics.payback > 0
+                        {calculateMetrics.payback >= 0
                           ? `${calculateMetrics.payback.toFixed(1)} ${t("common.year")}`
                           : "N/A"}
                       </div>

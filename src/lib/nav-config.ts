@@ -136,5 +136,7 @@ export const NAV_ITEMS = NAV_CONFIG.flatMap((section) => section.items);
 
 export const MOBILE_PRIMARY_NAV = [
   { href: "/", icon: Calculator, labelKey: "common.home" },
+  { href: "/tvm", icon: Calculator, labelKey: "common.tvmShort" },
+  { href: "/portfolio", icon: PieChart, labelKey: "common.portfolioShort" },
   { href: "/history", icon: History, labelKey: "history.title" },
 ] as const;

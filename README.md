@@ -133,7 +133,7 @@ npm run format:check
 - service worker behavior is manually wired through:
   - `public/sw.js`
   - `src/components/service-worker-registration.tsx`
-- `next-pwa` is installed, but the current app behavior relies on the manual integration path instead
+- PWA behavior relies on the manual integration path; `next-pwa` is intentionally not installed
 
 ## Project Structure
 
@@ -154,9 +154,8 @@ financial-calc/
 
 ## Quality Notes
 
-- the app currently passes typecheck, test, and build verification
-- there is still one known non-blocking lint warning related to `@tanstack/react-virtual`
-- build may still print a `baseline-browser-mapping` freshness reminder, which is a maintenance issue rather than a product regression
+- the app currently passes typecheck, test, lint, format, and build verification
+- production dependency audit currently reports no vulnerabilities
 
 ## License
 

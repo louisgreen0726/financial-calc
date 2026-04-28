@@ -190,9 +190,10 @@ export const Finance = {
   },
   npv: (rate: number, values: number[]): number => {
     if (!isValid(rate) || !Array.isArray(values) || values.length === 0) return NaN;
+    if (rate <= -1) return NaN;
     return values.reduce((acc, val, i) => {
       if (!isValid(val)) return acc;
-      return acc + val / Math.pow(1 + rate, i + 1);
+      return acc + val / Math.pow(1 + rate, i);
     }, 0);
   },
   irr: (values: number[], guess: number = 0.1): number => {

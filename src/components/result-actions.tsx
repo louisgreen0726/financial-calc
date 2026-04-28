@@ -7,7 +7,7 @@ import { useState } from "react";
 
 interface ResultActionsProps {
   title: string;
-  results: Record<string, number>;
+  results: Record<string, number | string>;
   inputs?: Record<string, number | string>;
   shareUrl?: string;
   exportData?: Record<string, unknown>[];

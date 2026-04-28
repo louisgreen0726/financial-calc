@@ -174,12 +174,6 @@
   @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500;
 }
 
-.font-display {
-  font-size: 2.25rem;
-  line-height: 2.5rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-}
 .font-h1 {
   font-size: 1.875rem;
   line-height: 2.25rem;
@@ -221,10 +215,6 @@
 
 /* Mobile responsive typography */
 @media (max-width: 768px) {
-  .font-display {
-    font-size: 1.75rem;
-    line-height: 2rem;
-  }
   .font-h1 {
     font-size: 1.5rem;
     line-height: 1.875rem;
