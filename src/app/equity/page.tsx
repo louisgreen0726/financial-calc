@@ -17,6 +17,7 @@ import { ResponsiveDisclosure } from "@/components/responsive-disclosure";
 import { ErrorDisplay, ValidationError } from "@/components/ui/error-display";
 import { EquityCAPMSchema, EquityDDMSchema, EquityWACCSchema } from "@/lib/validation";
 import { ResultShell } from "@/components/result-shell";
+import { ResultActions } from "@/components/result-actions";
 
 export default function EquityPage() {
   const { t } = useLanguage();
@@ -163,7 +164,7 @@ export default function EquityPage() {
         </TabsList>
 
         <TabsContent value="capm" className="space-y-6">
-          <div className="grid gap-6 xl:grid-cols-2">
+          <div id="equity-capm-report-content" className="grid gap-6 xl:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -228,6 +229,25 @@ export default function EquityPage() {
               isReady={Object.keys(capmValidation).length === 0}
               emptyTitle={t("equity.capm.re")}
               emptyDescription={t("equity.validation.invalidInputs")}
+              actions={
+                Object.keys(capmValidation).length === 0 ? (
+                  <ResultActions
+                    title={t("equity.capm.title")}
+                    results={{ [t("equity.capm.re")]: `${(capmResult * 100).toFixed(2)}%` }}
+                    inputs={{ rf, beta, rm }}
+                    exportData={[
+                      {
+                        metric: t("equity.capm.re"),
+                        value: `${(capmResult * 100).toFixed(2)}%`,
+                      },
+                    ]}
+                    exportJson={{ rf, beta, rm, expectedReturn: capmResult }}
+                    pdfElementId="equity-capm-report-content"
+                    pdfFilename="equity-capm"
+                    pdfTitle={t("equity.capm.title")}
+                  />
+                ) : null
+              }
               summary={
                 <Card className="flex flex-col justify-center items-center bg-muted/30">
                   <CardContent className="text-center space-y-2 pt-6">
@@ -243,7 +263,7 @@ export default function EquityPage() {
         </TabsContent>
 
         <TabsContent value="wacc" className="space-y-6">
-          <div className="grid gap-6 xl:grid-cols-2">
+          <div id="equity-wacc-report-content" className="grid gap-6 xl:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -320,6 +340,25 @@ export default function EquityPage() {
               isReady={Object.keys(waccValidation).length === 0}
               emptyTitle={t("equity.wacc.result")}
               emptyDescription={t("equity.validation.invalidInputs")}
+              actions={
+                Object.keys(waccValidation).length === 0 ? (
+                  <ResultActions
+                    title={t("equity.wacc.title")}
+                    results={{ [t("equity.wacc.result")]: `${(waccResult * 100).toFixed(2)}%` }}
+                    inputs={{ equity, debt, costEquity, costDebt, taxRate }}
+                    exportData={[
+                      {
+                        metric: t("equity.wacc.result"),
+                        value: `${(waccResult * 100).toFixed(2)}%`,
+                      },
+                    ]}
+                    exportJson={{ equity, debt, costEquity, costDebt, taxRate, wacc: waccResult }}
+                    pdfElementId="equity-wacc-report-content"
+                    pdfFilename="equity-wacc"
+                    pdfTitle={t("equity.wacc.title")}
+                  />
+                ) : null
+              }
               summary={
                 <Card className="flex flex-col justify-center items-center bg-muted/30">
                   <CardContent className="text-center space-y-2 pt-6">
@@ -333,7 +372,7 @@ export default function EquityPage() {
         </TabsContent>
 
         <TabsContent value="ddm" className="space-y-6">
-          <div className="grid gap-6 xl:grid-cols-2">
+          <div id="equity-ddm-report-content" className="grid gap-6 xl:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -394,6 +433,25 @@ export default function EquityPage() {
               isReady={Object.keys(ddmValidation).length === 0 && ddmResult > 0}
               emptyTitle={t("equity.ddm.intrinsic")}
               emptyDescription={ddmResult <= 0 ? t("equity.ddm.growthError") : t("equity.validation.invalidInputs")}
+              actions={
+                Object.keys(ddmValidation).length === 0 && ddmResult > 0 ? (
+                  <ResultActions
+                    title={t("equity.ddm.title")}
+                    results={{ [t("equity.ddm.intrinsic")]: ddmResult }}
+                    inputs={{ div, growth, reqReturn }}
+                    exportData={[
+                      {
+                        metric: t("equity.ddm.intrinsic"),
+                        value: ddmResult,
+                      },
+                    ]}
+                    exportJson={{ div, growth, reqReturn, intrinsicValue: ddmResult }}
+                    pdfElementId="equity-ddm-report-content"
+                    pdfFilename="equity-ddm"
+                    pdfTitle={t("equity.ddm.title")}
+                  />
+                ) : null
+              }
               summary={
                 <Card className="flex flex-col justify-center items-center bg-muted/30">
                   <CardContent className="text-center space-y-2 pt-6">

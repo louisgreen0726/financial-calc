@@ -207,7 +207,9 @@ export default function BondsPage() {
               </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="bond-freq">{t("bonds.freq")}</Label>
+              <Label id="bond-freq-label" htmlFor="bond-freq">
+                {t("bonds.freq")}
+              </Label>
               <Select
                 value={frequency}
                 onValueChange={(value) => {
@@ -215,7 +217,7 @@ export default function BondsPage() {
                   setShowErrors(true);
                 }}
               >
-                <SelectTrigger id="bond-freq" aria-describedby="bond-freq-help">
+                <SelectTrigger id="bond-freq" aria-labelledby="bond-freq-label" aria-describedby="bond-freq-help">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -246,9 +248,9 @@ export default function BondsPage() {
                   title={t("bonds.title")}
                   results={{
                     [t("bonds.fairPrice")]: metrics.price,
-                    [t("bonds.macDur")]: metrics.macDuration,
-                    [t("bonds.modDur")]: metrics.modDuration,
-                    [t("bonds.convexity")]: metrics.convexity,
+                    [t("bonds.macDur")]: `${metrics.macDuration.toFixed(2)} ${t("common.year")}`,
+                    [t("bonds.modDur")]: metrics.modDuration.toFixed(2),
+                    [t("bonds.convexity")]: metrics.convexity.toFixed(2),
                   }}
                   inputs={{ faceValue, couponRate, years, ytm, frequency }}
                   exportData={chartData}
@@ -316,7 +318,7 @@ export default function BondsPage() {
               </section>
             }
             advanced={
-              <div className="space-y-6" id="bonds-report-content">
+              <div className="space-y-6" id="bonds-advanced-content">
                 {/* Key Metrics Grid */}
                 {/* Price-Yield Curve */}
                 <ResponsiveDisclosure

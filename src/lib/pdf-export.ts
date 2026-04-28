@@ -36,7 +36,9 @@ export async function exportToPDF({
       });
 
       const imgData = canvas.toDataURL("image/png");
-      const imgWidth = orientation === "portrait" ? 210 : 297;
+      const pageWidth = orientation === "portrait" ? 210 : 297;
+      const pageHeight = orientation === "portrait" ? 297 : 210;
+      const imgWidth = pageWidth;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
       // Add title at the top
@@ -51,7 +53,16 @@ export async function exportToPDF({
 
       // Add the captured element below the header
       const headerHeight = 28;
-      doc.addImage(imgData, "PNG", 0, headerHeight, imgWidth, imgHeight - headerHeight);
+      const firstPageContentHeight = pageHeight - headerHeight;
+      doc.addImage(imgData, "PNG", 0, headerHeight, imgWidth, imgHeight);
+
+      let remainingHeight = imgHeight - firstPageContentHeight;
+      while (remainingHeight > 0) {
+        doc.addPage();
+        const renderedHeight = imgHeight - remainingHeight;
+        doc.addImage(imgData, "PNG", 0, -renderedHeight, imgWidth, imgHeight);
+        remainingHeight -= pageHeight;
+      }
     } else {
       // Add title and timestamp
       doc.setFontSize(20);

@@ -12,7 +12,7 @@ interface ShareDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  results: Record<string, number>;
+  results: Record<string, number | string>;
   inputs?: Record<string, number | string>;
   shareUrl?: string;
   className?: string;
@@ -27,6 +27,14 @@ export function ShareDialog({ open, onOpenChange, title, results, inputs, shareU
   const canNativeShare = typeof navigator !== "undefined" && "share" in navigator;
   const resolvedShareUrl = shareUrl || (typeof window !== "undefined" ? new URL(window.location.href).toString() : "");
 
+  const formatResultValue = (value: number | string): string => {
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return formatCurrency(value);
+  };
+
   const generateMarkdown = (): string => {
     const lines = [`## ${title}\n`];
     if (inputs) {
@@ -40,7 +48,7 @@ export function ShareDialog({ open, onOpenChange, title, results, inputs, shareU
     lines.push(`### ${t("share.resultsHeading")}\n`);
     lines.push(`| ${t("share.metricLabel")} | ${t("share.valueLabel")} |\n|---|---|\n`);
     Object.entries(results).forEach(([k, v]) => {
-      lines.push(`| ${k} | ${formatCurrency(v)} |\n`);
+      lines.push(`| ${k} | ${formatResultValue(v)} |\n`);
     });
     return lines.join("");
   };
@@ -53,7 +61,7 @@ export function ShareDialog({ open, onOpenChange, title, results, inputs, shareU
       lines.push("");
     }
     lines.push(`${t("share.resultsHeading")}:`);
-    Object.entries(results).forEach(([k, v]) => lines.push(`  ${k}: ${formatCurrency(v)}`));
+    Object.entries(results).forEach(([k, v]) => lines.push(`  ${k}: ${formatResultValue(v)}`));
     return lines.join("\n");
   };
 

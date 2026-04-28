@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { parseOptionalNumber } from "@/lib/input-utils";
 
 interface UseUrlStateOptions<T> {
   defaultValues: T;
@@ -25,8 +26,8 @@ export function useUrlState<T extends Record<string, string | number>>({
 
       if (paramValue !== null) {
         if (typeof defaultValue === "number") {
-          const parsed = parseFloat(paramValue);
-          if (!isNaN(parsed)) {
+          const parsed = parseOptionalNumber(paramValue);
+          if (parsed !== null) {
             (initialState as Record<string, unknown>)[key] = parsed;
           }
         } else {

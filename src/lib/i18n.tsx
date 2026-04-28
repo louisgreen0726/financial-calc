@@ -42,6 +42,8 @@ type Translations = {
     more: string;
     notAvailable: string;
     rows: string;
+    tvmShort: string;
+    portfolioShort: string;
   };
   sidebar: {
     edition: string;
@@ -304,6 +306,11 @@ type Translations = {
     principal: string;
     interest: string;
     remBalance: string;
+    emptySchedule: string;
+    errorPositiveAmount: string;
+    errorPositiveRate: string;
+    errorPositiveYears: string;
+    noData: string;
   };
   macro: {
     title: string;
@@ -529,6 +536,8 @@ const en: Translations = {
     more: "More",
     notAvailable: "N/A",
     rows: "rows",
+    tvmShort: "TVM",
+    portfolioShort: "Portfolio",
   },
   sidebar: {
     edition: "Professional Edition",
@@ -799,6 +808,11 @@ const en: Translations = {
     principal: "Principal",
     interest: "Interest",
     remBalance: "Balance",
+    emptySchedule: "Enter valid loan details to generate the amortization schedule.",
+    errorPositiveAmount: "Loan amount must be positive",
+    errorPositiveRate: "Interest rate cannot be negative",
+    errorPositiveYears: "Loan term must be positive",
+    noData: "No schedule data available",
   },
   macro: {
     title: "Macroeconomics & FX",
@@ -1030,6 +1044,8 @@ const zh: Translations = {
     more: "更多",
     notAvailable: "暂无",
     rows: "行",
+    tvmShort: "TVM",
+    portfolioShort: "组合",
   },
   sidebar: {
     edition: "专业版",
@@ -1300,6 +1316,11 @@ const zh: Translations = {
     principal: "偿还本金",
     interest: "偿还利息",
     remBalance: "剩余本金",
+    emptySchedule: "请输入有效的贷款信息以生成还款计划表。",
+    errorPositiveAmount: "贷款总额必须为正数",
+    errorPositiveRate: "利率不能为负数",
+    errorPositiveYears: "贷款期限必须为正数",
+    noData: "暂无还款计划数据",
   },
   macro: {
     title: "宏观经济与外汇",
@@ -1517,11 +1538,14 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState<Language>(() => {
-    if (typeof window === "undefined") return "en";
+  const [language, setLanguage] = useState<Language>("en");
+
+  useEffect(() => {
     const saved = safeGetItem(LANGUAGE_KEY);
-    return saved === "en" || saved === "zh" ? saved : "en";
-  });
+    if (saved === "en" || saved === "zh") {
+      queueMicrotask(() => setLanguage(saved));
+    }
+  }, []);
 
   const handleSetLanguage = (lang: Language) => {
     setLanguage(lang);

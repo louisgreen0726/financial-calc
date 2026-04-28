@@ -65,7 +65,7 @@ function LoansPageContent() {
     const n = parseFloat(years);
 
     if (amount && (isNaN(P) || P <= 0)) return t("loans.errorPositiveAmount") || "Loan amount must be positive";
-    if (rate && (isNaN(r) || r <= 0)) return t("loans.errorPositiveRate") || "Interest rate must be positive";
+    if (rate && (isNaN(r) || r < 0)) return t("loans.errorPositiveRate") || "Interest rate cannot be negative";
     if (years && (isNaN(n) || n <= 0)) return t("loans.errorPositiveYears") || "Loan term must be positive";
     return null;
   }, [amount, rate, years, t]);
@@ -75,7 +75,7 @@ function LoansPageContent() {
     const r = (parseFloat(rate) || 0) / 100 / 12;
     const n = (parseFloat(years) || 0) * 12;
 
-    if (P <= 0 || r <= 0 || n <= 0) {
+    if (P <= 0 || r < 0 || n <= 0) {
       return [];
     }
 
@@ -119,8 +119,13 @@ function LoansPageContent() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>{t("loans.method")}</Label>
-              <Tabs value={method} onValueChange={(v) => setMethod(v as "CPM" | "CAM")} className="w-full">
+              <Label id="loans-method-label">{t("loans.method")}</Label>
+              <Tabs
+                value={method}
+                onValueChange={(v) => setMethod(v as "CPM" | "CAM")}
+                className="w-full"
+                aria-labelledby="loans-method-label"
+              >
                 <TabsList className="w-full">
                   <TabsTrigger value="CPM" className="flex-1">
                     {t("loans.cpm")}
@@ -157,10 +162,10 @@ function LoansPageContent() {
                 step="0.01"
                 value={rate}
                 onChange={(e) => setRate(e.target.value)}
-                className={rate && parseFloat(rate) <= 0 ? "border-destructive" : ""}
+                className={rate && parseFloat(rate) < 0 ? "border-destructive" : ""}
               />
               <ValidationError
-                error={rate && parseFloat(rate) <= 0 ? t("loans.errorPositiveRate") || validationError : null}
+                error={rate && parseFloat(rate) < 0 ? t("loans.errorPositiveRate") || validationError : null}
               />
             </div>
 

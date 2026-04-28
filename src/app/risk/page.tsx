@@ -10,6 +10,10 @@ import { formatCurrency } from "@/lib/utils";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { useLanguage } from "@/lib/i18n";
 import { ResultShell } from "@/components/result-shell";
+import { ResultActions } from "@/components/result-actions";
+import { parseOptionalNumber } from "@/lib/input-utils";
+import { RiskInputSchema } from "@/lib/validation";
+import { ErrorDisplay, ValidationError } from "@/components/ui/error-display";
 
 export default function RiskPage() {
   const { t } = useLanguage();
@@ -19,16 +23,52 @@ export default function RiskPage() {
   const [days, setDays] = useState("10"); // Horizon
   const [chartReady, setChartReady] = useState(false);
 
+  const parsedInputs = useMemo(
+    () => ({
+      value: parseOptionalNumber(value),
+      volatility: parseOptionalNumber(volatility),
+      confidence: parseOptionalNumber(confidence),
+      days: parseOptionalNumber(days),
+    }),
+    [confidence, days, value, volatility]
+  );
+
+  const validation = useMemo(() => {
+    const result = RiskInputSchema.safeParse({
+      value: parsedInputs.value ?? Number.NaN,
+      volatility: parsedInputs.volatility ?? Number.NaN,
+      confidence: parsedInputs.confidence ?? Number.NaN,
+      days: parsedInputs.days ?? Number.NaN,
+    });
+
+    return result.success
+      ? {}
+      : Object.fromEntries(result.error.issues.map((issue) => [String(issue.path[0]), issue.message]));
+  }, [parsedInputs]);
+
+  const hasValidationErrors = Object.keys(validation).length > 0;
+
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => setChartReady(true));
     return () => window.cancelAnimationFrame(frame);
   }, []);
 
   const metrics = useMemo(() => {
-    const P = parseFloat(value) || 0;
-    const sigmaAnnual = (parseFloat(volatility) || 0) / 100;
-    const conf = parseFloat(confidence);
-    const d = parseFloat(days) || 1;
+    if (hasValidationErrors) {
+      return {
+        VaR_val: Number.NaN,
+        VaR_pct: Number.NaN,
+        CVaR_val: Number.NaN,
+        CVaR_pct: Number.NaN,
+        sigmaHorizon: 0,
+        z: 0,
+      };
+    }
+
+    const P = parsedInputs.value ?? 0;
+    const sigmaAnnual = (parsedInputs.volatility ?? 0) / 100;
+    const conf = parsedInputs.confidence ?? 0.95;
+    const d = parsedInputs.days ?? 1;
 
     // Scale volatility to horizon
     const sigmaHorizon = sigmaAnnual * Math.sqrt(d / 252);
@@ -45,13 +85,16 @@ export default function RiskPage() {
     const CVaR_val = P * CVaR_pct;
 
     return { VaR_val, VaR_pct, CVaR_val, CVaR_pct, sigmaHorizon, z };
-  }, [value, volatility, confidence, days]);
+  }, [hasValidationErrors, parsedInputs]);
 
   // Generate Distribution Curve
   const chartData = useMemo(() => {
-    const data = [];
+    const data: { dev: number; return: number; loss: number; prob: number; isTail: boolean }[] = [];
+    if (hasValidationErrors) {
+      return data;
+    }
     const sigma = metrics.sigmaHorizon;
-    const P = parseFloat(value) || 0;
+    const P = parsedInputs.value ?? 0;
     const tailZ = metrics.z; // precise z from normCDFInverse, matches confidence level
     // Show range from -4 std dev to +4 std dev
     for (let i = -4; i <= 4; i += 0.1) {
@@ -68,7 +111,7 @@ export default function RiskPage() {
       });
     }
     return data;
-  }, [metrics, value]);
+  }, [hasValidationErrors, metrics, parsedInputs]);
 
   return (
     <div className="space-y-6">
@@ -79,28 +122,38 @@ export default function RiskPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-12">
+      <div id="risk-report-content" className="grid gap-6 lg:grid-cols-12">
         <Card className="lg:col-span-4 h-fit">
           <CardHeader>
             <CardTitle>{t("risk.params")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {hasValidationErrors && <ErrorDisplay message={Object.values(validation)[0] as string} variant="warning" />}
             <div className="space-y-2">
-              <Label>{t("risk.val")}</Label>
-              <Input value={value} onChange={(e) => setValue(e.target.value)} type="number" />
+              <Label htmlFor="risk-value">{t("risk.val")}</Label>
+              <Input id="risk-value" value={value} onChange={(e) => setValue(e.target.value)} type="number" min="0" />
+              <ValidationError error={validation.value as string | null} />
             </div>
             <div className="space-y-2">
-              <Label>{t("risk.vol")}</Label>
-              <Input value={volatility} onChange={(e) => setVolatility(e.target.value)} type="number" />
+              <Label htmlFor="risk-volatility">{t("risk.vol")}</Label>
+              <Input
+                id="risk-volatility"
+                value={volatility}
+                onChange={(e) => setVolatility(e.target.value)}
+                type="number"
+                min="0"
+              />
+              <ValidationError error={validation.volatility as string | null} />
             </div>
             <div className="space-y-2">
-              <Label>{t("risk.horizon")}</Label>
-              <Input value={days} onChange={(e) => setDays(e.target.value)} type="number" />
+              <Label htmlFor="risk-days">{t("risk.horizon")}</Label>
+              <Input id="risk-days" value={days} onChange={(e) => setDays(e.target.value)} type="number" min="1" />
+              <ValidationError error={validation.days as string | null} />
             </div>
             <div className="space-y-2">
-              <Label>{t("risk.conf")}</Label>
+              <Label id="risk-confidence-label">{t("risk.conf")}</Label>
               <Select value={confidence} onValueChange={setConfidence}>
-                <SelectTrigger>
+                <SelectTrigger aria-labelledby="risk-confidence-label">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -117,7 +170,27 @@ export default function RiskPage() {
           <ResultShell
             title={t("common.result")}
             description={t("risk.subtitle")}
-            isReady={true}
+            isReady={!hasValidationErrors}
+            emptyTitle={t("risk.title")}
+            emptyDescription={Object.values(validation)[0] as string | undefined}
+            actions={
+              !hasValidationErrors ? (
+                <ResultActions
+                  title={t("risk.title")}
+                  results={{
+                    [t("risk.var")]: metrics.VaR_val,
+                    [t("risk.cvar")]: metrics.CVaR_val,
+                    [t("risk.vol")]: `${(metrics.sigmaHorizon * 100).toFixed(2)}%`,
+                  }}
+                  inputs={{ value, volatility, confidence, days }}
+                  exportData={chartData as unknown as Record<string, unknown>[]}
+                  exportJson={metrics}
+                  pdfElementId="risk-report-content"
+                  pdfFilename="risk-analysis"
+                  pdfTitle={t("risk.title")}
+                />
+              ) : null
+            }
             summary={
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <Card>

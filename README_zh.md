@@ -133,7 +133,7 @@ npm run format:check
 - service worker 为手动接入，主要文件为：
   - `public/sw.js`
   - `src/components/service-worker-registration.tsx`
-- 虽然安装了 `next-pwa`，但当前实际行为仍以手动接入方案为准
+- PWA 当前实际行为以手动接入方案为准；项目已不再安装 `next-pwa`
 
 ## 项目结构
 

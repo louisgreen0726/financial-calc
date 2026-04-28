@@ -21,6 +21,11 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: "FinCalc Pro | Professional Financial Calculator",
   description: "Advanced financial modeling and valuation tools.",
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/icon.svg",
+  },
   openGraph: {
     title: "FinCalc Pro",
     description: "Advanced financial modeling and valuation tools.",

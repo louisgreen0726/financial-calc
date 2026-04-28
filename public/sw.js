@@ -18,6 +18,7 @@ const APP_SHELL = [
   "/help",
   "/manifest.json",
   "/favicon.ico",
+  "/icon.svg",
 ];
 
 function shouldHandle(request) {

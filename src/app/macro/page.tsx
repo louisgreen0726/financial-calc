@@ -10,13 +10,29 @@ import { useLanguage } from "@/lib/i18n";
 import { TrendingUp, DollarSign, Percent, Scale, Globe, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ValidationError } from "@/components/ui/error-display";
+import { formatCurrency } from "@/lib/utils";
+import { ResultActions } from "@/components/result-actions";
 
 interface ValidationError {
   field: string;
   message: string;
 }
 
+interface MacroActionConfig {
+  title: string;
+  results: Record<string, number | string>;
+  inputs: Record<string, number | string>;
+  exportData: Record<string, unknown>[];
+  exportJson: Record<string, unknown>;
+  pdfElementId: string;
+  pdfFilename: string;
+}
+
 const EMPTY_RESULT = "\u2014";
+
+function makeMacroActionConfig(config: MacroActionConfig): MacroActionConfig {
+  return config;
+}
 
 export default function MacroPage() {
   const { t } = useLanguage();
@@ -161,6 +177,99 @@ export default function MacroPage() {
   const ppErrors = useMemo(() => validatePPInputs(), [validatePPInputs]);
   const cpiErrors = useMemo(() => validateCPIInputs(), [validateCPIInputs]);
   const pppErrors = useMemo(() => validatePPPInputs(), [validatePPPInputs]);
+  const macroActionConfig = useMemo<MacroActionConfig | null>(() => {
+    if (activeTab === "inflation" && infResult !== null && !isNaN(infResult)) {
+      const value = `${(infResult * 100).toFixed(4)}%`;
+      return makeMacroActionConfig({
+        title: t("macro.inflation.title"),
+        results: { [t("macro.inflation.rate")]: value },
+        inputs: { startPrice, endPrice, years: infYears },
+        exportData: [{ metric: t("macro.inflation.rate"), value }],
+        exportJson: { startPrice, endPrice, years: infYears, inflationRate: infResult },
+        pdfElementId: "macro-inflation-report-content",
+        pdfFilename: "macro-inflation",
+      });
+    }
+
+    if (activeTab === "purchasingPower" && ppResult !== null && !isNaN(ppResult)) {
+      const loss = parseFloat(ppAmount || "0") - ppResult;
+      return makeMacroActionConfig({
+        title: t("macro.purchasingPower.title"),
+        results: {
+          [t("macro.purchasingPower.futureValue")]: ppResult,
+          [t("macro.purchasingPower.loss")]: loss,
+        },
+        inputs: { amount: ppAmount, inflation: ppRate, years: ppYears },
+        exportData: [
+          { metric: t("macro.purchasingPower.futureValue"), value: ppResult },
+          { metric: t("macro.purchasingPower.loss"), value: loss },
+        ],
+        exportJson: { amount: ppAmount, inflation: ppRate, years: ppYears, futureValue: ppResult, loss },
+        pdfElementId: "macro-purchasing-power-report-content",
+        pdfFilename: "macro-purchasing-power",
+      });
+    }
+
+    if (activeTab === "realRate" && realResult !== null && !isNaN(realResult)) {
+      const value = `${(realResult * 100).toFixed(4)}%`;
+      return makeMacroActionConfig({
+        title: t("macro.realRate.title"),
+        results: { [t("macro.realRate.real")]: value },
+        inputs: { nominalRate, inflation: realInfRate },
+        exportData: [{ metric: t("macro.realRate.real"), value }],
+        exportJson: { nominalRate, inflation: realInfRate, realRate: realResult },
+        pdfElementId: "macro-real-rate-report-content",
+        pdfFilename: "macro-real-rate",
+      });
+    }
+
+    if (activeTab === "cpiAdjust" && cpiResult !== null && !isNaN(cpiResult)) {
+      return makeMacroActionConfig({
+        title: t("macro.cpiAdjust.title"),
+        results: { [t("macro.cpiAdjust.adjusted")]: cpiResult },
+        inputs: { amount: cpiAmount, fromCPI, toCPI },
+        exportData: [{ metric: t("macro.cpiAdjust.adjusted"), value: cpiResult }],
+        exportJson: { amount: cpiAmount, fromCPI, toCPI, adjustedAmount: cpiResult },
+        pdfElementId: "macro-cpi-adjust-report-content",
+        pdfFilename: "macro-cpi-adjust",
+      });
+    }
+
+    if (activeTab === "ppp" && pppResult !== null && !isNaN(pppResult)) {
+      return makeMacroActionConfig({
+        title: t("macro.ppp.title"),
+        results: { [t("macro.ppp.rate")]: pppResult.toFixed(4) },
+        inputs: { domesticPrice, foreignPrice },
+        exportData: [{ metric: t("macro.ppp.rate"), value: pppResult.toFixed(4) }],
+        exportJson: { domesticPrice, foreignPrice, pppRate: pppResult },
+        pdfElementId: "macro-ppp-report-content",
+        pdfFilename: "macro-ppp",
+      });
+    }
+
+    return null;
+  }, [
+    activeTab,
+    cpiAmount,
+    cpiResult,
+    domesticPrice,
+    endPrice,
+    foreignPrice,
+    fromCPI,
+    infResult,
+    infYears,
+    nominalRate,
+    ppAmount,
+    ppRate,
+    ppResult,
+    ppYears,
+    pppResult,
+    realInfRate,
+    realResult,
+    startPrice,
+    t,
+    toCPI,
+  ]);
 
   return (
     <div className="space-y-6">
@@ -193,9 +302,24 @@ export default function MacroPage() {
           </TabsTrigger>
         </TabsList>
 
+        {macroActionConfig ? (
+          <div className="flex justify-end">
+            <ResultActions
+              title={macroActionConfig.title}
+              results={macroActionConfig.results}
+              inputs={macroActionConfig.inputs}
+              exportData={macroActionConfig.exportData}
+              exportJson={macroActionConfig.exportJson}
+              pdfElementId={macroActionConfig.pdfElementId}
+              pdfFilename={macroActionConfig.pdfFilename}
+              pdfTitle={macroActionConfig.title}
+            />
+          </div>
+        ) : null}
+
         {/* Inflation Rate Calculator */}
         <TabsContent value="inflation">
-          <div className="grid gap-6 md:grid-cols-2">
+          <div id="macro-inflation-report-content" className="grid gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -206,8 +330,9 @@ export default function MacroPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>{t("macro.inflation.startPrice")}</Label>
+                  <Label htmlFor="macro-inflation-start">{t("macro.inflation.startPrice")}</Label>
                   <Input
+                    id="macro-inflation-start"
                     type="number"
                     value={startPrice}
                     onChange={(e) => setStartPrice(e.target.value)}
@@ -217,8 +342,9 @@ export default function MacroPage() {
                   <ValidationError error={inflationErrors.find((e) => e.field === "startPrice")?.message ?? null} />
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("macro.inflation.endPrice")}</Label>
+                  <Label htmlFor="macro-inflation-end">{t("macro.inflation.endPrice")}</Label>
                   <Input
+                    id="macro-inflation-end"
                     type="number"
                     value={endPrice}
                     onChange={(e) => setEndPrice(e.target.value)}
@@ -228,8 +354,9 @@ export default function MacroPage() {
                   <ValidationError error={inflationErrors.find((e) => e.field === "endPrice")?.message ?? null} />
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("macro.inflation.years")}</Label>
+                  <Label htmlFor="macro-inflation-years">{t("macro.inflation.years")}</Label>
                   <Input
+                    id="macro-inflation-years"
                     type="number"
                     value={infYears}
                     onChange={(e) => setInfYears(e.target.value)}
@@ -260,7 +387,7 @@ export default function MacroPage() {
 
         {/* Purchasing Power Calculator */}
         <TabsContent value="purchasingPower">
-          <div className="grid gap-6 md:grid-cols-2">
+          <div id="macro-purchasing-power-report-content" className="grid gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -271,8 +398,9 @@ export default function MacroPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>{t("macro.purchasingPower.amount")}</Label>
+                  <Label htmlFor="macro-pp-amount">{t("macro.purchasingPower.amount")}</Label>
                   <Input
+                    id="macro-pp-amount"
                     type="number"
                     value={ppAmount}
                     onChange={(e) => setPpAmount(e.target.value)}
@@ -282,12 +410,19 @@ export default function MacroPage() {
                   <ValidationError error={ppErrors.find((e) => e.field === "amount")?.message ?? null} />
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("macro.purchasingPower.inflation")}</Label>
-                  <Input type="number" value={ppRate} onChange={(e) => setPpRate(e.target.value)} step="0.01" />
+                  <Label htmlFor="macro-pp-rate">{t("macro.purchasingPower.inflation")}</Label>
+                  <Input
+                    id="macro-pp-rate"
+                    type="number"
+                    value={ppRate}
+                    onChange={(e) => setPpRate(e.target.value)}
+                    step="0.01"
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("macro.purchasingPower.years")}</Label>
+                  <Label htmlFor="macro-pp-years">{t("macro.purchasingPower.years")}</Label>
                   <Input
+                    id="macro-pp-years"
                     type="number"
                     value={ppYears}
                     onChange={(e) => setPpYears(e.target.value)}
@@ -312,20 +447,14 @@ export default function MacroPage() {
                     {t("macro.purchasingPower.futureValue")}
                   </h3>
                   <div className="text-4xl font-bold text-primary tracking-tighter mt-2">
-                    {ppResult !== null && !isNaN(ppResult)
-                      ? `$${ppResult.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                      : EMPTY_RESULT}
+                    {ppResult !== null && !isNaN(ppResult) ? formatCurrency(ppResult) : EMPTY_RESULT}
                   </div>
                 </div>
                 {ppResult !== null && !isNaN(ppResult) && (
                   <div className="p-4 bg-red-50 dark:bg-red-950 rounded-lg">
                     <p className="text-sm text-muted-foreground">{t("macro.purchasingPower.loss")}</p>
                     <p className="text-2xl font-bold text-red-600">
-                      $
-                      {(parseFloat(ppAmount || "0") - ppResult).toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
+                      {formatCurrency(parseFloat(ppAmount || "0") - ppResult)}
                     </p>
                   </div>
                 )}
@@ -336,7 +465,7 @@ export default function MacroPage() {
 
         {/* Real Interest Rate Calculator */}
         <TabsContent value="realRate">
-          <div className="grid gap-6 md:grid-cols-2">
+          <div id="macro-real-rate-report-content" className="grid gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -347,8 +476,9 @@ export default function MacroPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>{t("macro.realRate.nominal")}</Label>
+                  <Label htmlFor="macro-real-nominal">{t("macro.realRate.nominal")}</Label>
                   <Input
+                    id="macro-real-nominal"
                     type="number"
                     value={nominalRate}
                     onChange={(e) => setNominalRate(e.target.value)}
@@ -356,8 +486,9 @@ export default function MacroPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("macro.realRate.inflation")}</Label>
+                  <Label htmlFor="macro-real-inflation">{t("macro.realRate.inflation")}</Label>
                   <Input
+                    id="macro-real-inflation"
                     type="number"
                     value={realInfRate}
                     onChange={(e) => setRealInfRate(e.target.value)}
@@ -380,7 +511,7 @@ export default function MacroPage() {
 
         {/* CPI Adjustment Calculator */}
         <TabsContent value="cpiAdjust">
-          <div className="grid gap-6 md:grid-cols-2">
+          <div id="macro-cpi-adjust-report-content" className="grid gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -391,8 +522,9 @@ export default function MacroPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>{t("macro.cpiAdjust.amount")}</Label>
+                  <Label htmlFor="macro-cpi-amount">{t("macro.cpiAdjust.amount")}</Label>
                   <Input
+                    id="macro-cpi-amount"
                     type="number"
                     value={cpiAmount}
                     onChange={(e) => setCpiAmount(e.target.value)}
@@ -404,8 +536,9 @@ export default function MacroPage() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("macro.cpiAdjust.fromCPI")}</Label>
+                  <Label htmlFor="macro-cpi-from">{t("macro.cpiAdjust.fromCPI")}</Label>
                   <Input
+                    id="macro-cpi-from"
                     type="number"
                     value={fromCPI}
                     onChange={(e) => setFromCPI(e.target.value)}
@@ -417,8 +550,15 @@ export default function MacroPage() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("macro.cpiAdjust.toCPI")}</Label>
-                  <Input type="number" value={toCPI} onChange={(e) => setToCPI(e.target.value)} min="0" step="0.01" />
+                  <Label htmlFor="macro-cpi-to">{t("macro.cpiAdjust.toCPI")}</Label>
+                  <Input
+                    id="macro-cpi-to"
+                    type="number"
+                    value={toCPI}
+                    onChange={(e) => setToCPI(e.target.value)}
+                    min="0"
+                    step="0.01"
+                  />
                   {cpiErrors.find((e) => e.field === "toCPI") && (
                     <p className="text-sm text-red-500">{cpiErrors.find((e) => e.field === "toCPI")?.message}</p>
                   )}
@@ -436,9 +576,7 @@ export default function MacroPage() {
               <div className="text-center space-y-2">
                 <h3 className="text-lg font-medium text-muted-foreground">{t("macro.cpiAdjust.adjusted")}</h3>
                 <div className="text-5xl font-bold text-primary tracking-tighter">
-                  {cpiResult !== null && !isNaN(cpiResult)
-                    ? `$${cpiResult.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                    : EMPTY_RESULT}
+                  {cpiResult !== null && !isNaN(cpiResult) ? formatCurrency(cpiResult) : EMPTY_RESULT}
                 </div>
               </div>
             </Card>
@@ -447,7 +585,7 @@ export default function MacroPage() {
 
         {/* PPP Exchange Rate Calculator */}
         <TabsContent value="ppp">
-          <div className="grid gap-6 md:grid-cols-2">
+          <div id="macro-ppp-report-content" className="grid gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -458,8 +596,9 @@ export default function MacroPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>{t("macro.ppp.domestic")}</Label>
+                  <Label htmlFor="macro-ppp-domestic">{t("macro.ppp.domestic")}</Label>
                   <Input
+                    id="macro-ppp-domestic"
                     type="number"
                     value={domesticPrice}
                     onChange={(e) => setDomesticPrice(e.target.value)}
@@ -471,8 +610,9 @@ export default function MacroPage() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("macro.ppp.foreign")}</Label>
+                  <Label htmlFor="macro-ppp-foreign">{t("macro.ppp.foreign")}</Label>
                   <Input
+                    id="macro-ppp-foreign"
                     type="number"
                     value={foreignPrice}
                     onChange={(e) => setForeignPrice(e.target.value)}

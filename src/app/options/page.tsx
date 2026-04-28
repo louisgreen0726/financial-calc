@@ -14,6 +14,9 @@ import { HistoryPanel } from "@/components/history-panel";
 import { ClientOnlyChart } from "@/components/client-only-chart";
 import { ResultShell } from "@/components/result-shell";
 import { ResultActions } from "@/components/result-actions";
+import { parseOptionalNumber } from "@/lib/input-utils";
+import { OptionsInputSchema } from "@/lib/validation";
+import { ErrorDisplay, ValidationError } from "@/components/ui/error-display";
 
 export default function OptionsPage() {
   const { t } = useLanguage();
@@ -23,12 +26,44 @@ export default function OptionsPage() {
   const [rate, setRate] = useState("5"); // %
   const [volatility, setVolatility] = useState("20"); // %
 
+  const parsedInputs = useMemo(
+    () => ({
+      S: parseOptionalNumber(spot),
+      K: parseOptionalNumber(strike),
+      t: parseOptionalNumber(time),
+      r: parseOptionalNumber(rate),
+      sigma: parseOptionalNumber(volatility),
+    }),
+    [rate, spot, strike, time, volatility]
+  );
+
+  const validation = useMemo(() => {
+    const result = OptionsInputSchema.safeParse({
+      S: parsedInputs.S ?? Number.NaN,
+      K: parsedInputs.K ?? Number.NaN,
+      t: parsedInputs.t ?? Number.NaN,
+      r: (parsedInputs.r ?? Number.NaN) / 100,
+      sigma: (parsedInputs.sigma ?? Number.NaN) / 100,
+    });
+
+    return result.success
+      ? {}
+      : Object.fromEntries(result.error.issues.map((issue) => [String(issue.path[0]), issue.message]));
+  }, [parsedInputs]);
+
+  const hasValidationErrors = Object.keys(validation).length > 0;
+
   const results = useMemo(() => {
-    const S = parseFloat(spot) || 0;
-    const K = parseFloat(strike) || 0;
-    const tm = parseFloat(time) || 0;
-    const r = (parseFloat(rate) || 0) / 100;
-    const sigma = (parseFloat(volatility) || 0) / 100;
+    if (hasValidationErrors) {
+      const emptyGreeks = { delta: 0, gamma: 0, theta: 0, vega: 0, rho: 0 };
+      return { callPrice: Number.NaN, putPrice: Number.NaN, callGreeks: emptyGreeks, putGreeks: emptyGreeks };
+    }
+
+    const S = parsedInputs.S ?? 0;
+    const K = parsedInputs.K ?? 0;
+    const tm = parsedInputs.t ?? 0;
+    const r = (parsedInputs.r ?? 0) / 100;
+    const sigma = (parsedInputs.sigma ?? 0) / 100;
 
     const callPrice = Finance.blackScholes("call", S, K, tm, r, sigma);
     const putPrice = Finance.blackScholes("put", S, K, tm, r, sigma);
@@ -37,21 +72,25 @@ export default function OptionsPage() {
     const putGreeks = Finance.greeks("put", S, K, tm, r, sigma);
 
     return { callPrice, putPrice, callGreeks, putGreeks };
-  }, [spot, strike, time, rate, volatility]);
+  }, [hasValidationErrors, parsedInputs]);
 
   const { addToHistory } = useCalculationHistory({ page: "options" });
 
   useHistoryRecorder({
     addToHistory,
     inputs: { spot, strike, time, rate, volatility },
-    result: results.callPrice,
+    result: hasValidationErrors ? Number.NaN : results.callPrice,
     label: t("options.callPrice"),
   });
 
   // Payoff Diagram (Price vs Spot)
   const chartData = useMemo(() => {
-    const K = parseFloat(strike) || 0;
-    const S_center = parseFloat(spot) || 100;
+    if (hasValidationErrors || parsedInputs.S === null || parsedInputs.K === null) {
+      return [];
+    }
+
+    const K = parsedInputs.K;
+    const S_center = parsedInputs.S;
     const data = [];
     for (let s = S_center * 0.5; s <= S_center * 1.5; s += S_center * 0.05) {
       data.push({
@@ -61,7 +100,7 @@ export default function OptionsPage() {
       });
     }
     return data;
-  }, [spot, strike]);
+  }, [hasValidationErrors, parsedInputs]);
 
   return (
     <>
@@ -73,24 +112,43 @@ export default function OptionsPage() {
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-12">
+        <div id="options-report-content" className="grid gap-6 lg:grid-cols-12">
           {/* Inputs */}
           <Card className="lg:col-span-4 h-fit">
             <CardHeader>
               <CardTitle>{t("options.params")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {hasValidationErrors && (
+                <ErrorDisplay message={Object.values(validation)[0] as string} variant="warning" />
+              )}
               <div className="space-y-2">
                 <Label htmlFor="opt-spot">{t("options.spot")}</Label>
-                <Input id="opt-spot" value={spot} onChange={(e) => setSpot(e.target.value)} type="number" />
+                <Input id="opt-spot" value={spot} onChange={(e) => setSpot(e.target.value)} type="number" min="0" />
+                <ValidationError error={validation.S as string | null} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="opt-strike">{t("options.strike")}</Label>
-                <Input id="opt-strike" value={strike} onChange={(e) => setStrike(e.target.value)} type="number" />
+                <Input
+                  id="opt-strike"
+                  value={strike}
+                  onChange={(e) => setStrike(e.target.value)}
+                  type="number"
+                  min="0"
+                />
+                <ValidationError error={validation.K as string | null} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="opt-time">{t("options.time")}</Label>
-                <Input id="opt-time" value={time} onChange={(e) => setTime(e.target.value)} type="number" step="0.1" />
+                <Input
+                  id="opt-time"
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
+                  type="number"
+                  min="0"
+                  step="0.1"
+                />
+                <ValidationError error={validation.t as string | null} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="opt-rate">{t("options.rate")}</Label>
@@ -103,8 +161,10 @@ export default function OptionsPage() {
                   value={volatility}
                   onChange={(e) => setVolatility(e.target.value)}
                   type="number"
+                  min="0"
                   step="1"
                 />
+                <ValidationError error={validation.sigma as string | null} />
               </div>
             </CardContent>
           </Card>
@@ -113,18 +173,22 @@ export default function OptionsPage() {
             <ResultShell
               title={t("common.result")}
               description={t("options.subtitle")}
-              isReady={true}
+              isReady={!hasValidationErrors}
+              emptyTitle={t("options.title")}
+              emptyDescription={Object.values(validation)[0] as string | undefined}
               actions={
-                <ResultActions
-                  title={t("options.title")}
-                  results={{ [t("options.call")]: results.callPrice, [t("options.put")]: results.putPrice }}
-                  inputs={{ spot, strike, time, rate, volatility }}
-                  exportData={chartData as unknown as Record<string, unknown>[]}
-                  exportJson={results}
-                  pdfElementId="options-report-content"
-                  pdfFilename="options-analysis"
-                  pdfTitle={t("options.title")}
-                />
+                !hasValidationErrors ? (
+                  <ResultActions
+                    title={t("options.title")}
+                    results={{ [t("options.call")]: results.callPrice, [t("options.put")]: results.putPrice }}
+                    inputs={{ spot, strike, time, rate, volatility }}
+                    exportData={chartData as unknown as Record<string, unknown>[]}
+                    exportJson={results}
+                    pdfElementId="options-report-content"
+                    pdfFilename="options-analysis"
+                    pdfTitle={t("options.title")}
+                  />
+                ) : null
               }
               summary={
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -196,7 +260,7 @@ export default function OptionsPage() {
                 </div>
               }
               advanced={
-                <Card className="h-[250px] sm:h-[320px] flex flex-col" id="options-report-content">
+                <Card className="h-[250px] sm:h-[320px] flex flex-col" id="options-chart-content">
                   <CardHeader>
                     <CardTitle>{t("options.payoff")}</CardTitle>
                     <CardDescription>{t("options.intrinsic")}</CardDescription>

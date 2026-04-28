@@ -77,5 +77,5 @@ npm run format:check
 ## NOTES
 - Recommended verification order: `npx tsc --noEmit`, then `npm run test`, then `npm run build`.
 - `npm run build` emits static output to `out/`.
-- `next-pwa` is installed but inactive; manual SW registration is the source of truth.
+- `next-pwa` is intentionally not installed; manual SW registration is the source of truth.
 - Pre-commit runs `lint-staged`; staged TS/TSX files are auto-fixed with ESLint + Prettier.

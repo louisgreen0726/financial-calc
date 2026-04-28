@@ -348,7 +348,10 @@ function TVMPageContent() {
           </div>
         </div>
 
-        <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]">
+        <div
+          id="tvm-report-content"
+          className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]"
+        >
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -359,7 +362,7 @@ function TVMPageContent() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label>{t("common.solveFor")}</Label>
+                <Label id="tvm-target-label">{t("common.solveFor")}</Label>
                 <Select
                   value={target}
                   onValueChange={(v) => {
@@ -368,7 +371,7 @@ function TVMPageContent() {
                     setCalculationError(null);
                   }}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger aria-labelledby="tvm-target-label">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -382,9 +385,9 @@ function TVMPageContent() {
               </div>
 
               <div className="space-y-2">
-                <Label>{t("tvm.quickPreset")}</Label>
+                <Label id="tvm-preset-label">{t("tvm.quickPreset")}</Label>
                 <Select onValueChange={(value) => applyPreset(value as keyof typeof TVM_PRESETS)}>
-                  <SelectTrigger>
+                  <SelectTrigger aria-labelledby="tvm-preset-label">
                     <SelectValue placeholder={t("tvm.chooseScenario")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -403,8 +406,11 @@ function TVMPageContent() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className={target === "rate" ? "text-primary font-bold" : ""}>{t("tvm.annualRate")}</Label>
+                  <Label htmlFor="tvm-rate" className={target === "rate" ? "text-primary font-bold" : ""}>
+                    {t("tvm.annualRate")}
+                  </Label>
                   <Input
+                    id="tvm-rate"
                     type="number"
                     value={rate}
                     onChange={(e) => handleInputChange("rate", e.target.value, setRate)}
@@ -417,8 +423,11 @@ function TVMPageContent() {
                   <InputRangeHint min={0} max={100} unit="%" example="5" currentValue={parseFloat(rate)} />
                 </div>
                 <div className="space-y-2">
-                  <Label className={target === "nper" ? "text-primary font-bold" : ""}>{t("tvm.periods")}</Label>
+                  <Label htmlFor="tvm-nper" className={target === "nper" ? "text-primary font-bold" : ""}>
+                    {t("tvm.periods")}
+                  </Label>
                   <Input
+                    id="tvm-nper"
                     type="number"
                     value={nper}
                     onChange={(e) => handleInputChange("nper", e.target.value, setNper)}
@@ -431,8 +440,11 @@ function TVMPageContent() {
                   <InputRangeHint min={1} max={600} unit="periods" example="10" currentValue={parseFloat(nper)} />
                 </div>
                 <div className="space-y-2">
-                  <Label className={target === "pmt" ? "text-primary font-bold" : ""}>{t("tvm.payment")}</Label>
+                  <Label htmlFor="tvm-pmt" className={target === "pmt" ? "text-primary font-bold" : ""}>
+                    {t("tvm.payment")}
+                  </Label>
                   <Input
+                    id="tvm-pmt"
                     type="number"
                     value={pmt}
                     onChange={(e) => handleInputChange("pmt", e.target.value, setPmt)}
@@ -444,8 +456,11 @@ function TVMPageContent() {
                   <ValidationError error={errors.pmt && touchedFields.pmt ? errors.pmt : null} />
                 </div>
                 <div className="space-y-2">
-                  <Label className={target === "pv" ? "text-primary font-bold" : ""}>{t("tvm.presentValue")}</Label>
+                  <Label htmlFor="tvm-pv" className={target === "pv" ? "text-primary font-bold" : ""}>
+                    {t("tvm.presentValue")}
+                  </Label>
                   <Input
+                    id="tvm-pv"
                     type="number"
                     value={pv}
                     onChange={(e) => handleInputChange("pv", e.target.value, setPv)}
@@ -455,8 +470,11 @@ function TVMPageContent() {
                   <ValidationError error={errors.pv && touchedFields.pv ? errors.pv : null} />
                 </div>
                 <div className="space-y-2">
-                  <Label className={target === "fv" ? "text-primary font-bold" : ""}>{t("tvm.futureValue")}</Label>
+                  <Label htmlFor="tvm-fv" className={target === "fv" ? "text-primary font-bold" : ""}>
+                    {t("tvm.futureValue")}
+                  </Label>
                   <Input
+                    id="tvm-fv"
                     type="number"
                     value={fv}
                     onChange={(e) => handleInputChange("fv", e.target.value, setFv)}
@@ -468,11 +486,12 @@ function TVMPageContent() {
               </div>
 
               <div className="space-y-3 pt-2">
-                <Label>{t("tvm.paymentMode")}</Label>
+                <Label id="tvm-payment-mode-label">{t("tvm.paymentMode")}</Label>
                 <RadioGroup
                   value={type}
                   onValueChange={(v) => setType(v as "0" | "1")}
                   className="grid gap-3 sm:grid-cols-2"
+                  aria-labelledby="tvm-payment-mode-label"
                 >
                   <div className="flex min-h-11 items-center space-x-2 rounded-xl border border-white/10 px-3 py-2">
                     <RadioGroupItem value="0" id="end" />
@@ -512,13 +531,20 @@ function TVMPageContent() {
             }
             isReady={result !== null && !isNaN(result) && isFinite(result)}
             emptyTitle={calculationError ? t("tvm.calculationError") : t("tvm.emptyState")}
-            emptyDescription={calculationError || t("tvm.calculationErrorDesc")}
+            emptyDescription={calculationError || undefined}
             emptyIcon={calculationError ? Calculator : ArrowRightLeft}
             actions={
               result !== null && !isNaN(result) && isFinite(result) ? (
                 <ResultActions
                   title={`${t("tvm.title")} - ${target.toUpperCase()}`}
-                  results={{ [target.toUpperCase()]: result }}
+                  results={{
+                    [target.toUpperCase()]:
+                      target === "nper"
+                        ? result.toFixed(2)
+                        : target === "rate"
+                          ? `${(result * 100).toFixed(4)}%`
+                          : result,
+                  }}
                   inputs={{ rate, nper, pmt, pv, fv, type }}
                   shareUrl={shareUrl}
                   exportJson={{ target, rate, nper, pmt, pv, fv, type, result }}
