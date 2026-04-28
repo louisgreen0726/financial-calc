@@ -19,7 +19,7 @@ interface ProgressBarProps {
 export function ProgressBar({ progress, label, showETA, estimatedTotalMs, onCancel, className }: ProgressBarProps) {
   const clampedProgress = Math.min(100, Math.max(0, progress));
 
-  // Color transitions: green → yellow → primary
+  // Color transitions: green -> yellow -> primary
   const barColor = clampedProgress < 60 ? "bg-emerald-500" : clampedProgress < 80 ? "bg-yellow-500" : "bg-primary";
 
   // ETA calculation

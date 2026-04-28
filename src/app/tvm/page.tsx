@@ -27,6 +27,12 @@ import { ResultActions } from "@/components/result-actions";
 
 type TVMTarget = "pv" | "fv" | "pmt" | "nper" | "rate";
 
+const SYMBOLS = {
+  arrowRight: "\u2192",
+  multiply: "\u00D7",
+  approximately: "\u2248",
+};
+
 const TVM_PRESETS = {
   retirement: {
     labelKey: "tvm.presets.retirement",
@@ -193,55 +199,87 @@ function TVMPageContent() {
       } else {
         setResult(res);
         setCalculationError(null);
-        addToHistory({ rate, nper, pmt, pv, fv, type, target }, res, `TVM ?${target.toUpperCase()}`);
+        addToHistory(
+          { rate, nper, pmt, pv, fv, type, target },
+          res,
+          `TVM ${SYMBOLS.arrowRight} ${target.toUpperCase()}`
+        );
 
         const compoundFactor = Math.pow(1 + r, n);
 
         const stepData = {
           fv: {
-            formula: "FV = PV(1+r)^n + PMT ? [(1+r)^n - 1] / r",
+            formula: `FV = PV(1+r)^n + PMT ${SYMBOLS.multiply} [(1+r)^n - 1] / r`,
             steps: [
-              { label: "Rate as decimal", value: `${rate}% ?${r.toFixed(4)}`, formula: "r = rate / 100" },
+              {
+                label: "Rate as decimal",
+                value: `${rate}% ${SYMBOLS.arrowRight} ${r.toFixed(4)}`,
+                formula: "r = rate / 100",
+              },
               {
                 label: "Compound factor",
                 value: `(1+${r.toFixed(4)})^${n} = ${compoundFactor.toFixed(4)}`,
                 formula: "(1+r)^n",
               },
-              { label: "Future Value", value: `$${res.toFixed(2)}`, formula: "PV(1+r)^n + PMT ? annuity" },
+              {
+                label: "Future Value",
+                value: `$${res.toFixed(2)}`,
+                formula: `PV(1+r)^n + PMT ${SYMBOLS.multiply} annuity`,
+              },
             ],
           },
           pv: {
-            formula: "PV = FV / (1+r)^n + PMT ? [(1+r)^n - 1] / r",
+            formula: `PV = FV / (1+r)^n + PMT ${SYMBOLS.multiply} [(1+r)^n - 1] / r`,
             steps: [
-              { label: "Rate as decimal", value: `${rate}% ?${r.toFixed(4)}`, formula: "r = rate / 100" },
+              {
+                label: "Rate as decimal",
+                value: `${rate}% ${SYMBOLS.arrowRight} ${r.toFixed(4)}`,
+                formula: "r = rate / 100",
+              },
               {
                 label: "Discount factor",
                 value: `1 / ${compoundFactor.toFixed(4)} = ${(1 / compoundFactor).toFixed(4)}`,
                 formula: "1/(1+r)^n",
               },
-              { label: "Present Value", value: `$${res.toFixed(2)}`, formula: "PV = FV/(1+r)^n + PMT ? factor" },
+              {
+                label: "Present Value",
+                value: `$${res.toFixed(2)}`,
+                formula: `PV = FV/(1+r)^n + PMT ${SYMBOLS.multiply} factor`,
+              },
             ],
           },
           pmt: {
             formula: "PMT = (FV - PV(1+r)^n) / annuity_factor",
             steps: [
-              { label: "Rate as decimal", value: `${rate}% ?${r.toFixed(4)}`, formula: "r = rate / 100" },
+              {
+                label: "Rate as decimal",
+                value: `${rate}% ${SYMBOLS.arrowRight} ${r.toFixed(4)}`,
+                formula: "r = rate / 100",
+              },
               {
                 label: "Compound factor",
                 value: `(1+${r.toFixed(4)})^${n} = ${compoundFactor.toFixed(4)}`,
                 formula: "(1+r)^n",
               },
-              { label: "Payment", value: `$${res.toFixed(2)}`, formula: "PMT = (FV-PV?factor) / annuity" },
+              {
+                label: "Payment",
+                value: `$${res.toFixed(2)}`,
+                formula: `PMT = (FV-PV${SYMBOLS.multiply}factor) / annuity`,
+              },
             ],
           },
           nper: {
-            formula: "n = ln[(FV?r+PMT)/(PV?r+PMT)] / ln(1+r)",
+            formula: `n = ln[(FV${SYMBOLS.multiply}r+PMT)/(PV${SYMBOLS.multiply}r+PMT)] / ln(1+r)`,
             steps: [
-              { label: "Rate as decimal", value: `${rate}% ?${r.toFixed(4)}`, formula: "r = rate / 100" },
+              {
+                label: "Rate as decimal",
+                value: `${rate}% ${SYMBOLS.arrowRight} ${r.toFixed(4)}`,
+                formula: "r = rate / 100",
+              },
               {
                 label: "Cash flow ratio",
-                value: `${fut}?${r}+${p} vs ${pres}?${r}+${p}`,
-                formula: "(FV?r+PMT)/(PV?r+PMT)",
+                value: `${fut}${SYMBOLS.multiply}${r}+${p} vs ${pres}${SYMBOLS.multiply}${r}+${p}`,
+                formula: `(FV${SYMBOLS.multiply}r+PMT)/(PV${SYMBOLS.multiply}r+PMT)`,
               },
               { label: "Periods", value: `${res.toFixed(2)} years`, formula: "n = ln(ratio) / ln(1+r)" },
             ],
@@ -250,8 +288,8 @@ function TVMPageContent() {
             formula: "Iterative Newton-Raphson approximation",
             steps: [
               { label: "Initial guess", value: "2% per period" },
-              { label: "NPV iteration", value: "Refine until NPV ?0" },
-              { label: "Annual rate", value: `${(res * 100).toFixed(4)}%`, formula: "rate ? 100" },
+              { label: "NPV iteration", value: `Refine until NPV ${SYMBOLS.approximately} 0` },
+              { label: "Annual rate", value: `${(res * 100).toFixed(4)}%`, formula: `rate ${SYMBOLS.multiply} 100` },
             ],
           },
         };
