@@ -2,6 +2,7 @@
 
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n";
 
 interface InputRangeHintProps {
   min?: number;
@@ -17,6 +18,7 @@ interface InputRangeHintProps {
  * Shows warning icon if current value is out of range.
  */
 export function InputRangeHint({ min, max, unit, example, currentValue, className }: InputRangeHintProps) {
+  const { t } = useLanguage();
   const isOutOfRange =
     currentValue !== undefined &&
     ((min !== undefined && currentValue < min) || (max !== undefined && currentValue > max));
@@ -43,27 +45,27 @@ export function InputRangeHint({ min, max, unit, example, currentValue, classNam
       <span>
         {min !== undefined && max !== undefined && (
           <>
-            Range: {min}
+            {t("common.range")}: {min}
             {unit ? ` ${unit}` : ""} {"\u2013"} {max}
             {unit ? ` ${unit}` : ""}
           </>
         )}
         {min !== undefined && max === undefined && (
           <>
-            Min: {min}
+            {t("common.min")}: {min}
             {unit ? ` ${unit}` : ""}
           </>
         )}
         {min === undefined && max !== undefined && (
           <>
-            Max: {max}
+            {t("common.max")}: {max}
             {unit ? ` ${unit}` : ""}
           </>
         )}
         {example && (
           <>
             {" "}
-            {"\u00B7"} Example: {example}
+            {"\u00B7"} {t("common.example")}: {example}
             {unit ? ` ${unit}` : ""}
           </>
         )}

@@ -19,9 +19,16 @@ import { EquityCAPMSchema, EquityDDMSchema, EquityWACCSchema } from "@/lib/valid
 import { ResultShell } from "@/components/result-shell";
 import { ResultActions } from "@/components/result-actions";
 
+type EquitySection = "capm" | "wacc" | "ddm";
+
 export default function EquityPage() {
   const { t } = useLanguage();
   const [showErrors, setShowErrors] = useState(false);
+  const [interactedSections, setInteractedSections] = useState<Record<EquitySection, boolean>>({
+    capm: false,
+    wacc: false,
+    ddm: false,
+  });
   // CAPM State
   const [rf, setRf] = useState("3.5");
   const [beta, setBeta] = useState("1.2");
@@ -102,6 +109,10 @@ export default function EquityPage() {
     Object.keys(waccValidation).length > 0 ||
     Object.keys(ddmValidation).length > 0;
 
+  const markInteracted = (section: EquitySection) => {
+    setInteractedSections((prev) => ({ ...prev, [section]: true }));
+  };
+
   const { addToHistory } = useCalculationHistory({ page: "equity" });
 
   useHistoryRecorder({
@@ -109,6 +120,7 @@ export default function EquityPage() {
     inputs: { rf, beta, rm },
     result: capmResult,
     label: "CAPM",
+    enabled: interactedSections.capm && Object.keys(capmValidation).length === 0,
   });
 
   useHistoryRecorder({
@@ -116,6 +128,7 @@ export default function EquityPage() {
     inputs: { equity, debt, costEquity, costDebt, taxRate },
     result: waccResult,
     label: "WACC",
+    enabled: interactedSections.wacc && Object.keys(waccValidation).length === 0,
   });
 
   useHistoryRecorder({
@@ -123,6 +136,7 @@ export default function EquityPage() {
     inputs: { div, growth, reqReturn },
     result: ddmResult,
     label: "DDM",
+    enabled: interactedSections.ddm && Object.keys(ddmValidation).length === 0 && ddmResult > 0,
   });
 
   return (
@@ -136,19 +150,19 @@ export default function EquityPage() {
           <HistoryPanel
             page="equity"
             onRestore={(inputs) => {
-              if (inputs.rf) setRf(String(inputs.rf));
-              if (inputs.beta) setBeta(String(inputs.beta));
-              if (inputs.rm) setRm(String(inputs.rm));
+              if (inputs.rf !== undefined) setRf(String(inputs.rf));
+              if (inputs.beta !== undefined) setBeta(String(inputs.beta));
+              if (inputs.rm !== undefined) setRm(String(inputs.rm));
 
-              if (inputs.equity) setEquity(String(inputs.equity));
-              if (inputs.debt) setDebt(String(inputs.debt));
-              if (inputs.costEquity) setCostEquity(String(inputs.costEquity));
-              if (inputs.costDebt) setCostDebt(String(inputs.costDebt));
-              if (inputs.taxRate) setTaxRate(String(inputs.taxRate));
+              if (inputs.equity !== undefined) setEquity(String(inputs.equity));
+              if (inputs.debt !== undefined) setDebt(String(inputs.debt));
+              if (inputs.costEquity !== undefined) setCostEquity(String(inputs.costEquity));
+              if (inputs.costDebt !== undefined) setCostDebt(String(inputs.costDebt));
+              if (inputs.taxRate !== undefined) setTaxRate(String(inputs.taxRate));
 
-              if (inputs.div) setDiv(String(inputs.div));
-              if (inputs.growth) setGrowth(String(inputs.growth));
-              if (inputs.reqReturn) setReqReturn(String(inputs.reqReturn));
+              if (inputs.div !== undefined) setDiv(String(inputs.div));
+              if (inputs.growth !== undefined) setGrowth(String(inputs.growth));
+              if (inputs.reqReturn !== undefined) setReqReturn(String(inputs.reqReturn));
             }}
           />
         </div>
@@ -179,7 +193,10 @@ export default function EquityPage() {
                   <Input
                     id="capm-rf"
                     value={rf}
-                    onChange={(e) => setRf(e.target.value)}
+                    onChange={(e) => {
+                      markInteracted("capm");
+                      setRf(e.target.value);
+                    }}
                     onBlur={() => setShowErrors(true)}
                     type="number"
                     aria-describedby="capm-rf-help"
@@ -194,7 +211,10 @@ export default function EquityPage() {
                   <Input
                     id="capm-beta"
                     value={beta}
-                    onChange={(e) => setBeta(e.target.value)}
+                    onChange={(e) => {
+                      markInteracted("capm");
+                      setBeta(e.target.value);
+                    }}
                     onBlur={() => setShowErrors(true)}
                     type="number"
                     step="0.1"
@@ -210,7 +230,10 @@ export default function EquityPage() {
                   <Input
                     id="capm-rm"
                     value={rm}
-                    onChange={(e) => setRm(e.target.value)}
+                    onChange={(e) => {
+                      markInteracted("capm");
+                      setRm(e.target.value);
+                    }}
                     onBlur={() => setShowErrors(true)}
                     type="number"
                     aria-describedby="capm-rm-help"
@@ -278,7 +301,10 @@ export default function EquityPage() {
                     <Input
                       id="wacc-equity"
                       value={equity}
-                      onChange={(e) => setEquity(e.target.value)}
+                      onChange={(e) => {
+                        markInteracted("wacc");
+                        setEquity(e.target.value);
+                      }}
                       onBlur={() => setShowErrors(true)}
                       type="number"
                     />
@@ -289,7 +315,10 @@ export default function EquityPage() {
                     <Input
                       id="wacc-cost-eq"
                       value={costEquity}
-                      onChange={(e) => setCostEquity(e.target.value)}
+                      onChange={(e) => {
+                        markInteracted("wacc");
+                        setCostEquity(e.target.value);
+                      }}
                       onBlur={() => setShowErrors(true)}
                       type="number"
                     />
@@ -302,7 +331,10 @@ export default function EquityPage() {
                     <Input
                       id="wacc-debt"
                       value={debt}
-                      onChange={(e) => setDebt(e.target.value)}
+                      onChange={(e) => {
+                        markInteracted("wacc");
+                        setDebt(e.target.value);
+                      }}
                       onBlur={() => setShowErrors(true)}
                       type="number"
                     />
@@ -313,7 +345,10 @@ export default function EquityPage() {
                     <Input
                       id="wacc-cost-debt"
                       value={costDebt}
-                      onChange={(e) => setCostDebt(e.target.value)}
+                      onChange={(e) => {
+                        markInteracted("wacc");
+                        setCostDebt(e.target.value);
+                      }}
                       onBlur={() => setShowErrors(true)}
                       type="number"
                     />
@@ -325,7 +360,10 @@ export default function EquityPage() {
                   <Input
                     id="wacc-tax"
                     value={taxRate}
-                    onChange={(e) => setTaxRate(e.target.value)}
+                    onChange={(e) => {
+                      markInteracted("wacc");
+                      setTaxRate(e.target.value);
+                    }}
                     onBlur={() => setShowErrors(true)}
                     type="number"
                   />
@@ -393,7 +431,10 @@ export default function EquityPage() {
                       <Input
                         id="ddm-div"
                         value={div}
-                        onChange={(e) => setDiv(e.target.value)}
+                        onChange={(e) => {
+                          markInteracted("ddm");
+                          setDiv(e.target.value);
+                        }}
                         onBlur={() => setShowErrors(true)}
                         type="number"
                         step="0.01"
@@ -405,7 +446,10 @@ export default function EquityPage() {
                       <Input
                         id="ddm-req"
                         value={reqReturn}
-                        onChange={(e) => setReqReturn(e.target.value)}
+                        onChange={(e) => {
+                          markInteracted("ddm");
+                          setReqReturn(e.target.value);
+                        }}
                         onBlur={() => setShowErrors(true)}
                         type="number"
                       />
@@ -416,7 +460,10 @@ export default function EquityPage() {
                       <Input
                         id="ddm-growth"
                         value={growth}
-                        onChange={(e) => setGrowth(e.target.value)}
+                        onChange={(e) => {
+                          markInteracted("ddm");
+                          setGrowth(e.target.value);
+                        }}
                         onBlur={() => setShowErrors(true)}
                         type="number"
                       />

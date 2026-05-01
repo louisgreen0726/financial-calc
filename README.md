@@ -50,7 +50,7 @@ The project is already usable as a multi-module financial analysis app, not just
 ### Supporting pages
 
 - **History** — saved calculation browsing and restore
-- **Settings** — language, theme, and data-management controls
+- **Settings** — language, theme, display currency, and data-management controls
 - **Help** — user guidance and supporting app information
 
 ## What Has Recently Improved
@@ -69,7 +69,7 @@ The project is already usable as a multi-module financial analysis app, not just
 - **Charts / Motion**: Recharts, Framer Motion
 - **Validation / Forms**: Zod, React Hook Form utilities where needed
 - **Testing**: Vitest, Testing Library, jsdom
-- **Offline / Export**: manual service worker, html2canvas, jsPDF, PapaParse
+- **Offline / Export**: manual service worker, html2canvas, jsPDF
 
 ## Getting Started
 

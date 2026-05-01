@@ -65,7 +65,7 @@ export const LoanInputSchema = z.object({
 export const RiskInputSchema = z.object({
   value: z.number().finite().positive("Portfolio value must be positive"),
   volatility: z.number().finite().min(0),
-  confidence: z.number().finite().min(0).max(1),
+  confidence: z.number().finite().gt(0).lt(1),
   days: z.number().finite().positive("Horizon must be positive"),
 });
 

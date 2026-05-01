@@ -207,6 +207,7 @@ export default function HistoryPage() {
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label={t("history.cancelSelection")}
                 onClick={() => {
                   setBatchMode(false);
                   setSelectedIds(new Set());
@@ -248,7 +249,9 @@ export default function HistoryPage() {
                   <div className="flex items-start gap-3 flex-1 min-w-0">
                     {batchMode && (
                       <button
+                        type="button"
                         className="mt-1 shrink-0"
+                        aria-label={selectedIds.has(item.id) ? t("history.deselectItem") : t("history.selectItem")}
                         onClick={(e) => {
                           e.stopPropagation();
                           toggleSelect(item.id);
@@ -292,6 +295,8 @@ export default function HistoryPage() {
                         e.stopPropagation();
                         toggleFavorite(item.id);
                       }}
+                      title={t("history.favorites")}
+                      aria-label={t("history.favorites")}
                     >
                       <Star className={cn("h-4 w-4", favorites.has(item.id) ? "fill-primary text-primary" : "")} />
                     </Button>
@@ -306,6 +311,7 @@ export default function HistoryPage() {
                             handleRestore(item);
                           }}
                           title={t("history.restore")}
+                          aria-label={t("history.restore")}
                         >
                           <RotateCcw className="h-4 w-4" />
                         </Button>
@@ -317,6 +323,8 @@ export default function HistoryPage() {
                             e.stopPropagation();
                             removeFromHistory(item.id);
                           }}
+                          title={t("history.delete")}
+                          aria-label={t("history.delete")}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -339,7 +347,9 @@ export default function HistoryPage() {
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
             {t("history.title") || "Calculation History"}
           </h1>
-          <p className="text-muted-foreground mt-2">{history.length} calculations recorded</p>
+          <p className="text-muted-foreground mt-2">
+            {history.length} {t("history.recorded")}
+          </p>
         </div>
         <div className="grid w-full gap-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-end">
           <Button variant="outline" size="sm" onClick={exportAllHistory} className="gap-2">

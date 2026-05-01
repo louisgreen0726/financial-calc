@@ -69,6 +69,13 @@ export function useUrlState<T extends Record<string, string | number>>({
     [buildUrl, router]
   );
 
+  const setState = useCallback(
+    (nextState: T) => {
+      updateUrl(nextState);
+    },
+    [updateUrl]
+  );
+
   const setField = useCallback(
     <K extends keyof T>(key: K, value: T[K]) => {
       const newState = { ...derivedState, [key]: value };
@@ -81,5 +88,5 @@ export function useUrlState<T extends Record<string, string | number>>({
     router.replace(pathname, { scroll: false });
   }, [pathname, router]);
 
-  return { state, setField, reset, updateUrl, buildUrl, shareUrl: buildUrl(state) };
+  return { state, setState, setField, reset, updateUrl, buildUrl, shareUrl: buildUrl(state) };
 }

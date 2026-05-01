@@ -25,7 +25,8 @@ export function ShareDialog({ open, onOpenChange, title, results, inputs, shareU
   const { t } = useLanguage();
   const [copied, setCopied] = useState<string | null>(null);
   const canNativeShare = typeof navigator !== "undefined" && "share" in navigator;
-  const resolvedShareUrl = shareUrl || (typeof window !== "undefined" ? new URL(window.location.href).toString() : "");
+  const hasShareUrl = Boolean(shareUrl);
+  const resolvedShareUrl = shareUrl ?? "";
 
   const formatResultValue = (value: number | string): string => {
     if (typeof value === "string") {
@@ -35,20 +36,24 @@ export function ShareDialog({ open, onOpenChange, title, results, inputs, shareU
     return formatCurrency(value);
   };
 
+  const formatMarkdownCell = (value: number | string): string => {
+    return String(value).replace(/\|/g, "\\|").replace(/\r?\n/g, "<br>");
+  };
+
   const generateMarkdown = (): string => {
     const lines = [`## ${title}\n`];
     if (inputs) {
       lines.push(`### ${t("share.inputsHeading")}\n`);
       lines.push(`| ${t("share.parameterLabel")} | ${t("share.valueLabel")} |\n|---|---|\n`);
       Object.entries(inputs).forEach(([k, v]) => {
-        lines.push(`| ${k} | ${v} |\n`);
+        lines.push(`| ${formatMarkdownCell(k)} | ${formatMarkdownCell(v)} |\n`);
       });
       lines.push("\n");
     }
     lines.push(`### ${t("share.resultsHeading")}\n`);
     lines.push(`| ${t("share.metricLabel")} | ${t("share.valueLabel")} |\n|---|---|\n`);
     Object.entries(results).forEach(([k, v]) => {
-      lines.push(`| ${k} | ${formatResultValue(v)} |\n`);
+      lines.push(`| ${formatMarkdownCell(k)} | ${formatMarkdownCell(formatResultValue(v))} |\n`);
     });
     return lines.join("");
   };
@@ -100,7 +105,7 @@ export function ShareDialog({ open, onOpenChange, title, results, inputs, shareU
       await navigator.share({
         title,
         text: shareText,
-        url: resolvedShareUrl,
+        ...(hasShareUrl ? { url: resolvedShareUrl } : {}),
       });
     } catch {
       // user cancelled or unsupported payload; keep silent
@@ -124,11 +129,12 @@ export function ShareDialog({ open, onOpenChange, title, results, inputs, shareU
             </Button>
           )}
 
-          {/* Copy Link */}
-          <Button variant="outline" className="w-full justify-start gap-3" onClick={copyLink}>
-            {copied === "link" ? <Check className="h-4 w-4 text-emerald-500" /> : <Link2 className="h-4 w-4" />}
-            <span>{t("share.copyLink") || "Copy shareable link"}</span>
-          </Button>
+          {hasShareUrl ? (
+            <Button variant="outline" className="w-full justify-start gap-3" onClick={copyLink}>
+              {copied === "link" ? <Check className="h-4 w-4 text-emerald-500" /> : <Link2 className="h-4 w-4" />}
+              <span>{t("share.copyLink") || "Copy shareable link"}</span>
+            </Button>
+          ) : null}
 
           {/* Copy as Markdown */}
           <Button variant="outline" className="w-full justify-start gap-3" onClick={copyMarkdown}>

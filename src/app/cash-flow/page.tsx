@@ -36,6 +36,7 @@ export default function CashFlowPage() {
   const { t } = useLanguage();
   const [rate, setRate] = useState<string>("10");
   const [flowInputs, setFlowInputs] = useState<string[]>(["-10000", "3000", "4000", "5000", "6000"]);
+  const [hasInteracted, setHasInteracted] = useState(false);
   const { addToHistory } = useCalculationHistory({ page: "cash-flow" });
 
   const parsedRate = parseOptionalNumber(rate);
@@ -66,9 +67,16 @@ export default function CashFlowPage() {
     return { isValid: true, message: null };
   }, [flows, hasInvalidFlow, parsedRate]);
 
-  const addFlow = () => setFlowInputs([...flowInputs, "0"]);
-  const removeFlow = (index: number) => setFlowInputs(flowInputs.filter((_, i) => i !== index));
+  const addFlow = () => {
+    setHasInteracted(true);
+    setFlowInputs([...flowInputs, "0"]);
+  };
+  const removeFlow = (index: number) => {
+    setHasInteracted(true);
+    setFlowInputs(flowInputs.filter((_, i) => i !== index));
+  };
   const updateFlow = (index: number, val: string) => {
+    setHasInteracted(true);
     const next = [...flowInputs];
     next[index] = val;
     setFlowInputs(next);
@@ -109,6 +117,7 @@ export default function CashFlowPage() {
     inputs: { rate, flows: flowInputs.join(",") },
     result: calculateMetrics.npv,
     label: "NPV",
+    enabled: hasInteracted && validation.isValid,
   });
 
   const chartData = flows.map((val, i) => ({
@@ -142,7 +151,10 @@ export default function CashFlowPage() {
                     id="cash-flow-discount-rate"
                     type="number"
                     value={rate}
-                    onChange={(e) => setRate(e.target.value)}
+                    onChange={(e) => {
+                      setHasInteracted(true);
+                      setRate(e.target.value);
+                    }}
                     className="flex-1"
                   />
                   <div className="flex items-center text-sm text-muted-foreground">%</div>
@@ -200,20 +212,22 @@ export default function CashFlowPage() {
               emptyTitle={t("cashFlow.title")}
               emptyDescription={validation.message ?? t("cashFlow.invalidInputs")}
               actions={
-                <ResultActions
-                  title={t("cashFlow.title")}
-                  results={{
-                    [t("cashFlow.npv")]: calculateMetrics.npv,
-                    [t("cashFlow.irr")]: isFinite(calculateMetrics.irr)
-                      ? `${(calculateMetrics.irr * 100).toFixed(2)}%`
-                      : t("common.notAvailable"),
-                  }}
-                  inputs={{ rate, flows: flowInputs.join(",") }}
-                  exportData={chartData}
-                  exportJson={calculateMetrics}
-                  pdfElementId="cash-flow-report-content"
-                  pdfFilename="cash-flow-analysis"
-                />
+                validation.isValid ? (
+                  <ResultActions
+                    title={t("cashFlow.title")}
+                    results={{
+                      [t("cashFlow.npv")]: calculateMetrics.npv,
+                      [t("cashFlow.irr")]: isFinite(calculateMetrics.irr)
+                        ? `${(calculateMetrics.irr * 100).toFixed(2)}%`
+                        : t("common.notAvailable"),
+                    }}
+                    inputs={{ rate, flows: flowInputs.join(",") }}
+                    exportData={chartData}
+                    exportJson={calculateMetrics}
+                    pdfElementId="cash-flow-report-content"
+                    pdfFilename="cash-flow-analysis"
+                  />
+                ) : null
               }
               summary={
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">

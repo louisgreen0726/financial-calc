@@ -25,6 +25,7 @@ export default function OptionsPage() {
   const [time, setTime] = useState("1"); // Years
   const [rate, setRate] = useState("5"); // %
   const [volatility, setVolatility] = useState("20"); // %
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   const parsedInputs = useMemo(
     () => ({
@@ -81,6 +82,7 @@ export default function OptionsPage() {
     inputs: { spot, strike, time, rate, volatility },
     result: hasValidationErrors ? Number.NaN : results.callPrice,
     label: t("options.callPrice"),
+    enabled: hasInteracted && !hasValidationErrors,
   });
 
   // Payoff Diagram (Price vs Spot)
@@ -124,7 +126,16 @@ export default function OptionsPage() {
               )}
               <div className="space-y-2">
                 <Label htmlFor="opt-spot">{t("options.spot")}</Label>
-                <Input id="opt-spot" value={spot} onChange={(e) => setSpot(e.target.value)} type="number" min="0" />
+                <Input
+                  id="opt-spot"
+                  value={spot}
+                  onChange={(e) => {
+                    setHasInteracted(true);
+                    setSpot(e.target.value);
+                  }}
+                  type="number"
+                  min="0"
+                />
                 <ValidationError error={validation.S as string | null} />
               </div>
               <div className="space-y-2">
@@ -132,7 +143,10 @@ export default function OptionsPage() {
                 <Input
                   id="opt-strike"
                   value={strike}
-                  onChange={(e) => setStrike(e.target.value)}
+                  onChange={(e) => {
+                    setHasInteracted(true);
+                    setStrike(e.target.value);
+                  }}
                   type="number"
                   min="0"
                 />
@@ -143,7 +157,10 @@ export default function OptionsPage() {
                 <Input
                   id="opt-time"
                   value={time}
-                  onChange={(e) => setTime(e.target.value)}
+                  onChange={(e) => {
+                    setHasInteracted(true);
+                    setTime(e.target.value);
+                  }}
                   type="number"
                   min="0"
                   step="0.1"
@@ -152,14 +169,27 @@ export default function OptionsPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="opt-rate">{t("options.rate")}</Label>
-                <Input id="opt-rate" value={rate} onChange={(e) => setRate(e.target.value)} type="number" step="0.1" />
+                <Input
+                  id="opt-rate"
+                  value={rate}
+                  onChange={(e) => {
+                    setHasInteracted(true);
+                    setRate(e.target.value);
+                  }}
+                  type="number"
+                  step="0.1"
+                />
+                <ValidationError error={validation.r as string | null} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="opt-vol">{t("options.vol")}</Label>
                 <Input
                   id="opt-vol"
                   value={volatility}
-                  onChange={(e) => setVolatility(e.target.value)}
+                  onChange={(e) => {
+                    setHasInteracted(true);
+                    setVolatility(e.target.value);
+                  }}
                   type="number"
                   min="0"
                   step="1"

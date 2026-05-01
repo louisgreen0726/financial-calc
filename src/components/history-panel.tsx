@@ -172,7 +172,9 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
               <div className="flex gap-1 items-center">
                 {batchMode ? (
                   <>
-                    <span className="text-xs text-muted-foreground mr-2">{selectedIds.size} selected</span>
+                    <span className="text-xs text-muted-foreground mr-2">
+                      {selectedIds.size} {t("history.itemsSelected")}
+                    </span>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -180,12 +182,13 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
                       onClick={deleteSelected}
                     >
                       <Trash2 className="h-4 w-4 mr-1" />
-                      Delete
+                      {t("history.delete")}
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
+                      aria-label={t("history.cancelSelection")}
                       onClick={() => {
                         setBatchMode(false);
                         setSelectedIds(new Set());
@@ -202,6 +205,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
                       className="h-8 w-8"
                       onClick={() => setBatchMode(true)}
                       title={t("history.select")}
+                      aria-label={t("history.select")}
                     >
                       <CheckSquare className="h-4 w-4" />
                     </Button>
@@ -211,10 +215,17 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
                       className="h-8 w-8"
                       onClick={handleClear}
                       title={t("history.clearAll")}
+                      aria-label={t("history.clearAll")}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsOpen(false)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setIsOpen(false)}
+                      aria-label={t("history.closePanel")}
+                    >
                       <X className="h-4 w-4" />
                     </Button>
                   </>
@@ -255,7 +266,9 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
                       <div className="flex items-start gap-2 flex-1 min-w-0">
                         {batchMode && (
                           <button
+                            type="button"
                             className="mt-0.5 shrink-0"
+                            aria-label={selectedIds.has(item.id) ? t("history.deselectItem") : t("history.selectItem")}
                             onClick={(e) => {
                               e.stopPropagation();
                               toggleSelect(item.id);
@@ -295,6 +308,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
                             toggleFavorite(item.id);
                           }}
                           title={t("history.favorites")}
+                          aria-label={t("history.favorites")}
                         >
                           <Star className={cn("h-3 w-3", favorites.has(item.id) ? "fill-primary text-primary" : "")} />
                         </Button>
@@ -309,6 +323,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
                                 handleRestore(item);
                               }}
                               title={t("history.restore")}
+                              aria-label={t("history.restore")}
                             >
                               <RotateCcw className="h-3 w-3" />
                             </Button>
@@ -321,6 +336,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
                                 removeFromHistory(item.id);
                               }}
                               title={t("history.delete")}
+                              aria-label={t("history.delete")}
                             >
                               <Trash2 className="h-3 w-3" />
                             </Button>

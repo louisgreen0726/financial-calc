@@ -32,7 +32,7 @@ export function useExport({ filename = "export" }: UseExportOptions = {}) {
                 const value = row[header];
                 // Escape values containing commas or quotes
                 const stringValue = String(value ?? "");
-                if (stringValue.includes(",") || stringValue.includes('"')) {
+                if (/[,\"\r\n]/.test(stringValue)) {
                   return `"${stringValue.replace(/"/g, '""')}"`;
                 }
                 return stringValue;

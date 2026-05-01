@@ -53,6 +53,7 @@ function TVMPageContent() {
   const { formatCurrencyLocale } = useLocaleFormat();
   const {
     state: urlState,
+    setState,
     setField,
     shareUrl,
   } = useUrlState({
@@ -309,12 +310,15 @@ function TVMPageContent() {
   };
 
   const handleClear = () => {
-    setRate("5");
-    setNper("10");
-    setPmt("0");
-    setPv("1000");
-    setFv("0");
-    setType("0");
+    setState({
+      target,
+      rate: "5",
+      nper: "10",
+      pmt: "0",
+      pv: "1000",
+      fv: "0",
+      type: "0",
+    });
     setResult(null);
     setCalculationError(null);
     setCalcSteps(null);
@@ -324,13 +328,7 @@ function TVMPageContent() {
 
   const applyPreset = (presetKey: keyof typeof TVM_PRESETS) => {
     const preset = TVM_PRESETS[presetKey].values;
-    setTarget(preset.target as TVMTarget);
-    setRate(preset.rate);
-    setNper(preset.nper);
-    setPmt(preset.pmt);
-    setPv(preset.pv);
-    setFv(preset.fv);
-    setType(preset.type);
+    setState(preset);
     setResult(null);
     setCalculationError(null);
     setCalcSteps(null);
@@ -583,13 +581,15 @@ function TVMPageContent() {
       <HistoryPanel
         page="tvm"
         onRestore={(inputs) => {
-          if (inputs.rate !== undefined) setRate(String(inputs.rate));
-          if (inputs.nper !== undefined) setNper(String(inputs.nper));
-          if (inputs.pmt !== undefined) setPmt(String(inputs.pmt));
-          if (inputs.pv !== undefined) setPv(String(inputs.pv));
-          if (inputs.fv !== undefined) setFv(String(inputs.fv));
-          if (inputs.type !== undefined) setType(String(inputs.type) as "0" | "1");
-          if (inputs.target) setTarget(String(inputs.target) as TVMTarget);
+          setState({
+            target: inputs.target !== undefined ? String(inputs.target) : target,
+            rate: inputs.rate !== undefined ? String(inputs.rate) : rate,
+            nper: inputs.nper !== undefined ? String(inputs.nper) : nper,
+            pmt: inputs.pmt !== undefined ? String(inputs.pmt) : pmt,
+            pv: inputs.pv !== undefined ? String(inputs.pv) : pv,
+            fv: inputs.fv !== undefined ? String(inputs.fv) : fv,
+            type: inputs.type !== undefined ? String(inputs.type) : type,
+          });
           setResult(null);
           setCalculationError(null);
           setCalcSteps(null);

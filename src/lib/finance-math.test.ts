@@ -83,6 +83,30 @@ test("bond duration and convexity are finite for standard inputs", () => {
   expect(Number.isFinite(Finance.bondConvexity(1000, 0.05, 10, 0.04, 2))).toBe(true);
 });
 
+test("bond helpers reject structurally invalid inputs", () => {
+  expect(Number.isNaN(Finance.bondPrice(0, 0.05, 10, 0.04, 2))).toBe(true);
+  expect(Number.isNaN(Finance.bondPrice(1000, -0.05, 10, 0.04, 2))).toBe(true);
+  expect(Number.isNaN(Finance.bondPrice(1000, 0.05, 10, -2, 2))).toBe(true);
+  expect(Number.isNaN(Finance.bondDuration(1000, 0.05, 10, -2, 2).macDuration)).toBe(true);
+  expect(Number.isNaN(Finance.bondConvexity(1000, 0.05, 10, -2, 2))).toBe(true);
+});
+
+test("wacc rejects impossible capital structures and tax rates", () => {
+  expect(Number.isNaN(Finance.wacc(0, 0, 0.1, 0.05, 0.25))).toBe(true);
+  expect(Number.isNaN(Finance.wacc(-1, 1, 0.1, 0.05, 0.25))).toBe(true);
+  expect(Number.isNaN(Finance.wacc(1, 1, 0.1, 0.05, 1.5))).toBe(true);
+});
+
+test("black scholes supports deterministic zero-volatility pricing", () => {
+  expect(Finance.blackScholes("call", 105, 100, 1, 0, 0)).toBe(5);
+  expect(Finance.blackScholes("put", 95, 100, 1, 0, 0)).toBe(5);
+});
+
+test("macro helpers reject singular negative inflation cases", () => {
+  expect(Number.isNaN(Finance.purchasingPower(100, -1, 10))).toBe(true);
+  expect(Number.isNaN(Finance.realInterestRate(0.05, -1))).toBe(true);
+});
+
 test("irr rejects cash flows without a sign change", () => {
   expect(Number.isNaN(Finance.irr([100, 200, 300]))).toBe(true);
   expect(Number.isNaN(Finance.irr([-100, -50, -25]))).toBe(true);
