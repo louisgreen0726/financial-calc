@@ -30,6 +30,7 @@ export default function BondsPage() {
   const [years, setYears] = useState("10");
   const [ytm, setYtm] = useState("4");
   const [frequency, setFrequency] = useState("2");
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   const bondValidation = useMemo(() => {
     const result = BondInputSchema.safeParse({
@@ -67,6 +68,7 @@ export default function BondsPage() {
     inputs: { faceValue, couponRate, years, ytm, frequency },
     result: metrics.price,
     label: t("bonds.fairPrice"),
+    enabled: hasInteracted && !hasBondErrors,
   });
 
   // Generate Price-Yield Curve
@@ -127,11 +129,11 @@ export default function BondsPage() {
           <HistoryPanel
             page="bonds"
             onRestore={(inputs) => {
-              if (inputs.faceValue) setFaceValue(String(inputs.faceValue));
-              if (inputs.couponRate) setCouponRate(String(inputs.couponRate));
-              if (inputs.years) setYears(String(inputs.years));
-              if (inputs.ytm) setYtm(String(inputs.ytm));
-              if (inputs.frequency) setFrequency(String(inputs.frequency));
+              if (inputs.faceValue !== undefined) setFaceValue(String(inputs.faceValue));
+              if (inputs.couponRate !== undefined) setCouponRate(String(inputs.couponRate));
+              if (inputs.years !== undefined) setYears(String(inputs.years));
+              if (inputs.ytm !== undefined) setYtm(String(inputs.ytm));
+              if (inputs.frequency !== undefined) setFrequency(String(inputs.frequency));
             }}
           />
         </div>
@@ -150,7 +152,10 @@ export default function BondsPage() {
               <Input
                 id="bond-face"
                 value={faceValue}
-                onChange={(e) => setFaceValue(e.target.value)}
+                onChange={(e) => {
+                  setHasInteracted(true);
+                  setFaceValue(e.target.value);
+                }}
                 onBlur={() => setShowErrors(true)}
                 type="number"
                 aria-describedby="bond-face-help"
@@ -166,7 +171,10 @@ export default function BondsPage() {
               <Input
                 id="bond-coupon"
                 value={couponRate}
-                onChange={(e) => setCouponRate(e.target.value)}
+                onChange={(e) => {
+                  setHasInteracted(true);
+                  setCouponRate(e.target.value);
+                }}
                 onBlur={() => setShowErrors(true)}
                 type="number"
                 aria-describedby="bond-coupon-help"
@@ -181,7 +189,10 @@ export default function BondsPage() {
               <Input
                 id="bond-ytm"
                 value={ytm}
-                onChange={(e) => setYtm(e.target.value)}
+                onChange={(e) => {
+                  setHasInteracted(true);
+                  setYtm(e.target.value);
+                }}
                 onBlur={() => setShowErrors(true)}
                 type="number"
                 aria-describedby="bond-ytm-help"
@@ -196,7 +207,10 @@ export default function BondsPage() {
               <Input
                 id="bond-years"
                 value={years}
-                onChange={(e) => setYears(e.target.value)}
+                onChange={(e) => {
+                  setHasInteracted(true);
+                  setYears(e.target.value);
+                }}
                 onBlur={() => setShowErrors(true)}
                 type="number"
                 aria-describedby="bond-years-help"
@@ -213,6 +227,7 @@ export default function BondsPage() {
               <Select
                 value={frequency}
                 onValueChange={(value) => {
+                  setHasInteracted(true);
                   setFrequency(value);
                   setShowErrors(true);
                 }}

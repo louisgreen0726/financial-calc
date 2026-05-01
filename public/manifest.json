@@ -2,21 +2,21 @@
   "name": "Financial Calculator",
   "short_name": "FinCalc",
   "description": "Professional-grade financial calculator for TVM, bonds, options, and more",
-  "version": "0.3.0",
-  "start_url": "/",
+  "version": "0.3.1",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#10b981",
   "orientation": "any",
-  "scope": "/",
+  "scope": ".",
   "icons": [
     {
-      "src": "/favicon.ico",
+      "src": "favicon.ico",
       "sizes": "48x48",
       "type": "image/x-icon"
     },
     {
-      "src": "/icon.svg",
+      "src": "icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
@@ -27,13 +27,13 @@
       "name": "TVM Calculator",
       "short_name": "TVM",
       "description": "Open the time value of money calculator",
-      "url": "/tvm"
+      "url": "tvm"
     },
     {
       "name": "Loan Calculator",
       "short_name": "Loans",
       "description": "Open the loan amortization calculator",
-      "url": "/loans"
+      "url": "loans"
     }
   ]
 }

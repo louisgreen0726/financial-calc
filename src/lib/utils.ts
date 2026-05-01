@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { LANGUAGE_KEY } from "@/lib/constants";
+import { CURRENCY_KEY, DEFAULT_CURRENCY, LANGUAGE_KEY, SUPPORTED_CURRENCIES } from "@/lib/constants";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -12,7 +12,10 @@ export function formatCurrency(value: number, locale?: string) {
   const determinedLocale =
     locale || (typeof window !== "undefined" ? (localStorage.getItem(LANGUAGE_KEY) ?? "en") : "en");
   const enLocale = determinedLocale === "zh" ? "zh-CN" : "en-US";
-  const currency = determinedLocale === "zh" ? "CNY" : "USD";
+  const storedCurrency = typeof window !== "undefined" ? localStorage.getItem(CURRENCY_KEY) : null;
+  const currency = SUPPORTED_CURRENCIES.includes(storedCurrency as (typeof SUPPORTED_CURRENCIES)[number])
+    ? storedCurrency!
+    : DEFAULT_CURRENCY;
   return new Intl.NumberFormat(enLocale, {
     style: "currency",
     currency,

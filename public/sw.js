@@ -1,6 +1,12 @@
-const VERSION = "v0.3.0";
+const VERSION = "v0.3.1";
 const STATIC_CACHE = `financial-calc-static-${VERSION}`;
 const RUNTIME_CACHE = `financial-calc-runtime-${VERSION}`;
+
+const BASE_PATH = new URL(self.registration.scope).pathname.replace(/\/$/, "");
+const withBasePath = (path) => {
+  if (path === "/") return BASE_PATH || "/";
+  return `${BASE_PATH}${path}`;
+};
 
 const APP_SHELL = [
   "/",
@@ -19,7 +25,7 @@ const APP_SHELL = [
   "/manifest.json",
   "/favicon.ico",
   "/icon.svg",
-];
+].map(withBasePath);
 
 function shouldHandle(request) {
   if (request.method !== "GET") return false;

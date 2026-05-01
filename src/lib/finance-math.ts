@@ -292,11 +292,11 @@ export const Finance = {
       !isValid(frequency)
     )
       return NaN;
-    if (frequency <= 0 || yearsToMaturity <= 0) return NaN;
+    if (faceValue <= 0 || couponRate < 0 || frequency <= 0 || yearsToMaturity <= 0) return NaN;
     const periods = yearsToMaturity * frequency;
     const coupon = (faceValue * couponRate) / frequency;
     const r = ytm / frequency;
-    if (r === -1) return NaN;
+    if (r <= -1) return NaN;
     let pvCoupons = 0;
     for (let i = 1; i <= periods; i++) {
       pvCoupons += coupon / Math.pow(1 + r, i);
@@ -319,7 +319,9 @@ export const Finance = {
       !isValid(frequency)
     )
       return { macDuration: NaN, modDuration: NaN };
-    if (frequency <= 0 || yearsToMaturity <= 0) return { macDuration: NaN, modDuration: NaN };
+    if (faceValue <= 0 || couponRate < 0 || frequency <= 0 || yearsToMaturity <= 0 || ytm / frequency <= -1) {
+      return { macDuration: NaN, modDuration: NaN };
+    }
     const periods = yearsToMaturity * frequency;
     const coupon = (faceValue * couponRate) / frequency;
     const r = ytm / frequency;
@@ -352,7 +354,9 @@ export const Finance = {
       !isValid(frequency)
     )
       return NaN;
-    if (frequency <= 0 || yearsToMaturity <= 0) return NaN;
+    if (faceValue <= 0 || couponRate < 0 || frequency <= 0 || yearsToMaturity <= 0 || ytm / frequency <= -1) {
+      return NaN;
+    }
     const periods = yearsToMaturity * frequency;
     const coupon = (faceValue * couponRate) / frequency;
     const r = ytm / frequency;
@@ -376,8 +380,9 @@ export const Finance = {
   wacc: (equityValue: number, debtValue: number, costEquity: number, costDebt: number, taxRate: number): number => {
     if (!isValid(equityValue) || !isValid(debtValue) || !isValid(costEquity) || !isValid(costDebt) || !isValid(taxRate))
       return NaN;
+    if (equityValue < 0 || debtValue < 0 || taxRate < 0 || taxRate > 1) return NaN;
     const v = equityValue + debtValue;
-    if (v === 0) return 0;
+    if (v <= 0) return NaN;
     return (equityValue / v) * costEquity + (debtValue / v) * costDebt * (1 - taxRate);
   },
   ddm: (d1: number, r: number, g: number): number => {
@@ -443,9 +448,13 @@ export const Finance = {
    */
   blackScholes: (type: OptionType, S: number, K: number, t: number, r: number, sigma: number): number => {
     if (!isValid(S) || !isValid(K) || !isValid(t) || !isValid(r) || !isValid(sigma)) return NaN;
-    if (S <= 0 || K <= 0 || sigma <= 0) return NaN;
+    if (S <= 0 || K <= 0 || t < 0 || sigma < 0) return NaN;
     if (t <= 0) {
       return type === "call" ? Math.max(S - K, 0) : Math.max(K - S, 0);
+    }
+    if (sigma === 0) {
+      const discountedStrike = K * Math.exp(-r * t);
+      return type === "call" ? Math.max(S - discountedStrike, 0) : Math.max(discountedStrike - S, 0);
     }
     const d1 = (Math.log(S / K) + (r + 0.5 * sigma * sigma) * t) / (sigma * Math.sqrt(t));
     const d2 = d1 - sigma * Math.sqrt(t);
@@ -498,10 +507,12 @@ export const Finance = {
   purchasingPower: (currentAmount: number, inflationRate: number, years: number): number => {
     if (!isValid(currentAmount) || !isValid(inflationRate) || !isValid(years)) return NaN;
     if (years < 0) return NaN;
+    if (1 + inflationRate <= 0) return NaN;
     return currentAmount / Math.pow(1 + inflationRate, years);
   },
   realInterestRate: (nominalRate: number, inflationRate: number): number => {
     if (!isValid(nominalRate) || !isValid(inflationRate)) return NaN;
+    if (inflationRate <= -1) return NaN;
     return (1 + nominalRate) / (1 + inflationRate) - 1;
   },
   cpiAdjust: (amount: number, fromCPI: number, toCPI: number): number => {

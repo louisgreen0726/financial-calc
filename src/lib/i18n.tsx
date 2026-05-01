@@ -44,6 +44,10 @@ type Translations = {
     rows: string;
     tvmShort: string;
     portfolioShort: string;
+    range: string;
+    min: string;
+    max: string;
+    example: string;
   };
   sidebar: {
     edition: string;
@@ -339,6 +343,7 @@ type Translations = {
       loss: string;
       error: {
         negativeAmount: string;
+        invalidRate: string;
         invalidYears: string;
       };
     };
@@ -349,6 +354,9 @@ type Translations = {
       nominal: string;
       inflation: string;
       real: string;
+      error: {
+        invalidRate: string;
+      };
     };
     cpiAdjust: {
       tab: string;
@@ -404,11 +412,16 @@ type Translations = {
     noHistoryDesc: string;
     searchPlaceholder: string;
     select: string;
+    selectItem: string;
+    deselectItem: string;
+    cancelSelection: string;
+    closePanel: string;
     itemsSelected: string;
     all: string;
     favorites: string;
     itemsDeleted: string;
     recent: string;
+    recorded: string;
   };
   sensitivity: {
     title: string;
@@ -430,6 +443,8 @@ type Translations = {
     dark: string;
     system: string;
     language: string;
+    currency: string;
+    currencyDesc: string;
     behavior: string;
     behaviorDesc: string;
     autoCalculate: string;
@@ -538,10 +553,14 @@ const en: Translations = {
     rows: "rows",
     tvmShort: "TVM",
     portfolioShort: "Portfolio",
+    range: "Range",
+    min: "Min",
+    max: "Max",
+    example: "Example",
   },
   sidebar: {
     edition: "Professional Edition",
-    version: "v0.3.0",
+    version: "v0.3.1",
     search: "Search calculators...",
     featured: "Featured",
   },
@@ -841,6 +860,7 @@ const en: Translations = {
       loss: "Value Lost",
       error: {
         negativeAmount: "Amount cannot be negative",
+        invalidRate: "Inflation rate must be greater than -100%",
         invalidYears: "Years cannot be negative",
       },
     },
@@ -851,6 +871,9 @@ const en: Translations = {
       nominal: "Nominal Rate (%)",
       inflation: "Inflation Rate (%)",
       real: "Real Interest Rate",
+      error: {
+        invalidRate: "Rates must be valid numbers and inflation must be greater than -100%",
+      },
     },
     cpiAdjust: {
       tab: "CPI Adjustment",
@@ -906,11 +929,16 @@ const en: Translations = {
     noHistoryDesc: "Your calculation history will appear here once you start using the financial calculators.",
     searchPlaceholder: "Search history...",
     select: "Select",
+    selectItem: "Select item",
+    deselectItem: "Deselect item",
+    cancelSelection: "Cancel selection",
+    closePanel: "Close history panel",
     itemsSelected: "selected",
     all: "All",
     favorites: "Favorites",
     itemsDeleted: "items deleted",
     recent: "Recent Calculations",
+    recorded: "calculations recorded",
   },
   sensitivity: {
     title: "Sensitivity Analysis",
@@ -932,6 +960,8 @@ const en: Translations = {
     dark: "Dark",
     system: "System",
     language: "Language / 语言",
+    currency: "Display currency",
+    currencyDesc: "Choose the currency symbol used when values are formatted throughout the app.",
     behavior: "Behavior",
     behaviorDesc: "Customize how calculations work",
     autoCalculate: "Auto-calculate",
@@ -944,7 +974,7 @@ const en: Translations = {
     clearAllHistory: "Clear All History",
     about: "About",
     aboutDesc: "About FinCalc Pro",
-    version: "v0.3.0",
+    version: "v0.3.1",
     description:
       "A comprehensive suite of financial calculators including TVM, cash flow analysis, stock valuation, portfolio optimization, bonds, options, risk metrics, loans, and macroeconomics.",
   },
@@ -995,7 +1025,7 @@ const en: Translations = {
     faqLanguageAns: "Click the language button in the header to toggle between English and Chinese (中文).",
     faqMobile: "How do I use this on mobile?",
     faqMobileAns:
-      "The app is fully responsive. On mobile devices, the bottom navigation keeps quick access focused on Home and History. Open Home to browse the full calculator directory.",
+      "The app is fully responsive. On mobile devices, the bottom navigation keeps quick access focused on Home, TVM, Portfolio, and History. Open Home to browse the full calculator directory.",
     faqPrivacy: "Is my data stored on servers?",
     faqPrivacyAns:
       "No. All calculation history is stored locally in your browser's localStorage. No data is sent to any server. You can export or clear your history at any time from the Settings page.",
@@ -1046,10 +1076,14 @@ const zh: Translations = {
     rows: "行",
     tvmShort: "TVM",
     portfolioShort: "组合",
+    range: "范围",
+    min: "最小值",
+    max: "最大值",
+    example: "示例",
   },
   sidebar: {
     edition: "专业版",
-    version: "v0.3.0",
+    version: "v0.3.1",
     search: "搜索计算器...",
     featured: "推荐",
   },
@@ -1349,6 +1383,7 @@ const zh: Translations = {
       loss: "价值损失",
       error: {
         negativeAmount: "金额不能为负数",
+        invalidRate: "通胀率必须大于 -100%",
         invalidYears: "年数不能为负数",
       },
     },
@@ -1359,6 +1394,9 @@ const zh: Translations = {
       nominal: "名义利率 (%)",
       inflation: "通胀率 (%)",
       real: "实际利率",
+      error: {
+        invalidRate: "利率必须是有效数字，且通胀率必须大于 -100%",
+      },
     },
     cpiAdjust: {
       tab: "CPI调整",
@@ -1414,11 +1452,16 @@ const zh: Translations = {
     noHistoryDesc: "开始使用计算器后，您的计算历史将显示在这里。",
     searchPlaceholder: "搜索历史记录...",
     select: "选择",
+    selectItem: "选择项目",
+    deselectItem: "取消选择项目",
+    cancelSelection: "取消选择",
+    closePanel: "关闭历史面板",
     itemsSelected: "已选择",
     all: "全部",
     favorites: "收藏",
     itemsDeleted: "项已删除",
     recent: "最近计算记录",
+    recorded: "条计算记录",
   },
   sensitivity: {
     title: "敏感性分析",
@@ -1440,6 +1483,8 @@ const zh: Translations = {
     dark: "深色",
     system: "跟随系统",
     language: "语言 / Language",
+    currency: "显示币种",
+    currencyDesc: "选择应用中格式化金额时使用的币种符号。",
     behavior: "行为",
     behaviorDesc: "自定义计算方式",
     autoCalculate: "自动计算",
@@ -1452,7 +1497,7 @@ const zh: Translations = {
     clearAllHistory: "清除所有历史",
     about: "关于",
     aboutDesc: "关于 FinCalc Pro",
-    version: "v0.3.0",
+    version: "v0.3.1",
     description:
       "全面的金融计算器套件，包括货币时间价值、现金流分析、股票估值、投资组合优化、债券、期权、风险指标、贷款和宏观经济计算工具。",
   },
@@ -1504,7 +1549,7 @@ const zh: Translations = {
       "\u70b9\u51fb\u9876\u90e8\u7684\u8bed\u8a00\u6309\u94ae\u53ef\u4ee5\u5728\u82f1\u8bed\u548c\u4e2d\u6587\u4e4b\u95f4\u5207\u6362\u3002",
     faqMobile: "\u5982\u4f55\u5728\u624b\u673a\u4e0a\u4f7f\u7528\uff1f",
     faqMobileAns:
-      "\u5e94\u7528\u5b8c\u5168\u54cd\u5e94\u5f0f\u3002\u5728\u79fb\u52a8\u8bbe\u5907\u4e0a\uff0c\u5e95\u90e8\u5bfc\u822a\u4ec5\u4fdd\u7559\u9996\u9875\u548c\u5386\u53f2\u8bb0\u5f55\u4e24\u4e2a\u5e38\u7528\u5165\u53e3\uff1b\u8fdb\u5165\u9996\u9875\u5373\u53ef\u6d4f\u89c8\u5b8c\u6574\u8ba1\u7b97\u5668\u76ee\u5f55\u3002",
+      "\u5e94\u7528\u5b8c\u5168\u54cd\u5e94\u5f0f\u3002\u5728\u79fb\u52a8\u8bbe\u5907\u4e0a\uff0c\u5e95\u90e8\u5bfc\u822a\u4fdd\u7559\u9996\u9875\u3001TVM\u3001\u6295\u8d44\u7ec4\u5408\u548c\u5386\u53f2\u8bb0\u5f55\u5165\u53e3\uff1b\u8fdb\u5165\u9996\u9875\u5373\u53ef\u6d4f\u89c8\u5b8c\u6574\u8ba1\u7b97\u5668\u76ee\u5f55\u3002",
     faqPrivacy: "\u6211\u7684\u6570\u636e\u662f\u5426\u5b58\u50a8\u5728\u670d\u52a1\u5668\u4e0a\uff1f",
     faqPrivacyAns:
       "\u4e0d\u4f1a\u3002\u6240\u6709\u8ba1\u7b97\u5386\u53f2\u90fd\u5b58\u50a8\u5728\u6d4f\u89c8\u5668\u672c\u5730\u5b58\u50a8\u4e2d\u3002\u4e0d\u4f1a\u5411\u4efb\u4f55\u670d\u52a1\u5668\u53d1\u9001\u6570\u636e\u3002\u60a8\u53ef\u4ee5\u968f\u65f6\u4ece\u8bbe\u7f6e\u9875\u9762\u5bfc\u51fa\u6216\u6e05\u9664\u5386\u53f2\u8bb0\u5f55\u3002",

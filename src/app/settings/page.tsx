@@ -1,20 +1,50 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useLanguage } from "@/lib/i18n";
-import { Moon, Sun, Monitor, Globe, Trash2, Download } from "lucide-react";
+import { Moon, Sun, Monitor, Globe, Trash2, Download, Coins } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { HISTORY_KEY } from "@/lib/constants";
-import { safeGetItem, safeRemoveItem } from "@/lib/storage";
+import {
+  CURRENCY_KEY,
+  DEFAULT_CURRENCY,
+  HISTORY_KEY,
+  SUPPORTED_CURRENCIES,
+  type SupportedCurrency,
+} from "@/lib/constants";
+import { safeGetItem, safeRemoveItem, safeSetItem } from "@/lib/storage";
 import { useTheme } from "@/components/theme-provider";
+
+const CURRENCY_NAMES: Record<SupportedCurrency, string> = {
+  USD: "US Dollar",
+  CNY: "Chinese Yuan",
+  EUR: "Euro",
+  GBP: "British Pound",
+  JPY: "Japanese Yen",
+};
+
+function isSupportedCurrency(value: string | null): value is SupportedCurrency {
+  return SUPPORTED_CURRENCIES.includes(value as SupportedCurrency);
+}
 
 export default function SettingsPage() {
   const { t, language, setLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
+  const [currency, setCurrency] = useState<SupportedCurrency>(() => {
+    const saved = safeGetItem(CURRENCY_KEY);
+    return isSupportedCurrency(saved) ? saved : DEFAULT_CURRENCY;
+  });
+
+  const handleSetCurrency = (nextCurrency: SupportedCurrency) => {
+    setCurrency(nextCurrency);
+    safeSetItem(CURRENCY_KEY, nextCurrency);
+    window.dispatchEvent(new CustomEvent("financial-calc-currency-changed", { detail: nextCurrency }));
+    toast.success(`${t("settings.currency")}: ${nextCurrency}`);
+  };
 
   const handleClearHistory = () => {
     if (window.confirm(t("history.confirmClear") || "Clear all calculation history?")) {
@@ -120,6 +150,34 @@ export default function SettingsPage() {
                 <Globe className="h-4 w-4" />
                 中文
               </Button>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-3">
+            <div>
+              <Label id="settings-currency-label">{t("settings.currency")}</Label>
+              <p className="mt-1 text-sm text-muted-foreground">{t("settings.currencyDesc")}</p>
+            </div>
+            <div
+              className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3"
+              role="group"
+              aria-labelledby="settings-currency-label"
+            >
+              {SUPPORTED_CURRENCIES.map((code) => (
+                <Button
+                  key={code}
+                  variant={currency === code ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleSetCurrency(code)}
+                  className={cn("min-h-11 justify-start gap-2", currency === code && "bg-primary")}
+                >
+                  <Coins className="h-4 w-4" />
+                  <span className="font-semibold">{code}</span>
+                  <span className="truncate text-xs opacity-80">{CURRENCY_NAMES[code]}</span>
+                </Button>
+              ))}
             </div>
           </div>
         </CardContent>

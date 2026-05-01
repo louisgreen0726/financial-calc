@@ -34,6 +34,8 @@ export const MAX_VOLATILITY = 500; // 500%
 // Display formats
 export const CURRENCY_LOCALE = "en-US";
 export const DEFAULT_CURRENCY = "USD";
+export const SUPPORTED_CURRENCIES = ["USD", "CNY", "EUR", "GBP", "JPY"] as const;
+export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
 export const DEFAULT_DECIMAL_PLACES = 2;
 export const PERCENTAGE_DECIMAL_PLACES = 2;
 
@@ -44,6 +46,7 @@ export const SETTINGS_KEY = `${STORAGE_PREFIX}settings`;
 export const DRAFTS_KEY = `${STORAGE_PREFIX}drafts`;
 export const PENDING_RESTORE_KEY = `${STORAGE_PREFIX}pending-restore`;
 export const LANGUAGE_KEY = `${STORAGE_PREFIX}language`;
+export const CURRENCY_KEY = `${STORAGE_PREFIX}currency`;
 
 // URL parameters
 export const URL_PARAM_PREFIX = "fc_";

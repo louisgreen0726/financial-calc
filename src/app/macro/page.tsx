@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ValidationError } from "@/components/ui/error-display";
 import { formatCurrency } from "@/lib/utils";
 import { ResultActions } from "@/components/result-actions";
+import { parseOptionalNumber } from "@/lib/input-utils";
 
 interface ValidationError {
   field: string;
@@ -64,17 +65,17 @@ export default function MacroPage() {
   // Validation functions
   const validateInflationInputs = useCallback((): ValidationError[] => {
     const errors: ValidationError[] = [];
-    const start = parseFloat(startPrice);
-    const end = parseFloat(endPrice);
-    const years = parseFloat(infYears);
+    const start = parseOptionalNumber(startPrice);
+    const end = parseOptionalNumber(endPrice);
+    const years = parseOptionalNumber(infYears);
 
-    if (isNaN(start) || start <= 0) {
+    if (start === null || start <= 0) {
       errors.push({ field: "startPrice", message: t("macro.inflation.error.negativePrice") });
     }
-    if (isNaN(end) || end <= 0) {
+    if (end === null || end <= 0) {
       errors.push({ field: "endPrice", message: t("macro.inflation.error.negativePrice") });
     }
-    if (isNaN(years) || years <= 0) {
+    if (years === null || years <= 0) {
       errors.push({ field: "years", message: t("macro.inflation.error.invalidYears") });
     }
     return errors;
@@ -82,31 +83,47 @@ export default function MacroPage() {
 
   const validatePPInputs = useCallback((): ValidationError[] => {
     const errors: ValidationError[] = [];
-    const amount = parseFloat(ppAmount);
-    const years = parseFloat(ppYears);
+    const amount = parseOptionalNumber(ppAmount);
+    const rate = parseOptionalNumber(ppRate);
+    const years = parseOptionalNumber(ppYears);
 
-    if (isNaN(amount) || amount < 0) {
+    if (amount === null || amount < 0) {
       errors.push({ field: "amount", message: t("macro.purchasingPower.error.negativeAmount") });
     }
-    if (isNaN(years) || years < 0) {
+    if (rate === null || rate <= -100) {
+      errors.push({ field: "rate", message: t("macro.purchasingPower.error.invalidRate") });
+    }
+    if (years === null || years < 0) {
       errors.push({ field: "years", message: t("macro.purchasingPower.error.invalidYears") });
     }
     return errors;
-  }, [ppAmount, ppYears, t]);
+  }, [ppAmount, ppRate, ppYears, t]);
+
+  const validateRealRateInputs = useCallback((): ValidationError[] => {
+    const errors: ValidationError[] = [];
+    const nominal = parseOptionalNumber(nominalRate);
+    const inflation = parseOptionalNumber(realInfRate);
+
+    if (nominal === null || inflation === null || inflation <= -100) {
+      errors.push({ field: "rate", message: t("macro.realRate.error.invalidRate") });
+    }
+
+    return errors;
+  }, [nominalRate, realInfRate, t]);
 
   const validateCPIInputs = useCallback((): ValidationError[] => {
     const errors: ValidationError[] = [];
-    const amount = parseFloat(cpiAmount);
-    const fromCpi = parseFloat(fromCPI);
-    const toCpi = parseFloat(toCPI);
+    const amount = parseOptionalNumber(cpiAmount);
+    const fromCpi = parseOptionalNumber(fromCPI);
+    const toCpi = parseOptionalNumber(toCPI);
 
-    if (isNaN(amount) || amount < 0) {
+    if (amount === null || amount < 0) {
       errors.push({ field: "amount", message: t("macro.cpiAdjust.error.negativeAmount") });
     }
-    if (isNaN(fromCpi) || fromCpi <= 0) {
+    if (fromCpi === null || fromCpi <= 0) {
       errors.push({ field: "fromCPI", message: t("macro.cpiAdjust.error.zeroCPI") });
     }
-    if (isNaN(toCpi) || toCpi <= 0) {
+    if (toCpi === null || toCpi <= 0) {
       errors.push({ field: "toCPI", message: t("macro.cpiAdjust.error.zeroCPI") });
     }
     return errors;
@@ -114,13 +131,13 @@ export default function MacroPage() {
 
   const validatePPPInputs = useCallback((): ValidationError[] => {
     const errors: ValidationError[] = [];
-    const domestic = parseFloat(domesticPrice);
-    const foreign = parseFloat(foreignPrice);
+    const domestic = parseOptionalNumber(domesticPrice);
+    const foreign = parseOptionalNumber(foreignPrice);
 
-    if (isNaN(domestic) || domestic <= 0) {
+    if (domestic === null || domestic <= 0) {
       errors.push({ field: "domestic", message: t("macro.ppp.error.negativePrice") });
     }
-    if (isNaN(foreign) || foreign <= 0) {
+    if (foreign === null || foreign <= 0) {
       errors.push({ field: "foreign", message: t("macro.ppp.error.zeroForeign") });
     }
     return errors;
@@ -131,9 +148,10 @@ export default function MacroPage() {
     const errors = validateInflationInputs();
     if (errors.length > 0) return null;
 
-    const start = parseFloat(startPrice);
-    const end = parseFloat(endPrice);
-    const years = parseFloat(infYears);
+    const start = parseOptionalNumber(startPrice);
+    const end = parseOptionalNumber(endPrice);
+    const years = parseOptionalNumber(infYears);
+    if (start === null || end === null || years === null) return null;
     return Finance.inflationRate(start, end, years);
   }, [startPrice, endPrice, infYears, validateInflationInputs]);
 
@@ -141,26 +159,31 @@ export default function MacroPage() {
     const errors = validatePPInputs();
     if (errors.length > 0) return null;
 
-    const amount = parseFloat(ppAmount);
-    const rate = parseFloat(ppRate) / 100;
-    const years = parseFloat(ppYears);
-    return Finance.purchasingPower(amount, rate, years);
+    const amount = parseOptionalNumber(ppAmount);
+    const rate = parseOptionalNumber(ppRate);
+    const years = parseOptionalNumber(ppYears);
+    if (amount === null || rate === null || years === null) return null;
+    return Finance.purchasingPower(amount, rate / 100, years);
   }, [ppAmount, ppRate, ppYears, validatePPInputs]);
 
   const realResult = useMemo(() => {
-    const nominal = parseFloat(nominalRate) / 100;
-    const inflation = parseFloat(realInfRate) / 100;
-    if (isNaN(nominal) || isNaN(inflation)) return null;
-    return Finance.realInterestRate(nominal, inflation);
-  }, [nominalRate, realInfRate]);
+    const errors = validateRealRateInputs();
+    if (errors.length > 0) return null;
+
+    const nominal = parseOptionalNumber(nominalRate);
+    const inflation = parseOptionalNumber(realInfRate);
+    if (nominal === null || inflation === null) return null;
+    return Finance.realInterestRate(nominal / 100, inflation / 100);
+  }, [nominalRate, realInfRate, validateRealRateInputs]);
 
   const cpiResult = useMemo(() => {
     const errors = validateCPIInputs();
     if (errors.length > 0) return null;
 
-    const amount = parseFloat(cpiAmount);
-    const fromCpi = parseFloat(fromCPI);
-    const toCpi = parseFloat(toCPI);
+    const amount = parseOptionalNumber(cpiAmount);
+    const fromCpi = parseOptionalNumber(fromCPI);
+    const toCpi = parseOptionalNumber(toCPI);
+    if (amount === null || fromCpi === null || toCpi === null) return null;
     return Finance.cpiAdjust(amount, fromCpi, toCpi);
   }, [cpiAmount, fromCPI, toCPI, validateCPIInputs]);
 
@@ -168,13 +191,15 @@ export default function MacroPage() {
     const errors = validatePPPInputs();
     if (errors.length > 0) return null;
 
-    const domestic = parseFloat(domesticPrice);
-    const foreign = parseFloat(foreignPrice);
+    const domestic = parseOptionalNumber(domesticPrice);
+    const foreign = parseOptionalNumber(foreignPrice);
+    if (domestic === null || foreign === null) return null;
     return Finance.exchangeRatePPP(domestic, foreign);
   }, [domesticPrice, foreignPrice, validatePPPInputs]);
 
   const inflationErrors = useMemo(() => validateInflationInputs(), [validateInflationInputs]);
   const ppErrors = useMemo(() => validatePPInputs(), [validatePPInputs]);
+  const realRateErrors = useMemo(() => validateRealRateInputs(), [validateRealRateInputs]);
   const cpiErrors = useMemo(() => validateCPIInputs(), [validateCPIInputs]);
   const pppErrors = useMemo(() => validatePPPInputs(), [validatePPPInputs]);
   const macroActionConfig = useMemo<MacroActionConfig | null>(() => {
@@ -192,7 +217,7 @@ export default function MacroPage() {
     }
 
     if (activeTab === "purchasingPower" && ppResult !== null && !isNaN(ppResult)) {
-      const loss = parseFloat(ppAmount || "0") - ppResult;
+      const loss = (parseOptionalNumber(ppAmount) ?? 0) - ppResult;
       return makeMacroActionConfig({
         title: t("macro.purchasingPower.title"),
         results: {
@@ -280,23 +305,27 @@ export default function MacroPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="inflation" className="flex items-center gap-2">
+          <TabsTrigger value="inflation" className="flex items-center gap-2" aria-label={t("macro.inflation.tab")}>
             <TrendingUp className="h-4 w-4" />
             <span className="hidden sm:inline">{t("macro.inflation.tab")}</span>
           </TabsTrigger>
-          <TabsTrigger value="purchasingPower" className="flex items-center gap-2">
+          <TabsTrigger
+            value="purchasingPower"
+            className="flex items-center gap-2"
+            aria-label={t("macro.purchasingPower.tab")}
+          >
             <DollarSign className="h-4 w-4" />
             <span className="hidden sm:inline">{t("macro.purchasingPower.tab")}</span>
           </TabsTrigger>
-          <TabsTrigger value="realRate" className="flex items-center gap-2">
+          <TabsTrigger value="realRate" className="flex items-center gap-2" aria-label={t("macro.realRate.tab")}>
             <Percent className="h-4 w-4" />
             <span className="hidden sm:inline">{t("macro.realRate.tab")}</span>
           </TabsTrigger>
-          <TabsTrigger value="cpiAdjust" className="flex items-center gap-2">
+          <TabsTrigger value="cpiAdjust" className="flex items-center gap-2" aria-label={t("macro.cpiAdjust.tab")}>
             <Scale className="h-4 w-4" />
             <span className="hidden sm:inline">{t("macro.cpiAdjust.tab")}</span>
           </TabsTrigger>
-          <TabsTrigger value="ppp" className="flex items-center gap-2">
+          <TabsTrigger value="ppp" className="flex items-center gap-2" aria-label={t("macro.ppp.tab")}>
             <Globe className="h-4 w-4" />
             <span className="hidden sm:inline">{t("macro.ppp.tab")}</span>
           </TabsTrigger>
@@ -418,6 +447,7 @@ export default function MacroPage() {
                     onChange={(e) => setPpRate(e.target.value)}
                     step="0.01"
                   />
+                  <ValidationError error={ppErrors.find((e) => e.field === "rate")?.message ?? null} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="macro-pp-years">{t("macro.purchasingPower.years")}</Label>
@@ -454,7 +484,7 @@ export default function MacroPage() {
                   <div className="p-4 bg-red-50 dark:bg-red-950 rounded-lg">
                     <p className="text-sm text-muted-foreground">{t("macro.purchasingPower.loss")}</p>
                     <p className="text-2xl font-bold text-red-600">
-                      {formatCurrency(parseFloat(ppAmount || "0") - ppResult)}
+                      {formatCurrency((parseOptionalNumber(ppAmount) ?? 0) - ppResult)}
                     </p>
                   </div>
                 )}
@@ -484,6 +514,7 @@ export default function MacroPage() {
                     onChange={(e) => setNominalRate(e.target.value)}
                     step="0.01"
                   />
+                  <ValidationError error={realRateErrors.find((e) => e.field === "rate")?.message ?? null} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="macro-real-inflation">{t("macro.realRate.inflation")}</Label>
@@ -494,7 +525,14 @@ export default function MacroPage() {
                     onChange={(e) => setRealInfRate(e.target.value)}
                     step="0.01"
                   />
+                  <ValidationError error={realRateErrors.find((e) => e.field === "rate")?.message ?? null} />
                 </div>
+                {realRateErrors.length > 0 && (
+                  <Alert variant="destructive" className="py-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-xs">{realRateErrors[0].message}</AlertDescription>
+                  </Alert>
+                )}
               </CardContent>
             </Card>
 

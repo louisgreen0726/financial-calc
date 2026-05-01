@@ -50,7 +50,7 @@ Financial Calc 是一个基于 Next.js 16、React 19 与 TypeScript 构建的双
 ### 辅助页面
 
 - **History**：历史记录浏览与恢复
-- **Settings**：语言、主题与数据管理设置
+- **Settings**：语言、主题、显示币种与数据管理设置
 - **Help**：使用说明与补充信息
 
 ## 最近已经完成的改进
@@ -69,7 +69,7 @@ Financial Calc 是一个基于 Next.js 16、React 19 与 TypeScript 构建的双
 - **图表 / 动效**：Recharts、Framer Motion
 - **校验 / 表单**：Zod、React Hook Form 相关能力
 - **测试**：Vitest、Testing Library、jsdom
-- **离线 / 导出**：手动 service worker、html2canvas、jsPDF、PapaParse
+- **离线 / 导出**：手动 service worker、html2canvas、jsPDF
 
 ## 本地启动
 
