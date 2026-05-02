@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/utils";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine } from "recharts";
 import { useLanguage } from "@/lib/i18n";
 import { useCalculationHistory } from "@/hooks/use-calculation-history";
 import { useHistoryRecorder } from "@/hooks/use-history-recorder";
@@ -297,8 +297,13 @@ export default function OptionsPage() {
                   </CardHeader>
                   <CardContent className="flex-1 min-h-0">
                     <ClientOnlyChart>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={chartData} margin={{ top: 12, right: 12, left: 0, bottom: 8 }}>
+                      {({ width, height }) => (
+                        <LineChart
+                          width={width}
+                          height={height}
+                          data={chartData}
+                          margin={{ top: 12, right: 12, left: 0, bottom: 8 }}
+                        >
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                           <XAxis
                             dataKey="spot"
@@ -313,7 +318,7 @@ export default function OptionsPage() {
                             formatter={(v: number) => formatCurrency(v)}
                           />
                           <ReferenceLine
-                            x={parseFloat(strike)}
+                            x={parsedInputs.K ?? 0}
                             stroke="hsl(var(--muted-foreground))"
                             strokeDasharray="3 3"
                             label="K"
@@ -335,7 +340,7 @@ export default function OptionsPage() {
                             strokeWidth={2}
                           />
                         </LineChart>
-                      </ResponsiveContainer>
+                      )}
                     </ClientOnlyChart>
                   </CardContent>
                 </Card>

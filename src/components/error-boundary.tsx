@@ -53,7 +53,9 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
                   Refresh page
                 </Button>
                 <Button variant="ghost" size="sm" asChild>
-                  <Link href="/">Go home</Link>
+                  <Link href="/" prefetch={false}>
+                    Go home
+                  </Link>
                 </Button>
               </div>
             </CardContent>

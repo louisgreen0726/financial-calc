@@ -10,16 +10,18 @@ import { MOBILE_PRIMARY_NAV } from "@/lib/nav-config";
 export function MobileNav() {
   const pathname = usePathname();
   const { t } = useLanguage();
+  const normalizedPathname = pathname.replace(/\/$/, "") || "/";
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-card/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_rgba(15,23,42,0.12)] backdrop-blur-xl supports-[backdrop-filter]:bg-card/80 lg:hidden">
       <div className="grid h-16 grid-cols-4 gap-1 px-2 py-2">
         {MOBILE_PRIMARY_NAV.map(({ href, icon: Icon, labelKey }) => {
-          const isActive = pathname === href;
+          const isActive = (href.replace(/\/$/, "") || "/") === normalizedPathname;
           return (
             <Link
               key={href}
               href={href}
+              prefetch={false}
               className={cn(
                 "flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-1 text-[11px] font-semibold transition-all sm:text-xs",
                 isActive

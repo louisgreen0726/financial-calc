@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, Suspense } from "react";
+import { useMemo, Suspense, useState } from "react";
 import { Finance } from "@/lib/finance-math";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ValidationError } from "@/components/ui/error-display";
 import { ResultShell } from "@/components/result-shell";
 import { ResultActions } from "@/components/result-actions";
+import { parseOptionalNumber } from "@/lib/input-utils";
+import { useCalculationHistory } from "@/hooks/use-calculation-history";
+import { useHistoryRecorder } from "@/hooks/use-history-recorder";
+import { HistoryPanel } from "@/components/history-panel";
+import { LoanInputSchema } from "@/lib/validation";
 
 function LoansPageContent() {
   const { t } = useLanguage();
@@ -47,40 +52,82 @@ function LoansPageContent() {
     prefix: "loans",
   });
 
+  const [hasInteracted, setHasInteracted] = useState(false);
+
   const method = urlState.method as "CPM" | "CAM";
-  const setMethod = (v: "CPM" | "CAM") => setField("method", v);
+  const setMethod = (v: "CPM" | "CAM") => {
+    setHasInteracted(true);
+    setField("method", v);
+  };
 
   const amount = urlState.amount as string;
-  const setAmount = (v: string) => setField("amount", v);
+  const setAmount = (v: string) => {
+    setHasInteracted(true);
+    setField("amount", v);
+  };
 
   const rate = urlState.rate as string;
-  const setRate = (v: string) => setField("rate", v);
+  const setRate = (v: string) => {
+    setHasInteracted(true);
+    setField("rate", v);
+  };
 
   const years = urlState.years as string;
-  const setYears = (v: string) => setField("years", v);
+  const setYears = (v: string) => {
+    setHasInteracted(true);
+    setField("years", v);
+  };
+
+  const parsedLoanInputs = useMemo(
+    () => ({
+      amount: parseOptionalNumber(amount),
+      rate: parseOptionalNumber(rate),
+      years: parseOptionalNumber(years),
+    }),
+    [amount, rate, years]
+  );
+
+  const loanValidation = useMemo(() => {
+    const result = LoanInputSchema.safeParse({
+      amount: parsedLoanInputs.amount ?? Number.NaN,
+      rate: parsedLoanInputs.rate ?? Number.NaN,
+      years: parsedLoanInputs.years ?? Number.NaN,
+      method,
+    });
+
+    return result.success
+      ? {}
+      : Object.fromEntries(result.error.issues.map((issue) => [String(issue.path[0]), issue.message]));
+  }, [method, parsedLoanInputs]);
 
   const validationError = useMemo(() => {
-    const P = parseFloat(amount);
-    const r = parseFloat(rate);
-    const n = parseFloat(years);
-
-    if (amount && (isNaN(P) || P <= 0)) return t("loans.errorPositiveAmount") || "Loan amount must be positive";
-    if (rate && (isNaN(r) || r < 0)) return t("loans.errorPositiveRate") || "Interest rate cannot be negative";
-    if (years && (isNaN(n) || n <= 0)) return t("loans.errorPositiveYears") || "Loan term must be positive";
+    if (loanValidation.amount) return t("loans.errorPositiveAmount") || String(loanValidation.amount);
+    if (loanValidation.rate) return t("loans.errorPositiveRate") || String(loanValidation.rate);
+    if (loanValidation.years) return t("loans.errorPositiveYears") || String(loanValidation.years);
+    if (loanValidation.method) return String(loanValidation.method);
     return null;
-  }, [amount, rate, years, t]);
+  }, [loanValidation, t]);
 
   const schedule = useMemo(() => {
-    const P = parseFloat(amount) || 0;
-    const r = (parseFloat(rate) || 0) / 100 / 12;
-    const n = (parseFloat(years) || 0) * 12;
+    if (
+      validationError ||
+      parsedLoanInputs.amount === null ||
+      parsedLoanInputs.rate === null ||
+      parsedLoanInputs.years === null
+    ) {
+      return [];
+    }
+
+    const P = parsedLoanInputs.amount;
+    const r = parsedLoanInputs.rate / 100 / 12;
+    const n = Math.round(parsedLoanInputs.years * 12);
 
     if (P <= 0 || r < 0 || n <= 0) {
       return [];
     }
 
     return Finance.amortizationSchedule(P, r, n, method);
-  }, [amount, rate, years, method]);
+  }, [method, parsedLoanInputs, validationError]);
 
   const stats = useMemo(() => {
     if (!schedule.length)
@@ -96,11 +143,20 @@ function LoansPageContent() {
   }, [schedule]);
 
   const pieData = [
-    { name: t("loans.principal"), value: parseFloat(amount) || 0, color: "hsl(var(--primary))" },
+    { name: t("loans.principal"), value: parsedLoanInputs.amount ?? 0, color: "hsl(var(--primary))" },
     { name: t("loans.totalInt"), value: stats.totalInterest, color: "hsl(var(--destructive))" },
   ];
 
   const reportTitle = `${t("loans.title")} - ${method}`;
+  const { addToHistory } = useCalculationHistory({ page: "loans" });
+
+  useHistoryRecorder({
+    addToHistory,
+    inputs: { amount, rate, years, method },
+    result: stats.totalPayment,
+    label: t("loans.totalCost"),
+    enabled: hasInteracted && !validationError && schedule.length > 0,
+  });
 
   return (
     <div className="space-y-6">
@@ -109,9 +165,19 @@ function LoansPageContent() {
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("loans.title")}</h1>
           <p className="text-muted-foreground mt-2">{t("loans.subtitle")}</p>
         </div>
+        <HistoryPanel
+          page="loans"
+          onRestore={(inputs) => {
+            if (inputs.amount !== undefined) setField("amount", String(inputs.amount));
+            if (inputs.rate !== undefined) setField("rate", String(inputs.rate));
+            if (inputs.years !== undefined) setField("years", String(inputs.years));
+            if (inputs.method === "CPM" || inputs.method === "CAM") setField("method", inputs.method);
+            setHasInteracted(true);
+          }}
+        />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-12">
+      <div id="loans-report-content" className="grid gap-6 xl:grid-cols-12">
         {/* Controls */}
         <Card className="xl:col-span-4 h-fit">
           <CardHeader>
@@ -119,7 +185,9 @@ function LoansPageContent() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label id="loans-method-label">{t("loans.method")}</Label>
+              <span id="loans-method-label" className="text-sm font-medium">
+                {t("loans.method")}
+              </span>
               <Tabs
                 value={method}
                 onValueChange={(v) => setMethod(v as "CPM" | "CAM")}
@@ -146,10 +214,10 @@ function LoansPageContent() {
                 step="0.01"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className={amount && parseFloat(amount) <= 0 ? "border-destructive" : ""}
+                className={loanValidation.amount ? "border-destructive" : ""}
               />
               <ValidationError
-                error={amount && parseFloat(amount) <= 0 ? t("loans.errorPositiveAmount") || validationError : null}
+                error={loanValidation.amount ? t("loans.errorPositiveAmount") || validationError : null}
               />
             </div>
 
@@ -162,11 +230,9 @@ function LoansPageContent() {
                 step="0.01"
                 value={rate}
                 onChange={(e) => setRate(e.target.value)}
-                className={rate && parseFloat(rate) < 0 ? "border-destructive" : ""}
+                className={loanValidation.rate ? "border-destructive" : ""}
               />
-              <ValidationError
-                error={rate && parseFloat(rate) < 0 ? t("loans.errorPositiveRate") || validationError : null}
-              />
+              <ValidationError error={loanValidation.rate ? t("loans.errorPositiveRate") || validationError : null} />
             </div>
 
             <div className="space-y-2">
@@ -178,11 +244,9 @@ function LoansPageContent() {
                 step="1"
                 value={years}
                 onChange={(e) => setYears(e.target.value)}
-                className={years && parseFloat(years) <= 0 ? "border-destructive" : ""}
+                className={loanValidation.years ? "border-destructive" : ""}
               />
-              <ValidationError
-                error={years && parseFloat(years) <= 0 ? t("loans.errorPositiveYears") || validationError : null}
-              />
+              <ValidationError error={loanValidation.years ? t("loans.errorPositiveYears") || validationError : null} />
             </div>
 
             {validationError && (
@@ -279,7 +343,7 @@ function LoansPageContent() {
               </Card>
             }
             advanced={
-              <div className="flex min-w-0 flex-col gap-6" id="loans-report-content">
+              <div className="flex min-w-0 flex-col gap-6">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {/* Pie Chart */}
                   <Card className="min-h-[260px] flex flex-col">

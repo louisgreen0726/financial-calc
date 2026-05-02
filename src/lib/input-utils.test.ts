@@ -18,6 +18,7 @@ describe("input-utils", () => {
   it("rejects incomplete or non-finite numeric strings", () => {
     expect(parseOptionalNumber("1.2.3")).toBeNull();
     expect(parseOptionalNumber("1e")).toBeNull();
+    expect(parseOptionalNumber("12abc")).toBeNull();
     expect(parseOptionalNumber("Infinity")).toBeNull();
     expect(parseOptionalNumber("NaN")).toBeNull();
   });

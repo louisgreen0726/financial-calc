@@ -30,7 +30,7 @@ export default function Home() {
       {/* Hero Section */}
       <div className="relative z-10 space-y-4 py-6 text-center md:space-y-6 md:py-16 md:text-left">
         <motion.h1
-          className="mx-auto max-w-full text-balance break-words pb-2 text-3xl font-display font-extrabold leading-tight tracking-[-0.04em] text-gradient drop-shadow-sm sm:text-5xl md:mx-0 md:w-fit md:text-7xl"
+          className="mx-auto max-w-full text-balance break-words pb-2 text-3xl font-display font-extrabold leading-tight tracking-normal text-gradient drop-shadow-sm sm:text-5xl md:mx-0 md:w-fit md:text-7xl"
           initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.8, ease: "easeOut" }}
@@ -68,7 +68,9 @@ export default function Home() {
               ) : null}
             </div>
             <Button asChild>
-              <Link href={`/${latestHistoryItem.page}`}>{t("home.continueAction")}</Link>
+              <Link href={`/${latestHistoryItem.page}/`} prefetch={false}>
+                {t("home.continueAction")}
+              </Link>
             </Button>
           </div>
         </WorkspaceHomeSection>
@@ -78,7 +80,7 @@ export default function Home() {
         <StaggeredList className="relative z-10 grid gap-5 sm:grid-cols-2 xl:grid-cols-3 md:gap-6">
           {allNavItems.map((item, i) => (
             <MotionListItem key={item.href} index={i} className="list-none group block h-full">
-              <Link href={item.href} className="group flex-1">
+              <Link href={item.href} prefetch={false} className="group flex-1">
                 <MotionCard className="h-full glass-card rounded-2xl hover:bg-background/80 hover:shadow-[0_12px_40px_-15px_hsl(var(--primary)_/_30%)] hover:-translate-y-1 transition-all duration-300 relative overflow-visible transform-gpu">
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none rounded-2xl" />
                   <CardHeader className="pb-2 px-5 pt-5">
@@ -122,7 +124,7 @@ export default function Home() {
             {history.slice(0, 4).map((item) => {
               const navItem = getPageConfig(item.page);
               return (
-                <Link key={item.id} href={`/${item.page}`} className="group">
+                <Link key={item.id} href={`/${item.page}/`} prefetch={false} className="group">
                   <Card className="h-full glass-card rounded-xl hover:-translate-y-[2px] transition-all duration-200 overflow-hidden">
                     <CardHeader className="p-4 pb-2 border-b border-border/50 bg-muted/20">
                       <CardTitle className="text-sm font-semibold flex items-center justify-between text-muted-foreground gap-2">

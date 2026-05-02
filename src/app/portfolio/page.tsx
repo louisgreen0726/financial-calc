@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Trash2, Plus, Play, PieChart as PieIcon, RefreshCw, Loader2 } from "lucide-react";
-import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ZAxis } from "recharts";
+import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ZAxis } from "recharts";
 import { formatNumber } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
 import { sanitizeInput } from "@/lib/sanitize";
@@ -21,19 +21,15 @@ import { PortfolioInputSchema } from "@/lib/validation";
 import { ErrorDisplay } from "@/components/ui/error-display";
 import { SectionActionBar } from "@/components/section-action-bar";
 import { ResultActions } from "@/components/result-actions";
+import { clampEqualCorrelation, getMinimumEqualCorrelation, type PortfolioPoint } from "@/lib/portfolio-math";
+import { useCalculationHistory } from "@/hooks/use-calculation-history";
+import { HistoryPanel } from "@/components/history-panel";
 
 interface Asset {
   id: number;
   name: string;
   return: string;
   risk: string;
-}
-
-interface PortfolioPoint {
-  ret: number;
-  risk: number;
-  sharpe: number;
-  weights: number[];
 }
 
 export default function PortfolioPage() {
@@ -51,6 +47,9 @@ export default function PortfolioPage() {
   const [minVol, setMinVol] = useState<PortfolioPoint | null>(null);
   const [resultSignature, setResultSignature] = useState("");
   const [chartsReady, setChartsReady] = useState(false);
+  const [chartElement, setChartElement] = useState<HTMLDivElement | null>(null);
+  const [chartSize, setChartSize] = useState({ width: 0, height: 0 });
+  const { addToHistory } = useCalculationHistory({ page: "portfolio" });
 
   const parsedAssets = useMemo(
     () =>
@@ -62,9 +61,14 @@ export default function PortfolioPage() {
     [assets]
   );
 
+  const minimumCorrelation = useMemo(() => getMinimumEqualCorrelation(parsedAssets.length), [parsedAssets.length]);
+  const effectiveCorrelation = useMemo(
+    () => clampEqualCorrelation(correlation, parsedAssets.length),
+    [correlation, parsedAssets.length]
+  );
   const inputSignature = useMemo(
-    () => JSON.stringify({ assets: parsedAssets, correlation, rf }),
-    [correlation, parsedAssets, rf]
+    () => JSON.stringify({ assets: parsedAssets, correlation: effectiveCorrelation, rf }),
+    [effectiveCorrelation, parsedAssets, rf]
   );
 
   const portfolioValidation = useMemo(() => {
@@ -73,7 +77,7 @@ export default function PortfolioPage() {
     );
     const result = PortfolioInputSchema.safeParse({
       rf,
-      correlation,
+      correlation: effectiveCorrelation,
       assets: parsedAssets.map((asset) => ({
         name: asset.name,
         return: asset.return ?? Number.NaN,
@@ -87,6 +91,13 @@ export default function PortfolioPage() {
       };
     }
 
+    if (effectiveCorrelation < minimumCorrelation) {
+      return {
+        isValid: false,
+        message: t("portfolio.validation.correlationRange").replace("{min}", minimumCorrelation.toFixed(2)),
+      };
+    }
+
     if (hasInvalidAssetValue) {
       return {
         isValid: false,
@@ -95,7 +106,7 @@ export default function PortfolioPage() {
     }
 
     return { isValid: true, message: null };
-  }, [correlation, parsedAssets, rf, t]);
+  }, [effectiveCorrelation, minimumCorrelation, parsedAssets, rf, t]);
 
   // Monte Carlo simulation hook: prefers a real worker, falls back to chunked client execution.
   const { progress, isRunning, run, cancel } = useMonteCarloSimulation();
@@ -109,6 +120,23 @@ export default function PortfolioPage() {
       cancel();
     };
   }, [cancel]);
+
+  useEffect(() => {
+    if (!chartElement) {
+      return;
+    }
+
+    const observer = new ResizeObserver(([entry]) => {
+      const width = Math.floor(entry.contentRect.width);
+      const height = Math.floor(entry.contentRect.height);
+      if (width > 0 && height > 0) {
+        setChartSize((current) => (current.width === width && current.height === height ? current : { width, height }));
+      }
+    });
+
+    observer.observe(chartElement);
+    return () => observer.disconnect();
+  }, [chartElement]);
 
   const resultsAreFresh = resultSignature === inputSignature;
   const visibleSimulations = resultsAreFresh ? simulations : [];
@@ -149,7 +177,7 @@ export default function PortfolioPage() {
         return: asset.return ?? 0,
         risk: asset.risk ?? 0,
       })),
-      correlation,
+      correlation: effectiveCorrelation,
       rf,
       simulations: 2000,
     } as const;
@@ -163,12 +191,58 @@ export default function PortfolioPage() {
         if (d?.simulations) setSimulations(d.simulations);
         if (d?.optimal) setOptimal(d.optimal);
         if (d?.minVol) setMinVol(d.minVol);
+        if (d?.optimal) {
+          addToHistory(
+            {
+              assets: JSON.stringify(assets),
+              rf,
+              correlation: effectiveCorrelation,
+            },
+            d.optimal.sharpe,
+            t("portfolio.maxSharpe")
+          );
+        }
         setResultSignature(runSignature);
       },
       onError: () => {
         // Fallback handling lives inside the hook; keep the UI responsive even if worker setup fails.
       },
     });
+  };
+
+  const restorePortfolio = (inputs: Record<string, number | string>) => {
+    if (typeof inputs.assets === "string") {
+      try {
+        const restoredAssets = JSON.parse(inputs.assets) as Asset[];
+        const isValidAssets =
+          Array.isArray(restoredAssets) &&
+          restoredAssets.length >= 2 &&
+          restoredAssets.every(
+            (asset) =>
+              typeof asset.id === "number" &&
+              typeof asset.name === "string" &&
+              typeof asset.return === "string" &&
+              typeof asset.risk === "string"
+          );
+
+        if (isValidAssets) {
+          setAssets(restoredAssets);
+        }
+      } catch {
+        // Ignore malformed old history entries.
+      }
+    }
+    if (typeof inputs.rf === "number") setRf(inputs.rf);
+    if (typeof inputs.rf === "string") {
+      const parsed = parseOptionalNumber(inputs.rf);
+      if (parsed !== null) setRf(parsed);
+    }
+    if (typeof inputs.correlation === "number") setCorrelation(inputs.correlation);
+    if (typeof inputs.correlation === "string") {
+      const parsed = parseOptionalNumber(inputs.correlation);
+      if (parsed !== null) setCorrelation(parsed);
+    }
+    setResultSignature("");
   };
 
   return (
@@ -182,6 +256,7 @@ export default function PortfolioPage() {
           {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
           {isRunning ? t("common.loading") : visibleSimulations.length > 0 ? t("portfolio.rerun") : t("portfolio.run")}
         </Button>
+        <HistoryPanel page="portfolio" onRestore={restorePortfolio} />
       </div>
 
       <div className="grid min-w-0 gap-6 xl:grid-cols-12">
@@ -193,15 +268,17 @@ export default function PortfolioPage() {
           <CardContent className="space-y-6 min-w-0">
             <div className="space-y-2">
               <div className="flex justify-between">
-                <Label id="portfolio-rf-label">
+                <span id="portfolio-rf-label" className="text-sm font-medium">
                   {t("portfolio.rf")}: {rf}%
-                </Label>
-                <Label id="portfolio-correlation-label">
-                  {t("portfolio.corr")}: {correlation}
-                </Label>
+                </span>
+                <span id="portfolio-correlation-label" className="text-sm font-medium">
+                  {t("portfolio.corr")}: {effectiveCorrelation}
+                </span>
               </div>
               <Slider
                 aria-labelledby="portfolio-rf-label"
+                aria-label={t("portfolio.rf")}
+                name="portfolio-risk-free-rate"
                 value={[rf]}
                 onValueChange={(v) => setRf(v[0])}
                 max={10}
@@ -210,9 +287,11 @@ export default function PortfolioPage() {
               />
               <Slider
                 aria-labelledby="portfolio-correlation-label"
-                value={[correlation]}
+                aria-label={t("portfolio.corr")}
+                name="portfolio-correlation"
+                value={[effectiveCorrelation]}
                 onValueChange={(v) => setCorrelation(v[0])}
-                min={-1}
+                min={minimumCorrelation}
                 max={1}
                 step={0.1}
               />
@@ -239,6 +318,8 @@ export default function PortfolioPage() {
                       <TableRow key={asset.id}>
                         <TableCell>
                           <Input
+                            id={`portfolio-desktop-asset-name-${asset.id}`}
+                            name={`portfolio-desktop-asset-name-${asset.id}`}
                             aria-label={t("portfolio.asset")}
                             value={asset.name}
                             onChange={(e) => updateAsset(asset.id, "name", e.target.value)}
@@ -247,6 +328,8 @@ export default function PortfolioPage() {
                         </TableCell>
                         <TableCell>
                           <Input
+                            id={`portfolio-desktop-asset-return-${asset.id}`}
+                            name={`portfolio-desktop-asset-return-${asset.id}`}
                             aria-label={`${t("portfolio.ret")} for ${asset.name}`}
                             type="number"
                             value={asset.return}
@@ -256,6 +339,8 @@ export default function PortfolioPage() {
                         </TableCell>
                         <TableCell>
                           <Input
+                            id={`portfolio-desktop-asset-risk-${asset.id}`}
+                            name={`portfolio-desktop-asset-risk-${asset.id}`}
                             aria-label={`${t("portfolio.risk")} for ${asset.name}`}
                             type="number"
                             value={asset.risk}
@@ -298,6 +383,7 @@ export default function PortfolioPage() {
                       <Label htmlFor={`portfolio-asset-name-${asset.id}`}>{t("portfolio.asset")}</Label>
                       <Input
                         id={`portfolio-asset-name-${asset.id}`}
+                        name={`portfolio-asset-name-${asset.id}`}
                         aria-label={t("portfolio.asset")}
                         value={asset.name}
                         onChange={(e) => updateAsset(asset.id, "name", e.target.value)}
@@ -308,6 +394,7 @@ export default function PortfolioPage() {
                         <Label htmlFor={`portfolio-asset-return-${asset.id}`}>{t("portfolio.ret")}</Label>
                         <Input
                           id={`portfolio-asset-return-${asset.id}`}
+                          name={`portfolio-asset-return-${asset.id}`}
                           aria-label={`${t("portfolio.ret")} for ${asset.name}`}
                           type="number"
                           value={asset.return}
@@ -318,6 +405,7 @@ export default function PortfolioPage() {
                         <Label htmlFor={`portfolio-asset-risk-${asset.id}`}>{t("portfolio.risk")}</Label>
                         <Input
                           id={`portfolio-asset-risk-${asset.id}`}
+                          name={`portfolio-asset-risk-${asset.id}`}
                           aria-label={`${t("portfolio.risk")} for ${asset.name}`}
                           type="number"
                           value={asset.risk}
@@ -380,14 +468,14 @@ export default function PortfolioPage() {
                     }}
                     inputs={{
                       [t("portfolio.rf")]: `${rf}%`,
-                      [t("portfolio.corr")]: correlation,
+                      [t("portfolio.corr")]: effectiveCorrelation,
                       [t("portfolio.asset")]: assets.map((asset) => asset.name).join(", "),
                     }}
                     exportData={visibleSimulations as unknown as Record<string, unknown>[]}
                     exportJson={{
                       assets,
                       rf,
-                      correlation,
+                      correlation: effectiveCorrelation,
                       optimal: visibleOptimal,
                       minVol: visibleMinVol,
                       simulations: visibleSimulations,
@@ -479,11 +567,15 @@ export default function PortfolioPage() {
                 <CardTitle>{t("portfolio.frontier")}</CardTitle>
                 <CardDescription>{t("portfolio.frontierDesc")}</CardDescription>
               </CardHeader>
-              <CardContent className="flex-1 min-h-0">
-                {visibleSimulations.length > 0 ? (
-                  chartsReady ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <ScatterChart margin={{ top: 12, right: 12, bottom: 12, left: 0 }}>
+              <CardContent className="flex-1 min-h-[240px]">
+                <div ref={setChartElement} className="h-full min-h-[240px] w-full">
+                  {visibleSimulations.length > 0 ? (
+                    chartsReady && chartSize.width > 0 && chartSize.height > 0 ? (
+                      <ScatterChart
+                        width={chartSize.width}
+                        height={chartSize.height}
+                        margin={{ top: 12, right: 12, bottom: 12, left: 0 }}
+                      >
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                         <XAxis
                           type="number"
@@ -551,17 +643,17 @@ export default function PortfolioPage() {
                           />
                         )}
                       </ScatterChart>
-                    </ResponsiveContainer>
+                    ) : (
+                      <div className="h-full w-full" aria-hidden="true" />
+                    )
                   ) : (
-                    <div className="h-full w-full" aria-hidden="true" />
-                  )
-                ) : (
-                  <EmptyState
-                    icon={RefreshCw}
-                    title={t("portfolio.empty")}
-                    description={isRunning ? t("common.loading") : undefined}
-                  />
-                )}
+                    <EmptyState
+                      icon={RefreshCw}
+                      title={t("portfolio.empty")}
+                      description={isRunning ? t("common.loading") : undefined}
+                    />
+                  )}
+                </div>
               </CardContent>
             </Card>
           </ResponsiveDisclosure>

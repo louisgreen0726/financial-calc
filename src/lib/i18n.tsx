@@ -249,6 +249,7 @@ type Translations = {
       universeDisclosure: string;
       frontierDisclosure: string;
       assetCardTitle: string;
+      correlationRange: string;
     };
   };
   options: {
@@ -568,22 +569,22 @@ const en: Translations = {
     core: {
       title: "Core Financials",
       tvm: { title: "TVM Calculator", desc: "Time Value of Money (PV, FV, PMT, Rate)" },
-      cashFlow: { title: "Cash Flow Analysis", desc: "NPV, IRR, Payback, ROI" },
+      cashFlow: { title: "Cash Flow Analysis", desc: "NPV, IRR, and payback period" },
     },
     investing: {
       title: "Investing",
-      equity: { title: "Stock Valuation", desc: "DDM, CAPM, WACC, Ratios" },
+      equity: { title: "Stock Valuation", desc: "DDM, CAPM, and WACC models" },
       portfolio: { title: "Portfolio Optimization", desc: "Markowitz, Efficient Frontier, Sharpe" },
       bonds: { title: "Bonds & Fixed Income", desc: "Duration, Convexity, YTM, Pricing" },
     },
     derivatives: {
       title: "Derivatives & Risk",
-      options: { title: "Options Pricing", desc: "Black-Scholes, Binomial, Greeks" },
-      risk: { title: "Risk Management", desc: "VaR, Monte Carlo Simulation" },
+      options: { title: "Options Pricing", desc: "Black-Scholes pricing and Greeks" },
+      risk: { title: "Risk Management", desc: "VaR and CVaR distribution view" },
     },
     banking: {
       title: "Banking & Macro",
-      loans: { title: "Loans & Mortgages", desc: "Amortization, Prepayment, APR" },
+      loans: { title: "Loans & Mortgages", desc: "CPM/CAM amortization schedules" },
       macro: { title: "Macro & FX", desc: "Inflation, Purchasing Power, FX" },
     },
     more: {
@@ -766,6 +767,7 @@ const en: Translations = {
       universeDisclosure: "Manage assets here. Keep at least two assets with valid risk and return values.",
       frontierDisclosure: "Keep the chart collapsed on phones until you need detailed frontier exploration.",
       assetCardTitle: "Asset details",
+      correlationRange: "For this number of assets, correlation must be at least {min}.",
     },
   },
   options: {
@@ -999,9 +1001,9 @@ const en: Translations = {
     tvmCalc: "TVM Calculator",
     tvmCalcDesc: "Time Value of Money - Calculate PV, FV, PMT, NPER, and interest rate.",
     cashFlowCalc: "Cash Flow Analysis",
-    cashFlowCalcDesc: "NPV, IRR, Payback Period, and ROI calculations for investment projects.",
+    cashFlowCalcDesc: "NPV, IRR, and payback period calculations for investment projects.",
     stockVal: "Stock Valuation",
-    stockValDesc: "DDM (Dividend Discount Model), CAPM, WACC, and financial ratios.",
+    stockValDesc: "DDM (Dividend Discount Model), CAPM, and WACC calculations.",
     portfolioOpt: "Portfolio Optimization",
     portfolioOptDesc: "Monte Carlo simulation for efficient frontier and optimal portfolios.",
     bondsCalc: "Bonds & Fixed Income",
@@ -1091,22 +1093,22 @@ const zh: Translations = {
     core: {
       title: "核心财务工具",
       tvm: { title: "货币时间价值 (TVM)", desc: "现值、终值、年金及利率计算" },
-      cashFlow: { title: "现金流分析", desc: "NPV, IRR 及投资回报分析" },
+      cashFlow: { title: "现金流分析", desc: "NPV、IRR 及回收期分析" },
     },
     investing: {
       title: "投资分析",
-      equity: { title: "股票估值模型", desc: "DDM, CAPM, WACC 及财务比率" },
+      equity: { title: "股票估值模型", desc: "DDM、CAPM 与 WACC 模型" },
       portfolio: { title: "投资组合优化", desc: "马科维茨模型, 有效前沿, 夏普比率" },
       bonds: { title: "债券与固定收益", desc: "久期, 凸性, 到期收益率 (YTM)" },
     },
     derivatives: {
       title: "衍生品与风险",
-      options: { title: "期权定价", desc: "Black-Scholes 模型, 二叉树, 希腊字母" },
-      risk: { title: "风险管理", desc: "VaR (在险价值), 蒙特卡洛模拟" },
+      options: { title: "期权定价", desc: "Black-Scholes 定价与希腊字母" },
+      risk: { title: "风险管理", desc: "VaR 与 CVaR 分布视图" },
     },
     banking: {
       title: "银行与宏观",
-      loans: { title: "贷款与按揭", desc: "还款计划, 提前还款, 年化利率 (APR)" },
+      loans: { title: "贷款与按揭", desc: "等额本息/等额本金摊销表" },
       macro: { title: "宏观经济与外汇", desc: "通胀调整, 购买力平价, 汇率换算" },
     },
     more: {
@@ -1289,6 +1291,7 @@ const zh: Translations = {
       universeDisclosure: "在这里管理资产，至少保留两个具有有效风险与回报数据的资产。",
       frontierDisclosure: "手机上默认折叠图表，需要深入查看有效前沿时再展开。",
       assetCardTitle: "资产明细",
+      correlationRange: "当前资产数量下，相关系数至少应为 {min}。",
     },
   },
   options: {
@@ -1522,9 +1525,9 @@ const zh: Translations = {
     tvmCalc: "货币时间价值计算器",
     tvmCalcDesc: "现值、终值、年金、期数及利率计算。",
     cashFlowCalc: "现金流分析",
-    cashFlowCalcDesc: "投资项目的 NPV、IRR、回收期和 ROI 计算。",
+    cashFlowCalcDesc: "投资项目的 NPV、IRR 与回收期计算。",
     stockVal: "股票估值",
-    stockValDesc: "股利折现模型 (DDM)、CAPM、WACC 及财务比率。",
+    stockValDesc: "股利折现模型 (DDM)、CAPM 与 WACC 计算。",
     portfolioOpt: "投资组合优化",
     portfolioOptDesc: "蒙特卡洛模拟有效前沿和最优投资组合。",
     bondsCalc: "债券与固定收益",
@@ -1586,6 +1589,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>("en");
 
   useEffect(() => {
+    document.documentElement.dataset.finCalcHydrated = "true";
     const saved = safeGetItem(LANGUAGE_KEY);
     if (saved === "en" || saved === "zh") {
       queueMicrotask(() => setLanguage(saved));

@@ -15,31 +15,6 @@ export function sanitizeInput(input: string): string {
 }
 
 /**
- * Sanitize and validate numeric input
- * @param value Input string
- * @returns Object with sanitized value and validation result
- */
-export function sanitizeNumericInput(value: string): {
-  sanitized: string;
-  isValid: boolean;
-  numericValue?: number;
-} {
-  const sanitized = sanitizeInput(value).trim();
-
-  // Remove any non-numeric characters except minus, decimal point, and comma
-  const cleaned = sanitized.replace(/[^0-9.,\-]/g, "");
-
-  const numericValue = parseFloat(cleaned);
-  const isValid = !isNaN(numericValue) && isFinite(numericValue);
-
-  return {
-    sanitized: cleaned,
-    isValid,
-    numericValue: isValid ? numericValue : undefined,
-  };
-}
-
-/**
  * Escape HTML special characters for safe display (SSR-safe, no DOM dependency)
  * @param text Text to escape
  * @returns Escaped text

@@ -17,12 +17,17 @@ interface HeaderProps {
 export const Header = React.memo(function Header({ className }: HeaderProps) {
   const pathname = usePathname();
   const { t } = useLanguage();
+  const normalizedPathname = pathname.replace(/\/$/, "") || "/";
 
   // Find current page title from NAV_CONFIG
-  const currentItem = NAV_CONFIG.flatMap((s) => s.items).find((item) => item.href === pathname);
+  const currentItem = NAV_CONFIG.flatMap((s) => s.items).find(
+    (item) => (item.href.replace(/\/$/, "") || "/") === normalizedPathname
+  );
   const pageTitle = currentItem
     ? t(currentItem.titleKey)
-    : pathname.split("/").pop()?.replace(/-/g, " ") || "Dashboard";
+    : normalizedPathname === "/"
+      ? t("common.home") || "Home"
+      : pathname.split("/").pop()?.replace(/-/g, " ") || "Dashboard";
 
   return (
     <header
@@ -35,10 +40,12 @@ export const Header = React.memo(function Header({ className }: HeaderProps) {
         <MobileSidebar />
         <div className="hidden min-w-0 items-center gap-2 md:flex">
           <span className="shrink-0 text-sm font-medium text-muted-foreground/70">{t("common.home") || "Home"}</span>
-          <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
-          <span className="truncate bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-sm font-semibold tracking-tight text-transparent text-foreground/90">
-            {pageTitle}
-          </span>
+          {normalizedPathname !== "/" ? (
+            <>
+              <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
+              <span className="truncate text-sm font-semibold tracking-normal text-foreground/90">{pageTitle}</span>
+            </>
+          ) : null}
         </div>
       </div>
 

@@ -8,17 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { Trash2, Plus, TrendingUp, AlertCircle } from "lucide-react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  ReferenceLine,
-  Cell,
-} from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, Cell } from "recharts";
 import { useLanguage } from "@/lib/i18n";
 import { useCalculationHistory } from "@/hooks/use-calculation-history";
 import { useHistoryRecorder } from "@/hooks/use-history-recorder";
@@ -168,33 +158,37 @@ export default function CashFlowPage() {
                   <span>{t("cashFlow.flow")}</span>
                 </div>
                 <div className="space-y-2 max-h-[250px] sm:max-h-[400px] pr-2 overflow-y-auto">
-                  {flowInputs.map((flow, i) => (
-                    <div
-                      key={i}
-                      className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-xl border border-white/10 bg-background/30 p-3 animate-in fade-in slide-in-from-left-2 duration-300 sm:grid-cols-[72px_minmax(0,1fr)_auto] sm:items-center sm:gap-3"
-                    >
-                      <div className="text-sm text-muted-foreground font-mono">
-                        {i === 0 ? t("common.initial") : `${t("common.year")} ${i}`}
-                      </div>
-                      <Input
-                        type="number"
-                        value={flow}
-                        onChange={(e) => updateFlow(i, e.target.value)}
-                        className={
-                          (parsedFlows[i] ?? 0) < 0 ? "text-destructive font-medium" : "text-primary font-medium"
-                        }
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-10 w-10"
-                        onClick={() => removeFlow(i)}
-                        disabled={flows.length <= 1}
+                  {flowInputs.map((flow, i) => {
+                    const periodLabel = i === 0 ? t("common.initial") : `${t("common.year")} ${i}`;
+
+                    return (
+                      <div
+                        key={i}
+                        className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-xl border border-white/10 bg-background/30 p-3 animate-in fade-in slide-in-from-left-2 duration-300 sm:grid-cols-[72px_minmax(0,1fr)_auto] sm:items-center sm:gap-3"
                       >
-                        <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                      </Button>
-                    </div>
-                  ))}
+                        <div className="text-sm text-muted-foreground font-mono">{periodLabel}</div>
+                        <Input
+                          type="number"
+                          aria-label={`${periodLabel} ${t("cashFlow.flow")}`}
+                          value={flow}
+                          onChange={(e) => updateFlow(i, e.target.value)}
+                          className={
+                            (parsedFlows[i] ?? 0) < 0 ? "text-destructive font-medium" : "text-primary font-medium"
+                          }
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-10 w-10"
+                          onClick={() => removeFlow(i)}
+                          disabled={flows.length <= 1}
+                          aria-label={`${t("common.remove")} ${periodLabel}`}
+                        >
+                          <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                        </Button>
+                      </div>
+                    );
+                  })}
                 </div>
                 <Button onClick={addFlow} variant="outline" className="w-full border-dashed mt-2">
                   <Plus className="mr-2 h-4 w-4" /> {t("cashFlow.addPeriod")}
@@ -289,8 +283,13 @@ export default function CashFlowPage() {
                       </CardHeader>
                       <CardContent className="flex-1 w-full min-h-0">
                         <ClientOnlyChart>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={chartData} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
+                          {({ width, height }) => (
+                            <BarChart
+                              width={width}
+                              height={height}
+                              data={chartData}
+                              margin={{ top: 12, right: 12, left: 0, bottom: 0 }}
+                            >
                               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                               <XAxis
                                 dataKey="period"
@@ -323,7 +322,7 @@ export default function CashFlowPage() {
                                 ))}
                               </Bar>
                             </BarChart>
-                          </ResponsiveContainer>
+                          )}
                         </ClientOnlyChart>
                       </CardContent>
                     </Card>

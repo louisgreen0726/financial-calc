@@ -13,6 +13,9 @@ import { ValidationError } from "@/components/ui/error-display";
 import { formatCurrency } from "@/lib/utils";
 import { ResultActions } from "@/components/result-actions";
 import { parseOptionalNumber } from "@/lib/input-utils";
+import { useCalculationHistory } from "@/hooks/use-calculation-history";
+import { useHistoryRecorder } from "@/hooks/use-history-recorder";
+import { HistoryPanel } from "@/components/history-panel";
 
 interface ValidationError {
   field: string;
@@ -38,6 +41,13 @@ function makeMacroActionConfig(config: MacroActionConfig): MacroActionConfig {
 export default function MacroPage() {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState("inflation");
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const { addToHistory } = useCalculationHistory({ page: "macro" });
+
+  const updateField = (setter: (value: string) => void) => (nextValue: string) => {
+    setHasInteracted(true);
+    setter(nextValue);
+  };
 
   // Inflation Rate Calculator
   const [startPrice, setStartPrice] = useState<string>("100");
@@ -296,11 +306,122 @@ export default function MacroPage() {
     toCPI,
   ]);
 
+  const macroHistoryEntry = useMemo<{
+    inputs: Record<string, number | string>;
+    result: number;
+    label: string;
+  }>(() => {
+    if (!macroActionConfig) {
+      return { inputs: {} as Record<string, number | string>, result: Number.NaN, label: "" };
+    }
+
+    if (activeTab === "inflation" && infResult !== null) {
+      return {
+        inputs: { calculator: activeTab, startPrice, endPrice, years: infYears },
+        result: infResult * 100,
+        label: t("macro.inflation.rate"),
+      };
+    }
+
+    if (activeTab === "purchasingPower" && ppResult !== null) {
+      return {
+        inputs: { calculator: activeTab, amount: ppAmount, inflation: ppRate, years: ppYears },
+        result: ppResult,
+        label: t("macro.purchasingPower.futureValue"),
+      };
+    }
+
+    if (activeTab === "realRate" && realResult !== null) {
+      return {
+        inputs: { calculator: activeTab, nominalRate, inflation: realInfRate },
+        result: realResult * 100,
+        label: t("macro.realRate.real"),
+      };
+    }
+
+    if (activeTab === "cpiAdjust" && cpiResult !== null) {
+      return {
+        inputs: { calculator: activeTab, amount: cpiAmount, fromCPI, toCPI },
+        result: cpiResult,
+        label: t("macro.cpiAdjust.adjusted"),
+      };
+    }
+
+    if (activeTab === "ppp" && pppResult !== null) {
+      return {
+        inputs: { calculator: activeTab, domesticPrice, foreignPrice },
+        result: pppResult,
+        label: t("macro.ppp.rate"),
+      };
+    }
+
+    return { inputs: {} as Record<string, number | string>, result: Number.NaN, label: "" };
+  }, [
+    activeTab,
+    cpiAmount,
+    cpiResult,
+    domesticPrice,
+    endPrice,
+    foreignPrice,
+    fromCPI,
+    infResult,
+    infYears,
+    macroActionConfig,
+    nominalRate,
+    ppAmount,
+    ppRate,
+    ppResult,
+    ppYears,
+    pppResult,
+    realInfRate,
+    realResult,
+    startPrice,
+    t,
+    toCPI,
+  ]);
+
+  useHistoryRecorder({
+    addToHistory,
+    inputs: macroHistoryEntry.inputs,
+    result: macroHistoryEntry.result,
+    label: macroHistoryEntry.label,
+    enabled: hasInteracted && macroActionConfig !== null,
+  });
+
+  const restoreMacroInputs = (inputs: Record<string, number | string>) => {
+    if (typeof inputs.calculator === "string") {
+      setActiveTab(inputs.calculator);
+    }
+    if (inputs.startPrice !== undefined) setStartPrice(String(inputs.startPrice));
+    if (inputs.endPrice !== undefined) setEndPrice(String(inputs.endPrice));
+    if (inputs.years !== undefined) {
+      setInfYears(String(inputs.years));
+      setPpYears(String(inputs.years));
+    }
+    if (inputs.amount !== undefined) {
+      setPpAmount(String(inputs.amount));
+      setCpiAmount(String(inputs.amount));
+    }
+    if (inputs.inflation !== undefined) {
+      setPpRate(String(inputs.inflation));
+      setRealInfRate(String(inputs.inflation));
+    }
+    if (inputs.nominalRate !== undefined) setNominalRate(String(inputs.nominalRate));
+    if (inputs.fromCPI !== undefined) setFromCPI(String(inputs.fromCPI));
+    if (inputs.toCPI !== undefined) setToCPI(String(inputs.toCPI));
+    if (inputs.domesticPrice !== undefined) setDomesticPrice(String(inputs.domesticPrice));
+    if (inputs.foreignPrice !== undefined) setForeignPrice(String(inputs.foreignPrice));
+    setHasInteracted(true);
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("macro.title")}</h1>
-        <p className="text-muted-foreground mt-2">{t("macro.subtitle")}</p>
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("macro.title")}</h1>
+          <p className="text-muted-foreground mt-2">{t("macro.subtitle")}</p>
+        </div>
+        <HistoryPanel page="macro" onRestore={restoreMacroInputs} />
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -364,7 +485,7 @@ export default function MacroPage() {
                     id="macro-inflation-start"
                     type="number"
                     value={startPrice}
-                    onChange={(e) => setStartPrice(e.target.value)}
+                    onChange={(e) => updateField(setStartPrice)(e.target.value)}
                     min="0"
                     step="0.01"
                   />
@@ -376,7 +497,7 @@ export default function MacroPage() {
                     id="macro-inflation-end"
                     type="number"
                     value={endPrice}
-                    onChange={(e) => setEndPrice(e.target.value)}
+                    onChange={(e) => updateField(setEndPrice)(e.target.value)}
                     min="0"
                     step="0.01"
                   />
@@ -388,7 +509,7 @@ export default function MacroPage() {
                     id="macro-inflation-years"
                     type="number"
                     value={infYears}
-                    onChange={(e) => setInfYears(e.target.value)}
+                    onChange={(e) => updateField(setInfYears)(e.target.value)}
                     min="0"
                     step="0.1"
                   />
@@ -432,7 +553,7 @@ export default function MacroPage() {
                     id="macro-pp-amount"
                     type="number"
                     value={ppAmount}
-                    onChange={(e) => setPpAmount(e.target.value)}
+                    onChange={(e) => updateField(setPpAmount)(e.target.value)}
                     min="0"
                     step="0.01"
                   />
@@ -444,7 +565,7 @@ export default function MacroPage() {
                     id="macro-pp-rate"
                     type="number"
                     value={ppRate}
-                    onChange={(e) => setPpRate(e.target.value)}
+                    onChange={(e) => updateField(setPpRate)(e.target.value)}
                     step="0.01"
                   />
                   <ValidationError error={ppErrors.find((e) => e.field === "rate")?.message ?? null} />
@@ -455,7 +576,7 @@ export default function MacroPage() {
                     id="macro-pp-years"
                     type="number"
                     value={ppYears}
-                    onChange={(e) => setPpYears(e.target.value)}
+                    onChange={(e) => updateField(setPpYears)(e.target.value)}
                     min="0"
                     step="0.1"
                   />
@@ -511,7 +632,7 @@ export default function MacroPage() {
                     id="macro-real-nominal"
                     type="number"
                     value={nominalRate}
-                    onChange={(e) => setNominalRate(e.target.value)}
+                    onChange={(e) => updateField(setNominalRate)(e.target.value)}
                     step="0.01"
                   />
                   <ValidationError error={realRateErrors.find((e) => e.field === "rate")?.message ?? null} />
@@ -522,7 +643,7 @@ export default function MacroPage() {
                     id="macro-real-inflation"
                     type="number"
                     value={realInfRate}
-                    onChange={(e) => setRealInfRate(e.target.value)}
+                    onChange={(e) => updateField(setRealInfRate)(e.target.value)}
                     step="0.01"
                   />
                   <ValidationError error={realRateErrors.find((e) => e.field === "rate")?.message ?? null} />
@@ -565,7 +686,7 @@ export default function MacroPage() {
                     id="macro-cpi-amount"
                     type="number"
                     value={cpiAmount}
-                    onChange={(e) => setCpiAmount(e.target.value)}
+                    onChange={(e) => updateField(setCpiAmount)(e.target.value)}
                     min="0"
                     step="0.01"
                   />
@@ -579,7 +700,7 @@ export default function MacroPage() {
                     id="macro-cpi-from"
                     type="number"
                     value={fromCPI}
-                    onChange={(e) => setFromCPI(e.target.value)}
+                    onChange={(e) => updateField(setFromCPI)(e.target.value)}
                     min="0"
                     step="0.01"
                   />
@@ -593,7 +714,7 @@ export default function MacroPage() {
                     id="macro-cpi-to"
                     type="number"
                     value={toCPI}
-                    onChange={(e) => setToCPI(e.target.value)}
+                    onChange={(e) => updateField(setToCPI)(e.target.value)}
                     min="0"
                     step="0.01"
                   />
@@ -639,7 +760,7 @@ export default function MacroPage() {
                     id="macro-ppp-domestic"
                     type="number"
                     value={domesticPrice}
-                    onChange={(e) => setDomesticPrice(e.target.value)}
+                    onChange={(e) => updateField(setDomesticPrice)(e.target.value)}
                     min="0"
                     step="0.01"
                   />
@@ -653,7 +774,7 @@ export default function MacroPage() {
                     id="macro-ppp-foreign"
                     type="number"
                     value={foreignPrice}
-                    onChange={(e) => setForeignPrice(e.target.value)}
+                    onChange={(e) => updateField(setForeignPrice)(e.target.value)}
                     min="0"
                     step="0.01"
                   />

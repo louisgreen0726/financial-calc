@@ -47,6 +47,16 @@ describe("useValidation", () => {
     expect(result.current.error).toBeNull();
   });
 
+  it("rejects partial numeric strings", () => {
+    const { result } = renderHook(() => useValidation());
+
+    act(() => {
+      result.current.validate("42abc");
+    });
+
+    expect(result.current.error).toBe("Please enter a valid number");
+  });
+
   it("clears error on clearError", () => {
     const { result } = renderHook(() => useValidation({ required: true }));
 

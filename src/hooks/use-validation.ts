@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { parseOptionalNumber } from "@/lib/input-utils";
 
 interface ValidationResult {
   valid: boolean;
@@ -33,15 +34,10 @@ export function useValidation(options: UseValidationOptions = {}) {
       }
 
       // Parse number
-      const num = parseFloat(value);
-      if (isNaN(num)) {
+      const num = parseOptionalNumber(value);
+      if (num === null) {
         setError("Please enter a valid number");
         return { valid: false, error: "Please enter a valid number" };
-      }
-
-      if (!isFinite(num)) {
-        setError("Number is too large or too small");
-        return { valid: false, error: "Number is too large or too small" };
       }
 
       // Check negative
@@ -94,11 +90,9 @@ export function useFormValidation() {
         error = "This field is required";
       }
     } else {
-      const num = parseFloat(value);
-      if (isNaN(num)) {
+      const num = parseOptionalNumber(value);
+      if (num === null) {
         error = "Please enter a valid number";
-      } else if (!isFinite(num)) {
-        error = "Number is too large or too small";
       } else if (!allowNegative && num < 0) {
         error = "Value cannot be negative";
       } else if (!allowZero && num === 0) {
@@ -127,11 +121,9 @@ export function useFormValidation() {
           error = "This field is required";
         }
       } else {
-        const num = parseFloat(value);
-        if (isNaN(num)) {
+        const num = parseOptionalNumber(value);
+        if (num === null) {
           error = "Please enter a valid number";
-        } else if (!isFinite(num)) {
-          error = "Number is too large or too small";
         } else if (!allowNegative && num < 0) {
           error = "Value cannot be negative";
         } else if (!allowZero && num === 0) {

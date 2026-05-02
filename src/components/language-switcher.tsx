@@ -1,14 +1,15 @@
 "use client";
 
 import React from "react";
-
+import { Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/lib/i18n";
-import { Languages } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const LanguageSwitcher = React.memo(function LanguageSwitcher() {
   const { language, setLanguage } = useLanguage();
+  const visibleLabel = language === "en" ? "EN / 中文" : "中文 / EN";
+  const nextLanguageLabel = language === "en" ? "Switch to Chinese" : "Switch to English";
 
   return (
     <Button
@@ -16,13 +17,13 @@ export const LanguageSwitcher = React.memo(function LanguageSwitcher() {
       size="sm"
       onClick={() => setLanguage(language === "en" ? "zh" : "en")}
       className={cn(
-        "h-9 px-3 gap-2 rounded-full transition-all hover:bg-primary/10 font-medium text-xs",
+        "h-9 gap-2 rounded-full px-3 text-xs font-medium transition-all hover:bg-primary/10",
         language === "zh" && "bg-primary/10 text-primary"
       )}
-      aria-label={language === "en" ? "Switch to Chinese" : "切换到英文"}
+      aria-label={`${visibleLabel} - ${nextLanguageLabel}`}
     >
       <Languages className="h-4 w-4" />
-      <span className="hidden sm:inline">{language === "en" ? "EN / 中文" : "中文 / EN"}</span>
+      <span className="hidden sm:inline">{visibleLabel}</span>
       <span className="sm:hidden">{language === "en" ? "中" : "EN"}</span>
     </Button>
   );

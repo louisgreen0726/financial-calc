@@ -18,6 +18,7 @@ type SidebarProps = React.HTMLAttributes<HTMLDivElement>;
 export const Sidebar = React.memo(function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname();
   const { t } = useLanguage();
+  const normalizedPathname = pathname.replace(/\/$/, "") || "/";
 
   // Search query state
   const [query, setQuery] = useState("");
@@ -62,7 +63,7 @@ export const Sidebar = React.memo(function Sidebar({ className }: SidebarProps) 
         <div className="mx-4 mt-2 relative group">
           <div className="absolute -inset-1 bg-gradient-to-r from-primary to-blue-600 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-500"></div>
           <div className="relative p-3 rounded-2xl bg-background/80 backdrop-blur-sm border border-white/10 shadow-sm flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-3 w-full">
+            <Link href="/" prefetch={false} className="flex items-center gap-3 w-full">
               <div className="p-2 bg-gradient-to-br from-primary to-blue-600 rounded-xl shadow-inner group-hover:scale-105 transition-transform duration-300">
                 <Calculator className="h-5 w-5 text-white" />
               </div>
@@ -79,6 +80,8 @@ export const Sidebar = React.memo(function Sidebar({ className }: SidebarProps) 
           <div className="relative group">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
             <Input
+              id="calculator-search"
+              name="calculator-search"
               aria-label={t("sidebar.search")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -118,7 +121,7 @@ export const Sidebar = React.memo(function Sidebar({ className }: SidebarProps) 
                         >
                           <div className="space-y-1">
                             {section.items.map((item) => {
-                              const isActive = pathname === item.href;
+                              const isActive = (item.href.replace(/\/$/, "") || "/") === normalizedPathname;
                               return (
                                 <Button
                                   key={item.href}
@@ -131,7 +134,11 @@ export const Sidebar = React.memo(function Sidebar({ className }: SidebarProps) 
                                       : "text-muted-foreground hover:bg-muted/50 hover:text-foreground border border-transparent"
                                   )}
                                 >
-                                  <Link href={item.href} className="flex items-center w-full relative z-10">
+                                  <Link
+                                    href={item.href}
+                                    prefetch={false}
+                                    className="flex items-center w-full relative z-10"
+                                  >
                                     <item.icon
                                       className={cn(
                                         "mr-3 h-4 w-4 transition-transform duration-300 group-hover:scale-110",

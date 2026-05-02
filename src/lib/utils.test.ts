@@ -97,7 +97,7 @@ describe("validateNumber", () => {
   it("rejects Infinity", () => {
     const result = validateNumber("Infinity");
     expect(result.valid).toBe(false);
-    expect(result.error).toBe("Number is too large");
+    expect(result.error).toBe("Please enter a valid number");
   });
 });
 

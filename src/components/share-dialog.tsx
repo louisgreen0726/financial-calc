@@ -7,6 +7,8 @@ import { useLanguage } from "@/lib/i18n";
 import { toast } from "sonner";
 import { Share2, Link2, FileText, Copy, Download, Check } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
+import { copyTextToClipboard } from "@/lib/clipboard";
+import { logger } from "@/lib/logger";
 
 interface ShareDialogProps {
   open: boolean;
@@ -74,11 +76,12 @@ export function ShareDialog({ open, onOpenChange, title, results, inputs, shareU
 
   const copyToClipboard = async (text: string, key: string) => {
     try {
-      await navigator.clipboard.writeText(text);
+      await copyTextToClipboard(text);
       setCopied(key);
       toast.success(t("common.copySuccess") || "Copied!");
       setTimeout(() => setCopied(null), 2000);
-    } catch {
+    } catch (error) {
+      logger.error("Failed to copy share payload:", error);
       toast.error(t("common.copyError") || "Failed to copy");
     }
   };

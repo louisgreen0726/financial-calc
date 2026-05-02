@@ -32,7 +32,7 @@
   --color-card: hsl(var(--card));
   --color-card-foreground: hsl(var(--card-foreground));
 
-  --radius: 0.75rem; /* Increased radius for modern look */
+  --radius: 0.5rem;
 
   --color-chart-1: hsl(var(--chart-1));
   --color-chart-2: hsl(var(--chart-2));
@@ -53,7 +53,7 @@
   --popover-foreground: 222 47% 11%;
 
   /* Vibrant Teal Primary */
-  --primary: 173 80% 40%;
+  --primary: 173 86% 28%;
   --primary-foreground: 210 40% 98%;
 
   --secondary: 214 32% 91%;
@@ -71,15 +71,15 @@
 
   --border: 214.3 31.8% 91.4%;
   --input: 214.3 31.8% 91.4%;
-  --ring: 173 80% 40%;
+  --ring: 173 86% 28%;
 
-  --radius: 0.75rem;
+  --radius: 0.5rem;
 
-  --chart-1: 173 80% 40%;
-  --chart-2: 210 70% 55%;
-  --chart-3: 25 80% 55%;
-  --chart-4: 280 65% 60%;
-  --chart-5: 340 75% 55%;
+  --chart-1: 173 86% 28%;
+  --chart-2: 210 84% 36%;
+  --chart-3: 25 78% 42%;
+  --chart-4: 276 52% 42%;
+  --chart-5: 340 72% 42%;
 }
 
 /* Premium FinTech Dark Theme (Deep Slate/Navy with Neon Teal) */
@@ -139,6 +139,54 @@
   }
 }
 
+.app-shell {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--background)) 0%,
+    hsl(173 72% 96%) 38%,
+    hsl(210 84% 97%) 68%,
+    hsl(276 52% 97%) 100%
+  );
+  isolation: isolate;
+}
+
+.app-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(115deg, hsl(var(--primary) / 0.14), transparent 42%),
+    linear-gradient(305deg, hsl(210 84% 36% / 0.12), transparent 46%),
+    linear-gradient(180deg, transparent 0%, hsl(var(--background) / 0.64) 100%);
+}
+
+.dark .app-shell {
+  background: linear-gradient(
+    135deg,
+    hsl(222 47% 8%) 0%,
+    hsl(212 48% 12%) 44%,
+    hsl(173 48% 9%) 72%,
+    hsl(276 36% 10%) 100%
+  );
+}
+
+.dark .app-shell::before {
+  background:
+    linear-gradient(115deg, hsl(var(--primary) / 0.16), transparent 44%),
+    linear-gradient(305deg, hsl(210 70% 60% / 0.12), transparent 48%),
+    linear-gradient(180deg, hsl(222 47% 8% / 0.2) 0%, hsl(222 47% 8% / 0.72) 100%);
+}
+
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-blue-600 to-violet-600;
+}
+
+.dark .text-gradient {
+  @apply from-primary via-sky-300 to-violet-300;
+}
+
 /* Base global overrides for Shadcn UI elements to look premium */
 @layer components {
   /* Make cards float and have glass properties */
@@ -165,32 +213,23 @@
   }
 }
 
-/* Typography scale utilities */
-.text-gradient {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-500;
-}
-
-.text-gradient-alt {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500;
-}
-
 .font-h1 {
   font-size: 1.875rem;
   line-height: 2.25rem;
   font-weight: 700;
-  letter-spacing: -0.025em;
+  letter-spacing: 0;
 }
 .font-h2 {
   font-size: 1.5rem;
   line-height: 2rem;
   font-weight: 600;
-  letter-spacing: -0.015em;
+  letter-spacing: 0;
 }
 .font-h3 {
   font-size: 1.25rem;
   line-height: 1.75rem;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 .font-h4 {
   font-size: 1.125rem;
@@ -240,68 +279,6 @@ textarea,
   transition-duration: 200ms;
 }
 
-/* Background animated glow orbs */
-.bg-glow-orb {
-  position: fixed;
-  border-radius: 50%;
-  filter: blur(120px);
-  opacity: 0.15;
-  z-index: 0;
-  pointer-events: none;
-  animation: float 20s infinite ease-in-out alternate;
-}
-.dark .bg-glow-orb {
-  opacity: 0.25;
-}
-.bg-glow-orb-1 {
-  width: 600px;
-  height: 600px;
-  background: hsl(var(--primary));
-  top: -200px;
-  left: -200px;
-}
-.bg-glow-orb-2 {
-  width: 500px;
-  height: 500px;
-  background: hsl(280 65% 60%);
-  bottom: -150px;
-  right: -100px;
-  animation-delay: -10s;
-}
-
-@keyframes float {
-  0% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(50px, 30px) scale(1.1);
-  }
-  100% {
-    transform: translate(-30px, -50px) scale(0.9);
-  }
-}
-
-/* Mobile: reduce orb size and disable animation */
-@media (max-width: 768px) {
-  .bg-glow-orb {
-    filter: blur(48px);
-    animation: none;
-    opacity: 0.07;
-  }
-  .bg-glow-orb-1 {
-    width: 300px;
-    height: 300px;
-    top: -100px;
-    left: -100px;
-  }
-  .bg-glow-orb-2 {
-    width: 250px;
-    height: 250px;
-    bottom: -75px;
-    right: -50px;
-  }
-}
-
 @media (max-width: 640px) {
   .glass-panel,
   .card,
@@ -312,9 +289,6 @@ textarea,
 
 /* Respect prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
-  .bg-glow-orb {
-    animation: none;
-  }
   *,
   *::before,
   *::after {
@@ -331,8 +305,7 @@ textarea,
   footer,
   button,
   [role="button"],
-  .no-print,
-  .bg-glow-orb {
+  .no-print {
     display: none !important;
   }
   body,

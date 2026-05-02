@@ -11,8 +11,9 @@ export function ServiceWorkerRegistration() {
   useEffect(() => {
     if ("serviceWorker" in navigator && navigator.serviceWorker) {
       const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-      const serviceWorkerUrl = `${basePath}/sw.js` || "/sw.js";
-      const scope = `${basePath}/` || "/";
+      const normalizedBasePath = basePath.replace(/\/$/, "");
+      const serviceWorkerUrl = `${normalizedBasePath}/sw.js`;
+      const scope = `${normalizedBasePath || ""}/`;
 
       navigator.serviceWorker
         .register(serviceWorkerUrl, { scope })

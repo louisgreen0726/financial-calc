@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { PENDING_RESTORE_KEY, STORAGE_PREFIX } from "@/lib/constants";
 import { safeGetJSON, safeGetSessionJSON, safeRemoveSessionItem, safeSetJSON } from "@/lib/storage";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 interface HistoryPanelProps {
   page: string;
@@ -30,6 +31,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [batchMode, setBatchMode] = useState(false);
+  const [clearDialogOpen, setClearDialogOpen] = useState(false);
 
   // Favorites from localStorage
   const [favorites, setFavorites] = useState<Set<string>>(() => {
@@ -104,12 +106,10 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
   }, [onRestore, page]);
 
   const handleClear = () => {
-    if (window.confirm(t("history.confirmClear") || "Clear all history?")) {
-      clearHistory();
-      setSelectedIds(new Set());
-      setBatchMode(false);
-      toast.success(t("history.cleared"));
-    }
+    clearHistory();
+    setSelectedIds(new Set());
+    setBatchMode(false);
+    toast.success(t("history.cleared"));
   };
 
   const toggleSelect = (id: string) => {
@@ -213,7 +213,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={handleClear}
+                      onClick={() => setClearDialogOpen(true)}
                       title={t("history.clearAll")}
                       aria-label={t("history.clearAll")}
                     >
@@ -351,6 +351,15 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
           </motion.div>
         )}
       </AnimatePresence>
+      <ConfirmDialog
+        open={clearDialogOpen}
+        onOpenChange={setClearDialogOpen}
+        title={t("history.confirmClear") || "Clear all history?"}
+        description={t("history.noHistoryDesc")}
+        confirmLabel={t("history.clearAll")}
+        destructive
+        onConfirm={handleClear}
+      />
     </>
   );
 }

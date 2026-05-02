@@ -104,6 +104,7 @@ npm run lint
 npx tsc --noEmit
 npm run test
 npm run build
+npm run preview
 npm run format
 npm run format:check
 ```
@@ -127,8 +128,10 @@ npm run format:check
 ## 构建与部署说明
 
 - `next.config.ts` 使用 `output: "export"`
+- 静态路由使用 trailing slash 输出，更适合静态托管环境
 - 生产构建结果输出到 `out/`
 - 项目目标部署方式是静态站点
+- `npm run preview` / `npm start` 会预览构建后的 `out/` 目录；本项目不会使用 `next start` 作为生产启动方式
 - 生产环境不依赖服务端 API runtime
 - service worker 为手动接入，主要文件为：
   - `public/sw.js`

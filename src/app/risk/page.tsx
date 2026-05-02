@@ -1,19 +1,23 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Finance } from "@/lib/finance-math"; // Assuming normPDF/CDF are here
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrency } from "@/lib/utils";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine } from "recharts";
 import { useLanguage } from "@/lib/i18n";
 import { ResultShell } from "@/components/result-shell";
 import { ResultActions } from "@/components/result-actions";
 import { parseOptionalNumber } from "@/lib/input-utils";
 import { RiskInputSchema } from "@/lib/validation";
 import { ErrorDisplay, ValidationError } from "@/components/ui/error-display";
+import { useCalculationHistory } from "@/hooks/use-calculation-history";
+import { useHistoryRecorder } from "@/hooks/use-history-recorder";
+import { HistoryPanel } from "@/components/history-panel";
+import { ClientOnlyChart } from "@/components/client-only-chart";
 
 export default function RiskPage() {
   const { t } = useLanguage();
@@ -21,7 +25,13 @@ export default function RiskPage() {
   const [volatility, setVolatility] = useState("15"); // Annual Vol %
   const [confidence, setConfidence] = useState("0.95");
   const [days, setDays] = useState("10"); // Horizon
-  const [chartReady, setChartReady] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const { addToHistory } = useCalculationHistory({ page: "risk" });
+
+  const updateField = (setter: (value: string) => void) => (nextValue: string) => {
+    setHasInteracted(true);
+    setter(nextValue);
+  };
 
   const parsedInputs = useMemo(
     () => ({
@@ -47,11 +57,6 @@ export default function RiskPage() {
   }, [parsedInputs]);
 
   const hasValidationErrors = Object.keys(validation).length > 0;
-
-  useEffect(() => {
-    const frame = window.requestAnimationFrame(() => setChartReady(true));
-    return () => window.cancelAnimationFrame(frame);
-  }, []);
 
   const metrics = useMemo(() => {
     if (hasValidationErrors) {
@@ -113,6 +118,14 @@ export default function RiskPage() {
     return data;
   }, [hasValidationErrors, metrics, parsedInputs]);
 
+  useHistoryRecorder({
+    addToHistory,
+    inputs: { value, volatility, confidence, days },
+    result: metrics.VaR_val,
+    label: t("risk.var"),
+    enabled: hasInteracted && !hasValidationErrors,
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -120,6 +133,16 @@ export default function RiskPage() {
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("risk.title")}</h1>
           <p className="text-muted-foreground mt-2">{t("risk.subtitle")}</p>
         </div>
+        <HistoryPanel
+          page="risk"
+          onRestore={(inputs) => {
+            if (inputs.value !== undefined) setValue(String(inputs.value));
+            if (inputs.volatility !== undefined) setVolatility(String(inputs.volatility));
+            if (inputs.confidence !== undefined) setConfidence(String(inputs.confidence));
+            if (inputs.days !== undefined) setDays(String(inputs.days));
+            setHasInteracted(true);
+          }}
+        />
       </div>
 
       <div id="risk-report-content" className="grid gap-6 lg:grid-cols-12">
@@ -131,7 +154,13 @@ export default function RiskPage() {
             {hasValidationErrors && <ErrorDisplay message={Object.values(validation)[0] as string} variant="warning" />}
             <div className="space-y-2">
               <Label htmlFor="risk-value">{t("risk.val")}</Label>
-              <Input id="risk-value" value={value} onChange={(e) => setValue(e.target.value)} type="number" min="0" />
+              <Input
+                id="risk-value"
+                value={value}
+                onChange={(e) => updateField(setValue)(e.target.value)}
+                type="number"
+                min="0"
+              />
               <ValidationError error={validation.value as string | null} />
             </div>
             <div className="space-y-2">
@@ -139,7 +168,7 @@ export default function RiskPage() {
               <Input
                 id="risk-volatility"
                 value={volatility}
-                onChange={(e) => setVolatility(e.target.value)}
+                onChange={(e) => updateField(setVolatility)(e.target.value)}
                 type="number"
                 min="0"
               />
@@ -147,13 +176,21 @@ export default function RiskPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="risk-days">{t("risk.horizon")}</Label>
-              <Input id="risk-days" value={days} onChange={(e) => setDays(e.target.value)} type="number" min="1" />
+              <Input
+                id="risk-days"
+                value={days}
+                onChange={(e) => updateField(setDays)(e.target.value)}
+                type="number"
+                min="1"
+              />
               <ValidationError error={validation.days as string | null} />
             </div>
             <div className="space-y-2">
-              <Label id="risk-confidence-label">{t("risk.conf")}</Label>
-              <Select value={confidence} onValueChange={setConfidence}>
-                <SelectTrigger aria-labelledby="risk-confidence-label">
+              <Label id="risk-confidence-label" htmlFor="risk-confidence">
+                {t("risk.conf")}
+              </Label>
+              <Select value={confidence} onValueChange={updateField(setConfidence)}>
+                <SelectTrigger id="risk-confidence" aria-labelledby="risk-confidence-label">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -230,9 +267,9 @@ export default function RiskPage() {
                   <CardDescription>{t("risk.distDesc")}</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 min-h-0">
-                  {chartReady ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={chartData}>
+                  <ClientOnlyChart>
+                    {({ width, height }) => (
+                      <AreaChart width={width} height={height} data={chartData}>
                         <defs>
                           <linearGradient id="colorProb" x1="0" y1="0" x2="1" y2="0">
                             <stop offset="0%" stopColor="hsl(var(--destructive))" stopOpacity={0.5} />
@@ -287,10 +324,8 @@ export default function RiskPage() {
                           label={{ value: "VaR", fill: "hsl(var(--destructive))", fontSize: 11 }}
                         />
                       </AreaChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="h-full w-full" aria-hidden="true" />
-                  )}
+                    )}
+                  </ClientOnlyChart>
                 </CardContent>
               </Card>
             }

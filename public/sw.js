@@ -4,24 +4,24 @@ const RUNTIME_CACHE = `financial-calc-runtime-${VERSION}`;
 
 const BASE_PATH = new URL(self.registration.scope).pathname.replace(/\/$/, "");
 const withBasePath = (path) => {
-  if (path === "/") return BASE_PATH || "/";
+  if (path === "/") return `${BASE_PATH || ""}/`;
   return `${BASE_PATH}${path}`;
 };
 
 const APP_SHELL = [
   "/",
-  "/tvm",
-  "/bonds",
-  "/cash-flow",
-  "/equity",
-  "/loans",
-  "/macro",
-  "/options",
-  "/portfolio",
-  "/risk",
-  "/history",
-  "/settings",
-  "/help",
+  "/tvm/",
+  "/bonds/",
+  "/cash-flow/",
+  "/equity/",
+  "/loans/",
+  "/macro/",
+  "/options/",
+  "/portfolio/",
+  "/risk/",
+  "/history/",
+  "/settings/",
+  "/help/",
   "/manifest.json",
   "/favicon.ico",
   "/icon.svg",
@@ -39,7 +39,9 @@ function isStaticAsset(request) {
 }
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(STATIC_CACHE).then((cache) => cache.addAll(APP_SHELL)));
+  event.waitUntil(
+    caches.open(STATIC_CACHE).then((cache) => Promise.all(APP_SHELL.map((path) => cache.add(path).catch(() => null))))
+  );
   self.skipWaiting();
 });
 
@@ -92,7 +94,11 @@ self.addEventListener("fetch", (event) => {
           if (cachedPage) return cachedPage;
           const cachedPath = await caches.match(url.pathname);
           if (cachedPath) return cachedPath;
-          return caches.match("/");
+          if (!url.pathname.endsWith("/")) {
+            const cachedTrailingSlashPath = await caches.match(`${url.pathname}/`);
+            if (cachedTrailingSlashPath) return cachedTrailingSlashPath;
+          }
+          return caches.match(withBasePath("/"));
         })
     );
     return;
