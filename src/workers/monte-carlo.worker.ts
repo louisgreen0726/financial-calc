@@ -1,6 +1,13 @@
 // Monte Carlo worker: computes Efficient Frontier via random portfolio sampling.
 // Uses actual asset expected returns, risks, and pairwise correlation.
 
+import {
+  calculatePortfolioPoint,
+  makeRandomWeights,
+  summarizePortfolioSimulations,
+  type PortfolioPoint,
+} from "@/lib/portfolio-math";
+
 self.onmessage = (event: MessageEvent) => {
   try {
     const payload = event.data as {
@@ -19,38 +26,12 @@ self.onmessage = (event: MessageEvent) => {
       return;
     }
 
-    const n = assets.length;
-    const returns = assets.map((a) => a.return); // in %
-    const risks = assets.map((a) => a.risk); // std dev in %
-
-    // Build covariance matrix: Cov(i,j) = rho * sigma_i * sigma_j  (i≠j), sigma_i^2 (i==j)
-    const cov: number[][] = Array.from({ length: n }, (_, i) =>
-      Array.from({ length: n }, (_, j) => (i === j ? risks[i] * risks[i] : correlation * risks[i] * risks[j]))
-    );
-
-    const simulations: { ret: number; risk: number; sharpe: number; weights: number[] }[] = [];
+    const simulations: PortfolioPoint[] = [];
     const step = Math.max(1, Math.floor(simCount / 20));
 
     for (let i = 0; i < simCount; i++) {
-      // Random weights summing to 1 (Dirichlet-like)
-      const raw = assets.map(() => -Math.log(Math.random() + 1e-15));
-      const sum = raw.reduce((a, b) => a + b, 0) || 1;
-      const weights = raw.map((w) => w / sum);
-
-      // Weighted portfolio return (%)
-      const ret = weights.reduce((acc, w, k) => acc + w * returns[k], 0);
-
-      // Portfolio variance = w^T * Cov * w
-      let variance = 0;
-      for (let a = 0; a < n; a++) {
-        for (let b = 0; b < n; b++) {
-          variance += weights[a] * weights[b] * cov[a][b];
-        }
-      }
-      const risk = Math.sqrt(Math.max(0, variance));
-      const sharpe = risk > 0 ? (ret - rf) / risk : 0;
-
-      simulations.push({ ret, risk, sharpe, weights });
+      const weights = makeRandomWeights(assets.length);
+      simulations.push(calculatePortfolioPoint(assets, weights, correlation, rf));
 
       if (step > 0 && i % step === 0) {
         const progress = Math.round((i / simCount) * 100);
@@ -58,20 +39,7 @@ self.onmessage = (event: MessageEvent) => {
       }
     }
 
-    // Max Sharpe portfolio
-    let optimal: (typeof simulations)[0] | null = null;
-    let bestSharpe = -Infinity;
-    for (const s of simulations) {
-      if (s.sharpe > bestSharpe) {
-        bestSharpe = s.sharpe;
-        optimal = s;
-      }
-    }
-
-    // Min volatility portfolio
-    const minVol = simulations.reduce((min, s) => (s.risk < (min?.risk ?? Infinity) ? s : min), simulations[0] ?? null);
-
-    self.postMessage({ type: "result", data: { simulations, optimal, minVol } });
+    self.postMessage({ type: "result", data: summarizePortfolioSimulations(simulations) });
   } catch (e) {
     self.postMessage({ type: "error", data: (e as Error).message });
   }

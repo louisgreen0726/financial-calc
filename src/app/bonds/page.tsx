@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrency } from "@/lib/utils";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { useLanguage } from "@/lib/i18n";
 import { SensitivityHeatmap } from "@/components/sensitivity-heatmap";
 
@@ -348,8 +348,13 @@ export default function BondsPage() {
                     </CardHeader>
                     <CardContent className="flex-1 min-h-0">
                       <ClientOnlyChart>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={chartData} margin={{ top: 12, right: 12, left: 0, bottom: 8 }}>
+                        {({ width, height }) => (
+                          <LineChart
+                            width={width}
+                            height={height}
+                            data={chartData}
+                            margin={{ top: 12, right: 12, left: 0, bottom: 8 }}
+                          >
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                             <XAxis
                               dataKey="yield"
@@ -378,7 +383,7 @@ export default function BondsPage() {
                               activeDot={{ r: 6 }}
                             />
                           </LineChart>
-                        </ResponsiveContainer>
+                        )}
                       </ClientOnlyChart>
                     </CardContent>
                   </Card>

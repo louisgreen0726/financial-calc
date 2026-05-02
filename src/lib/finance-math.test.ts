@@ -30,6 +30,10 @@ test("bondPrice matches a premium-bond benchmark", () => {
   expect(price).toBeCloseTo(1081.76, 2);
 });
 
+test("bondPrice handles zero-coupon bonds", () => {
+  expect(Finance.bondPrice(1000, 0, 2, 0.05, 1)).toBeCloseTo(907.0295, 4);
+});
+
 test("loan amortization schedule pays down to zero balance", () => {
   const schedule = Finance.amortizationSchedule(300000, 0.045 / 12, 30 * 12, "CPM");
   expect(schedule.length).toBe(360);
@@ -102,6 +106,11 @@ test("black scholes supports deterministic zero-volatility pricing", () => {
   expect(Finance.blackScholes("put", 95, 100, 1, 0, 0)).toBe(5);
 });
 
+test("black scholes supports discounted deterministic zero-volatility pricing", () => {
+  expect(Finance.blackScholes("call", 105, 100, 1, 0.05, 0)).toBeCloseTo(9.8771, 4);
+  expect(Finance.blackScholes("put", 95, 100, 1, 0.05, 0)).toBeCloseTo(0.1229, 4);
+});
+
 test("macro helpers reject singular negative inflation cases", () => {
   expect(Number.isNaN(Finance.purchasingPower(100, -1, 10))).toBe(true);
   expect(Number.isNaN(Finance.realInterestRate(0.05, -1))).toBe(true);
@@ -110,6 +119,10 @@ test("macro helpers reject singular negative inflation cases", () => {
 test("irr rejects cash flows without a sign change", () => {
   expect(Number.isNaN(Finance.irr([100, 200, 300]))).toBe(true);
   expect(Number.isNaN(Finance.irr([-100, -50, -25]))).toBe(true);
+});
+
+test("irr handles a break-even one-period project", () => {
+  expect(Finance.irr([-100, 100])).toBeCloseTo(0, 6);
 });
 
 test("npv treats the first cash flow as period zero", () => {
@@ -127,4 +140,9 @@ test("irr falls back to a bracketed solver when the initial guess is poor", () =
 test("rate falls back to a bracketed solver when the initial guess is poor", () => {
   const result = Finance.rate(36, -300, 9000, 0, 0, 9);
   expect(result).toBeCloseTo(0.0102075, 6);
+});
+
+test("annuity due helpers match explicit begin-period TVM calls", () => {
+  expect(Finance.annuityDuePV(0.01, 24, 50, 1000)).toBeCloseTo(Finance.pv(0.01, 24, 50, 1000, 1), 8);
+  expect(Finance.annuityDueFV(0.01, 24, 50, 1000)).toBeCloseTo(Finance.fv(0.01, 24, 50, 1000, 1), 8);
 });

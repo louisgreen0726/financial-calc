@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useExport } from "@/hooks/use-export";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 const FAVORITES_KEY = `${STORAGE_PREFIX}favorites`;
 
@@ -29,6 +30,7 @@ export default function HistoryPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [batchMode, setBatchMode] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
+  const [clearDialogOpen, setClearDialogOpen] = useState(false);
 
   const { exportToCSV } = useExport({ filename: "calculation-history" });
 
@@ -37,7 +39,7 @@ export default function HistoryPage() {
     const map: Record<string, string> = {};
     NAV_CONFIG.forEach((section) => {
       section.items.forEach((item) => {
-        const key = item.href.replace("/", "");
+        const key = item.href.replace(/^\/|\/$/g, "");
         map[key] = t(item.titleKey);
       });
     });
@@ -105,17 +107,15 @@ export default function HistoryPage() {
       inputs: item.inputs,
       timestamp: Date.now(),
     });
-    router.push(`/${item.page}`);
+    router.push(`/${item.page}/`);
     toast.success(t("history.restored"));
   };
 
   const handleClearAll = () => {
-    if (window.confirm(t("history.confirmClear") || "Clear all history?")) {
-      clearAllHistory();
-      setSelectedIds(new Set());
-      setBatchMode(false);
-      toast.success(t("history.cleared"));
-    }
+    clearAllHistory();
+    setSelectedIds(new Set());
+    setBatchMode(false);
+    toast.success(t("history.cleared"));
   };
 
   const toggleSelect = (id: string) => {
@@ -189,6 +189,8 @@ export default function HistoryPage() {
           <div className="relative flex-1 xl:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
+              id="history-search"
+              name="history-search"
               placeholder={t("history.searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -359,7 +361,7 @@ export default function HistoryPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={handleClearAll}
+            onClick={() => setClearDialogOpen(true)}
             className="gap-2 text-destructive hover:text-destructive"
           >
             <Trash2 className="h-4 w-4" />
@@ -390,6 +392,15 @@ export default function HistoryPage() {
           {renderHistoryList()}
         </Tabs>
       )}
+      <ConfirmDialog
+        open={clearDialogOpen}
+        onOpenChange={setClearDialogOpen}
+        title={t("history.confirmClear") || "Clear all history?"}
+        description={t("history.noHistoryDesc")}
+        confirmLabel={t("history.clearAll")}
+        destructive
+        onConfirm={handleClearAll}
+      />
     </div>
   );
 }

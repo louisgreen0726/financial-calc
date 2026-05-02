@@ -104,6 +104,7 @@ npm run lint
 npx tsc --noEmit
 npm run test
 npm run build
+npm run preview
 npm run format
 npm run format:check
 ```
@@ -127,8 +128,10 @@ npm run format:check
 ## Build and Deployment Notes
 
 - `next.config.ts` uses `output: "export"`
+- static routes are emitted with trailing slashes for cleaner static-hosting behavior
 - production output is generated into `out/`
 - the app is intended for static hosting
+- `npm run preview` / `npm start` serves the generated `out/` folder; `next start` is intentionally not used for this export-only app
 - there is **no server-side API runtime assumption** for production use
 - service worker behavior is manually wired through:
   - `public/sw.js`

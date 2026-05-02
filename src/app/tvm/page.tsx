@@ -24,6 +24,8 @@ import { ResponsiveDisclosure } from "@/components/responsive-disclosure";
 import { useLocaleFormat } from "@/hooks/use-locale-format";
 import { ResultShell } from "@/components/result-shell";
 import { ResultActions } from "@/components/result-actions";
+import { parseRequiredNumber } from "@/lib/input-utils";
+import { logger } from "@/lib/logger";
 
 type TVMTarget = "pv" | "fv" | "pmt" | "nper" | "rate";
 
@@ -166,12 +168,12 @@ function TVMPageContent() {
       return;
     }
 
-    const r = parseFloat(rate) / 100; // Convert percentage to decimal
-    const n = parseFloat(nper);
-    const p = parseFloat(pmt);
-    const pres = parseFloat(pv);
-    const fut = parseFloat(fv);
-    const paymentType = parseInt(type) as 0 | 1;
+    const r = parseRequiredNumber(rate) / 100; // Convert percentage to decimal
+    const n = parseRequiredNumber(nper);
+    const p = parseRequiredNumber(pmt);
+    const pres = parseRequiredNumber(pv);
+    const fut = parseRequiredNumber(fv);
+    const paymentType = type === "1" ? 1 : 0;
 
     let res = 0;
 
@@ -210,7 +212,7 @@ function TVMPageContent() {
 
         const stepData = {
           fv: {
-            formula: `FV = PV(1+r)^n + PMT ${SYMBOLS.multiply} [(1+r)^n - 1] / r`,
+            formula: `FV = -(PV(1+r)^n + PMT ${SYMBOLS.multiply} (1+r${SYMBOLS.multiply}type) ${SYMBOLS.multiply} [((1+r)^n - 1) / r])`,
             steps: [
               {
                 label: "Rate as decimal",
@@ -230,7 +232,7 @@ function TVMPageContent() {
             ],
           },
           pv: {
-            formula: `PV = FV / (1+r)^n + PMT ${SYMBOLS.multiply} [(1+r)^n - 1] / r`,
+            formula: `PV = -(FV + PMT ${SYMBOLS.multiply} (1+r${SYMBOLS.multiply}type) ${SYMBOLS.multiply} [((1+r)^n - 1) / r]) / (1+r)^n`,
             steps: [
               {
                 label: "Rate as decimal",
@@ -250,7 +252,7 @@ function TVMPageContent() {
             ],
           },
           pmt: {
-            formula: "PMT = (FV - PV(1+r)^n) / annuity_factor",
+            formula: `PMT = -(FV + PV(1+r)^n) / ((1+r${SYMBOLS.multiply}type) ${SYMBOLS.multiply} [((1+r)^n - 1) / r])`,
             steps: [
               {
                 label: "Rate as decimal",
@@ -288,7 +290,7 @@ function TVMPageContent() {
           rate: {
             formula: "Iterative Newton-Raphson approximation",
             steps: [
-              { label: "Initial guess", value: "2% per period" },
+              { label: "Initial guess", value: "10% per period" },
               { label: "NPV iteration", value: `Refine until NPV ${SYMBOLS.approximately} 0` },
               { label: "Annual rate", value: `${(res * 100).toFixed(4)}%`, formula: `rate ${SYMBOLS.multiply} 100` },
             ],
@@ -297,13 +299,13 @@ function TVMPageContent() {
 
         setCalcSteps({
           formula: stepData[target].formula,
-          inputs: { Rate: parseFloat(rate), Periods: n, PMT: p, PV: pres, FV: fut },
+          inputs: { Rate: parseRequiredNumber(rate), Periods: n, PMT: p, PV: pres, FV: fut },
           steps: stepData[target].steps,
           result: res,
         });
       }
     } catch (e) {
-      console.error(e);
+      logger.error("TVM calculation failed:", e);
       setCalculationError(t("tvm.runtimeError"));
       setResult(null);
     }
@@ -360,7 +362,9 @@ function TVMPageContent() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label id="tvm-target-label">{t("common.solveFor")}</Label>
+                <Label id="tvm-target-label" htmlFor="tvm-target">
+                  {t("common.solveFor")}
+                </Label>
                 <Select
                   value={target}
                   onValueChange={(v) => {
@@ -369,7 +373,7 @@ function TVMPageContent() {
                     setCalculationError(null);
                   }}
                 >
-                  <SelectTrigger aria-labelledby="tvm-target-label">
+                  <SelectTrigger id="tvm-target" aria-labelledby="tvm-target-label">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -383,9 +387,11 @@ function TVMPageContent() {
               </div>
 
               <div className="space-y-2">
-                <Label id="tvm-preset-label">{t("tvm.quickPreset")}</Label>
+                <Label id="tvm-preset-label" htmlFor="tvm-preset">
+                  {t("tvm.quickPreset")}
+                </Label>
                 <Select onValueChange={(value) => applyPreset(value as keyof typeof TVM_PRESETS)}>
-                  <SelectTrigger aria-labelledby="tvm-preset-label">
+                  <SelectTrigger id="tvm-preset" aria-labelledby="tvm-preset-label">
                     <SelectValue placeholder={t("tvm.chooseScenario")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -418,7 +424,13 @@ function TVMPageContent() {
                     )}
                   />
                   <ValidationError error={errors.rate && touchedFields.rate ? errors.rate : null} />
-                  <InputRangeHint min={0} max={100} unit="%" example="5" currentValue={parseFloat(rate)} />
+                  <InputRangeHint
+                    min={0}
+                    max={100}
+                    unit="%"
+                    example="5"
+                    currentValue={parseRequiredNumber(rate, Number.NaN)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="tvm-nper" className={target === "nper" ? "text-primary font-bold" : ""}>
@@ -435,7 +447,13 @@ function TVMPageContent() {
                     )}
                   />
                   <ValidationError error={errors.nper && touchedFields.nper ? errors.nper : null} />
-                  <InputRangeHint min={1} max={600} unit="periods" example="10" currentValue={parseFloat(nper)} />
+                  <InputRangeHint
+                    min={1}
+                    max={600}
+                    unit="periods"
+                    example="10"
+                    currentValue={parseRequiredNumber(nper, Number.NaN)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="tvm-pmt" className={target === "pmt" ? "text-primary font-bold" : ""}>
@@ -484,7 +502,9 @@ function TVMPageContent() {
               </div>
 
               <div className="space-y-3 pt-2">
-                <Label id="tvm-payment-mode-label">{t("tvm.paymentMode")}</Label>
+                <p id="tvm-payment-mode-label" className="text-sm font-medium leading-none">
+                  {t("tvm.paymentMode")}
+                </p>
                 <RadioGroup
                   value={type}
                   onValueChange={(v) => setType(v as "0" | "1")}

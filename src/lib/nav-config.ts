@@ -35,13 +35,13 @@ export const NAV_CONFIG: NavSection[] = [
       {
         titleKey: "nav.core.tvm.title",
         descKey: "nav.core.tvm.desc",
-        href: "/tvm",
+        href: "/tvm/",
         icon: Calculator,
       },
       {
         titleKey: "nav.core.cashFlow.title",
         descKey: "nav.core.cashFlow.desc",
-        href: "/cash-flow",
+        href: "/cash-flow/",
         icon: TrendingUp,
       },
     ],
@@ -53,19 +53,19 @@ export const NAV_CONFIG: NavSection[] = [
       {
         titleKey: "nav.investing.equity.title",
         descKey: "nav.investing.equity.desc",
-        href: "/equity",
+        href: "/equity/",
         icon: Activity,
       },
       {
         titleKey: "nav.investing.portfolio.title",
         descKey: "nav.investing.portfolio.desc",
-        href: "/portfolio",
+        href: "/portfolio/",
         icon: PieChart,
       },
       {
         titleKey: "nav.investing.bonds.title",
         descKey: "nav.investing.bonds.desc",
-        href: "/bonds",
+        href: "/bonds/",
         icon: Landmark,
       },
     ],
@@ -77,13 +77,13 @@ export const NAV_CONFIG: NavSection[] = [
       {
         titleKey: "nav.derivatives.options.title",
         descKey: "nav.derivatives.options.desc",
-        href: "/options",
+        href: "/options/",
         icon: ShieldCheck,
       },
       {
         titleKey: "nav.derivatives.risk.title",
         descKey: "nav.derivatives.risk.desc",
-        href: "/risk",
+        href: "/risk/",
         icon: Activity,
       },
     ],
@@ -95,13 +95,13 @@ export const NAV_CONFIG: NavSection[] = [
       {
         titleKey: "nav.banking.loans.title",
         descKey: "nav.banking.loans.desc",
-        href: "/loans",
+        href: "/loans/",
         icon: CreditCard,
       },
       {
         titleKey: "nav.banking.macro.title",
         descKey: "nav.banking.macro.desc",
-        href: "/macro",
+        href: "/macro/",
         icon: Globe,
       },
     ],
@@ -113,19 +113,19 @@ export const NAV_CONFIG: NavSection[] = [
       {
         titleKey: "history.title",
         descKey: "nav.more.history.desc",
-        href: "/history",
+        href: "/history/",
         icon: History,
       },
       {
         titleKey: "settings.title",
         descKey: "nav.more.settings.desc",
-        href: "/settings",
+        href: "/settings/",
         icon: Settings,
       },
       {
         titleKey: "help.title",
         descKey: "nav.more.help.desc",
-        href: "/help",
+        href: "/help/",
         icon: HelpCircle,
       },
     ],
@@ -136,7 +136,7 @@ export const NAV_ITEMS = NAV_CONFIG.flatMap((section) => section.items);
 
 export const MOBILE_PRIMARY_NAV = [
   { href: "/", icon: Calculator, labelKey: "common.home" },
-  { href: "/tvm", icon: Calculator, labelKey: "common.tvmShort" },
-  { href: "/portfolio", icon: PieChart, labelKey: "common.portfolioShort" },
-  { href: "/history", icon: History, labelKey: "history.title" },
+  { href: "/tvm/", icon: Calculator, labelKey: "common.tvmShort" },
+  { href: "/portfolio/", icon: PieChart, labelKey: "common.portfolioShort" },
+  { href: "/history/", icon: History, labelKey: "history.title" },
 ] as const;

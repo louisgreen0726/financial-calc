@@ -15,6 +15,7 @@ vi.mock("@/lib/logger", () => ({
 describe("ServiceWorkerRegistration", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    delete process.env.NEXT_PUBLIC_BASE_PATH;
   });
 
   it("registers the service worker when supported", async () => {
@@ -75,6 +76,22 @@ describe("ServiceWorkerRegistration", () => {
       expect(register).toHaveBeenCalledWith("/sw.js", { scope: "/" });
       expect(update).toHaveBeenCalled();
       expect(logger.warn).toHaveBeenCalled();
+    });
+  });
+
+  it("respects a configured static base path", async () => {
+    process.env.NEXT_PUBLIC_BASE_PATH = "/calc/";
+    const update = vi.fn().mockResolvedValue(undefined);
+    const register = vi.fn().mockResolvedValue({ scope: "/calc/", update });
+    Object.defineProperty(window.navigator, "serviceWorker", {
+      configurable: true,
+      value: { register },
+    });
+
+    render(<ServiceWorkerRegistration />);
+
+    await waitFor(() => {
+      expect(register).toHaveBeenCalledWith("/calc/sw.js", { scope: "/calc/" });
     });
   });
 });

@@ -1,6 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import {
+  calculatePortfolioPoint,
+  makeRandomWeights,
+  summarizePortfolioSimulations,
+  type PortfolioPoint,
+} from "@/lib/portfolio-math";
 
 interface UseMonteCarloOptions {
   onProgress?: (progress: number) => void;
@@ -15,17 +21,10 @@ interface MonteCarloPayload {
   correlation?: number;
 }
 
-interface MonteCarloPoint {
-  ret: number;
-  risk: number;
-  sharpe: number;
-  weights: number[];
-}
-
 interface MonteCarloResult {
-  simulations: MonteCarloPoint[];
-  optimal: MonteCarloPoint | null;
-  minVol: MonteCarloPoint | null;
+  simulations: PortfolioPoint[];
+  optimal: PortfolioPoint | null;
+  minVol: PortfolioPoint | null;
 }
 
 type WorkerMessage =
@@ -71,14 +70,7 @@ export function useMonteCarloSimulation() {
         return;
       }
 
-      const n = assets.length;
-      const returns = assets.map((a) => a.return);
-      const risks = assets.map((a) => a.risk);
-      const cov: number[][] = Array.from({ length: n }, (_, i) =>
-        Array.from({ length: n }, (_, j) => (i === j ? risks[i] * risks[i] : correlation * risks[i] * risks[j]))
-      );
-
-      const results: MonteCarloPoint[] = [];
+      const results: PortfolioPoint[] = [];
       const chunkSize = Math.max(50, Math.floor(simulationsTarget / 20));
 
       for (let start = 0; start < simulationsTarget; start += chunkSize) {
@@ -88,22 +80,8 @@ export function useMonteCarloSimulation() {
 
         const end = Math.min(start + chunkSize, simulationsTarget);
         for (let i = start; i < end; i++) {
-          const raw = assets.map(() => -Math.log(Math.random() + 1e-15));
-          const sum = raw.reduce((a: number, b: number) => a + b, 0) || 1;
-          const weights = raw.map((w) => w / sum);
-
-          const ret = weights.reduce((acc, w, k) => acc + w * returns[k], 0);
-
-          let variance = 0;
-          for (let a = 0; a < n; a++) {
-            for (let b = 0; b < n; b++) {
-              variance += weights[a] * weights[b] * cov[a][b];
-            }
-          }
-
-          const risk = Math.sqrt(Math.max(0, variance));
-          const sharpe = risk > 0 ? (ret - rf) / risk : 0;
-          results.push({ ret, risk, sharpe, weights });
+          const weights = makeRandomWeights(assets.length);
+          results.push(calculatePortfolioPoint(assets, weights, correlation, rf));
         }
 
         const nextProgress = Math.round((end / simulationsTarget) * 100);
@@ -117,21 +95,7 @@ export function useMonteCarloSimulation() {
         return;
       }
 
-      let optimal: MonteCarloPoint | null = null;
-      let bestSharpe = -Infinity;
-      for (const point of results) {
-        if (point.sharpe > bestSharpe) {
-          bestSharpe = point.sharpe;
-          optimal = point;
-        }
-      }
-
-      const minVol = results.reduce<MonteCarloPoint | null>(
-        (min, point) => ((min?.risk ?? Infinity) < point.risk ? min : point),
-        results[0] ?? null
-      );
-
-      const final: MonteCarloResult = { simulations: results, optimal, minVol };
+      const final: MonteCarloResult = summarizePortfolioSimulations(results);
       setError(null);
       setResult(final);
       setIsRunning(false);

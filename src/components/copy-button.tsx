@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/lib/i18n";
 import { logger } from "@/lib/logger";
+import { copyTextToClipboard } from "@/lib/clipboard";
 
 interface CopyButtonProps {
   value: string | number;
@@ -20,31 +21,7 @@ export function CopyButton({ value, className }: CopyButtonProps) {
     const textToCopy = String(value);
 
     try {
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(textToCopy);
-      } else {
-        // Fallback for older browsers or non-secure contexts
-        const textArea = document.createElement("textarea");
-        textArea.value = textToCopy;
-        textArea.style.position = "fixed";
-        textArea.style.left = "-9999px";
-        textArea.style.top = "0";
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-
-        try {
-          const successful = document.execCommand("copy");
-          document.body.removeChild(textArea);
-          if (!successful) {
-            throw new Error("Copy command failed");
-          }
-        } catch (err) {
-          document.body.removeChild(textArea);
-          throw err;
-        }
-      }
-
+      await copyTextToClipboard(textToCopy);
       setCopied(true);
       toast.success(t("common.copySuccess") || "Copied to clipboard");
 

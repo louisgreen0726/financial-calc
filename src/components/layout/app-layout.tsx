@@ -10,11 +10,7 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   return (
-    <div className="relative flex min-h-screen overflow-x-clip bg-background selection:bg-primary/30">
-      {/* Background Orbs */}
-      <div className="bg-glow-orb bg-glow-orb-1" />
-      <div className="bg-glow-orb bg-glow-orb-2" />
-
+    <div className="app-shell relative flex min-h-screen overflow-x-clip selection:bg-primary/30">
       {/* Skip to Content Link */}
       <a
         href="#main-content"
