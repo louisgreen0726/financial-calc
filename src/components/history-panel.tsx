@@ -26,7 +26,8 @@ const FAVORITES_KEY = `${STORAGE_PREFIX}favorites`;
 
 export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) {
   const { t } = useLanguage();
-  const { pageHistory, removeFromHistory, clearHistory, isInitialized } = useCalculationHistory({ page });
+  const { history, pageHistory, removeFromHistory, removeManyFromHistory, clearHistory, isInitialized } =
+    useCalculationHistory({ page });
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -42,16 +43,31 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
       return new Set();
     }
   });
+  const validHistoryIds = useMemo(() => new Set(history.map((item) => item.id)), [history]);
+  const visibleFavorites = useMemo(
+    () => new Set([...favorites].filter((id) => validHistoryIds.has(id))),
+    [favorites, validHistoryIds]
+  );
 
   const toggleFavorite = (id: string) => {
     setFavorites((prev) => {
-      const next = new Set(prev);
+      const next = new Set([...prev].filter((favoriteId) => validHistoryIds.has(favoriteId)));
       if (next.has(id)) next.delete(id);
       else next.add(id);
       safeSetJSON(FAVORITES_KEY, [...next]);
       return next;
     });
   };
+
+  useEffect(() => {
+    if (!isInitialized) {
+      return;
+    }
+
+    if (visibleFavorites.size !== favorites.size) {
+      safeSetJSON(FAVORITES_KEY, [...visibleFavorites]);
+    }
+  }, [favorites, isInitialized, visibleFavorites]);
 
   const filtered = useMemo(() => {
     if (!searchQuery.trim()) return pageHistory;
@@ -65,8 +81,8 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
   }, [pageHistory, searchQuery]);
 
   const sorted = useMemo(
-    () => [...filtered].sort((a, b) => (favorites.has(b.id) ? 1 : 0) - (favorites.has(a.id) ? 1 : 0)),
-    [filtered, favorites]
+    () => [...filtered].sort((a, b) => (visibleFavorites.has(b.id) ? 1 : 0) - (visibleFavorites.has(a.id) ? 1 : 0)),
+    [filtered, visibleFavorites]
   );
 
   const handleRestore = (item: CalculationHistoryItem) => {
@@ -122,7 +138,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
   };
 
   const deleteSelected = () => {
-    selectedIds.forEach((id) => removeFromHistory(id));
+    removeManyFromHistory(selectedIds);
     toast.success(`${selectedIds.size} ${t("history.itemsDeleted")}`);
     setSelectedIds(new Set());
     setBatchMode(false);
@@ -259,7 +275,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
                       exit={{ opacity: 0, height: 0 }}
                       className={cn(
                         "flex items-start justify-between p-3 rounded-lg border bg-card group transition-colors",
-                        favorites.has(item.id) && "border-primary/30 bg-primary/5",
+                        visibleFavorites.has(item.id) && "border-primary/30 bg-primary/5",
                         selectedIds.has(item.id) && "ring-2 ring-primary"
                       )}
                     >
@@ -285,7 +301,9 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
                           <div className="flex items-center gap-2">
                             <span className="font-semibold text-sm">{formatCurrency(item.result)}</span>
                             <span className="text-xs text-muted-foreground">{formatDate(item.timestamp)}</span>
-                            {favorites.has(item.id) && <Star className="h-3 w-3 fill-primary text-primary shrink-0" />}
+                            {visibleFavorites.has(item.id) && (
+                              <Star className="h-3 w-3 fill-primary text-primary shrink-0" />
+                            )}
                           </div>
                           <p className="text-xs text-muted-foreground truncate mt-0.5">{formatInputs(item.inputs)}</p>
                           {item.label && <span className="text-xs text-primary mt-1 block">{item.label}</span>}
@@ -310,7 +328,9 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
                           title={t("history.favorites")}
                           aria-label={t("history.favorites")}
                         >
-                          <Star className={cn("h-3 w-3", favorites.has(item.id) ? "fill-primary text-primary" : "")} />
+                          <Star
+                            className={cn("h-3 w-3", visibleFavorites.has(item.id) ? "fill-primary text-primary" : "")}
+                          />
                         </Button>
                         {!batchMode && (
                           <>

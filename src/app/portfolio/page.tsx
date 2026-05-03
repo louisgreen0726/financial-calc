@@ -24,6 +24,7 @@ import { ResultActions } from "@/components/result-actions";
 import { clampEqualCorrelation, getMinimumEqualCorrelation, type PortfolioPoint } from "@/lib/portfolio-math";
 import { useCalculationHistory } from "@/hooks/use-calculation-history";
 import { HistoryPanel } from "@/components/history-panel";
+import { useShareableUrl } from "@/hooks/use-shareable-url";
 
 interface Asset {
   id: number;
@@ -32,16 +33,20 @@ interface Asset {
   risk: string;
 }
 
+const DEFAULT_PORTFOLIO_SEED = "balanced-2026";
+const DEFAULT_PORTFOLIO_ASSETS: Asset[] = [
+  { id: 1, name: "US Tech", return: "12", risk: "20" },
+  { id: 2, name: "Bonds", return: "4", risk: "5" },
+  { id: 3, name: "Gold", return: "6", risk: "15" },
+  { id: 4, name: "Emerging Mkts", return: "15", risk: "25" },
+];
+
 export default function PortfolioPage() {
   const { t } = useLanguage();
   const [rf, setRf] = useState(3.0);
-  const [assets, setAssets] = useState<Asset[]>([
-    { id: 1, name: "US Tech", return: "12", risk: "20" },
-    { id: 2, name: "Bonds", return: "4", risk: "5" },
-    { id: 3, name: "Gold", return: "6", risk: "15" },
-    { id: 4, name: "Emerging Mkts", return: "15", risk: "25" },
-  ]);
+  const [assets, setAssets] = useState<Asset[]>(DEFAULT_PORTFOLIO_ASSETS);
   const [correlation, setCorrelation] = useState(0.2);
+  const [seed, setSeed] = useState(DEFAULT_PORTFOLIO_SEED);
   const [simulations, setSimulations] = useState<PortfolioPoint[]>([]);
   const [optimal, setOptimal] = useState<PortfolioPoint | null>(null);
   const [minVol, setMinVol] = useState<PortfolioPoint | null>(null);
@@ -66,10 +71,12 @@ export default function PortfolioPage() {
     () => clampEqualCorrelation(correlation, parsedAssets.length),
     [correlation, parsedAssets.length]
   );
+  const effectiveSeed = useMemo(() => seed.trim() || DEFAULT_PORTFOLIO_SEED, [seed]);
   const inputSignature = useMemo(
-    () => JSON.stringify({ assets: parsedAssets, correlation: effectiveCorrelation, rf }),
-    [effectiveCorrelation, parsedAssets, rf]
+    () => JSON.stringify({ assets: parsedAssets, correlation: effectiveCorrelation, rf, seed: effectiveSeed }),
+    [effectiveCorrelation, effectiveSeed, parsedAssets, rf]
   );
+  const serializedAssets = useMemo(() => JSON.stringify(assets), [assets]);
 
   const portfolioValidation = useMemo(() => {
     const hasInvalidAssetValue = parsedAssets.some(
@@ -179,6 +186,7 @@ export default function PortfolioPage() {
       })),
       correlation: effectiveCorrelation,
       rf,
+      seed: effectiveSeed,
       simulations: 2000,
     } as const;
 
@@ -197,6 +205,7 @@ export default function PortfolioPage() {
               assets: JSON.stringify(assets),
               rf,
               correlation: effectiveCorrelation,
+              seed: effectiveSeed,
             },
             d.optimal.sharpe,
             t("portfolio.maxSharpe")
@@ -242,8 +251,35 @@ export default function PortfolioPage() {
       const parsed = parseOptionalNumber(inputs.correlation);
       if (parsed !== null) setCorrelation(parsed);
     }
+    if (typeof inputs.seed === "string") setSeed(sanitizeInput(inputs.seed) || DEFAULT_PORTFOLIO_SEED);
+    if (typeof inputs.seed === "number") setSeed(String(inputs.seed));
     setResultSignature("");
   };
+
+  const shareDefaults = useMemo(
+    () => ({
+      rf: 3,
+      correlation: 0.2,
+      seed: DEFAULT_PORTFOLIO_SEED,
+      assets: JSON.stringify(DEFAULT_PORTFOLIO_ASSETS),
+    }),
+    []
+  );
+  const shareState = useMemo(
+    () => ({
+      rf,
+      correlation: effectiveCorrelation,
+      seed: effectiveSeed,
+      assets: serializedAssets,
+    }),
+    [effectiveCorrelation, effectiveSeed, rf, serializedAssets]
+  );
+  const shareUrl = useShareableUrl({
+    prefix: "portfolio",
+    state: shareState,
+    defaults: shareDefaults,
+    onRestore: (restored) => restorePortfolio(restored as Record<string, number | string>),
+  });
 
   return (
     <div className="min-w-0 space-y-6">
@@ -252,10 +288,6 @@ export default function PortfolioPage() {
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("portfolio.title")}</h1>
           <p className="text-muted-foreground mt-2">{t("portfolio.subtitle")}</p>
         </div>
-        <Button onClick={startSimulation} size="lg" className="gap-2 w-full md:w-auto" disabled={isRunning}>
-          {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-          {isRunning ? t("common.loading") : visibleSimulations.length > 0 ? t("portfolio.rerun") : t("portfolio.run")}
-        </Button>
         <HistoryPanel page="portfolio" onRestore={restorePortfolio} />
       </div>
 
@@ -296,6 +328,17 @@ export default function PortfolioPage() {
                 step={0.1}
               />
               {!portfolioValidation.isValid && <ErrorDisplay message={portfolioValidation.message} variant="warning" />}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="portfolio-seed">{t("portfolio.seed")}</Label>
+              <Input
+                id="portfolio-seed"
+                name="portfolio-seed"
+                value={seed}
+                onChange={(event) => setSeed(sanitizeInput(event.target.value))}
+              />
+              <p className="text-xs text-muted-foreground">{t("portfolio.seedDesc")}</p>
             </div>
 
             <ResponsiveDisclosure
@@ -469,13 +512,16 @@ export default function PortfolioPage() {
                     inputs={{
                       [t("portfolio.rf")]: `${rf}%`,
                       [t("portfolio.corr")]: effectiveCorrelation,
+                      [t("portfolio.seed")]: effectiveSeed,
                       [t("portfolio.asset")]: assets.map((asset) => asset.name).join(", "),
                     }}
+                    shareUrl={shareUrl}
                     exportData={visibleSimulations as unknown as Record<string, unknown>[]}
                     exportJson={{
                       assets,
                       rf,
                       correlation: effectiveCorrelation,
+                      seed: effectiveSeed,
                       optimal: visibleOptimal,
                       minVol: visibleMinVol,
                       simulations: visibleSimulations,

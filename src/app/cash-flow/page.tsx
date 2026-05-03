@@ -21,6 +21,7 @@ import { CashFlowSchema } from "@/lib/validation";
 import { ErrorDisplay } from "@/components/ui/error-display";
 import { ResultShell } from "@/components/result-shell";
 import { ResultActions } from "@/components/result-actions";
+import { useShareableUrl } from "@/hooks/use-shareable-url";
 
 export default function CashFlowPage() {
   const { t } = useLanguage();
@@ -28,6 +29,16 @@ export default function CashFlowPage() {
   const [flowInputs, setFlowInputs] = useState<string[]>(["-10000", "3000", "4000", "5000", "6000"]);
   const [hasInteracted, setHasInteracted] = useState(false);
   const { addToHistory } = useCalculationHistory({ page: "cash-flow" });
+  const shareUrl = useShareableUrl({
+    prefix: "cash",
+    state: { rate, flows: flowInputs },
+    onRestore: (inputs) => {
+      if (inputs.rate !== undefined) setRate(String(inputs.rate));
+      if (Array.isArray(inputs.flows) && inputs.flows.length > 0) {
+        setFlowInputs(inputs.flows.map(String));
+      }
+    },
+  });
 
   const parsedRate = parseOptionalNumber(rate);
   const parsedFlows = useMemo(() => flowInputs.map((flow) => parseOptionalNumber(flow)), [flowInputs]);
@@ -216,6 +227,7 @@ export default function CashFlowPage() {
                         : t("common.notAvailable"),
                     }}
                     inputs={{ rate, flows: flowInputs.join(",") }}
+                    shareUrl={shareUrl}
                     exportData={chartData}
                     exportJson={calculateMetrics}
                     pdfElementId="cash-flow-report-content"
@@ -353,11 +365,11 @@ export default function CashFlowPage() {
           if (inputs.flows !== undefined) {
             const restoredFlows = String(inputs.flows)
               .split(",")
-              .map((value) => Number(value))
-              .filter((value) => !Number.isNaN(value));
+              .map((value) => value.trim())
+              .filter((value) => parseOptionalNumber(value) !== null);
 
             if (restoredFlows.length > 0) {
-              setFlowInputs(restoredFlows.map((value) => String(value)));
+              setFlowInputs(restoredFlows);
             }
           }
         }}

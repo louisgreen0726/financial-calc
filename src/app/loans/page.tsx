@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/utils";
 import {
   PieChart,
@@ -21,7 +20,6 @@ import {
   YAxis,
   CartesianGrid,
 } from "recharts";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useLanguage } from "@/lib/i18n";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
@@ -35,6 +33,7 @@ import { useCalculationHistory } from "@/hooks/use-calculation-history";
 import { useHistoryRecorder } from "@/hooks/use-history-recorder";
 import { HistoryPanel } from "@/components/history-panel";
 import { LoanInputSchema } from "@/lib/validation";
+import { VirtualTable } from "@/components/virtual-table";
 
 function LoansPageContent() {
   const { t } = useLanguage();
@@ -455,39 +454,54 @@ function LoansPageContent() {
                         </Alert>
                       </div>
                     ) : (
-                      <ScrollArea className="h-[22rem] max-h-[52vh] min-h-[18rem] w-full max-w-full rounded-b-lg border-t">
-                        <div className="min-w-[640px]">
-                          <Table>
-                            <TableHeader className="sticky top-0 bg-background z-10">
-                              <TableRow>
-                                <TableHead className="w-[80px]">{t("cashFlow.period")}</TableHead>
-                                <TableHead>{t("loans.payment")}</TableHead>
-                                <TableHead>{t("loans.principal")}</TableHead>
-                                <TableHead>{t("loans.interest")}</TableHead>
-                                <TableHead className="text-right">{t("loans.remBalance")}</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {schedule.map((row) => (
-                                <TableRow key={row.period}>
-                                  <TableCell className="font-mono text-xs">{row.period}</TableCell>
-                                  <TableCell className="font-mono text-xs">{formatCurrency(row.payment)}</TableCell>
-                                  <TableCell className="font-mono text-xs text-primary">
-                                    {formatCurrency(row.principal)}
-                                  </TableCell>
-                                  <TableCell className="font-mono text-xs text-destructive">
-                                    {formatCurrency(row.interest)}
-                                  </TableCell>
-                                  <TableCell className="text-right font-mono text-xs">
-                                    {formatCurrency(row.balance)}
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
+                      <div className="w-full max-w-full overflow-x-auto rounded-b-lg border-t" role="table">
+                        <div className="grid min-w-[680px] grid-cols-[80px_repeat(3,minmax(120px,1fr))_minmax(150px,1fr)] border-b bg-background text-sm font-medium text-muted-foreground">
+                          <div className="px-4 py-3" role="columnheader">
+                            {t("cashFlow.period")}
+                          </div>
+                          <div className="px-4 py-3" role="columnheader">
+                            {t("loans.payment")}
+                          </div>
+                          <div className="px-4 py-3" role="columnheader">
+                            {t("loans.principal")}
+                          </div>
+                          <div className="px-4 py-3" role="columnheader">
+                            {t("loans.interest")}
+                          </div>
+                          <div className="px-4 py-3 text-right" role="columnheader">
+                            {t("loans.remBalance")}
+                          </div>
                         </div>
-                        <ScrollBar orientation="horizontal" />
-                      </ScrollArea>
+                        <VirtualTable
+                          data={schedule}
+                          rowHeight={44}
+                          height="22rem"
+                          minWidth="680px"
+                          className="max-h-[52vh] min-h-[18rem]"
+                          renderRow={(row) => (
+                            <div
+                              role="row"
+                              className="grid h-11 min-w-[680px] grid-cols-[80px_repeat(3,minmax(120px,1fr))_minmax(150px,1fr)] items-center border-b text-sm"
+                            >
+                              <div role="cell" className="px-4 font-mono text-xs">
+                                {row.period}
+                              </div>
+                              <div role="cell" className="px-4 font-mono text-xs">
+                                {formatCurrency(row.payment)}
+                              </div>
+                              <div role="cell" className="px-4 font-mono text-xs text-primary">
+                                {formatCurrency(row.principal)}
+                              </div>
+                              <div role="cell" className="px-4 font-mono text-xs text-destructive">
+                                {formatCurrency(row.interest)}
+                              </div>
+                              <div role="cell" className="px-4 text-right font-mono text-xs">
+                                {formatCurrency(row.balance)}
+                              </div>
+                            </div>
+                          )}
+                        />
+                      </div>
                     )}
                   </CardContent>
                 </Card>

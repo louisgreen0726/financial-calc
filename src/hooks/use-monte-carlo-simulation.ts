@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   calculatePortfolioPoint,
+  createSeededRandom,
   makeRandomWeights,
   summarizePortfolioSimulations,
   type PortfolioPoint,
@@ -19,6 +20,7 @@ interface MonteCarloPayload {
   simulations?: number;
   rf?: number;
   correlation?: number;
+  seed?: string | number;
 }
 
 interface MonteCarloResult {
@@ -60,6 +62,7 @@ export function useMonteCarloSimulation() {
       const simulationsTarget = payload.simulations ?? 1000;
       const rf = payload.rf ?? 0;
       const correlation = payload.correlation ?? 0;
+      const random = createSeededRandom(payload.seed ?? "portfolio-default");
 
       if (assets.length === 0) {
         const emptyResult: MonteCarloResult = { simulations: [], optimal: null, minVol: null };
@@ -80,7 +83,7 @@ export function useMonteCarloSimulation() {
 
         const end = Math.min(start + chunkSize, simulationsTarget);
         for (let i = start; i < end; i++) {
-          const weights = makeRandomWeights(assets.length);
+          const weights = makeRandomWeights(assets.length, random);
           results.push(calculatePortfolioPoint(assets, weights, correlation, rf));
         }
 

@@ -3,6 +3,7 @@
 
 import {
   calculatePortfolioPoint,
+  createSeededRandom,
   makeRandomWeights,
   summarizePortfolioSimulations,
   type PortfolioPoint,
@@ -15,11 +16,13 @@ self.onmessage = (event: MessageEvent) => {
       assets?: { id: number; name: string; return: number; risk: number }[];
       rf?: number;
       correlation?: number;
+      seed?: string | number;
     };
     const simCount = payload?.simulations ?? 1000;
     const assets = payload?.assets ?? [];
     const rf = payload?.rf ?? 0;
     const correlation = payload?.correlation ?? 0; // scalar pairwise correlation
+    const random = createSeededRandom(payload?.seed ?? "portfolio-default");
 
     if (assets.length === 0) {
       self.postMessage({ type: "result", data: { simulations: [], optimal: null, minVol: null } });
@@ -30,7 +33,7 @@ self.onmessage = (event: MessageEvent) => {
     const step = Math.max(1, Math.floor(simCount / 20));
 
     for (let i = 0; i < simCount; i++) {
-      const weights = makeRandomWeights(assets.length);
+      const weights = makeRandomWeights(assets.length, random);
       simulations.push(calculatePortfolioPoint(assets, weights, correlation, rf));
 
       if (step > 0 && i % step === 0) {
