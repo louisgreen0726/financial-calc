@@ -18,6 +18,26 @@ export interface PortfolioSimulationResult {
   minVol: PortfolioPoint | null;
 }
 
+export function createSeededRandom(seed: string | number): () => number {
+  const seedText = String(seed || "financial-calc");
+  let hash = 2166136261;
+
+  for (let index = 0; index < seedText.length; index++) {
+    hash ^= seedText.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  let state = hash >>> 0 || 1;
+
+  return () => {
+    state += 0x6d2b79f5;
+    let next = state;
+    next = Math.imul(next ^ (next >>> 15), next | 1);
+    next ^= next + Math.imul(next ^ (next >>> 7), next | 61);
+    return ((next ^ (next >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 export function getMinimumEqualCorrelation(assetCount: number): number {
   if (!Number.isFinite(assetCount) || assetCount <= 1) {
     return -1;

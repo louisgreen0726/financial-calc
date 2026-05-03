@@ -18,6 +18,7 @@ import { ErrorDisplay, ValidationError } from "@/components/ui/error-display";
 import { EquityCAPMSchema, EquityDDMSchema, EquityWACCSchema } from "@/lib/validation";
 import { ResultShell } from "@/components/result-shell";
 import { ResultActions } from "@/components/result-actions";
+import { useShareableUrl } from "@/hooks/use-shareable-url";
 
 type EquitySection = "capm" | "wacc" | "ddm";
 
@@ -45,6 +46,41 @@ export default function EquityPage() {
   const [div, setDiv] = useState("2.5");
   const [growth, setGrowth] = useState("4");
   const [reqReturn, setReqReturn] = useState("9");
+  const [activeSection, setActiveSection] = useState<EquitySection>("capm");
+
+  const shareUrl = useShareableUrl({
+    prefix: "equity",
+    state: {
+      section: activeSection,
+      rf,
+      beta,
+      rm,
+      equity,
+      debt,
+      costEquity,
+      costDebt,
+      taxRate,
+      div,
+      growth,
+      reqReturn,
+    },
+    onRestore: (inputs) => {
+      if (inputs.section === "capm" || inputs.section === "wacc" || inputs.section === "ddm") {
+        setActiveSection(inputs.section);
+      }
+      if (inputs.rf !== undefined) setRf(String(inputs.rf));
+      if (inputs.beta !== undefined) setBeta(String(inputs.beta));
+      if (inputs.rm !== undefined) setRm(String(inputs.rm));
+      if (inputs.equity !== undefined) setEquity(String(inputs.equity));
+      if (inputs.debt !== undefined) setDebt(String(inputs.debt));
+      if (inputs.costEquity !== undefined) setCostEquity(String(inputs.costEquity));
+      if (inputs.costDebt !== undefined) setCostDebt(String(inputs.costDebt));
+      if (inputs.taxRate !== undefined) setTaxRate(String(inputs.taxRate));
+      if (inputs.div !== undefined) setDiv(String(inputs.div));
+      if (inputs.growth !== undefined) setGrowth(String(inputs.growth));
+      if (inputs.reqReturn !== undefined) setReqReturn(String(inputs.reqReturn));
+    },
+  });
 
   // Memoized calculations for performance
   const capmResult = useMemo(() => {
@@ -163,6 +199,18 @@ export default function EquityPage() {
               if (inputs.div !== undefined) setDiv(String(inputs.div));
               if (inputs.growth !== undefined) setGrowth(String(inputs.growth));
               if (inputs.reqReturn !== undefined) setReqReturn(String(inputs.reqReturn));
+              if (inputs.rf !== undefined || inputs.beta !== undefined || inputs.rm !== undefined)
+                setActiveSection("capm");
+              if (
+                inputs.equity !== undefined ||
+                inputs.debt !== undefined ||
+                inputs.costEquity !== undefined ||
+                inputs.costDebt !== undefined ||
+                inputs.taxRate !== undefined
+              )
+                setActiveSection("wacc");
+              if (inputs.div !== undefined || inputs.growth !== undefined || inputs.reqReturn !== undefined)
+                setActiveSection("ddm");
             }}
           />
         </div>
@@ -170,7 +218,11 @@ export default function EquityPage() {
 
       {showErrors && hasErrors && <ErrorDisplay message={t("equity.validation.invalidInputs")} variant="warning" />}
 
-      <Tabs defaultValue="capm" className="space-y-6">
+      <Tabs
+        value={activeSection}
+        onValueChange={(value) => setActiveSection(value as EquitySection)}
+        className="space-y-6"
+      >
         <TabsList className="grid w-full grid-cols-3 max-w-xl overflow-x-auto">
           <TabsTrigger value="capm">{t("equity.capm.tab")}</TabsTrigger>
           <TabsTrigger value="wacc">{t("equity.wacc.tab")}</TabsTrigger>
@@ -258,6 +310,7 @@ export default function EquityPage() {
                     title={t("equity.capm.title")}
                     results={{ [t("equity.capm.re")]: `${(capmResult * 100).toFixed(2)}%` }}
                     inputs={{ rf, beta, rm }}
+                    shareUrl={shareUrl}
                     exportData={[
                       {
                         metric: t("equity.capm.re"),
@@ -384,6 +437,7 @@ export default function EquityPage() {
                     title={t("equity.wacc.title")}
                     results={{ [t("equity.wacc.result")]: `${(waccResult * 100).toFixed(2)}%` }}
                     inputs={{ equity, debt, costEquity, costDebt, taxRate }}
+                    shareUrl={shareUrl}
                     exportData={[
                       {
                         metric: t("equity.wacc.result"),
@@ -486,6 +540,7 @@ export default function EquityPage() {
                     title={t("equity.ddm.title")}
                     results={{ [t("equity.ddm.intrinsic")]: ddmResult }}
                     inputs={{ div, growth, reqReturn }}
+                    shareUrl={shareUrl}
                     exportData={[
                       {
                         metric: t("equity.ddm.intrinsic"),

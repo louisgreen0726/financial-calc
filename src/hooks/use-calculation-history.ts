@@ -120,6 +120,22 @@ export function useCalculationHistory({ page, maxItems = MAX_HISTORY_ITEMS }: Us
     [persistHistory]
   );
 
+  const removeManyFromHistory = useCallback(
+    (ids: Iterable<string>) => {
+      const idsToRemove = new Set(ids);
+      if (idsToRemove.size === 0) {
+        return;
+      }
+
+      setHistory((prev) => {
+        const updated = prev.filter((item) => !idsToRemove.has(item.id));
+        queueMicrotask(() => persistHistory(updated));
+        return updated;
+      });
+    },
+    [persistHistory]
+  );
+
   const clearHistory = useCallback(() => {
     setHistory((prev) => {
       const updated = prev.filter((item) => item.page !== page);
@@ -142,6 +158,7 @@ export function useCalculationHistory({ page, maxItems = MAX_HISTORY_ITEMS }: Us
     pageHistory: getPageHistory(),
     addToHistory,
     removeFromHistory,
+    removeManyFromHistory,
     clearHistory,
     clearAllHistory,
     isInitialized,

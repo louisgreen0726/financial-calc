@@ -4,12 +4,26 @@ import { useCallback, useMemo } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { parseOptionalNumber } from "@/lib/input-utils";
 
+type UrlStateValue = string | number | string[];
+
 interface UseUrlStateOptions<T> {
   defaultValues: T;
   prefix?: string;
 }
 
-export function useUrlState<T extends Record<string, string | number>>({
+function normalizePathname(pathname: string) {
+  if (pathname === "/") {
+    return pathname;
+  }
+
+  return pathname.replace(/\/$/, "");
+}
+
+function serializeUrlValue(value: UrlStateValue) {
+  return Array.isArray(value) ? value.join("|") : String(value);
+}
+
+export function useUrlState<T extends Record<string, UrlStateValue>>({
   defaultValues,
   prefix = "",
 }: UseUrlStateOptions<T>) {
@@ -30,6 +44,8 @@ export function useUrlState<T extends Record<string, string | number>>({
           if (parsed !== null) {
             (initialState as Record<string, unknown>)[key] = parsed;
           }
+        } else if (Array.isArray(defaultValue)) {
+          (initialState as Record<string, unknown>)[key] = paramValue === "" ? [] : paramValue.split("|");
         } else {
           (initialState as Record<string, unknown>)[key] = paramValue;
         }
@@ -48,15 +64,16 @@ export function useUrlState<T extends Record<string, string | number>>({
 
       for (const [key, value] of Object.entries(nextState)) {
         const paramKey = prefix ? `${prefix}_${key}` : key;
-        if (value !== undefined && value !== null && value !== "") {
-          params.set(paramKey, String(value));
+        if (value !== undefined && value !== null && value !== "" && (!Array.isArray(value) || value.length > 0)) {
+          params.set(paramKey, serializeUrlValue(value));
         } else {
           params.delete(paramKey);
         }
       }
 
       const nextQuery = params.toString();
-      return nextQuery ? `${pathname}?${nextQuery}` : pathname;
+      const normalizedPathname = normalizePathname(pathname);
+      return nextQuery ? `${normalizedPathname}?${nextQuery}` : normalizedPathname;
     },
     [pathname, prefix, searchParams, state]
   );

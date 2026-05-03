@@ -18,6 +18,7 @@ import { useCalculationHistory } from "@/hooks/use-calculation-history";
 import { useHistoryRecorder } from "@/hooks/use-history-recorder";
 import { HistoryPanel } from "@/components/history-panel";
 import { ClientOnlyChart } from "@/components/client-only-chart";
+import { useShareableUrl } from "@/hooks/use-shareable-url";
 
 export default function RiskPage() {
   const { t } = useLanguage();
@@ -27,6 +28,16 @@ export default function RiskPage() {
   const [days, setDays] = useState("10"); // Horizon
   const [hasInteracted, setHasInteracted] = useState(false);
   const { addToHistory } = useCalculationHistory({ page: "risk" });
+  const shareUrl = useShareableUrl({
+    prefix: "risk",
+    state: { value, volatility, confidence, days },
+    onRestore: (inputs) => {
+      if (inputs.value !== undefined) setValue(String(inputs.value));
+      if (inputs.volatility !== undefined) setVolatility(String(inputs.volatility));
+      if (inputs.confidence !== undefined) setConfidence(String(inputs.confidence));
+      if (inputs.days !== undefined) setDays(String(inputs.days));
+    },
+  });
 
   const updateField = (setter: (value: string) => void) => (nextValue: string) => {
     setHasInteracted(true);
@@ -220,6 +231,7 @@ export default function RiskPage() {
                     [t("risk.vol")]: `${(metrics.sigmaHorizon * 100).toFixed(2)}%`,
                   }}
                   inputs={{ value, volatility, confidence, days }}
+                  shareUrl={shareUrl}
                   exportData={chartData as unknown as Record<string, unknown>[]}
                   exportJson={metrics}
                   pdfElementId="risk-report-content"

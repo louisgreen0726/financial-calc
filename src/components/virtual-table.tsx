@@ -8,9 +8,18 @@ interface VirtualTableProps<T> {
   rowHeight?: number;
   renderRow: (item: T, index: number) => ReactNode;
   className?: string;
+  height?: string | number;
+  minWidth?: string | number;
 }
 
-export function VirtualTable<T>({ data, rowHeight = 48, renderRow, className }: VirtualTableProps<T>) {
+export function VirtualTable<T>({
+  data,
+  rowHeight = 48,
+  renderRow,
+  className,
+  height = 400,
+  minWidth = "100%",
+}: VirtualTableProps<T>) {
   const parentRef = useRef<HTMLDivElement>(null);
 
   // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual exposes imperative helpers by design.
@@ -24,10 +33,11 @@ export function VirtualTable<T>({ data, rowHeight = 48, renderRow, className }: 
   const virtualItems = virtualizer.getVirtualItems();
 
   return (
-    <div ref={parentRef} className={`overflow-auto ${className}`} style={{ height: "400px" }}>
+    <div ref={parentRef} className={`overflow-auto ${className ?? ""}`} style={{ height }}>
       <div
         style={{
           height: `${virtualizer.getTotalSize()}px`,
+          minWidth,
           width: "100%",
           position: "relative",
         }}

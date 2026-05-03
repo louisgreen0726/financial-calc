@@ -58,4 +58,25 @@ describe("useUrlState", () => {
 
     expect(navigationMock.replace).toHaveBeenCalledWith("/tvm?source=share&fc_nper=15", { scroll: false });
   });
+
+  it("serializes arrays and normalizes trailing slashes", () => {
+    navigationMock.pathname = "/cash-flow/";
+    navigationMock.searchParams = new URLSearchParams("source=share");
+
+    const { result } = renderHook(() =>
+      useUrlState({
+        defaultValues: { flows: ["-1000", "500"], rate: "8" },
+        prefix: "cash",
+      })
+    );
+
+    act(() => {
+      result.current.setField("flows", ["-2000", "700", "900"]);
+    });
+
+    expect(navigationMock.replace).toHaveBeenCalledWith(
+      "/cash-flow?source=share&cash_flows=-2000%7C700%7C900&cash_rate=8",
+      { scroll: false }
+    );
+  });
 });

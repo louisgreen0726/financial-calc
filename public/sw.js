@@ -1,4 +1,4 @@
-const VERSION = "v0.3.1";
+const VERSION = "v0.4.0";
 const STATIC_CACHE = `financial-calc-static-${VERSION}`;
 const RUNTIME_CACHE = `financial-calc-runtime-${VERSION}`;
 
@@ -8,24 +8,35 @@ const withBasePath = (path) => {
   return `${BASE_PATH}${path}`;
 };
 
-const APP_SHELL = [
+const ROUTE_SHELL = [
   "/",
   "/tvm/",
+  "/tvm",
   "/bonds/",
+  "/bonds",
   "/cash-flow/",
+  "/cash-flow",
   "/equity/",
+  "/equity",
   "/loans/",
+  "/loans",
   "/macro/",
+  "/macro",
   "/options/",
+  "/options",
   "/portfolio/",
+  "/portfolio",
   "/risk/",
+  "/risk",
   "/history/",
+  "/history",
   "/settings/",
+  "/settings",
   "/help/",
-  "/manifest.json",
-  "/favicon.ico",
-  "/icon.svg",
-].map(withBasePath);
+  "/help",
+];
+
+const APP_SHELL = [...ROUTE_SHELL, "/manifest.json", "/favicon.ico", "/icon.svg"].map(withBasePath);
 
 function shouldHandle(request) {
   if (request.method !== "GET") return false;
@@ -56,6 +67,12 @@ self.addEventListener("activate", (event) => {
       )
   );
   self.clients.claim();
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener("fetch", (event) => {

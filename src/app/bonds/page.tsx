@@ -21,6 +21,7 @@ import { ErrorDisplay, ValidationError } from "@/components/ui/error-display";
 import { BondInputSchema } from "@/lib/validation";
 import { ResultShell } from "@/components/result-shell";
 import { ResultActions } from "@/components/result-actions";
+import { useShareableUrl } from "@/hooks/use-shareable-url";
 
 export default function BondsPage() {
   const { t } = useLanguage();
@@ -31,6 +32,17 @@ export default function BondsPage() {
   const [ytm, setYtm] = useState("4");
   const [frequency, setFrequency] = useState("2");
   const [hasInteracted, setHasInteracted] = useState(false);
+  const shareUrl = useShareableUrl({
+    prefix: "bonds",
+    state: { faceValue, couponRate, years, ytm, frequency },
+    onRestore: (inputs) => {
+      if (inputs.faceValue !== undefined) setFaceValue(String(inputs.faceValue));
+      if (inputs.couponRate !== undefined) setCouponRate(String(inputs.couponRate));
+      if (inputs.years !== undefined) setYears(String(inputs.years));
+      if (inputs.ytm !== undefined) setYtm(String(inputs.ytm));
+      if (inputs.frequency !== undefined) setFrequency(String(inputs.frequency));
+    },
+  });
 
   const bondValidation = useMemo(() => {
     const result = BondInputSchema.safeParse({
@@ -268,6 +280,7 @@ export default function BondsPage() {
                     [t("bonds.convexity")]: metrics.convexity.toFixed(2),
                   }}
                   inputs={{ faceValue, couponRate, years, ytm, frequency }}
+                  shareUrl={shareUrl}
                   exportData={chartData}
                   exportJson={metrics}
                   pdfElementId="bonds-report-content"

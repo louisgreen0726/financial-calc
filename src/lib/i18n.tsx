@@ -224,6 +224,8 @@ type Translations = {
     universeDesc: string;
     rf: string;
     corr: string;
+    seed: string;
+    seedDesc: string;
     asset: string;
     ret: string;
     risk: string;
@@ -561,7 +563,7 @@ const en: Translations = {
   },
   sidebar: {
     edition: "Professional Edition",
-    version: "v0.3.1",
+    version: "v0.4.0",
     search: "Search calculators...",
     featured: "Featured",
   },
@@ -742,6 +744,8 @@ const en: Translations = {
     universeDesc: "Define assets with Expected Return & Risk (Std Dev).",
     rf: "Risk-Free Rate",
     corr: "Correlation",
+    seed: "Simulation seed",
+    seedDesc: "Use the same seed to reproduce identical Monte Carlo results and shared links.",
     asset: "Asset",
     ret: "Ret (%)",
     risk: "Risk (%)",
@@ -976,7 +980,7 @@ const en: Translations = {
     clearAllHistory: "Clear All History",
     about: "About",
     aboutDesc: "About FinCalc Pro",
-    version: "v0.3.1",
+    version: "v0.4.0",
     description:
       "A comprehensive suite of financial calculators including TVM, cash flow analysis, stock valuation, portfolio optimization, bonds, options, risk metrics, loans, and macroeconomics.",
   },
@@ -1085,7 +1089,7 @@ const zh: Translations = {
   },
   sidebar: {
     edition: "专业版",
-    version: "v0.3.1",
+    version: "v0.4.0",
     search: "搜索计算器...",
     featured: "推荐",
   },
@@ -1266,6 +1270,8 @@ const zh: Translations = {
     universeDesc: "设定各资产的预期回报率与风险 (标准差)。",
     rf: "无风险利率",
     corr: "相关系数",
+    seed: "模拟种子",
+    seedDesc: "使用相同种子可复现一致的蒙特卡洛结果与分享链接。",
     asset: "资产名称",
     ret: "预期回报 (%)",
     risk: "风险/波动率 (%)",
@@ -1500,7 +1506,7 @@ const zh: Translations = {
     clearAllHistory: "清除所有历史",
     about: "关于",
     aboutDesc: "关于 FinCalc Pro",
-    version: "v0.3.1",
+    version: "v0.4.0",
     description:
       "全面的金融计算器套件，包括货币时间价值、现金流分析、股票估值、投资组合优化、债券、期权、风险指标、贷款和宏观经济计算工具。",
   },

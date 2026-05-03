@@ -17,6 +17,7 @@ import { ResultActions } from "@/components/result-actions";
 import { parseOptionalNumber } from "@/lib/input-utils";
 import { OptionsInputSchema } from "@/lib/validation";
 import { ErrorDisplay, ValidationError } from "@/components/ui/error-display";
+import { useShareableUrl } from "@/hooks/use-shareable-url";
 
 export default function OptionsPage() {
   const { t } = useLanguage();
@@ -26,6 +27,17 @@ export default function OptionsPage() {
   const [rate, setRate] = useState("5"); // %
   const [volatility, setVolatility] = useState("20"); // %
   const [hasInteracted, setHasInteracted] = useState(false);
+  const shareUrl = useShareableUrl({
+    prefix: "options",
+    state: { spot, strike, time, rate, volatility },
+    onRestore: (inputs) => {
+      if (inputs.spot !== undefined) setSpot(String(inputs.spot));
+      if (inputs.strike !== undefined) setStrike(String(inputs.strike));
+      if (inputs.time !== undefined) setTime(String(inputs.time));
+      if (inputs.rate !== undefined) setRate(String(inputs.rate));
+      if (inputs.volatility !== undefined) setVolatility(String(inputs.volatility));
+    },
+  });
 
   const parsedInputs = useMemo(
     () => ({
@@ -212,6 +224,7 @@ export default function OptionsPage() {
                     title={t("options.title")}
                     results={{ [t("options.call")]: results.callPrice, [t("options.put")]: results.putPrice }}
                     inputs={{ spot, strike, time, rate, volatility }}
+                    shareUrl={shareUrl}
                     exportData={chartData as unknown as Record<string, unknown>[]}
                     exportJson={results}
                     pdfElementId="options-report-content"

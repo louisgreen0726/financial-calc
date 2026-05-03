@@ -32,7 +32,7 @@ export function ResultShell({
 }: ResultShellProps) {
   return (
     <section className={cn("space-y-6", className)}>
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between" data-pdf-block>
         <div className="space-y-1">
           <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
           {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}

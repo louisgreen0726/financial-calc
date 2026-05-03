@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   calculatePortfolioPoint,
   clampEqualCorrelation,
+  createSeededRandom,
   getMinimumEqualCorrelation,
   makeRandomWeights,
   summarizePortfolioSimulations,
@@ -28,6 +29,28 @@ describe("portfolio-math", () => {
     expect(weights[0]).toBeCloseTo(0.5, 8);
     expect(weights[1]).toBeCloseTo(0.5, 8);
     expect(weights.reduce((sum, value) => sum + value, 0)).toBeCloseTo(1, 8);
+  });
+
+  it("generates deterministic random sequences from the same seed", () => {
+    const first = createSeededRandom("scenario-a");
+    const second = createSeededRandom("scenario-a");
+    const third = createSeededRandom("scenario-b");
+
+    const firstSequence = Array.from({ length: 5 }, () => first());
+    const secondSequence = Array.from({ length: 5 }, () => second());
+    const thirdSequence = Array.from({ length: 5 }, () => third());
+
+    expect(firstSequence).toEqual(secondSequence);
+    expect(firstSequence).not.toEqual(thirdSequence);
+    expect(firstSequence.every((value) => value >= 0 && value < 1)).toBe(true);
+  });
+
+  it("makes reproducible random weights when a seeded generator is supplied", () => {
+    const firstWeights = makeRandomWeights(4, createSeededRandom("portfolio-demo"));
+    const secondWeights = makeRandomWeights(4, createSeededRandom("portfolio-demo"));
+
+    expect(firstWeights).toEqual(secondWeights);
+    expect(firstWeights.reduce((sum, value) => sum + value, 0)).toBeCloseTo(1, 8);
   });
 
   it("rejects invalid equal-correlation matrices before producing negative variance", () => {

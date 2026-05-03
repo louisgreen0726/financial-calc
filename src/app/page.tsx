@@ -68,7 +68,7 @@ export default function Home() {
               ) : null}
             </div>
             <Button asChild>
-              <Link href={`/${latestHistoryItem.page}/`} prefetch={false}>
+              <Link href={`/${latestHistoryItem.page}`} prefetch={false}>
                 {t("home.continueAction")}
               </Link>
             </Button>
@@ -124,7 +124,7 @@ export default function Home() {
             {history.slice(0, 4).map((item) => {
               const navItem = getPageConfig(item.page);
               return (
-                <Link key={item.id} href={`/${item.page}/`} prefetch={false} className="group">
+                <Link key={item.id} href={`/${item.page}`} prefetch={false} className="group">
                   <Card className="h-full glass-card rounded-xl hover:-translate-y-[2px] transition-all duration-200 overflow-hidden">
                     <CardHeader className="p-4 pb-2 border-b border-border/50 bg-muted/20">
                       <CardTitle className="text-sm font-semibold flex items-center justify-between text-muted-foreground gap-2">

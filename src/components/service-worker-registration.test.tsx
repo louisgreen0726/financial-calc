@@ -16,6 +16,11 @@ describe("ServiceWorkerRegistration", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     delete process.env.NEXT_PUBLIC_BASE_PATH;
+    vi.stubEnv("NODE_ENV", "production");
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it("registers the service worker when supported", async () => {
@@ -44,6 +49,40 @@ describe("ServiceWorkerRegistration", () => {
 
     await waitFor(() => {
       expect(window.navigator.serviceWorker).toBeUndefined();
+    });
+  });
+
+  it("unregisters existing service workers during development", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    const unregister = vi.fn().mockResolvedValue(true);
+    const getRegistrations = vi.fn().mockResolvedValue([{ unregister }]);
+    const register = vi.fn();
+    Object.defineProperty(window.navigator, "serviceWorker", {
+      configurable: true,
+      value: { getRegistrations, register },
+    });
+
+    render(<ServiceWorkerRegistration />);
+
+    await waitFor(() => {
+      expect(getRegistrations).toHaveBeenCalled();
+      expect(unregister).toHaveBeenCalled();
+      expect(register).not.toHaveBeenCalled();
+    });
+  });
+
+  it("logs development cleanup failures without crashing", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    const getRegistrations = vi.fn().mockRejectedValue(new Error("cleanup failed"));
+    Object.defineProperty(window.navigator, "serviceWorker", {
+      configurable: true,
+      value: { getRegistrations, register: vi.fn() },
+    });
+
+    render(<ServiceWorkerRegistration />);
+
+    await waitFor(() => {
+      expect(logger.warn).toHaveBeenCalled();
     });
   });
 

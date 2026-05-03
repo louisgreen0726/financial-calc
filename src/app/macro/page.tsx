@@ -16,6 +16,7 @@ import { parseOptionalNumber } from "@/lib/input-utils";
 import { useCalculationHistory } from "@/hooks/use-calculation-history";
 import { useHistoryRecorder } from "@/hooks/use-history-recorder";
 import { HistoryPanel } from "@/components/history-panel";
+import { useShareableUrl } from "@/hooks/use-shareable-url";
 
 interface ValidationError {
   field: string;
@@ -414,6 +415,46 @@ export default function MacroPage() {
     setHasInteracted(true);
   };
 
+  const shareUrl = useShareableUrl({
+    prefix: "macro",
+    state: {
+      calculator: activeTab,
+      startPrice,
+      endPrice,
+      infYears,
+      ppAmount,
+      ppRate,
+      ppYears,
+      nominalRate,
+      realInfRate,
+      cpiAmount,
+      fromCPI,
+      toCPI,
+      domesticPrice,
+      foreignPrice,
+    },
+    onRestore: (inputs) => {
+      const restoredInputs = Object.fromEntries(
+        Object.entries(inputs).filter(([, value]) => value !== undefined && !Array.isArray(value))
+      ) as Record<string, number | string>;
+      const restoredYears = inputs.infYears ?? inputs.ppYears;
+      const restoredInflation = inputs.ppRate ?? inputs.realInfRate;
+      const restoredAmount = inputs.ppAmount ?? inputs.cpiAmount;
+
+      if (restoredYears !== undefined) restoredInputs.years = restoredYears;
+      if (restoredInflation !== undefined) restoredInputs.inflation = restoredInflation;
+      if (restoredAmount !== undefined) restoredInputs.amount = restoredAmount;
+
+      restoreMacroInputs(restoredInputs);
+      if (inputs.infYears !== undefined) setInfYears(String(inputs.infYears));
+      if (inputs.ppYears !== undefined) setPpYears(String(inputs.ppYears));
+      if (inputs.ppRate !== undefined) setPpRate(String(inputs.ppRate));
+      if (inputs.realInfRate !== undefined) setRealInfRate(String(inputs.realInfRate));
+      if (inputs.ppAmount !== undefined) setPpAmount(String(inputs.ppAmount));
+      if (inputs.cpiAmount !== undefined) setCpiAmount(String(inputs.cpiAmount));
+    },
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
@@ -458,6 +499,7 @@ export default function MacroPage() {
               title={macroActionConfig.title}
               results={macroActionConfig.results}
               inputs={macroActionConfig.inputs}
+              shareUrl={shareUrl}
               exportData={macroActionConfig.exportData}
               exportJson={macroActionConfig.exportJson}
               pdfElementId={macroActionConfig.pdfElementId}

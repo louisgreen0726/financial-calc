@@ -35,7 +35,7 @@ export function ResultActions({
 
   return (
     <>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2" data-pdf-exclude="true">
         <Button variant="outline" size="sm" className="gap-2" onClick={() => setShareOpen(true)}>
           <Share2 className="h-4 w-4" />
           {t("share.title")}
