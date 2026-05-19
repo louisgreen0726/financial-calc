@@ -191,10 +191,27 @@ export const Finance = {
   npv: (rate: number, values: number[]): number => {
     if (!isValid(rate) || !Array.isArray(values) || values.length === 0) return NaN;
     if (rate <= -1) return NaN;
+    if (values.some((value) => !isValid(value))) return NaN;
     return values.reduce((acc, val, i) => {
-      if (!isValid(val)) return acc;
       return acc + val / Math.pow(1 + rate, i);
     }, 0);
+  },
+  paybackPeriod: (values: number[]): number => {
+    if (!Array.isArray(values) || values.length === 0 || values.some((value) => !isValid(value))) return NaN;
+
+    let cumulative = 0;
+    for (let i = 0; i < values.length; i++) {
+      cumulative += values[i];
+      if (cumulative >= 0) {
+        if (i === 0) return 0;
+
+        const previousCumulative = cumulative - values[i];
+        if (values[i] === 0) return i;
+        return i - 1 + -previousCumulative / values[i];
+      }
+    }
+
+    return NaN;
   },
   irr: (values: number[], guess: number = 0.1): number => {
     if (!Array.isArray(values) || values.length < 2) return NaN;

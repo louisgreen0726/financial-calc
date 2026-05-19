@@ -158,9 +158,16 @@ export function useMonteCarloSimulation() {
         };
 
         worker.onerror = () => {
+          const nextError = new Error("Monte Carlo worker execution failed");
           workerRef.current?.terminate();
           workerRef.current = null;
-          void computeInProcess(payload, options, runId);
+          void computeInProcess(payload, options, runId).catch((fallbackError) => {
+            if (activeRunIdRef.current !== runId) return;
+            const finalError = fallbackError instanceof Error ? fallbackError : nextError;
+            setError(finalError);
+            setIsRunning(false);
+            options.onError?.(finalError);
+          });
         };
 
         worker.postMessage(payload);

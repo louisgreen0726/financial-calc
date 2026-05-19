@@ -64,7 +64,7 @@ export function useUrlState<T extends Record<string, UrlStateValue>>({
 
       for (const [key, value] of Object.entries(nextState)) {
         const paramKey = prefix ? `${prefix}_${key}` : key;
-        if (value !== undefined && value !== null && value !== "" && (!Array.isArray(value) || value.length > 0)) {
+        if (value !== undefined && value !== null && (!Array.isArray(value) || value.length > 0)) {
           params.set(paramKey, serializeUrlValue(value));
         } else {
           params.delete(paramKey);

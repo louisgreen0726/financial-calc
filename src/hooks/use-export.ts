@@ -9,6 +9,38 @@ interface UseExportOptions {
   filename?: string;
 }
 
+function shouldPrefixCsvFormula(value: unknown, text: string) {
+  if (typeof value !== "string") {
+    return false;
+  }
+
+  return /^[\t\r\n =+\-@]/.test(text);
+}
+
+export function escapeCsvCell(value: unknown) {
+  const rawValue = String(value ?? "");
+  const stringValue = shouldPrefixCsvFormula(value, rawValue) ? `'${rawValue}` : rawValue;
+
+  if (/[,\"\r\n]/.test(stringValue)) {
+    return `"${stringValue.replace(/"/g, '""')}"`;
+  }
+
+  return stringValue;
+}
+
+export function serializeCsv(data: Record<string, unknown>[], headers?: string[]) {
+  if (data.length === 0) {
+    return "";
+  }
+
+  const csvHeaders = headers || Object.keys(data[0]);
+
+  return [
+    csvHeaders.map(escapeCsvCell).join(","),
+    ...data.map((row) => csvHeaders.map((header) => escapeCsvCell(row[header])).join(",")),
+  ].join("\n");
+}
+
 export function useExport({ filename = "export" }: UseExportOptions = {}) {
   const { t } = useLanguage();
 
@@ -20,26 +52,7 @@ export function useExport({ filename = "export" }: UseExportOptions = {}) {
           return;
         }
 
-        // Generate headers from first row if not provided
-        const csvHeaders = headers || Object.keys(data[0]);
-
-        // Create CSV content
-        const csvContent = [
-          csvHeaders.join(","),
-          ...data.map((row) =>
-            csvHeaders
-              .map((header) => {
-                const value = row[header];
-                // Escape values containing commas or quotes
-                const stringValue = String(value ?? "");
-                if (/[,\"\r\n]/.test(stringValue)) {
-                  return `"${stringValue.replace(/"/g, '""')}"`;
-                }
-                return stringValue;
-              })
-              .join(",")
-          ),
-        ].join("\n");
+        const csvContent = serializeCsv(data, headers);
 
         // Create and download file
         const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });

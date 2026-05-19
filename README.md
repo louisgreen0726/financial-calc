@@ -158,7 +158,7 @@ financial-calc/
 ## Quality Notes
 
 - the app currently passes typecheck, test, lint, format, and build verification
-- production dependency audit currently reports no vulnerabilities
+- production dependency audit should be kept green with `npm audit --omit=dev`
 
 ## License
 

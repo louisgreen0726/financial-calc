@@ -45,9 +45,9 @@ export const EquityDDMSchema = z
 export const OptionsInputSchema = z.object({
   S: z.number().finite().positive("Spot price must be positive"),
   K: z.number().finite().positive("Strike price must be positive"),
-  t: z.number().finite().positive("Time to maturity must be positive"),
+  t: z.number().finite().min(0, "Time to maturity cannot be negative"),
   r: z.number().finite(),
-  sigma: z.number().finite().positive("Volatility must be positive"),
+  sigma: z.number().finite().min(0, "Volatility cannot be negative"),
 });
 
 export const CashFlowSchema = z.object({
