@@ -17,6 +17,7 @@ import { useCalculationHistory } from "@/hooks/use-calculation-history";
 import { useHistoryRecorder } from "@/hooks/use-history-recorder";
 import { HistoryPanel } from "@/components/history-panel";
 import { useShareableUrl } from "@/hooks/use-shareable-url";
+import { normalizeMacroTab, type MacroTab } from "@/lib/route-state";
 
 interface ValidationError {
   field: string;
@@ -41,7 +42,7 @@ function makeMacroActionConfig(config: MacroActionConfig): MacroActionConfig {
 
 export default function MacroPage() {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState("inflation");
+  const [activeTab, setActiveTab] = useState<MacroTab>("inflation");
   const [hasInteracted, setHasInteracted] = useState(false);
   const { addToHistory } = useCalculationHistory({ page: "macro" });
 
@@ -390,8 +391,8 @@ export default function MacroPage() {
   });
 
   const restoreMacroInputs = (inputs: Record<string, number | string>) => {
-    if (typeof inputs.calculator === "string") {
-      setActiveTab(inputs.calculator);
+    if (inputs.calculator !== undefined) {
+      setActiveTab(normalizeMacroTab(inputs.calculator, activeTab));
     }
     if (inputs.startPrice !== undefined) setStartPrice(String(inputs.startPrice));
     if (inputs.endPrice !== undefined) setEndPrice(String(inputs.endPrice));
@@ -465,7 +466,7 @@ export default function MacroPage() {
         <HistoryPanel page="macro" onRestore={restoreMacroInputs} />
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(normalizeMacroTab(value))} className="space-y-6">
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="inflation" className="flex items-center gap-2" aria-label={t("macro.inflation.tab")}>
             <TrendingUp className="h-4 w-4" />

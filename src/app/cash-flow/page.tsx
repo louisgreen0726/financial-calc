@@ -92,23 +92,7 @@ export default function CashFlowPage() {
     const npv = Finance.npv(r, flows);
     const irr = Finance.irr(flows);
 
-    // Payback Period (Simple)
-    let cumulative = 0;
-    let payback = -1;
-    for (let i = 0; i < flows.length; i++) {
-      cumulative += flows[i];
-      if (cumulative >= 0) {
-        // Linear interpolation for more precision? Or just period
-        // Previous cumulative was negative.
-        const prevCum = cumulative - flows[i];
-        if (flows[i] === 0) {
-          payback = i;
-        } else {
-          payback = i - 1 + -prevCum / flows[i];
-        }
-        break;
-      }
-    }
+    const payback = Finance.paybackPeriod(flows);
 
     return { npv, irr, payback };
   }, [flows, parsedRate, validation.isValid]);
@@ -271,7 +255,7 @@ export default function CashFlowPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">
-                        {calculateMetrics.payback >= 0
+                        {Number.isFinite(calculateMetrics.payback) && calculateMetrics.payback >= 0
                           ? `${calculateMetrics.payback.toFixed(1)} ${t("common.year")}`
                           : "N/A"}
                       </div>

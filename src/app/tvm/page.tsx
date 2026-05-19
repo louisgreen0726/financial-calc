@@ -26,8 +26,7 @@ import { ResultShell } from "@/components/result-shell";
 import { ResultActions } from "@/components/result-actions";
 import { parseRequiredNumber } from "@/lib/input-utils";
 import { logger } from "@/lib/logger";
-
-type TVMTarget = "pv" | "fv" | "pmt" | "nper" | "rate";
+import { normalizeTVMTarget, type TVMTarget } from "@/lib/route-state";
 
 const SYMBOLS = {
   arrowRight: "\u2192",
@@ -71,7 +70,7 @@ function TVMPageContent() {
     prefix: "tvm",
   });
 
-  const target = urlState.target as TVMTarget;
+  const target = normalizeTVMTarget(urlState.target);
   const setTarget = (v: TVMTarget) => setField("target", v);
 
   const rate = urlState.rate as string;
@@ -368,7 +367,7 @@ function TVMPageContent() {
                 <Select
                   value={target}
                   onValueChange={(v) => {
-                    setTarget(v as TVMTarget);
+                    setTarget(normalizeTVMTarget(v));
                     setResult(null);
                     setCalculationError(null);
                   }}
@@ -602,7 +601,7 @@ function TVMPageContent() {
         page="tvm"
         onRestore={(inputs) => {
           setState({
-            target: inputs.target !== undefined ? String(inputs.target) : target,
+            target: inputs.target !== undefined ? normalizeTVMTarget(inputs.target) : target,
             rate: inputs.rate !== undefined ? String(inputs.rate) : rate,
             nper: inputs.nper !== undefined ? String(inputs.nper) : nper,
             pmt: inputs.pmt !== undefined ? String(inputs.pmt) : pmt,

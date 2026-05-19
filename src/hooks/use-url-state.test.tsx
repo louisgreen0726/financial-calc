@@ -42,7 +42,7 @@ describe("useUrlState", () => {
     });
   });
 
-  it("drops empty values while preserving unrelated parameters", () => {
+  it("preserves empty string values so controlled inputs can stay blank", () => {
     navigationMock.searchParams = new URLSearchParams("source=share&fc_rate=5&fc_nper=10");
 
     const { result } = renderHook(() =>
@@ -56,7 +56,7 @@ describe("useUrlState", () => {
       result.current.setState({ rate: "", nper: "15" });
     });
 
-    expect(navigationMock.replace).toHaveBeenCalledWith("/tvm?source=share&fc_nper=15", { scroll: false });
+    expect(navigationMock.replace).toHaveBeenCalledWith("/tvm?source=share&fc_rate=&fc_nper=15", { scroll: false });
   });
 
   it("serializes arrays and normalizes trailing slashes", () => {

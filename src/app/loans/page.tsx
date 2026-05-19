@@ -34,6 +34,7 @@ import { useHistoryRecorder } from "@/hooks/use-history-recorder";
 import { HistoryPanel } from "@/components/history-panel";
 import { LoanInputSchema } from "@/lib/validation";
 import { VirtualTable } from "@/components/virtual-table";
+import { normalizeLoanMethod, type LoanMethodState } from "@/lib/route-state";
 
 function LoansPageContent() {
   const { t } = useLanguage();
@@ -43,7 +44,7 @@ function LoansPageContent() {
     shareUrl,
   } = useUrlState({
     defaultValues: {
-      method: "CPM" as "CPM" | "CAM",
+      method: "CPM" as LoanMethodState,
       amount: "500000",
       rate: "4.5",
       years: "30",
@@ -53,8 +54,8 @@ function LoansPageContent() {
 
   const [hasInteracted, setHasInteracted] = useState(false);
 
-  const method = urlState.method as "CPM" | "CAM";
-  const setMethod = (v: "CPM" | "CAM") => {
+  const method = normalizeLoanMethod(urlState.method);
+  const setMethod = (v: LoanMethodState) => {
     setHasInteracted(true);
     setField("method", v);
   };
@@ -170,7 +171,7 @@ function LoansPageContent() {
             if (inputs.amount !== undefined) setField("amount", String(inputs.amount));
             if (inputs.rate !== undefined) setField("rate", String(inputs.rate));
             if (inputs.years !== undefined) setField("years", String(inputs.years));
-            if (inputs.method === "CPM" || inputs.method === "CAM") setField("method", inputs.method);
+            if (inputs.method !== undefined) setField("method", normalizeLoanMethod(inputs.method));
             setHasInteracted(true);
           }}
         />
@@ -189,7 +190,7 @@ function LoansPageContent() {
               </span>
               <Tabs
                 value={method}
-                onValueChange={(v) => setMethod(v as "CPM" | "CAM")}
+                onValueChange={(value) => setMethod(normalizeLoanMethod(value))}
                 className="w-full"
                 aria-labelledby="loans-method-label"
               >

@@ -133,6 +133,16 @@ test("npv rejects rates at or below -100 percent", () => {
   expect(Number.isNaN(Finance.npv(-1, [-100, 110]))).toBe(true);
 });
 
+test("npv rejects invalid cash-flow values instead of silently skipping them", () => {
+  expect(Number.isNaN(Finance.npv(0.1, [-100, Number.NaN, 50]))).toBe(true);
+});
+
+test("paybackPeriod handles period-zero payback and unrecovered projects", () => {
+  expect(Finance.paybackPeriod([100, 50])).toBe(0);
+  expect(Finance.paybackPeriod([-100, 60, 60])).toBeCloseTo(1.6667, 4);
+  expect(Number.isNaN(Finance.paybackPeriod([-100, 10, 10]))).toBe(true);
+});
+
 test("irr falls back to a bracketed solver when the initial guess is poor", () => {
   expect(Finance.irr([-1000, 300, 420, 680], 9)).toBeCloseTo(0.1634, 4);
 });
