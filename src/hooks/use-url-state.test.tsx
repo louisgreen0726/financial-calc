@@ -75,8 +75,22 @@ describe("useUrlState", () => {
     });
 
     expect(navigationMock.replace).toHaveBeenCalledWith(
-      "/cash-flow?source=share&cash_flows=-2000%7C700%7C900&cash_rate=8",
+      "/cash-flow?source=share&cash_flows=json%3A%5B%22-2000%22%2C%22700%22%2C%22900%22%5D&cash_rate=8",
       { scroll: false }
     );
+  });
+
+  it("exposes an absolute share URL while keeping router updates relative", () => {
+    navigationMock.pathname = "/tvm/";
+    navigationMock.searchParams = new URLSearchParams("source=share");
+
+    const { result } = renderHook(() =>
+      useUrlState({
+        defaultValues: { rate: "5", nper: "10" },
+        prefix: "fc",
+      })
+    );
+
+    expect(result.current.shareUrl).toBe(`${window.location.origin}/tvm?source=share&fc_rate=5&fc_nper=10`);
   });
 });

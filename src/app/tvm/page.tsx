@@ -27,6 +27,7 @@ import { ResultActions } from "@/components/result-actions";
 import { parseRequiredNumber } from "@/lib/input-utils";
 import { logger } from "@/lib/logger";
 import { normalizeTVMTarget, type TVMTarget } from "@/lib/route-state";
+import { MAX_INTEREST_RATE, MAX_PERIODS } from "@/lib/constants";
 
 const SYMBOLS = {
   arrowRight: "\u2192",
@@ -107,18 +108,22 @@ function TVMPageContent() {
   const handleInputChange = (field: string, value: string, setter: (val: string) => void) => {
     setter(value);
     setTouchedFields((prev) => ({ ...prev, [field]: true }));
+    setResult(null);
+    setCalcSteps(null);
 
     // Validate based on field type
-    const options: { required?: boolean; allowNegative?: boolean; allowZero?: boolean; min?: number } = {
+    const options: { required?: boolean; allowNegative?: boolean; allowZero?: boolean; min?: number; max?: number } = {
       required: true,
     };
 
     if (field === "rate") {
       options.allowNegative = false;
+      options.max = MAX_INTEREST_RATE;
     } else if (field === "nper") {
       options.allowNegative = false;
       options.allowZero = false;
       options.min = 1;
+      options.max = MAX_PERIODS;
     }
 
     validateField(field, value, options);
@@ -137,16 +142,22 @@ function TVMPageContent() {
     // Validate all inputs
     const fieldsToValidate: Record<
       string,
-      { value: string; options?: { required?: boolean; allowNegative?: boolean; allowZero?: boolean; min?: number } }
+      {
+        value: string;
+        options?: { required?: boolean; allowNegative?: boolean; allowZero?: boolean; min?: number; max?: number };
+      }
     > = {};
 
     if (target !== "rate") {
-      fieldsToValidate.rate = { value: rate, options: { required: true, allowNegative: false } };
+      fieldsToValidate.rate = {
+        value: rate,
+        options: { required: true, allowNegative: false, max: MAX_INTEREST_RATE },
+      };
     }
     if (target !== "nper") {
       fieldsToValidate.nper = {
         value: nper,
-        options: { required: true, allowNegative: false, allowZero: false, min: 1 },
+        options: { required: true, allowNegative: false, allowZero: false, min: 1, max: MAX_PERIODS },
       };
     }
     if (target !== "pmt") {
@@ -201,11 +212,10 @@ function TVMPageContent() {
       } else {
         setResult(res);
         setCalculationError(null);
-        addToHistory(
-          { rate, nper, pmt, pv, fv, type, target },
-          res,
-          `TVM ${SYMBOLS.arrowRight} ${target.toUpperCase()}`
-        );
+        addToHistory({ rate, nper, pmt, pv, fv, type, target }, res, {
+          label: `TVM ${SYMBOLS.arrowRight} ${target.toUpperCase()}`,
+          resultFormat: target === "rate" ? "percentDecimal" : target === "nper" ? "periods" : "currency",
+        });
 
         const compoundFactor = Math.pow(1 + r, n);
 
@@ -283,7 +293,7 @@ function TVMPageContent() {
                 value: `${fut}${SYMBOLS.multiply}${r}+${p} vs ${pres}${SYMBOLS.multiply}${r}+${p}`,
                 formula: `(FV${SYMBOLS.multiply}r+PMT)/(PV${SYMBOLS.multiply}r+PMT)`,
               },
-              { label: "Periods", value: `${res.toFixed(2)} years`, formula: "n = ln(ratio) / ln(1+r)" },
+              { label: "Periods", value: `${res.toFixed(2)} periods`, formula: "n = ln(ratio) / ln(1+r)" },
             ],
           },
           rate: {
@@ -370,6 +380,7 @@ function TVMPageContent() {
                     setTarget(normalizeTVMTarget(v));
                     setResult(null);
                     setCalculationError(null);
+                    setCalcSteps(null);
                   }}
                 >
                   <SelectTrigger id="tvm-target" aria-labelledby="tvm-target-label">
@@ -506,7 +517,12 @@ function TVMPageContent() {
                 </p>
                 <RadioGroup
                   value={type}
-                  onValueChange={(v) => setType(v as "0" | "1")}
+                  onValueChange={(v) => {
+                    setType(v as "0" | "1");
+                    setResult(null);
+                    setCalculationError(null);
+                    setCalcSteps(null);
+                  }}
                   className="grid gap-3 sm:grid-cols-2"
                   aria-labelledby="tvm-payment-mode-label"
                 >

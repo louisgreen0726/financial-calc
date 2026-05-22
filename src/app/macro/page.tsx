@@ -35,6 +35,7 @@ interface MacroActionConfig {
 }
 
 const EMPTY_RESULT = "\u2014";
+const isFiniteNumber = (value: number | null): value is number => typeof value === "number" && Number.isFinite(value);
 
 function makeMacroActionConfig(config: MacroActionConfig): MacroActionConfig {
   return config;
@@ -164,7 +165,8 @@ export default function MacroPage() {
     const end = parseOptionalNumber(endPrice);
     const years = parseOptionalNumber(infYears);
     if (start === null || end === null || years === null) return null;
-    return Finance.inflationRate(start, end, years);
+    const result = Finance.inflationRate(start, end, years);
+    return Number.isFinite(result) ? result : null;
   }, [startPrice, endPrice, infYears, validateInflationInputs]);
 
   const ppResult = useMemo(() => {
@@ -175,7 +177,8 @@ export default function MacroPage() {
     const rate = parseOptionalNumber(ppRate);
     const years = parseOptionalNumber(ppYears);
     if (amount === null || rate === null || years === null) return null;
-    return Finance.purchasingPower(amount, rate / 100, years);
+    const result = Finance.purchasingPower(amount, rate / 100, years);
+    return Number.isFinite(result) ? result : null;
   }, [ppAmount, ppRate, ppYears, validatePPInputs]);
 
   const realResult = useMemo(() => {
@@ -185,7 +188,8 @@ export default function MacroPage() {
     const nominal = parseOptionalNumber(nominalRate);
     const inflation = parseOptionalNumber(realInfRate);
     if (nominal === null || inflation === null) return null;
-    return Finance.realInterestRate(nominal / 100, inflation / 100);
+    const result = Finance.realInterestRate(nominal / 100, inflation / 100);
+    return Number.isFinite(result) ? result : null;
   }, [nominalRate, realInfRate, validateRealRateInputs]);
 
   const cpiResult = useMemo(() => {
@@ -196,7 +200,8 @@ export default function MacroPage() {
     const fromCpi = parseOptionalNumber(fromCPI);
     const toCpi = parseOptionalNumber(toCPI);
     if (amount === null || fromCpi === null || toCpi === null) return null;
-    return Finance.cpiAdjust(amount, fromCpi, toCpi);
+    const result = Finance.cpiAdjust(amount, fromCpi, toCpi);
+    return Number.isFinite(result) ? result : null;
   }, [cpiAmount, fromCPI, toCPI, validateCPIInputs]);
 
   const pppResult = useMemo(() => {
@@ -206,7 +211,8 @@ export default function MacroPage() {
     const domestic = parseOptionalNumber(domesticPrice);
     const foreign = parseOptionalNumber(foreignPrice);
     if (domestic === null || foreign === null) return null;
-    return Finance.exchangeRatePPP(domestic, foreign);
+    const result = Finance.exchangeRatePPP(domestic, foreign);
+    return Number.isFinite(result) ? result : null;
   }, [domesticPrice, foreignPrice, validatePPPInputs]);
 
   const inflationErrors = useMemo(() => validateInflationInputs(), [validateInflationInputs]);
@@ -215,7 +221,7 @@ export default function MacroPage() {
   const cpiErrors = useMemo(() => validateCPIInputs(), [validateCPIInputs]);
   const pppErrors = useMemo(() => validatePPPInputs(), [validatePPPInputs]);
   const macroActionConfig = useMemo<MacroActionConfig | null>(() => {
-    if (activeTab === "inflation" && infResult !== null && !isNaN(infResult)) {
+    if (activeTab === "inflation" && isFiniteNumber(infResult)) {
       const value = `${(infResult * 100).toFixed(4)}%`;
       return makeMacroActionConfig({
         title: t("macro.inflation.title"),
@@ -228,7 +234,7 @@ export default function MacroPage() {
       });
     }
 
-    if (activeTab === "purchasingPower" && ppResult !== null && !isNaN(ppResult)) {
+    if (activeTab === "purchasingPower" && isFiniteNumber(ppResult)) {
       const loss = (parseOptionalNumber(ppAmount) ?? 0) - ppResult;
       return makeMacroActionConfig({
         title: t("macro.purchasingPower.title"),
@@ -247,7 +253,7 @@ export default function MacroPage() {
       });
     }
 
-    if (activeTab === "realRate" && realResult !== null && !isNaN(realResult)) {
+    if (activeTab === "realRate" && isFiniteNumber(realResult)) {
       const value = `${(realResult * 100).toFixed(4)}%`;
       return makeMacroActionConfig({
         title: t("macro.realRate.title"),
@@ -260,7 +266,7 @@ export default function MacroPage() {
       });
     }
 
-    if (activeTab === "cpiAdjust" && cpiResult !== null && !isNaN(cpiResult)) {
+    if (activeTab === "cpiAdjust" && isFiniteNumber(cpiResult)) {
       return makeMacroActionConfig({
         title: t("macro.cpiAdjust.title"),
         results: { [t("macro.cpiAdjust.adjusted")]: cpiResult },
@@ -272,7 +278,7 @@ export default function MacroPage() {
       });
     }
 
-    if (activeTab === "ppp" && pppResult !== null && !isNaN(pppResult)) {
+    if (activeTab === "ppp" && isFiniteNumber(pppResult)) {
       return makeMacroActionConfig({
         title: t("macro.ppp.title"),
         results: { [t("macro.ppp.rate")]: pppResult.toFixed(4) },
@@ -312,48 +318,57 @@ export default function MacroPage() {
     inputs: Record<string, number | string>;
     result: number;
     label: string;
+    resultFormat?: "currency" | "percent" | "ratio";
   }>(() => {
     if (!macroActionConfig) {
       return { inputs: {} as Record<string, number | string>, result: Number.NaN, label: "" };
     }
 
-    if (activeTab === "inflation" && infResult !== null) {
+    if (activeTab === "inflation" && isFiniteNumber(infResult)) {
       return {
-        inputs: { calculator: activeTab, startPrice, endPrice, years: infYears },
+        inputs: { calculator: activeTab, startPrice, endPrice, years: infYears } as Record<string, number | string>,
         result: infResult * 100,
         label: t("macro.inflation.rate"),
+        resultFormat: "percent",
       };
     }
 
-    if (activeTab === "purchasingPower" && ppResult !== null) {
+    if (activeTab === "purchasingPower" && isFiniteNumber(ppResult)) {
       return {
-        inputs: { calculator: activeTab, amount: ppAmount, inflation: ppRate, years: ppYears },
+        inputs: { calculator: activeTab, amount: ppAmount, inflation: ppRate, years: ppYears } as Record<
+          string,
+          number | string
+        >,
         result: ppResult,
         label: t("macro.purchasingPower.futureValue"),
+        resultFormat: "currency",
       };
     }
 
-    if (activeTab === "realRate" && realResult !== null) {
+    if (activeTab === "realRate" && isFiniteNumber(realResult)) {
       return {
-        inputs: { calculator: activeTab, nominalRate, inflation: realInfRate },
+        inputs: { calculator: activeTab, nominalRate, inflation: realInfRate } as Record<string, number | string>,
         result: realResult * 100,
         label: t("macro.realRate.real"),
+        resultFormat: "percent",
       };
     }
 
-    if (activeTab === "cpiAdjust" && cpiResult !== null) {
+    if (activeTab === "cpiAdjust" && isFiniteNumber(cpiResult)) {
       return {
-        inputs: { calculator: activeTab, amount: cpiAmount, fromCPI, toCPI },
+        inputs: { calculator: activeTab, amount: cpiAmount, fromCPI, toCPI } as Record<string, number | string>,
         result: cpiResult,
         label: t("macro.cpiAdjust.adjusted"),
+        resultFormat: "currency",
       };
     }
 
-    if (activeTab === "ppp" && pppResult !== null) {
+    if (activeTab === "ppp" && isFiniteNumber(pppResult)) {
       return {
-        inputs: { calculator: activeTab, domesticPrice, foreignPrice },
+        inputs: { calculator: activeTab, domesticPrice, foreignPrice } as Record<string, number | string>,
         result: pppResult,
         label: t("macro.ppp.rate"),
+        resultFormat: "ratio",
       };
     }
 
@@ -387,6 +402,7 @@ export default function MacroPage() {
     inputs: macroHistoryEntry.inputs,
     result: macroHistoryEntry.result,
     label: macroHistoryEntry.label,
+    resultFormat: macroHistoryEntry.resultFormat,
     enabled: hasInteracted && macroActionConfig !== null,
   });
 
@@ -413,7 +429,7 @@ export default function MacroPage() {
     if (inputs.toCPI !== undefined) setToCPI(String(inputs.toCPI));
     if (inputs.domesticPrice !== undefined) setDomesticPrice(String(inputs.domesticPrice));
     if (inputs.foreignPrice !== undefined) setForeignPrice(String(inputs.foreignPrice));
-    setHasInteracted(true);
+    setHasInteracted(false);
   };
 
   const shareUrl = useShareableUrl({
@@ -571,7 +587,7 @@ export default function MacroPage() {
               <div className="text-center space-y-2">
                 <h3 className="text-lg font-medium text-muted-foreground">{t("macro.inflation.rate")}</h3>
                 <div className="text-5xl font-bold text-primary tracking-tighter">
-                  {infResult !== null && !isNaN(infResult) ? `${(infResult * 100).toFixed(4)}%` : EMPTY_RESULT}
+                  {isFiniteNumber(infResult) ? `${(infResult * 100).toFixed(4)}%` : EMPTY_RESULT}
                 </div>
               </div>
             </Card>
@@ -641,10 +657,10 @@ export default function MacroPage() {
                     {t("macro.purchasingPower.futureValue")}
                   </h3>
                   <div className="text-4xl font-bold text-primary tracking-tighter mt-2">
-                    {ppResult !== null && !isNaN(ppResult) ? formatCurrency(ppResult) : EMPTY_RESULT}
+                    {isFiniteNumber(ppResult) ? formatCurrency(ppResult) : EMPTY_RESULT}
                   </div>
                 </div>
-                {ppResult !== null && !isNaN(ppResult) && (
+                {isFiniteNumber(ppResult) && (
                   <div className="p-4 bg-red-50 dark:bg-red-950 rounded-lg">
                     <p className="text-sm text-muted-foreground">{t("macro.purchasingPower.loss")}</p>
                     <p className="text-2xl font-bold text-red-600">
@@ -704,7 +720,7 @@ export default function MacroPage() {
               <div className="text-center space-y-2">
                 <h3 className="text-lg font-medium text-muted-foreground">{t("macro.realRate.real")}</h3>
                 <div className="text-5xl font-bold text-primary tracking-tighter">
-                  {realResult !== null && !isNaN(realResult) ? `${(realResult * 100).toFixed(4)}%` : EMPTY_RESULT}
+                  {isFiniteNumber(realResult) ? `${(realResult * 100).toFixed(4)}%` : EMPTY_RESULT}
                 </div>
               </div>
             </Card>
@@ -778,7 +794,7 @@ export default function MacroPage() {
               <div className="text-center space-y-2">
                 <h3 className="text-lg font-medium text-muted-foreground">{t("macro.cpiAdjust.adjusted")}</h3>
                 <div className="text-5xl font-bold text-primary tracking-tighter">
-                  {cpiResult !== null && !isNaN(cpiResult) ? formatCurrency(cpiResult) : EMPTY_RESULT}
+                  {isFiniteNumber(cpiResult) ? formatCurrency(cpiResult) : EMPTY_RESULT}
                 </div>
               </div>
             </Card>
@@ -838,7 +854,7 @@ export default function MacroPage() {
               <div className="text-center space-y-2">
                 <h3 className="text-lg font-medium text-muted-foreground">{t("macro.ppp.rate")}</h3>
                 <div className="text-5xl font-bold text-primary tracking-tighter">
-                  {pppResult !== null && !isNaN(pppResult) ? pppResult.toFixed(4) : EMPTY_RESULT}
+                  {isFiniteNumber(pppResult) ? pppResult.toFixed(4) : EMPTY_RESULT}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">{t("macro.ppp.rateDesc")}</p>
               </div>

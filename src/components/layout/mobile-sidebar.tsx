@@ -2,7 +2,7 @@
 
 import React from "react";
 
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Sidebar } from "./sidebar";
 import { Menu } from "lucide-react";
@@ -21,8 +21,14 @@ export const MobileSidebar = React.memo(function MobileSidebar() {
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="p-0 w-[82vw] max-w-[300px] bg-background border-r flex flex-col">
+        <SheetTitle className="sr-only">{t("common.toggleMenu")}</SheetTitle>
+        <SheetDescription className="sr-only">{t("sidebar.search")}</SheetDescription>
         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
-          <Sidebar className="border-none w-full h-full bg-transparent" />
+          <Sidebar
+            className="border-none w-full h-full bg-transparent"
+            searchId="mobile-calculator-search"
+            onNavigate={() => setOpen(false)}
+          />
         </div>
       </SheetContent>
     </Sheet>

@@ -15,6 +15,16 @@ export interface CalculationHistoryItem {
   result: number;
   timestamp: number;
   label?: string;
+  resultFormat?: HistoryResultFormat;
+  resultUnit?: string;
+}
+
+export type HistoryResultFormat = "currency" | "percent" | "percentDecimal" | "number" | "ratio" | "periods" | "years";
+
+export interface AddToHistoryOptions {
+  label?: string;
+  resultFormat?: HistoryResultFormat;
+  resultUnit?: string;
 }
 
 interface UseCalculationHistoryOptions {
@@ -88,19 +98,25 @@ export function useCalculationHistory({ page, maxItems = MAX_HISTORY_ITEMS }: Us
   }, [loadHistory]);
 
   const addToHistory = useCallback(
-    (inputs: Record<string, number | string>, result: number, label?: string) => {
+    (inputs: Record<string, number | string>, result: number, labelOrOptions?: string | AddToHistoryOptions) => {
+      const options: AddToHistoryOptions =
+        typeof labelOrOptions === "string" ? { label: labelOrOptions } : (labelOrOptions ?? {});
       const newItem: CalculationHistoryItem = {
         id: createHistoryId(),
         page,
         inputs,
         result,
         timestamp: Date.now(),
-        label,
+        label: options.label,
+        resultFormat: options.resultFormat,
+        resultUnit: options.resultUnit,
       };
 
       setHistory((prev) => {
-        const nextSignature = stableSerialize(inputs);
-        const filtered = prev.filter((item) => item.page !== page || stableSerialize(item.inputs) !== nextSignature);
+        const nextSignature = stableSerialize({ inputs, label: options.label });
+        const filtered = prev.filter(
+          (item) => item.page !== page || stableSerialize({ inputs: item.inputs, label: item.label }) !== nextSignature
+        );
         const updated = [newItem, ...filtered].slice(0, maxItems);
         queueMicrotask(() => persistHistory(updated));
         return updated;

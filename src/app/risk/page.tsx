@@ -36,6 +36,7 @@ export default function RiskPage() {
       if (inputs.volatility !== undefined) setVolatility(String(inputs.volatility));
       if (inputs.confidence !== undefined) setConfidence(String(inputs.confidence));
       if (inputs.days !== undefined) setDays(String(inputs.days));
+      setHasInteracted(false);
     },
   });
 
@@ -102,11 +103,13 @@ export default function RiskPage() {
 
     return { VaR_val, VaR_pct, CVaR_val, CVaR_pct, sigmaHorizon, z };
   }, [hasValidationErrors, parsedInputs]);
+  const metricsAreFinite = Object.values(metrics).every(Number.isFinite);
+  const resultReady = !hasValidationErrors && metricsAreFinite;
 
   // Generate Distribution Curve
   const chartData = useMemo(() => {
     const data: { dev: number; return: number; loss: number; prob: number; isTail: boolean }[] = [];
-    if (hasValidationErrors) {
+    if (!resultReady) {
       return data;
     }
     const sigma = metrics.sigmaHorizon;
@@ -127,14 +130,15 @@ export default function RiskPage() {
       });
     }
     return data;
-  }, [hasValidationErrors, metrics, parsedInputs]);
+  }, [metrics, parsedInputs, resultReady]);
 
   useHistoryRecorder({
     addToHistory,
     inputs: { value, volatility, confidence, days },
     result: metrics.VaR_val,
     label: t("risk.var"),
-    enabled: hasInteracted && !hasValidationErrors,
+    resultFormat: "currency",
+    enabled: hasInteracted && resultReady,
   });
 
   return (
@@ -151,7 +155,7 @@ export default function RiskPage() {
             if (inputs.volatility !== undefined) setVolatility(String(inputs.volatility));
             if (inputs.confidence !== undefined) setConfidence(String(inputs.confidence));
             if (inputs.days !== undefined) setDays(String(inputs.days));
-            setHasInteracted(true);
+            setHasInteracted(false);
           }}
         />
       </div>
@@ -218,11 +222,11 @@ export default function RiskPage() {
           <ResultShell
             title={t("common.result")}
             description={t("risk.subtitle")}
-            isReady={!hasValidationErrors}
+            isReady={resultReady}
             emptyTitle={t("risk.title")}
             emptyDescription={Object.values(validation)[0] as string | undefined}
             actions={
-              !hasValidationErrors ? (
+              resultReady ? (
                 <ResultActions
                   title={t("risk.title")}
                   results={{
@@ -321,7 +325,7 @@ export default function RiskPage() {
                           minTickGap={22}
                         />
                         <YAxis hide />
-                        <Tooltip labelFormatter={() => ""} formatter={(v: number) => v.toFixed(4)} />
+                        <Tooltip labelFormatter={() => ""} formatter={(value) => Number(value ?? 0).toFixed(4)} />
                         <Area
                           type="monotone"
                           dataKey="prob"

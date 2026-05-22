@@ -8,7 +8,9 @@ import { NAV_CONFIG } from "@/lib/nav-config";
 import { ArrowRight, Clock } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
 import { useCalculationHistory } from "@/hooks/use-calculation-history";
-import { formatCurrency } from "@/lib/utils";
+import { formatHistoryResult } from "@/lib/history-format";
+import { PENDING_RESTORE_KEY } from "@/lib/constants";
+import { safeSetSessionJSON } from "@/lib/storage";
 import { MotionPage, StaggeredList, MotionListItem, MotionCard } from "@/components/motion-wrappers";
 import { motion } from "framer-motion";
 import { WorkspaceHomeSection } from "@/components/workspace-home-section";
@@ -23,6 +25,18 @@ export default function Home() {
 
   const getPageConfig = (pageStr: string) => {
     return allNavItems.find((item) => item.href.includes(pageStr));
+  };
+
+  const prepareRestore = (item: typeof latestHistoryItem) => {
+    if (!item) {
+      return;
+    }
+
+    safeSetSessionJSON(PENDING_RESTORE_KEY, {
+      page: item.page,
+      inputs: item.inputs,
+      timestamp: Date.now(),
+    });
   };
 
   return (
@@ -56,19 +70,17 @@ export default function Home() {
                   ? t(getPageConfig(latestHistoryItem.page)!.titleKey)
                   : latestHistoryItem.page}
               </p>
-              <p className="text-2xl font-display font-bold">
-                {latestHistoryItem.result > 1000 ||
-                latestHistoryItem.result < -1000 ||
-                latestHistoryItem.page === "bonds"
-                  ? formatCurrency(latestHistoryItem.result)
-                  : latestHistoryItem.result.toLocaleString(undefined, { maximumFractionDigits: 4 })}
-              </p>
+              <p className="text-2xl font-display font-bold">{formatHistoryResult(latestHistoryItem)}</p>
               {latestHistoryItem.label ? (
                 <p className="text-sm font-medium text-primary">{latestHistoryItem.label}</p>
               ) : null}
             </div>
             <Button asChild>
-              <Link href={`/${latestHistoryItem.page}`} prefetch={false}>
+              <Link
+                href={`/${latestHistoryItem.page}`}
+                prefetch={false}
+                onClick={() => prepareRestore(latestHistoryItem)}
+              >
                 {t("home.continueAction")}
               </Link>
             </Button>
@@ -124,7 +136,13 @@ export default function Home() {
             {history.slice(0, 4).map((item) => {
               const navItem = getPageConfig(item.page);
               return (
-                <Link key={item.id} href={`/${item.page}`} prefetch={false} className="group">
+                <Link
+                  key={item.id}
+                  href={`/${item.page}`}
+                  prefetch={false}
+                  className="group"
+                  onClick={() => prepareRestore(item)}
+                >
                   <Card className="h-full glass-card rounded-xl hover:-translate-y-[2px] transition-all duration-200 overflow-hidden">
                     <CardHeader className="p-4 pb-2 border-b border-border/50 bg-muted/20">
                       <CardTitle className="text-sm font-semibold flex items-center justify-between text-muted-foreground gap-2">
@@ -136,9 +154,7 @@ export default function Home() {
                     </CardHeader>
                     <CardContent className="p-4 pt-3 flex flex-col justify-center min-h-[80px]">
                       <div className="text-xl md:text-2xl font-display font-bold text-foreground truncate">
-                        {item.result > 1000 || item.result < -1000 || item.page === "bonds"
-                          ? formatCurrency(item.result)
-                          : item.result.toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                        {formatHistoryResult(item)}
                       </div>
                       {item.label && (
                         <p className="text-xs text-primary font-medium mt-1 uppercase tracking-wider truncate">

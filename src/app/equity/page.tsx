@@ -79,6 +79,7 @@ export default function EquityPage() {
       if (inputs.div !== undefined) setDiv(String(inputs.div));
       if (inputs.growth !== undefined) setGrowth(String(inputs.growth));
       if (inputs.reqReturn !== undefined) setReqReturn(String(inputs.reqReturn));
+      setInteractedSections({ capm: false, wacc: false, ddm: false });
     },
   });
 
@@ -144,6 +145,9 @@ export default function EquityPage() {
     Object.keys(capmValidation).length > 0 ||
     Object.keys(waccValidation).length > 0 ||
     Object.keys(ddmValidation).length > 0;
+  const capmReady = Object.keys(capmValidation).length === 0 && Number.isFinite(capmResult);
+  const waccReady = Object.keys(waccValidation).length === 0 && Number.isFinite(waccResult);
+  const ddmReady = Object.keys(ddmValidation).length === 0 && Number.isFinite(ddmResult) && ddmResult > 0;
 
   const markInteracted = (section: EquitySection) => {
     setInteractedSections((prev) => ({ ...prev, [section]: true }));
@@ -156,7 +160,8 @@ export default function EquityPage() {
     inputs: { rf, beta, rm },
     result: capmResult,
     label: "CAPM",
-    enabled: interactedSections.capm && Object.keys(capmValidation).length === 0,
+    resultFormat: "percentDecimal",
+    enabled: interactedSections.capm && capmReady,
   });
 
   useHistoryRecorder({
@@ -164,7 +169,8 @@ export default function EquityPage() {
     inputs: { equity, debt, costEquity, costDebt, taxRate },
     result: waccResult,
     label: "WACC",
-    enabled: interactedSections.wacc && Object.keys(waccValidation).length === 0,
+    resultFormat: "percentDecimal",
+    enabled: interactedSections.wacc && waccReady,
   });
 
   useHistoryRecorder({
@@ -172,7 +178,8 @@ export default function EquityPage() {
     inputs: { div, growth, reqReturn },
     result: ddmResult,
     label: "DDM",
-    enabled: interactedSections.ddm && Object.keys(ddmValidation).length === 0 && ddmResult > 0,
+    resultFormat: "currency",
+    enabled: interactedSections.ddm && ddmReady,
   });
 
   return (
@@ -211,6 +218,7 @@ export default function EquityPage() {
                 setActiveSection("wacc");
               if (inputs.div !== undefined || inputs.growth !== undefined || inputs.reqReturn !== undefined)
                 setActiveSection("ddm");
+              setInteractedSections({ capm: false, wacc: false, ddm: false });
             }}
           />
         </div>
@@ -301,11 +309,11 @@ export default function EquityPage() {
             <ResultShell
               title={t("equity.capm.re")}
               description={t("equity.capm.desc")}
-              isReady={Object.keys(capmValidation).length === 0}
+              isReady={capmReady}
               emptyTitle={t("equity.capm.re")}
               emptyDescription={t("equity.validation.invalidInputs")}
               actions={
-                Object.keys(capmValidation).length === 0 ? (
+                capmReady ? (
                   <ResultActions
                     title={t("equity.capm.title")}
                     results={{ [t("equity.capm.re")]: `${(capmResult * 100).toFixed(2)}%` }}
@@ -428,11 +436,11 @@ export default function EquityPage() {
             <ResultShell
               title={t("equity.wacc.result")}
               description={t("equity.wacc.desc")}
-              isReady={Object.keys(waccValidation).length === 0}
+              isReady={waccReady}
               emptyTitle={t("equity.wacc.result")}
               emptyDescription={t("equity.validation.invalidInputs")}
               actions={
-                Object.keys(waccValidation).length === 0 ? (
+                waccReady ? (
                   <ResultActions
                     title={t("equity.wacc.title")}
                     results={{ [t("equity.wacc.result")]: `${(waccResult * 100).toFixed(2)}%` }}
@@ -531,11 +539,15 @@ export default function EquityPage() {
             <ResultShell
               title={t("equity.ddm.intrinsic")}
               description={t("equity.ddm.desc")}
-              isReady={Object.keys(ddmValidation).length === 0 && ddmResult > 0}
+              isReady={ddmReady}
               emptyTitle={t("equity.ddm.intrinsic")}
-              emptyDescription={ddmResult <= 0 ? t("equity.ddm.growthError") : t("equity.validation.invalidInputs")}
+              emptyDescription={
+                Object.keys(ddmValidation).length > 0
+                  ? t("equity.validation.invalidInputs")
+                  : t("equity.ddm.growthError")
+              }
               actions={
-                Object.keys(ddmValidation).length === 0 && ddmResult > 0 ? (
+                ddmReady ? (
                   <ResultActions
                     title={t("equity.ddm.title")}
                     results={{ [t("equity.ddm.intrinsic")]: ddmResult }}

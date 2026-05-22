@@ -10,7 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from "@/lib/i18n";
 import { useCalculationHistory, CalculationHistoryItem } from "@/hooks/use-calculation-history";
 import { NAV_CONFIG } from "@/lib/nav-config";
-import { formatCurrency } from "@/lib/utils";
+import { formatHistoryResult } from "@/lib/history-format";
 import { PENDING_RESTORE_KEY, STORAGE_PREFIX } from "@/lib/constants";
 import { safeGetJSON, safeSetJSON, safeSetSessionJSON } from "@/lib/storage";
 import { Clock, Trash2, RotateCcw, Search, Star, FileSpreadsheet, X, CheckSquare, Square } from "lucide-react";
@@ -89,7 +89,7 @@ export default function HistoryPage() {
     const q = searchQuery.toLowerCase();
     return filteredHistory.filter(
       (item) =>
-        formatCurrency(item.result).toLowerCase().includes(q) ||
+        formatHistoryResult(item).toLowerCase().includes(q) ||
         Object.values(item.inputs).some((v) => String(v).toLowerCase().includes(q)) ||
         (item.label && item.label.toLowerCase().includes(q)) ||
         (pageTitleMap[item.page] && pageTitleMap[item.page].toLowerCase().includes(q))
@@ -152,7 +152,7 @@ export default function HistoryPage() {
     const data = history.map((item) => ({
       page: pageTitleMap[item.page] || item.page,
       inputs: JSON.stringify(item.inputs),
-      result: item.result,
+      result: formatHistoryResult(item),
       label: item.label || "",
       timestamp: formatDate(item.timestamp),
     }));
@@ -268,7 +268,7 @@ export default function HistoryPage() {
                     )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-base sm:text-lg break-all">{formatCurrency(item.result)}</span>
+                        <span className="font-bold text-base sm:text-lg break-all">{formatHistoryResult(item)}</span>
                         <span className="text-sm px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
                           {pageTitleMap[item.page] || item.page}
                         </span>

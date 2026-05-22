@@ -36,6 +36,7 @@ export default function OptionsPage() {
       if (inputs.time !== undefined) setTime(String(inputs.time));
       if (inputs.rate !== undefined) setRate(String(inputs.rate));
       if (inputs.volatility !== undefined) setVolatility(String(inputs.volatility));
+      setHasInteracted(false);
     },
   });
 
@@ -86,6 +87,11 @@ export default function OptionsPage() {
 
     return { callPrice, putPrice, callGreeks, putGreeks };
   }, [hasValidationErrors, parsedInputs]);
+  const greeksAreFinite = [...Object.values(results.callGreeks), ...Object.values(results.putGreeks)].every(
+    Number.isFinite
+  );
+  const resultReady =
+    !hasValidationErrors && Number.isFinite(results.callPrice) && Number.isFinite(results.putPrice) && greeksAreFinite;
 
   const { addToHistory } = useCalculationHistory({ page: "options" });
 
@@ -94,12 +100,13 @@ export default function OptionsPage() {
     inputs: { spot, strike, time, rate, volatility },
     result: hasValidationErrors ? Number.NaN : results.callPrice,
     label: t("options.callPrice"),
-    enabled: hasInteracted && !hasValidationErrors,
+    resultFormat: "currency",
+    enabled: hasInteracted && resultReady,
   });
 
   // Payoff Diagram (Price vs Spot)
   const chartData = useMemo(() => {
-    if (hasValidationErrors || parsedInputs.S === null || parsedInputs.K === null) {
+    if (!resultReady || parsedInputs.S === null || parsedInputs.K === null) {
       return [];
     }
 
@@ -114,7 +121,7 @@ export default function OptionsPage() {
       });
     }
     return data;
-  }, [hasValidationErrors, parsedInputs]);
+  }, [parsedInputs, resultReady]);
 
   return (
     <>
@@ -215,11 +222,11 @@ export default function OptionsPage() {
             <ResultShell
               title={t("common.result")}
               description={t("options.subtitle")}
-              isReady={!hasValidationErrors}
+              isReady={resultReady}
               emptyTitle={t("options.title")}
               emptyDescription={Object.values(validation)[0] as string | undefined}
               actions={
-                !hasValidationErrors ? (
+                resultReady ? (
                   <ResultActions
                     title={t("options.title")}
                     results={{ [t("options.call")]: results.callPrice, [t("options.put")]: results.putPrice }}
@@ -328,7 +335,7 @@ export default function OptionsPage() {
                           <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
                           <Tooltip
                             contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))" }}
-                            formatter={(v: number) => formatCurrency(v)}
+                            formatter={(value) => formatCurrency(Number(value ?? 0))}
                           />
                           <ReferenceLine
                             x={parsedInputs.K ?? 0}
@@ -370,6 +377,7 @@ export default function OptionsPage() {
           if (inputs.time !== undefined) setTime(String(inputs.time));
           if (inputs.rate !== undefined) setRate(String(inputs.rate));
           if (inputs.volatility !== undefined) setVolatility(String(inputs.volatility));
+          setHasInteracted(false);
         }}
       />
     </>

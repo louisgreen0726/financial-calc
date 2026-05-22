@@ -3,24 +3,18 @@
 import { useCallback, useMemo } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { parseOptionalNumber } from "@/lib/input-utils";
-
-type UrlStateValue = string | number | string[];
+import {
+  normalizePathname,
+  isShareUrlWithinLimit,
+  parseUrlArrayValue,
+  serializeUrlValue,
+  toAbsoluteAppUrl,
+  type UrlStateValue,
+} from "@/lib/url-state-utils";
 
 interface UseUrlStateOptions<T> {
   defaultValues: T;
   prefix?: string;
-}
-
-function normalizePathname(pathname: string) {
-  if (pathname === "/") {
-    return pathname;
-  }
-
-  return pathname.replace(/\/$/, "");
-}
-
-function serializeUrlValue(value: UrlStateValue) {
-  return Array.isArray(value) ? value.join("|") : String(value);
 }
 
 export function useUrlState<T extends Record<string, UrlStateValue>>({
@@ -45,7 +39,7 @@ export function useUrlState<T extends Record<string, UrlStateValue>>({
             (initialState as Record<string, unknown>)[key] = parsed;
           }
         } else if (Array.isArray(defaultValue)) {
-          (initialState as Record<string, unknown>)[key] = paramValue === "" ? [] : paramValue.split("|");
+          (initialState as Record<string, unknown>)[key] = parseUrlArrayValue(paramValue);
         } else {
           (initialState as Record<string, unknown>)[key] = paramValue;
         }
@@ -105,5 +99,15 @@ export function useUrlState<T extends Record<string, UrlStateValue>>({
     router.replace(pathname, { scroll: false });
   }, [pathname, router]);
 
-  return { state, setState, setField, reset, updateUrl, buildUrl, shareUrl: buildUrl(state) };
+  const shareUrl = toAbsoluteAppUrl(buildUrl(state));
+
+  return {
+    state,
+    setState,
+    setField,
+    reset,
+    updateUrl,
+    buildUrl,
+    shareUrl: isShareUrlWithinLimit(shareUrl) ? shareUrl : "",
+  };
 }

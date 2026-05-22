@@ -23,6 +23,7 @@ export function ResponsiveDisclosure({
   defaultOpen = false,
 }: ResponsiveDisclosureProps) {
   const [isDesktop, setIsDesktop] = useState(false);
+  const [isOpen, setIsOpen] = useState(() => defaultOpen);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
@@ -40,7 +41,8 @@ export function ResponsiveDisclosure({
   return (
     <details
       className={cn("overflow-hidden rounded-3xl border border-white/10 bg-card/70 shadow-sm group", className)}
-      open={defaultOpen}
+      open={isOpen}
+      onToggle={(event) => setIsOpen(event.currentTarget.open)}
     >
       <summary className="flex cursor-pointer list-none items-start justify-between gap-4 px-4 py-4 marker:hidden">
         <div className="min-w-0">

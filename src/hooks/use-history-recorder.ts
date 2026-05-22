@@ -1,17 +1,32 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
+import type { AddToHistoryOptions, HistoryResultFormat } from "@/hooks/use-calculation-history";
 import { stableSerialize } from "@/lib/stable-serialize";
 
 interface UseHistoryRecorderOptions {
-  addToHistory: (inputs: Record<string, number | string>, result: number, label?: string) => void;
+  addToHistory: (
+    inputs: Record<string, number | string>,
+    result: number,
+    labelOrOptions?: string | AddToHistoryOptions
+  ) => void;
   inputs: Record<string, number | string>;
   result: number;
   label?: string;
+  resultFormat?: HistoryResultFormat;
+  resultUnit?: string;
   enabled?: boolean;
 }
 
-export function useHistoryRecorder({ addToHistory, inputs, result, label, enabled = true }: UseHistoryRecorderOptions) {
+export function useHistoryRecorder({
+  addToHistory,
+  inputs,
+  result,
+  label,
+  resultFormat,
+  resultUnit,
+  enabled = true,
+}: UseHistoryRecorderOptions) {
   const lastSignatureRef = useRef<string | null>(null);
 
   const signature = useMemo(() => {
@@ -19,8 +34,8 @@ export function useHistoryRecorder({ addToHistory, inputs, result, label, enable
       return null;
     }
 
-    return stableSerialize({ inputs, result, label });
-  }, [enabled, inputs, label, result]);
+    return stableSerialize({ inputs, result, label, resultFormat, resultUnit });
+  }, [enabled, inputs, label, result, resultFormat, resultUnit]);
 
   useEffect(() => {
     if (!signature || signature === lastSignatureRef.current) {
@@ -28,6 +43,11 @@ export function useHistoryRecorder({ addToHistory, inputs, result, label, enable
     }
 
     lastSignatureRef.current = signature;
+    if (resultFormat || resultUnit) {
+      addToHistory(inputs, result, { label, resultFormat, resultUnit });
+      return;
+    }
+
     addToHistory(inputs, result, label);
-  }, [addToHistory, inputs, label, result, signature]);
+  }, [addToHistory, inputs, label, result, resultFormat, resultUnit, signature]);
 }

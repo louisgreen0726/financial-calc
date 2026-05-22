@@ -13,9 +13,16 @@ import { useLanguage } from "@/lib/i18n";
 import { Calculator, ChevronDown, ChevronRight, Search } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
-type SidebarProps = React.HTMLAttributes<HTMLDivElement>;
+type SidebarProps = React.HTMLAttributes<HTMLDivElement> & {
+  onNavigate?: () => void;
+  searchId?: string;
+};
 
-export const Sidebar = React.memo(function Sidebar({ className }: SidebarProps) {
+export const Sidebar = React.memo(function Sidebar({
+  className,
+  onNavigate,
+  searchId = "calculator-search",
+}: SidebarProps) {
   const pathname = usePathname();
   const { t } = useLanguage();
   const normalizedPathname = pathname.replace(/\/$/, "") || "/";
@@ -63,7 +70,7 @@ export const Sidebar = React.memo(function Sidebar({ className }: SidebarProps) 
         <div className="mx-4 mt-2 relative group">
           <div className="absolute -inset-1 bg-gradient-to-r from-primary to-blue-600 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-500"></div>
           <div className="relative p-3 rounded-2xl bg-background/80 backdrop-blur-sm border border-white/10 shadow-sm flex items-center justify-between">
-            <Link href="/" prefetch={false} className="flex items-center gap-3 w-full">
+            <Link href="/" prefetch={false} className="flex items-center gap-3 w-full" onClick={onNavigate}>
               <div className="p-2 bg-gradient-to-br from-primary to-blue-600 rounded-xl shadow-inner group-hover:scale-105 transition-transform duration-300">
                 <Calculator className="h-5 w-5 text-white" />
               </div>
@@ -80,8 +87,8 @@ export const Sidebar = React.memo(function Sidebar({ className }: SidebarProps) 
           <div className="relative group">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
             <Input
-              id="calculator-search"
-              name="calculator-search"
+              id={searchId}
+              name={searchId}
               aria-label={t("sidebar.search")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -138,6 +145,7 @@ export const Sidebar = React.memo(function Sidebar({ className }: SidebarProps) 
                                     href={item.href}
                                     prefetch={false}
                                     className="flex items-center w-full relative z-10"
+                                    onClick={onNavigate}
                                   >
                                     <item.icon
                                       className={cn(

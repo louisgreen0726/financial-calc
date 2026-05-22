@@ -3,7 +3,21 @@
  * Implements standard financial formulas with high precision.
  */
 
+import {
+  ANNUAL_FREQUENCY,
+  MAX_PERIODS,
+  MONTHLY_FREQUENCY,
+  QUARTERLY_FREQUENCY,
+  SEMIANNUAL_FREQUENCY,
+} from "./constants";
+
 const isValid = (n: number): boolean => Number.isFinite(n) && !Number.isNaN(n);
+const isSupportedBondFrequency = (frequency: number) =>
+  [ANNUAL_FREQUENCY, SEMIANNUAL_FREQUENCY, QUARTERLY_FREQUENCY, MONTHLY_FREQUENCY].includes(frequency);
+const toWholePeriods = (years: number, frequency: number) => {
+  const periods = years * frequency;
+  return Number.isInteger(periods) ? periods : NaN;
+};
 
 const solveByBisection = (
   fn: (rate: number) => number,
@@ -264,11 +278,14 @@ export const Finance = {
   ): AmortizationItem[] => {
     if (!isValid(principal) || !isValid(rate) || !isValid(nper)) return [];
     if (principal <= 0 || nper <= 0) return [];
+    const periods = Math.round(nper);
+    if (periods > MAX_PERIODS) return [];
     const schedule: AmortizationItem[] = [];
     let balance = principal;
-    const cpmPmt = method === "CPM" ? Finance.pmt(rate, nper, -principal) : 0;
-    const fixedPrincipal = method === "CAM" ? principal / nper : 0;
-    for (let i = 1; i <= nper; i++) {
+    const cpmPmt = method === "CPM" ? Finance.pmt(rate, periods, -principal) : 0;
+    const fixedPrincipal = method === "CAM" ? principal / periods : 0;
+    if (method === "CPM" && !isValid(cpmPmt)) return [];
+    for (let i = 1; i <= periods; i++) {
       const interest = balance * rate;
       let payment = 0;
       let princip = 0;
@@ -279,7 +296,7 @@ export const Finance = {
         princip = fixedPrincipal;
         payment = princip + interest;
       }
-      if (i === nper && Math.abs(balance - princip) > 0.01) {
+      if (i === periods && Math.abs(balance - princip) > 0.01) {
         if (method === "CPM") princip = balance;
         if (method === "CAM") {
           princip = balance;
@@ -309,8 +326,9 @@ export const Finance = {
       !isValid(frequency)
     )
       return NaN;
-    if (faceValue <= 0 || couponRate < 0 || frequency <= 0 || yearsToMaturity <= 0) return NaN;
-    const periods = yearsToMaturity * frequency;
+    if (faceValue <= 0 || couponRate < 0 || !isSupportedBondFrequency(frequency) || yearsToMaturity <= 0) return NaN;
+    const periods = toWholePeriods(yearsToMaturity, frequency);
+    if (!isValid(periods) || periods <= 0 || periods > MAX_PERIODS) return NaN;
     const coupon = (faceValue * couponRate) / frequency;
     const r = ytm / frequency;
     if (r <= -1) return NaN;
@@ -336,10 +354,17 @@ export const Finance = {
       !isValid(frequency)
     )
       return { macDuration: NaN, modDuration: NaN };
-    if (faceValue <= 0 || couponRate < 0 || frequency <= 0 || yearsToMaturity <= 0 || ytm / frequency <= -1) {
+    if (
+      faceValue <= 0 ||
+      couponRate < 0 ||
+      !isSupportedBondFrequency(frequency) ||
+      yearsToMaturity <= 0 ||
+      ytm / frequency <= -1
+    ) {
       return { macDuration: NaN, modDuration: NaN };
     }
-    const periods = yearsToMaturity * frequency;
+    const periods = toWholePeriods(yearsToMaturity, frequency);
+    if (!isValid(periods) || periods <= 0 || periods > MAX_PERIODS) return { macDuration: NaN, modDuration: NaN };
     const coupon = (faceValue * couponRate) / frequency;
     const r = ytm / frequency;
     const price = Finance.bondPrice(faceValue, couponRate, yearsToMaturity, ytm, frequency);
@@ -371,10 +396,17 @@ export const Finance = {
       !isValid(frequency)
     )
       return NaN;
-    if (faceValue <= 0 || couponRate < 0 || frequency <= 0 || yearsToMaturity <= 0 || ytm / frequency <= -1) {
+    if (
+      faceValue <= 0 ||
+      couponRate < 0 ||
+      !isSupportedBondFrequency(frequency) ||
+      yearsToMaturity <= 0 ||
+      ytm / frequency <= -1
+    ) {
       return NaN;
     }
-    const periods = yearsToMaturity * frequency;
+    const periods = toWholePeriods(yearsToMaturity, frequency);
+    if (!isValid(periods) || periods <= 0 || periods > MAX_PERIODS) return NaN;
     const coupon = (faceValue * couponRate) / frequency;
     const r = ytm / frequency;
     const price = Finance.bondPrice(faceValue, couponRate, yearsToMaturity, ytm, frequency);
@@ -404,7 +436,7 @@ export const Finance = {
   },
   ddm: (d1: number, r: number, g: number): number => {
     if (!isValid(d1) || !isValid(r) || !isValid(g)) return NaN;
-    if (r <= g) return 0;
+    if (r <= g) return NaN;
     return d1 / (r - g);
   },
 
@@ -534,12 +566,12 @@ export const Finance = {
   },
   cpiAdjust: (amount: number, fromCPI: number, toCPI: number): number => {
     if (!isValid(amount) || !isValid(fromCPI) || !isValid(toCPI)) return NaN;
-    if (fromCPI === 0) return NaN;
+    if (amount < 0 || fromCPI <= 0 || toCPI <= 0) return NaN;
     return amount * (toCPI / fromCPI);
   },
   exchangeRatePPP: (domesticPrice: number, foreignPrice: number): number => {
     if (!isValid(domesticPrice) || !isValid(foreignPrice)) return NaN;
-    if (foreignPrice === 0) return NaN;
+    if (domesticPrice <= 0 || foreignPrice <= 0) return NaN;
     return domesticPrice / foreignPrice;
   },
 

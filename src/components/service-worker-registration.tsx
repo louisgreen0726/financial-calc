@@ -13,20 +13,30 @@ export function ServiceWorkerRegistration() {
       return;
     }
 
+    const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+    const normalizedBasePath = basePath.replace(/\/$/, "");
+    const scope = `${normalizedBasePath || ""}/`;
+
     if (process.env.NODE_ENV !== "production") {
+      const expectedScope = new URL(scope, window.location.origin).href;
+
       navigator.serviceWorker
         .getRegistrations()
-        .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+        .then((registrations) =>
+          Promise.all(
+            registrations
+              .filter((registration) => registration.scope === expectedScope)
+              .map((registration) => registration.unregister())
+          )
+        )
         .catch((error) => {
           logger.warn?.("[PWA] Service Worker cleanup failed:", error);
         });
       return;
     }
 
-    const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-    const normalizedBasePath = basePath.replace(/\/$/, "");
-    const serviceWorkerUrl = `${normalizedBasePath}/sw.js`;
-    const scope = `${normalizedBasePath || ""}/`;
+    const serviceWorkerVersion = process.env.NEXT_PUBLIC_APP_VERSION ?? "v0.4.0";
+    const serviceWorkerUrl = `${normalizedBasePath}/sw.js?v=${encodeURIComponent(serviceWorkerVersion)}`;
 
     navigator.serviceWorker
       .register(serviceWorkerUrl, { scope })

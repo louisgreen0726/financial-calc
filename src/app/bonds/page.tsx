@@ -41,6 +41,7 @@ export default function BondsPage() {
       if (inputs.years !== undefined) setYears(String(inputs.years));
       if (inputs.ytm !== undefined) setYtm(String(inputs.ytm));
       if (inputs.frequency !== undefined) setFrequency(String(inputs.frequency));
+      setHasInteracted(false);
     },
   });
 
@@ -64,7 +65,7 @@ export default function BondsPage() {
     const cr = parseRequiredNumber(couponRate) / 100;
     const time = parseRequiredNumber(years);
     const y = parseRequiredNumber(ytm) / 100;
-    const freq = parseInt(frequency);
+    const freq = parseRequiredNumber(frequency);
 
     const price = Finance.bondPrice(fv, cr, time, y, freq);
     const { macDuration, modDuration } = Finance.bondDuration(fv, cr, time, y, freq);
@@ -73,6 +74,13 @@ export default function BondsPage() {
     return { price, macDuration, modDuration, convexity };
   }, [faceValue, couponRate, years, ytm, frequency]);
 
+  const metricsAreFinite =
+    Number.isFinite(metrics.price) &&
+    Number.isFinite(metrics.macDuration) &&
+    Number.isFinite(metrics.modDuration) &&
+    Number.isFinite(metrics.convexity);
+  const bondReady = !hasBondErrors && metricsAreFinite;
+
   const { addToHistory } = useCalculationHistory({ page: "bonds" });
 
   useHistoryRecorder({
@@ -80,7 +88,8 @@ export default function BondsPage() {
     inputs: { faceValue, couponRate, years, ytm, frequency },
     result: metrics.price,
     label: t("bonds.fairPrice"),
-    enabled: hasInteracted && !hasBondErrors,
+    resultFormat: "currency",
+    enabled: hasInteracted && bondReady,
   });
 
   // Generate Price-Yield Curve
@@ -88,7 +97,10 @@ export default function BondsPage() {
     const fv = parseRequiredNumber(faceValue);
     const cr = parseRequiredNumber(couponRate) / 100;
     const time = parseRequiredNumber(years);
-    const freq = parseInt(frequency);
+    const freq = parseRequiredNumber(frequency);
+    if (!bondReady) {
+      return [];
+    }
 
     // Generate yields from 0% to 15%
     const data = [];
@@ -99,7 +111,7 @@ export default function BondsPage() {
       data.push({ yield: i, price: p });
     }
     return data;
-  }, [faceValue, couponRate, years, frequency]);
+  }, [bondReady, faceValue, couponRate, years, frequency]);
 
   // Generate sensitivity data grid for Price Sensitivity heatmap
   // YTM values (columns): [2%, 3%, 4%, 5%, 6%]
@@ -107,7 +119,10 @@ export default function BondsPage() {
   const sensitivityData = useMemo(() => {
     const fv = parseRequiredNumber(faceValue);
     const cr = parseRequiredNumber(couponRate) / 100;
-    const freq = parseInt(frequency);
+    const freq = parseRequiredNumber(frequency);
+    if (!bondReady) {
+      return [];
+    }
 
     const ytms = [2, 3, 4, 5, 6]; // in percent
     const yrs = [1, 5, 10, 15, 20];
@@ -124,11 +139,11 @@ export default function BondsPage() {
       data.push(row);
     }
     return data;
-  }, [faceValue, couponRate, frequency]);
+  }, [bondReady, faceValue, couponRate, frequency]);
 
   const rowLabels = ["1 yr", "5 yrs", "10 yrs", "15 yrs", "20 yrs"];
   const colLabels = ["2%", "3%", "4%", "5%", "6%"];
-  const formatCell = (v: number) => `$${v.toFixed(0)}`;
+  const formatCell = (v: number) => (Number.isFinite(v) ? `$${v.toFixed(0)}` : "N/A");
 
   return (
     <div className="space-y-6">
@@ -146,6 +161,7 @@ export default function BondsPage() {
               if (inputs.years !== undefined) setYears(String(inputs.years));
               if (inputs.ytm !== undefined) setYtm(String(inputs.ytm));
               if (inputs.frequency !== undefined) setFrequency(String(inputs.frequency));
+              setHasInteracted(false);
             }}
           />
         </div>
@@ -266,11 +282,11 @@ export default function BondsPage() {
           <ResultShell
             title={t("common.result")}
             description={t("bonds.subtitle")}
-            isReady={!hasBondErrors}
+            isReady={bondReady}
             emptyTitle={t("bonds.metrics")}
             emptyDescription={t("bonds.validation.invalidInputs")}
             actions={
-              !hasBondErrors ? (
+              bondReady ? (
                 <ResultActions
                   title={t("bonds.title")}
                   results={{
@@ -383,7 +399,7 @@ export default function BondsPage() {
                               tickFormatter={(val) => `$${val}`}
                             />
                             <Tooltip
-                              formatter={(value: number) => formatCurrency(value)}
+                              formatter={(value) => formatCurrency(Number(value ?? 0))}
                               labelFormatter={(label) => `${t("bonds.ytm")}: ${label}%`}
                               contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))" }}
                             />
@@ -434,7 +450,7 @@ export default function BondsPage() {
                                 <div key={`${rowLabel}-${colLabel}`} className="rounded-xl bg-muted/40 px-3 py-2">
                                   <p className="text-xs text-muted-foreground">{colLabel}</p>
                                   <p className="font-mono font-medium">
-                                    {formatCell(sensitivityData[rowIndex][colIndex])}
+                                    {formatCell(sensitivityData[rowIndex]?.[colIndex] ?? Number.NaN)}
                                   </p>
                                 </div>
                               ))}

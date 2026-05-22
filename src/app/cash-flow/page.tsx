@@ -22,6 +22,7 @@ import { ErrorDisplay } from "@/components/ui/error-display";
 import { ResultShell } from "@/components/result-shell";
 import { ResultActions } from "@/components/result-actions";
 import { useShareableUrl } from "@/hooks/use-shareable-url";
+import { MAX_CASH_FLOWS } from "@/lib/constants";
 
 export default function CashFlowPage() {
   const { t } = useLanguage();
@@ -35,8 +36,9 @@ export default function CashFlowPage() {
     onRestore: (inputs) => {
       if (inputs.rate !== undefined) setRate(String(inputs.rate));
       if (Array.isArray(inputs.flows) && inputs.flows.length > 0) {
-        setFlowInputs(inputs.flows.map(String));
+        setFlowInputs(inputs.flows.map(String).slice(0, MAX_CASH_FLOWS));
       }
+      setHasInteracted(false);
     },
   });
 
@@ -96,13 +98,15 @@ export default function CashFlowPage() {
 
     return { npv, irr, payback };
   }, [flows, parsedRate, validation.isValid]);
+  const resultReady = validation.isValid && Number.isFinite(calculateMetrics.npv);
 
   useHistoryRecorder({
     addToHistory,
     inputs: { rate, flows: flowInputs.join(",") },
     result: calculateMetrics.npv,
     label: "NPV",
-    enabled: hasInteracted && validation.isValid,
+    resultFormat: "currency",
+    enabled: hasInteracted && resultReady,
   });
 
   const chartData = flows.map((val, i) => ({
@@ -185,7 +189,12 @@ export default function CashFlowPage() {
                     );
                   })}
                 </div>
-                <Button onClick={addFlow} variant="outline" className="w-full border-dashed mt-2">
+                <Button
+                  onClick={addFlow}
+                  variant="outline"
+                  className="w-full border-dashed mt-2"
+                  disabled={flowInputs.length >= MAX_CASH_FLOWS}
+                >
                   <Plus className="mr-2 h-4 w-4" /> {t("cashFlow.addPeriod")}
                 </Button>
               </div>
@@ -197,11 +206,11 @@ export default function CashFlowPage() {
             <ResultShell
               title={t("common.result")}
               description={t("cashFlow.subtitle")}
-              isReady={validation.isValid}
+              isReady={resultReady}
               emptyTitle={t("cashFlow.title")}
               emptyDescription={validation.message ?? t("cashFlow.invalidInputs")}
               actions={
-                validation.isValid ? (
+                resultReady ? (
                   <ResultActions
                     title={t("cashFlow.title")}
                     results={{
@@ -353,9 +362,10 @@ export default function CashFlowPage() {
               .filter((value) => parseOptionalNumber(value) !== null);
 
             if (restoredFlows.length > 0) {
-              setFlowInputs(restoredFlows);
+              setFlowInputs(restoredFlows.slice(0, MAX_CASH_FLOWS));
             }
           }
+          setHasInteracted(false);
         }}
       />
     </>

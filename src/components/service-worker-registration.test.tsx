@@ -34,7 +34,7 @@ describe("ServiceWorkerRegistration", () => {
     render(<ServiceWorkerRegistration />);
 
     await waitFor(() => {
-      expect(register).toHaveBeenCalledWith("/sw.js", { scope: "/" });
+      expect(register).toHaveBeenCalledWith("/sw.js?v=v0.4.0", { scope: "/" });
       expect(update).toHaveBeenCalled();
     });
   });
@@ -55,7 +55,7 @@ describe("ServiceWorkerRegistration", () => {
   it("unregisters existing service workers during development", async () => {
     vi.stubEnv("NODE_ENV", "development");
     const unregister = vi.fn().mockResolvedValue(true);
-    const getRegistrations = vi.fn().mockResolvedValue([{ unregister }]);
+    const getRegistrations = vi.fn().mockResolvedValue([{ scope: window.location.origin + "/", unregister }]);
     const register = vi.fn();
     Object.defineProperty(window.navigator, "serviceWorker", {
       configurable: true,
@@ -96,7 +96,7 @@ describe("ServiceWorkerRegistration", () => {
     render(<ServiceWorkerRegistration />);
 
     await waitFor(() => {
-      expect(register).toHaveBeenCalledWith("/sw.js", { scope: "/" });
+      expect(register).toHaveBeenCalledWith("/sw.js?v=v0.4.0", { scope: "/" });
       expect(logger.error).toHaveBeenCalled();
     });
   });
@@ -112,7 +112,7 @@ describe("ServiceWorkerRegistration", () => {
     render(<ServiceWorkerRegistration />);
 
     await waitFor(() => {
-      expect(register).toHaveBeenCalledWith("/sw.js", { scope: "/" });
+      expect(register).toHaveBeenCalledWith("/sw.js?v=v0.4.0", { scope: "/" });
       expect(update).toHaveBeenCalled();
       expect(logger.warn).toHaveBeenCalled();
     });
@@ -130,7 +130,7 @@ describe("ServiceWorkerRegistration", () => {
     render(<ServiceWorkerRegistration />);
 
     await waitFor(() => {
-      expect(register).toHaveBeenCalledWith("/calc/sw.js", { scope: "/calc/" });
+      expect(register).toHaveBeenCalledWith("/calc/sw.js?v=v0.4.0", { scope: "/calc/" });
     });
   });
 });

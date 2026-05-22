@@ -25,6 +25,7 @@ import { clampEqualCorrelation, getMinimumEqualCorrelation, type PortfolioPoint 
 import { useCalculationHistory } from "@/hooks/use-calculation-history";
 import { HistoryPanel } from "@/components/history-panel";
 import { useShareableUrl } from "@/hooks/use-shareable-url";
+import { MAX_MONTE_CARLO_SIMULATIONS, MAX_PORTFOLIO_ASSETS } from "@/lib/constants";
 
 interface Asset {
   id: number;
@@ -152,6 +153,10 @@ export default function PortfolioPage() {
   const hasVisibleResults = Boolean(visibleOptimal && visibleMinVol && visibleSimulations.length > 0);
 
   const addAsset = () => {
+    if (assets.length >= MAX_PORTFOLIO_ASSETS) {
+      return;
+    }
+
     const id = Math.max(0, ...assets.map((a) => a.id)) + 1;
     setAssets([...assets, { id, name: `${t("portfolio.asset")} ${id}`, return: "8", risk: "10" }]);
   };
@@ -187,7 +192,7 @@ export default function PortfolioPage() {
       correlation: effectiveCorrelation,
       rf,
       seed: effectiveSeed,
-      simulations: 2000,
+      simulations: Math.min(2000, MAX_MONTE_CARLO_SIMULATIONS),
     } as const;
 
     run(payload, {
@@ -208,7 +213,7 @@ export default function PortfolioPage() {
               seed: effectiveSeed,
             },
             d.optimal.sharpe,
-            t("portfolio.maxSharpe")
+            { label: t("portfolio.maxSharpe"), resultFormat: "ratio" }
           );
         }
         setResultSignature(runSignature);
@@ -235,7 +240,7 @@ export default function PortfolioPage() {
           );
 
         if (isValidAssets) {
-          setAssets(restoredAssets);
+          setAssets(restoredAssets.slice(0, MAX_PORTFOLIO_ASSETS));
         }
       } catch {
         // Ignore malformed old history entries.
@@ -461,7 +466,12 @@ export default function PortfolioPage() {
               </div>
             </ResponsiveDisclosure>
 
-            <Button variant="outline" className="w-full border-dashed" onClick={addAsset}>
+            <Button
+              variant="outline"
+              className="w-full border-dashed"
+              onClick={addAsset}
+              disabled={assets.length >= MAX_PORTFOLIO_ASSETS}
+            >
               <Plus className="mr-2 h-4 w-4" /> {t("portfolio.add")}
             </Button>
 

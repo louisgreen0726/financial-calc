@@ -85,10 +85,12 @@ export function ExportMenu({
           </DropdownMenuItem>
         )}
         {(hasData || hasJsonData) && pdfElementId && <DropdownMenuSeparator />}
-        <DropdownMenuItem onClick={handleExportPDF} className="cursor-pointer">
-          <FileText className="h-4 w-4 mr-2 text-red-600" />
-          {t("export.pdf")}
-        </DropdownMenuItem>
+        {pdfElementId && (
+          <DropdownMenuItem onClick={handleExportPDF} className="cursor-pointer">
+            <FileText className="h-4 w-4 mr-2 text-red-600" />
+            {t("export.pdf")}
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -8,13 +8,13 @@ import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Clock, Trash2, RotateCcw, X, Star, Search, CheckSquare, Square } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { PENDING_RESTORE_KEY, STORAGE_PREFIX } from "@/lib/constants";
 import { safeGetJSON, safeGetSessionJSON, safeRemoveSessionItem, safeSetJSON } from "@/lib/storage";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { formatHistoryResult } from "@/lib/history-format";
 
 interface HistoryPanelProps {
   page: string;
@@ -74,7 +74,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
     const q = searchQuery.toLowerCase();
     return pageHistory.filter(
       (item) =>
-        formatCurrency(item.result).toLowerCase().includes(q) ||
+        formatHistoryResult(item).toLowerCase().includes(q) ||
         Object.values(item.inputs).some((v) => String(v).toLowerCase().includes(q)) ||
         (item.label && item.label.toLowerCase().includes(q))
     );
@@ -299,7 +299,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
                         )}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="font-semibold text-sm">{formatCurrency(item.result)}</span>
+                            <span className="font-semibold text-sm">{formatHistoryResult(item)}</span>
                             <span className="text-xs text-muted-foreground">{formatDate(item.timestamp)}</span>
                             {visibleFavorites.has(item.id) && (
                               <Star className="h-3 w-3 fill-primary text-primary shrink-0" />

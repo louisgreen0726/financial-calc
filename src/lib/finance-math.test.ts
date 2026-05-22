@@ -55,8 +55,9 @@ test("CAM amortization keeps principal constant until the final rounding period"
   expect(schedule.at(-1)?.balance).toBe(0);
 });
 
-test("ddm returns zero when growth exceeds required return", () => {
-  expect(Finance.ddm(2.5, 0.08, 0.09)).toBe(0);
+test("ddm rejects growth at or above required return", () => {
+  expect(Number.isNaN(Finance.ddm(2.5, 0.08, 0.09))).toBe(true);
+  expect(Number.isNaN(Finance.ddm(2.5, 0.08, 0.08))).toBe(true);
 });
 
 test("ddm returns the expected intrinsic value for a stable-growth case", () => {
@@ -91,6 +92,8 @@ test("bond helpers reject structurally invalid inputs", () => {
   expect(Number.isNaN(Finance.bondPrice(0, 0.05, 10, 0.04, 2))).toBe(true);
   expect(Number.isNaN(Finance.bondPrice(1000, -0.05, 10, 0.04, 2))).toBe(true);
   expect(Number.isNaN(Finance.bondPrice(1000, 0.05, 10, -2, 2))).toBe(true);
+  expect(Number.isNaN(Finance.bondPrice(1000, 0.05, 10, 0.04, 3))).toBe(true);
+  expect(Number.isNaN(Finance.bondPrice(1000, 0.05, 10.25, 0.04, 2))).toBe(true);
   expect(Number.isNaN(Finance.bondDuration(1000, 0.05, 10, -2, 2).macDuration)).toBe(true);
   expect(Number.isNaN(Finance.bondConvexity(1000, 0.05, 10, -2, 2))).toBe(true);
 });
@@ -114,6 +117,8 @@ test("black scholes supports discounted deterministic zero-volatility pricing", 
 test("macro helpers reject singular negative inflation cases", () => {
   expect(Number.isNaN(Finance.purchasingPower(100, -1, 10))).toBe(true);
   expect(Number.isNaN(Finance.realInterestRate(0.05, -1))).toBe(true);
+  expect(Number.isNaN(Finance.cpiAdjust(100, -1, 120))).toBe(true);
+  expect(Number.isNaN(Finance.exchangeRatePPP(0, 120))).toBe(true);
 });
 
 test("irr rejects cash flows without a sign change", () => {

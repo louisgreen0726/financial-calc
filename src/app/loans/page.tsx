@@ -141,6 +141,8 @@ function LoansPageContent() {
 
     return { totalInterest, totalPayment, monthlyPayment, firstPayment, lastPayment };
   }, [schedule]);
+  const statsAreFinite = Object.values(stats).every(Number.isFinite);
+  const loanReady = schedule.length > 0 && statsAreFinite;
 
   const pieData = [
     { name: t("loans.principal"), value: parsedLoanInputs.amount ?? 0, color: "hsl(var(--primary))" },
@@ -155,7 +157,8 @@ function LoansPageContent() {
     inputs: { amount, rate, years, method },
     result: stats.totalPayment,
     label: t("loans.totalCost"),
-    enabled: hasInteracted && !validationError && schedule.length > 0,
+    resultFormat: "currency",
+    enabled: hasInteracted && !validationError && loanReady,
   });
 
   return (
@@ -172,7 +175,7 @@ function LoansPageContent() {
             if (inputs.rate !== undefined) setField("rate", String(inputs.rate));
             if (inputs.years !== undefined) setField("years", String(inputs.years));
             if (inputs.method !== undefined) setField("method", normalizeLoanMethod(inputs.method));
-            setHasInteracted(true);
+            setHasInteracted(false);
           }}
         />
       </div>
@@ -290,7 +293,7 @@ function LoansPageContent() {
           <ResultShell
             title={t("common.result")}
             description={t("loans.subtitle")}
-            isReady={schedule.length > 0}
+            isReady={loanReady}
             emptyTitle={t("loans.schedule")}
             emptyDescription={
               validationError ||
@@ -298,7 +301,7 @@ function LoansPageContent() {
               "Please enter valid positive values for all fields to generate the amortization schedule."
             }
             actions={
-              schedule.length > 0 ? (
+              loanReady ? (
                 <ResultActions
                   title={reportTitle}
                   results={{
@@ -373,7 +376,7 @@ function LoansPageContent() {
                               ))}
                             </Pie>
                             <Tooltip
-                              formatter={(value: number) => formatCurrency(value)}
+                              formatter={(value) => formatCurrency(Number(value ?? 0))}
                               contentStyle={{
                                 backgroundColor: "hsl(var(--card))",
                                 borderRadius: "8px",
@@ -410,7 +413,7 @@ function LoansPageContent() {
                             <XAxis dataKey="period" hide />
                             <YAxis hide domain={[0, "auto"]} />
                             <Tooltip
-                              formatter={(value: number) => formatCurrency(value)}
+                              formatter={(value) => formatCurrency(Number(value ?? 0))}
                               labelFormatter={(label) => `Month ${label}`}
                               contentStyle={{
                                 backgroundColor: "hsl(var(--card))",

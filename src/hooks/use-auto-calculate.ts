@@ -23,7 +23,10 @@ export function useAutoCalculate<T extends Record<string, unknown>, R>(
   const [error, setError] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputsRef = useRef(inputs);
-  inputsRef.current = inputs;
+
+  useEffect(() => {
+    inputsRef.current = inputs;
+  }, [inputs]);
 
   const performCalculation = useCallback(
     (inputSnapshot: T) => {

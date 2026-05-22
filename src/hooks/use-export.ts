@@ -52,7 +52,7 @@ export function useExport({ filename = "export" }: UseExportOptions = {}) {
           return;
         }
 
-        const csvContent = serializeCsv(data, headers);
+        const csvContent = `\uFEFF${serializeCsv(data, headers)}`;
 
         // Create and download file
         const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });

@@ -18,13 +18,16 @@ const outfit = Outfit({
   subsets: ["latin"],
 });
 
+const basePath = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(/\/$/, "");
+const withBasePath = (path: string) => `${basePath}${path}`;
+
 export const metadata: Metadata = {
   title: "FinCalc Pro | Professional Financial Calculator",
   description: "Advanced financial modeling and valuation tools.",
-  manifest: "/manifest.json",
+  manifest: withBasePath("/manifest.json"),
   icons: {
-    icon: "/favicon.ico",
-    apple: "/icon.svg",
+    icon: withBasePath("/favicon.ico"),
+    apple: withBasePath("/icon.svg"),
   },
   openGraph: {
     title: "FinCalc Pro",

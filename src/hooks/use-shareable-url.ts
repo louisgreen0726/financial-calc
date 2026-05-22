@@ -2,8 +2,16 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { parseOptionalNumber } from "@/lib/input-utils";
+import {
+  normalizePathname,
+  isShareUrlWithinLimit,
+  parseUrlArrayValue,
+  serializeUrlValue,
+  toAbsoluteAppUrl,
+  type UrlStateValue,
+} from "@/lib/url-state-utils";
 
-type ShareValue = string | number | string[];
+type ShareValue = UrlStateValue;
 type ShareState = Record<string, ShareValue>;
 
 interface UseShareableUrlOptions<T extends ShareState> {
@@ -11,18 +19,6 @@ interface UseShareableUrlOptions<T extends ShareState> {
   state: T;
   defaults?: T;
   onRestore?: (state: Partial<T>) => void;
-}
-
-function normalizePathname(pathname: string) {
-  if (pathname === "/") {
-    return pathname;
-  }
-
-  return pathname.replace(/\/$/, "");
-}
-
-function encodeShareValue(value: ShareValue) {
-  return Array.isArray(value) ? value.join("|") : String(value);
 }
 
 export function buildShareableUrl(pathname: string, search: string, prefix: string, state: ShareState) {
@@ -33,13 +29,15 @@ export function buildShareableUrl(pathname: string, search: string, prefix: stri
     if (value === "" || (Array.isArray(value) && value.length === 0)) {
       params.delete(paramKey);
     } else {
-      params.set(paramKey, encodeShareValue(value));
+      params.set(paramKey, serializeUrlValue(value));
     }
   }
 
   const query = params.toString();
   const normalizedPathname = normalizePathname(pathname);
-  return query ? `${normalizedPathname}?${query}` : normalizedPathname;
+  const relativeUrl = query ? `${normalizedPathname}?${query}` : normalizedPathname;
+  const absoluteUrl = toAbsoluteAppUrl(relativeUrl);
+  return isShareUrlWithinLimit(absoluteUrl) ? absoluteUrl : "";
 }
 
 export function readShareableState<T extends ShareState>(search: string, prefix: string, defaults: T) {
@@ -58,7 +56,7 @@ export function readShareableState<T extends ShareState>(search: string, prefix:
         (restored as Record<string, unknown>)[key] = parsed;
       }
     } else if (Array.isArray(defaultValue)) {
-      (restored as Record<string, unknown>)[key] = paramValue === "" ? [] : paramValue.split("|");
+      (restored as Record<string, unknown>)[key] = parseUrlArrayValue(paramValue);
     } else {
       (restored as Record<string, unknown>)[key] = paramValue;
     }

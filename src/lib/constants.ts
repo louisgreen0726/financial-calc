@@ -24,6 +24,10 @@ export const CHART_MAX_POINTS = 100;
 export const MAX_PERIODS = 600; // 50 years monthly
 export const MAX_DISPLAY_ROWS = 100;
 export const MAX_ITERATIONS = 1000; // For iterative calculations
+export const MAX_CASH_FLOWS = 120;
+export const MAX_PORTFOLIO_ASSETS = 20;
+export const MAX_MONTE_CARLO_SIMULATIONS = 5000;
+export const MAX_SHARE_URL_LENGTH = 4000;
 
 // Validation limits
 export const MAX_INTEREST_RATE = 100; // 100%

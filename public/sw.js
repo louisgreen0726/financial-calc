@@ -1,4 +1,4 @@
-const VERSION = "v0.4.0";
+const VERSION = new URL(self.location.href).searchParams.get("v") || "v0.4.0";
 const STATIC_CACHE = `financial-calc-static-${VERSION}`;
 const RUNTIME_CACHE = `financial-calc-runtime-${VERSION}`;
 

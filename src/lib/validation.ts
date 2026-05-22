@@ -1,4 +1,18 @@
 import { z } from "zod";
+import {
+  ANNUAL_FREQUENCY,
+  DAYS_PER_YEAR,
+  MAX_CASH_FLOWS,
+  MAX_INTEREST_RATE,
+  MAX_PERIODS,
+  MAX_PORTFOLIO_ASSETS,
+  MAX_VOLATILITY,
+  MAX_YEARS,
+  MIN_INTEREST_RATE,
+  MONTHLY_FREQUENCY,
+  QUARTERLY_FREQUENCY,
+  SEMIANNUAL_FREQUENCY,
+} from "@/lib/constants";
 
 export const TVMInputSchema = z.object({
   rate: z.number().finite(),
@@ -9,13 +23,39 @@ export const TVMInputSchema = z.object({
   type: z.union([z.literal(0), z.literal(1)]).default(0),
 });
 
-export const BondInputSchema = z.object({
-  faceValue: z.number().finite().positive("Face value must be positive"),
-  couponRate: z.number().finite().min(0),
-  yearsToMaturity: z.number().finite().positive("Years must be positive"),
-  ytm: z.number().finite(),
-  frequency: z.number().finite().positive("Frequency must be positive"),
-});
+export const BondInputSchema = z
+  .object({
+    faceValue: z.number().finite().positive("Face value must be positive"),
+    couponRate: z
+      .number()
+      .finite()
+      .min(0)
+      .max(MAX_INTEREST_RATE / 100),
+    yearsToMaturity: z.number().finite().positive("Years must be positive").max(MAX_YEARS),
+    ytm: z
+      .number()
+      .finite()
+      .gt(MIN_INTEREST_RATE / 100)
+      .max(MAX_INTEREST_RATE / 100),
+    frequency: z.union([
+      z.literal(ANNUAL_FREQUENCY),
+      z.literal(SEMIANNUAL_FREQUENCY),
+      z.literal(QUARTERLY_FREQUENCY),
+      z.literal(MONTHLY_FREQUENCY),
+    ]),
+  })
+  .refine((data) => data.ytm / data.frequency > -1, {
+    message: "Yield per period must be greater than -100%",
+    path: ["ytm"],
+  })
+  .refine((data) => Number.isInteger(data.yearsToMaturity * data.frequency), {
+    message: "Years and payment frequency must produce whole coupon periods",
+    path: ["yearsToMaturity"],
+  })
+  .refine((data) => data.yearsToMaturity * data.frequency <= MAX_PERIODS, {
+    message: `Bond periods must be no more than ${MAX_PERIODS}`,
+    path: ["yearsToMaturity"],
+  });
 
 export const EquityCAPMSchema = z.object({
   rf: z.number().finite(),
@@ -23,13 +63,26 @@ export const EquityCAPMSchema = z.object({
   rm: z.number().finite(),
 });
 
-export const EquityWACCSchema = z.object({
-  equityValue: z.number().finite().min(0),
-  debtValue: z.number().finite().min(0),
-  costEquity: z.number().finite(),
-  costDebt: z.number().finite(),
-  taxRate: z.number().finite().min(0).max(1),
-});
+export const EquityWACCSchema = z
+  .object({
+    equityValue: z.number().finite().min(0),
+    debtValue: z.number().finite().min(0),
+    costEquity: z
+      .number()
+      .finite()
+      .gt(MIN_INTEREST_RATE / 100)
+      .max(MAX_INTEREST_RATE / 100),
+    costDebt: z
+      .number()
+      .finite()
+      .min(0)
+      .max(MAX_INTEREST_RATE / 100),
+    taxRate: z.number().finite().min(0).max(1),
+  })
+  .refine((data) => data.equityValue + data.debtValue > 0, {
+    message: "Total capital must be greater than zero",
+    path: ["equityValue"],
+  });
 
 export const EquityDDMSchema = z
   .object({
@@ -45,38 +98,60 @@ export const EquityDDMSchema = z
 export const OptionsInputSchema = z.object({
   S: z.number().finite().positive("Spot price must be positive"),
   K: z.number().finite().positive("Strike price must be positive"),
-  t: z.number().finite().min(0, "Time to maturity cannot be negative"),
-  r: z.number().finite(),
-  sigma: z.number().finite().min(0, "Volatility cannot be negative"),
+  t: z.number().finite().min(0, "Time to maturity cannot be negative").max(MAX_YEARS),
+  r: z
+    .number()
+    .finite()
+    .gt(MIN_INTEREST_RATE / 100)
+    .max(MAX_INTEREST_RATE / 100),
+  sigma: z
+    .number()
+    .finite()
+    .min(0, "Volatility cannot be negative")
+    .max(MAX_VOLATILITY / 100),
 });
 
 export const CashFlowSchema = z.object({
   rate: z.number().finite().gt(-100, "Discount rate must be greater than -100%"),
-  flows: z.array(z.number().finite()).min(1, "At least one cash flow required"),
+  flows: z
+    .array(z.number().finite())
+    .min(1, "At least one cash flow required")
+    .max(MAX_CASH_FLOWS, `No more than ${MAX_CASH_FLOWS} cash flows are supported`),
 });
 
 export const LoanInputSchema = z.object({
   amount: z.number().finite().positive("Loan amount must be positive"),
-  rate: z.number().finite().min(0, "Rate must be non-negative"),
-  years: z.number().finite().positive("Term must be positive"),
+  rate: z.number().finite().min(0, "Rate must be non-negative").max(MAX_INTEREST_RATE),
+  years: z
+    .number()
+    .finite()
+    .positive("Term must be positive")
+    .max(MAX_PERIODS / 12),
   method: z.enum(["CPM", "CAM"]),
 });
 
 export const RiskInputSchema = z.object({
-  value: z.number().finite().positive("Portfolio value must be positive"),
-  volatility: z.number().finite().min(0),
+  value: z.number().finite().positive("Portfolio value must be positive").max(1_000_000_000_000),
+  volatility: z.number().finite().min(0).max(MAX_VOLATILITY),
   confidence: z.number().finite().gt(0).lt(1),
-  days: z.number().finite().positive("Horizon must be positive"),
+  days: z
+    .number()
+    .finite()
+    .positive("Horizon must be positive")
+    .max(MAX_YEARS * DAYS_PER_YEAR),
 });
 
 export const PortfolioAssetSchema = z.object({
   name: z.string().min(1),
-  return: z.number().finite(),
-  risk: z.number().finite().min(0),
+  return: z.number().finite().min(MIN_INTEREST_RATE).max(MAX_INTEREST_RATE),
+  risk: z.number().finite().min(0).max(MAX_VOLATILITY),
 });
 
 export const PortfolioInputSchema = z.object({
   rf: z.number().finite().min(0).max(100),
   correlation: z.number().finite().min(-1).max(1),
-  assets: z.array(PortfolioAssetSchema).min(2, "At least two assets are required"),
+  assets: z
+    .array(PortfolioAssetSchema)
+    .min(2, "At least two assets are required")
+    .max(MAX_PORTFOLIO_ASSETS, `No more than ${MAX_PORTFOLIO_ASSETS} assets are supported`),
 });
