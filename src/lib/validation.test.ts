@@ -26,22 +26,56 @@ describe("shared validation schemas", () => {
     ).toBe(false);
   });
 
+  it("accepts bond rates as percent inputs from the page", () => {
+    expect(
+      BondInputSchema.safeParse({
+        faceValue: 1000,
+        couponRate: 5,
+        yearsToMaturity: 10,
+        ytm: 4,
+        frequency: 2,
+      }).success
+    ).toBe(true);
+  });
+
   it("rejects unsupported bond frequencies and fractional coupon periods", () => {
     expect(
       BondInputSchema.safeParse({
         faceValue: 1000,
-        couponRate: 0.05,
+        couponRate: 5,
         yearsToMaturity: 10,
-        ytm: 0.04,
+        ytm: 4,
         frequency: 3,
       }).success
     ).toBe(false);
     expect(
       BondInputSchema.safeParse({
         faceValue: 1000,
-        couponRate: 0.05,
+        couponRate: 5,
         yearsToMaturity: 10.25,
-        ytm: 0.04,
+        ytm: 4,
+        frequency: 2,
+      }).success
+    ).toBe(false);
+  });
+
+  it("rejects bond rates outside the supported percent range", () => {
+    expect(
+      BondInputSchema.safeParse({
+        faceValue: 1000,
+        couponRate: 101,
+        yearsToMaturity: 10,
+        ytm: 4,
+        frequency: 2,
+      }).success
+    ).toBe(false);
+
+    expect(
+      BondInputSchema.safeParse({
+        faceValue: 1000,
+        couponRate: 5,
+        yearsToMaturity: 10,
+        ytm: -100,
         frequency: 2,
       }).success
     ).toBe(false);

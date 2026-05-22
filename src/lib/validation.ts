@@ -29,14 +29,14 @@ export const BondInputSchema = z
     couponRate: z
       .number()
       .finite()
-      .min(0)
-      .max(MAX_INTEREST_RATE / 100),
+      .min(0, "Coupon rate must be non-negative")
+      .max(MAX_INTEREST_RATE, `Coupon rate must be no more than ${MAX_INTEREST_RATE}%`),
     yearsToMaturity: z.number().finite().positive("Years must be positive").max(MAX_YEARS),
     ytm: z
       .number()
       .finite()
-      .gt(MIN_INTEREST_RATE / 100)
-      .max(MAX_INTEREST_RATE / 100),
+      .gt(MIN_INTEREST_RATE, "Yield must be greater than -100%")
+      .max(MAX_INTEREST_RATE, `Yield must be no more than ${MAX_INTEREST_RATE}%`),
     frequency: z.union([
       z.literal(ANNUAL_FREQUENCY),
       z.literal(SEMIANNUAL_FREQUENCY),
@@ -44,7 +44,7 @@ export const BondInputSchema = z
       z.literal(MONTHLY_FREQUENCY),
     ]),
   })
-  .refine((data) => data.ytm / data.frequency > -1, {
+  .refine((data) => data.ytm / 100 / data.frequency > -1, {
     message: "Yield per period must be greater than -100%",
     path: ["ytm"],
   })
