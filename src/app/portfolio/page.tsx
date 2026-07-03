@@ -95,7 +95,7 @@ export default function PortfolioPage() {
     if (!result.success) {
       return {
         isValid: false,
-        message: result.error.issues[0]?.message ?? t("portfolio.validation.invalidInputs"),
+        message: t("portfolio.validation.invalidInputs"),
       };
     }
 
@@ -290,7 +290,7 @@ export default function PortfolioPage() {
     <div className="min-w-0 space-y-6">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("portfolio.title")}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">{t("portfolio.title")}</h1>
           <p className="text-muted-foreground mt-2">{t("portfolio.subtitle")}</p>
         </div>
         <HistoryPanel page="portfolio" onRestore={restorePortfolio} />
@@ -382,7 +382,7 @@ export default function PortfolioPage() {
                             type="number"
                             value={asset.return}
                             onChange={(e) => updateAsset(asset.id, "return", e.target.value)}
-                            className="h-10 w-18 min-w-[4.5rem]"
+                            className="h-10 w-[4.5rem] min-w-[4.5rem]"
                           />
                         </TableCell>
                         <TableCell>
@@ -393,7 +393,7 @@ export default function PortfolioPage() {
                             type="number"
                             value={asset.risk}
                             onChange={(e) => updateAsset(asset.id, "risk", e.target.value)}
-                            className="h-10 w-18 min-w-[4.5rem]"
+                            className="h-10 w-[4.5rem] min-w-[4.5rem]"
                           />
                         </TableCell>
                         <TableCell>
@@ -420,7 +420,7 @@ export default function PortfolioPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-9 w-9 text-destructive"
+                        className="h-10 w-10 text-destructive"
                         onClick={() => removeAsset(asset.id)}
                         aria-label={t("common.remove")}
                       >
@@ -491,7 +491,17 @@ export default function PortfolioPage() {
         </Card>
 
         <div id="portfolio-report-content" className="min-w-0 space-y-6 xl:col-span-8">
-          {isRunning && <ProgressBar progress={progress} label={t("portfolio.run")} showETA />}
+          {isRunning && (
+            <ProgressBar
+              progress={progress}
+              label={t("portfolio.run")}
+              showETA
+              onCancel={cancel}
+              cancelLabel={t("common.cancel")}
+              cancelAriaLabel={t("common.cancelCalculation")}
+              formatETA={(seconds) => t("common.secondsRemaining").replace("{seconds}", String(seconds))}
+            />
+          )}
 
           <SectionActionBar
             title={t("portfolio.workflow.results")}
@@ -618,12 +628,12 @@ export default function PortfolioPage() {
             description={t("portfolio.workflow.chartHint")}
             defaultOpen={visibleSimulations.length > 0}
           >
-            <Card className="h-[280px] sm:h-[360px] md:h-[430px] flex flex-col">
-              <CardHeader>
+            <div className="flex h-[280px] flex-col sm:h-[360px] md:h-[430px]">
+              <CardHeader className="px-0">
                 <CardTitle>{t("portfolio.frontier")}</CardTitle>
                 <CardDescription>{t("portfolio.frontierDesc")}</CardDescription>
               </CardHeader>
-              <CardContent className="flex-1 min-h-[240px]">
+              <CardContent className="min-h-[240px] flex-1 px-0">
                 <div ref={setChartElement} className="h-full min-h-[240px] w-full">
                   {visibleSimulations.length > 0 ? (
                     chartsReady && chartSize.width > 0 && chartSize.height > 0 ? (
@@ -711,7 +721,7 @@ export default function PortfolioPage() {
                   )}
                 </div>
               </CardContent>
-            </Card>
+            </div>
           </ResponsiveDisclosure>
         </div>
       </div>

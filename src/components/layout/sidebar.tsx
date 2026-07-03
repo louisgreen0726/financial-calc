@@ -75,7 +75,7 @@ export const Sidebar = React.memo(function Sidebar({
                 <Calculator className="h-5 w-5 text-white" />
               </div>
               <div className="flex flex-col leading-none">
-                <span className="text-lg font-bold tracking-tight box-decoration-clone font-display">FinCalc</span>
+                <span className="text-lg font-bold box-decoration-clone font-display">FinCalc</span>
                 <span className="text-[10px] mt-1 font-semibold uppercase tracking-widest text-primary/80">Pro</span>
               </div>
             </Link>
@@ -102,24 +102,33 @@ export const Sidebar = React.memo(function Sidebar({
           <div className="mt-2 space-y-6 px-2 pb-6">
             <AnimatePresence initial={false}>
               {sections.map((section) => {
-                const isExpanded = expanded[section.titleKey] ?? true;
+                const isSearching = query.trim().length > 0;
+                const isExpanded = isSearching || (expanded[section.titleKey] ?? true);
+                const sectionId = `${searchId}-section-${section.titleKey.replace(/\W+/g, "-")}`;
 
                 return (
                   <section key={section.titleKey} className="space-y-2">
-                    <div
-                      className="flex items-center justify-between px-2 py-1.5 cursor-pointer group"
+                    <button
+                      type="button"
+                      className="group flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                      aria-expanded={isExpanded}
+                      aria-controls={sectionId}
                       onClick={() => toggleSection(section.titleKey)}
                     >
                       <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/60 group-hover:text-foreground transition-colors mix-blend-luminosity">
                         {t(section.titleKey)}
                       </h3>
-                      <span className="ml-2 text-muted-foreground/40 group-hover:text-foreground transition-colors">
+                      <span
+                        className="ml-2 text-muted-foreground/40 group-hover:text-foreground transition-colors"
+                        aria-hidden="true"
+                      >
                         {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                       </span>
-                    </div>
+                    </button>
                     <AnimatePresence>
                       {isExpanded && (
                         <motion.div
+                          id={sectionId}
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: "auto" }}
                           exit={{ opacity: 0, height: 0 }}
@@ -187,6 +196,11 @@ export const Sidebar = React.memo(function Sidebar({
                   </section>
                 );
               })}
+              {sections.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-white/10 px-3 py-6 text-center text-sm text-muted-foreground">
+                  {t("history.noResults")}
+                </div>
+              ) : null}
             </AnimatePresence>
           </div>
         </ScrollArea>
@@ -194,9 +208,9 @@ export const Sidebar = React.memo(function Sidebar({
         <div className="shrink-0 px-6 py-4">
           <div className="p-3 rounded-xl bg-background/30 backdrop-blur-md border border-white/5 flex flex-col items-center justify-center gap-1">
             <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">
-              {t("sidebar.edition") || "Pro Edition"}
+              {t("sidebar.edition")}
             </p>
-            <p className="text-xs font-mono text-muted-foreground/30">{t("sidebar.version") || "v0.4.0"}</p>
+            <p className="text-xs font-mono text-muted-foreground/30">{t("sidebar.version")}</p>
           </div>
         </div>
       </div>

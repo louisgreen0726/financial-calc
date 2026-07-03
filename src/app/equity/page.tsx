@@ -107,6 +107,11 @@ export default function EquityPage() {
   }, [div, reqReturn, growth]);
 
   const capmValidation = useMemo(() => {
+    const messages = {
+      rf: t("equity.validation.capmRate"),
+      beta: t("equity.validation.capmBeta"),
+      rm: t("equity.validation.capmMarketReturn"),
+    } as const;
     const result = EquityCAPMSchema.safeParse({
       rf: parseRequiredNumber(rf, Number.NaN),
       beta: parseRequiredNumber(beta, Number.NaN),
@@ -114,10 +119,22 @@ export default function EquityPage() {
     });
     return result.success
       ? {}
-      : Object.fromEntries(result.error.issues.map((issue) => [String(issue.path[0]), issue.message]));
-  }, [beta, rf, rm]);
+      : Object.fromEntries(
+          result.error.issues.map((issue) => {
+            const field = String(issue.path[0]) as keyof typeof messages;
+            return [field, messages[field] ?? t("equity.validation.invalidInputs")];
+          })
+        );
+  }, [beta, rf, rm, t]);
 
   const waccValidation = useMemo(() => {
+    const messages = {
+      equityValue: t("equity.validation.waccEquity"),
+      debtValue: t("equity.validation.waccDebt"),
+      costEquity: t("equity.validation.waccCostEquity"),
+      costDebt: t("equity.validation.waccCostDebt"),
+      taxRate: t("equity.validation.waccTax"),
+    } as const;
     const result = EquityWACCSchema.safeParse({
       equityValue: parseRequiredNumber(equity, Number.NaN),
       debtValue: parseRequiredNumber(debt, Number.NaN),
@@ -127,10 +144,20 @@ export default function EquityPage() {
     });
     return result.success
       ? {}
-      : Object.fromEntries(result.error.issues.map((issue) => [String(issue.path[0]), issue.message]));
-  }, [costDebt, costEquity, debt, equity, taxRate]);
+      : Object.fromEntries(
+          result.error.issues.map((issue) => {
+            const field = String(issue.path[0]) as keyof typeof messages;
+            return [field, messages[field] ?? t("equity.validation.invalidInputs")];
+          })
+        );
+  }, [costDebt, costEquity, debt, equity, t, taxRate]);
 
   const ddmValidation = useMemo(() => {
+    const messages = {
+      d1: t("equity.validation.ddmDividend"),
+      r: t("equity.validation.ddmRequiredReturn"),
+      g: t("equity.validation.ddmGrowthRate"),
+    } as const;
     const result = EquityDDMSchema.safeParse({
       d1: parseRequiredNumber(div, Number.NaN),
       r: parseRequiredNumber(reqReturn, Number.NaN) / 100,
@@ -138,8 +165,13 @@ export default function EquityPage() {
     });
     return result.success
       ? {}
-      : Object.fromEntries(result.error.issues.map((issue) => [String(issue.path[0]), issue.message]));
-  }, [div, growth, reqReturn]);
+      : Object.fromEntries(
+          result.error.issues.map((issue) => {
+            const field = String(issue.path[0]) as keyof typeof messages;
+            return [field, messages[field] ?? t("equity.validation.invalidInputs")];
+          })
+        );
+  }, [div, growth, reqReturn, t]);
 
   const hasErrors =
     Object.keys(capmValidation).length > 0 ||
@@ -186,7 +218,7 @@ export default function EquityPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("equity.title")}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">{t("equity.title")}</h1>
           <p className="text-muted-foreground mt-2">{t("equity.subtitle")}</p>
         </div>
         <div className="flex items-center gap-2">
@@ -335,7 +367,7 @@ export default function EquityPage() {
               summary={
                 <Card className="flex flex-col justify-center items-center bg-muted/30">
                   <CardContent className="text-center space-y-2 pt-6">
-                    <div className="text-4xl sm:text-5xl font-bold text-primary tracking-tighter break-all">{`${(capmResult * 100).toFixed(2)}%`}</div>
+                    <div className="text-4xl sm:text-5xl font-bold text-primary break-all">{`${(capmResult * 100).toFixed(2)}%`}</div>
                     <p className="text-sm text-muted-foreground max-w-xs mx-auto pt-4">
                       {t("equity.capm.prem")}: {(parseRequiredNumber(rm) - parseRequiredNumber(rf)).toFixed(2)}%.
                     </p>
@@ -462,7 +494,7 @@ export default function EquityPage() {
               summary={
                 <Card className="flex flex-col justify-center items-center bg-muted/30">
                   <CardContent className="text-center space-y-2 pt-6">
-                    <div className="text-4xl sm:text-5xl font-bold text-primary tracking-tighter break-all">{`${(waccResult * 100).toFixed(2)}%`}</div>
+                    <div className="text-4xl sm:text-5xl font-bold text-primary break-all">{`${(waccResult * 100).toFixed(2)}%`}</div>
                     <p className="text-sm text-muted-foreground max-w-xs mx-auto pt-4">{t("equity.wacc.desc")}</p>
                   </CardContent>
                 </Card>
@@ -570,7 +602,7 @@ export default function EquityPage() {
                 <Card className="flex flex-col justify-center items-center bg-muted/30">
                   <CardContent className="text-center space-y-2 pt-6">
                     <div
-                      className={`text-4xl sm:text-5xl font-bold tracking-tighter break-all ${ddmResult <= 0 ? "text-muted-foreground" : "text-primary"}`}
+                      className={`text-4xl sm:text-5xl font-bold break-all ${ddmResult <= 0 ? "text-muted-foreground" : "text-primary"}`}
                     >
                       {formatCurrency(ddmResult)}
                     </div>

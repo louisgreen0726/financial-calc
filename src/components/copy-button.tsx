@@ -23,14 +23,14 @@ export function CopyButton({ value, className }: CopyButtonProps) {
     try {
       await copyTextToClipboard(textToCopy);
       setCopied(true);
-      toast.success(t("common.copySuccess") || "Copied to clipboard");
+      toast.success(t("common.copySuccess"));
 
       setTimeout(() => {
         setCopied(false);
       }, 2000);
     } catch (error) {
       logger.error("Failed to copy:", error);
-      toast.error(t("common.copyError") || "Failed to copy");
+      toast.error(t("common.copyError"));
     }
   }, [value, t]);
 
@@ -40,7 +40,7 @@ export function CopyButton({ value, className }: CopyButtonProps) {
       size="icon"
       className={className}
       onClick={handleCopy}
-      aria-label={copied ? t("common.copied") || "Copied" : t("common.copy") || "Copy"}
+      aria-label={copied ? t("common.copied") : t("common.copy")}
     >
       {copied ? <Check className="size-4 text-emerald-500" /> : <Copy className="size-4" />}
     </Button>

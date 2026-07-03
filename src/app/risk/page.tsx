@@ -56,6 +56,12 @@ export default function RiskPage() {
   );
 
   const validation = useMemo(() => {
+    const messages = {
+      value: t("risk.validation.valuePositive"),
+      volatility: t("risk.validation.volatilityRange"),
+      days: t("risk.validation.horizonPositive"),
+      confidence: t("risk.validation.invalidInputs"),
+    } as const;
     const result = RiskInputSchema.safeParse({
       value: parsedInputs.value ?? Number.NaN,
       volatility: parsedInputs.volatility ?? Number.NaN,
@@ -65,8 +71,13 @@ export default function RiskPage() {
 
     return result.success
       ? {}
-      : Object.fromEntries(result.error.issues.map((issue) => [String(issue.path[0]), issue.message]));
-  }, [parsedInputs]);
+      : Object.fromEntries(
+          result.error.issues.map((issue) => {
+            const field = String(issue.path[0]) as keyof typeof messages;
+            return [field, messages[field] ?? t("risk.validation.invalidInputs")];
+          })
+        );
+  }, [parsedInputs, t]);
 
   const hasValidationErrors = Object.keys(validation).length > 0;
 
@@ -145,7 +156,7 @@ export default function RiskPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("risk.title")}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">{t("risk.title")}</h1>
           <p className="text-muted-foreground mt-2">{t("risk.subtitle")}</p>
         </div>
         <HistoryPanel

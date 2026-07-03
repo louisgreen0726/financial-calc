@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 interface ProgressBarProps {
   progress: number;
@@ -10,13 +11,26 @@ interface ProgressBarProps {
   showETA?: boolean;
   estimatedTotalMs?: number;
   onCancel?: () => void;
+  cancelLabel?: string;
+  cancelAriaLabel?: string;
+  formatETA?: (seconds: number) => string;
   className?: string;
 }
 
 /**
  * Animated progress bar with color transitions and optional cancel.
  */
-export function ProgressBar({ progress, label, showETA, estimatedTotalMs, onCancel, className }: ProgressBarProps) {
+export function ProgressBar({
+  progress,
+  label,
+  showETA,
+  estimatedTotalMs,
+  onCancel,
+  cancelLabel = "Cancel",
+  cancelAriaLabel = "Cancel calculation",
+  formatETA = (seconds) => `~${seconds}s remaining`,
+  className,
+}: ProgressBarProps) {
   const clampedProgress = Math.min(100, Math.max(0, progress));
 
   // Color transitions: green -> yellow -> primary
@@ -32,17 +46,20 @@ export function ProgressBar({ progress, label, showETA, estimatedTotalMs, onCanc
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>{label || "Calculating..."}</span>
         <div className="flex items-center gap-2">
-          {showETA && etaSeconds > 0 && <span>~{etaSeconds}s remaining</span>}
+          {showETA && etaSeconds > 0 && <span>{formatETA(etaSeconds)}</span>}
           <span className="font-mono font-medium">{Math.round(clampedProgress)}%</span>
           {onCancel && (
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
               onClick={onCancel}
-              className="ml-1 flex items-center gap-1 text-destructive hover:text-destructive/80 transition-colors"
-              aria-label="Cancel calculation"
+              className="ml-1 h-10 px-2 text-destructive hover:text-destructive/80 sm:h-8"
+              aria-label={cancelAriaLabel}
             >
               <X className="h-3 w-3" />
-              Cancel
-            </button>
+              {cancelLabel}
+            </Button>
           )}
         </div>
       </div>

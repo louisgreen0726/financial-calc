@@ -23,9 +23,15 @@ export function ResponsiveDisclosure({
   defaultOpen = false,
 }: ResponsiveDisclosureProps) {
   const [isDesktop, setIsDesktop] = useState(false);
-  const [isOpen, setIsOpen] = useState(() => defaultOpen);
+  const [hasUserToggled, setHasUserToggled] = useState(false);
+  const [userOpen, setUserOpen] = useState(() => defaultOpen);
+  const isOpen = hasUserToggled ? userOpen : defaultOpen;
 
   useEffect(() => {
+    if (typeof window.matchMedia !== "function") {
+      return;
+    }
+
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
     const update = () => setIsDesktop(mediaQuery.matches);
 
@@ -42,9 +48,12 @@ export function ResponsiveDisclosure({
     <details
       className={cn("overflow-hidden rounded-3xl border border-white/10 bg-card/70 shadow-sm group", className)}
       open={isOpen}
-      onToggle={(event) => setIsOpen(event.currentTarget.open)}
+      onToggle={(event) => setUserOpen(event.currentTarget.open)}
     >
-      <summary className="flex cursor-pointer list-none items-start justify-between gap-4 px-4 py-4 marker:hidden">
+      <summary
+        className="flex cursor-pointer list-none items-start justify-between gap-4 px-4 py-4 marker:hidden"
+        onClick={() => setHasUserToggled(true)}
+      >
         <div className="min-w-0">
           <p className="text-sm font-semibold text-foreground">{title}</p>
           {description ? <p className="mt-1 text-xs leading-5 text-muted-foreground">{description}</p> : null}

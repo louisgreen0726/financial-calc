@@ -36,9 +36,9 @@ export function ResultActions({
   return (
     <>
       <div className="flex flex-wrap gap-2" data-pdf-exclude="true">
-        <Button variant="outline" size="sm" className="gap-2" onClick={() => setShareOpen(true)}>
+        <Button variant="outline" size="sm" className="min-h-10 min-w-0 gap-2" onClick={() => setShareOpen(true)}>
           <Share2 className="h-4 w-4" />
-          {t("share.title")}
+          <span className="truncate">{t("share.title")}</span>
         </Button>
         <ExportMenu
           data={exportData}
@@ -46,12 +46,12 @@ export function ResultActions({
           pdfElementId={pdfElementId}
           pdfFilename={pdfFilename}
           pdfTitle={pdfTitle}
-          className="gap-2"
+          className="min-h-10 gap-2"
         />
         {onShowHistory ? (
-          <Button variant="outline" size="sm" className="gap-2" onClick={onShowHistory}>
+          <Button variant="outline" size="sm" className="min-h-10 min-w-0 gap-2" onClick={onShowHistory}>
             <History className="h-4 w-4" />
-            {t("history.title")}
+            <span className="truncate">{t("history.title")}</span>
           </Button>
         ) : null}
       </div>

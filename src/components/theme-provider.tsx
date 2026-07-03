@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { safeGetItem, safeSetItem } from "@/lib/storage";
 
 type Theme = "light" | "dark" | "system";
 type ResolvedTheme = "light" | "dark";
@@ -44,11 +45,24 @@ export function ThemeProvider({ children, defaultTheme = "system", enableSystem 
   const resolvedTheme = theme === "system" && enableSystem ? systemTheme : theme === "dark" ? "dark" : "light";
 
   useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const loadStoredTheme = () => {
+      setThemeState(normalizeTheme(safeGetItem(THEME_STORAGE_KEY), defaultTheme));
+    };
+
+    if (typeof window.matchMedia !== "function") {
+      queueMicrotask(loadStoredTheme);
+      return;
+    }
+
     const mediaQuery = window.matchMedia(MEDIA_QUERY);
     const updateSystemTheme = () => setSystemTheme(mediaQuery.matches ? "dark" : "light");
 
     queueMicrotask(() => {
-      setThemeState(normalizeTheme(window.localStorage.getItem(THEME_STORAGE_KEY), defaultTheme));
+      loadStoredTheme();
       updateSystemTheme();
     });
 
@@ -62,7 +76,7 @@ export function ThemeProvider({ children, defaultTheme = "system", enableSystem 
 
   const setTheme = useCallback((nextTheme: Theme) => {
     setThemeState(nextTheme);
-    window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+    safeSetItem(THEME_STORAGE_KEY, nextTheme);
   }, []);
 
   const value = useMemo(

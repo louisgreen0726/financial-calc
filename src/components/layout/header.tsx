@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MobileSidebar } from "./mobile-sidebar";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -26,8 +27,8 @@ export const Header = React.memo(function Header({ className }: HeaderProps) {
   const pageTitle = currentItem
     ? t(currentItem.titleKey)
     : normalizedPathname === "/"
-      ? t("common.home") || "Home"
-      : pathname.split("/").pop()?.replace(/-/g, " ") || "Dashboard";
+      ? t("common.home")
+      : pathname.split("/").pop()?.replace(/-/g, " ") || t("common.dashboard");
 
   return (
     <header
@@ -39,7 +40,13 @@ export const Header = React.memo(function Header({ className }: HeaderProps) {
       <div className="flex min-w-0 items-center gap-2 sm:gap-4">
         <MobileSidebar />
         <div className="hidden min-w-0 items-center gap-2 md:flex">
-          <span className="shrink-0 text-sm font-medium text-muted-foreground/70">{t("common.home") || "Home"}</span>
+          <Link
+            href="/"
+            prefetch={false}
+            className="shrink-0 text-sm font-medium text-muted-foreground/70 transition-colors hover:text-foreground"
+          >
+            {t("common.home")}
+          </Link>
           {normalizedPathname !== "/" ? (
             <>
               <ChevronRight className="h-4 w-4 text-muted-foreground/40" />

@@ -11,7 +11,7 @@ export function SectionActionBar({ title, description, actions, className }: Sec
   return (
     <div className={cn("flex flex-col gap-3 md:flex-row md:items-center md:justify-between", className)} data-pdf-block>
       <div className="space-y-1">
-        <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
+        <h2 className="text-xl font-semibold">{title}</h2>
         {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}

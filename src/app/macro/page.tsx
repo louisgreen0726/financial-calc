@@ -19,7 +19,7 @@ import { HistoryPanel } from "@/components/history-panel";
 import { useShareableUrl } from "@/hooks/use-shareable-url";
 import { normalizeMacroTab, type MacroTab } from "@/lib/route-state";
 
-interface ValidationError {
+interface FieldValidationError {
   field: string;
   message: string;
 }
@@ -76,8 +76,8 @@ export default function MacroPage() {
   const [foreignPrice, setForeignPrice] = useState<string>("650");
 
   // Validation functions
-  const validateInflationInputs = useCallback((): ValidationError[] => {
-    const errors: ValidationError[] = [];
+  const validateInflationInputs = useCallback((): FieldValidationError[] => {
+    const errors: FieldValidationError[] = [];
     const start = parseOptionalNumber(startPrice);
     const end = parseOptionalNumber(endPrice);
     const years = parseOptionalNumber(infYears);
@@ -94,8 +94,8 @@ export default function MacroPage() {
     return errors;
   }, [startPrice, endPrice, infYears, t]);
 
-  const validatePPInputs = useCallback((): ValidationError[] => {
-    const errors: ValidationError[] = [];
+  const validatePPInputs = useCallback((): FieldValidationError[] => {
+    const errors: FieldValidationError[] = [];
     const amount = parseOptionalNumber(ppAmount);
     const rate = parseOptionalNumber(ppRate);
     const years = parseOptionalNumber(ppYears);
@@ -112,8 +112,8 @@ export default function MacroPage() {
     return errors;
   }, [ppAmount, ppRate, ppYears, t]);
 
-  const validateRealRateInputs = useCallback((): ValidationError[] => {
-    const errors: ValidationError[] = [];
+  const validateRealRateInputs = useCallback((): FieldValidationError[] => {
+    const errors: FieldValidationError[] = [];
     const nominal = parseOptionalNumber(nominalRate);
     const inflation = parseOptionalNumber(realInfRate);
 
@@ -124,8 +124,8 @@ export default function MacroPage() {
     return errors;
   }, [nominalRate, realInfRate, t]);
 
-  const validateCPIInputs = useCallback((): ValidationError[] => {
-    const errors: ValidationError[] = [];
+  const validateCPIInputs = useCallback((): FieldValidationError[] => {
+    const errors: FieldValidationError[] = [];
     const amount = parseOptionalNumber(cpiAmount);
     const fromCpi = parseOptionalNumber(fromCPI);
     const toCpi = parseOptionalNumber(toCPI);
@@ -142,8 +142,8 @@ export default function MacroPage() {
     return errors;
   }, [cpiAmount, fromCPI, toCPI, t]);
 
-  const validatePPPInputs = useCallback((): ValidationError[] => {
-    const errors: ValidationError[] = [];
+  const validatePPPInputs = useCallback((): FieldValidationError[] => {
+    const errors: FieldValidationError[] = [];
     const domestic = parseOptionalNumber(domesticPrice);
     const foreign = parseOptionalNumber(foreignPrice);
 
@@ -476,35 +476,51 @@ export default function MacroPage() {
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("macro.title")}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">{t("macro.title")}</h1>
           <p className="text-muted-foreground mt-2">{t("macro.subtitle")}</p>
         </div>
         <HistoryPanel page="macro" onRestore={restoreMacroInputs} />
       </div>
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(normalizeMacroTab(value))} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="inflation" className="flex items-center gap-2" aria-label={t("macro.inflation.tab")}>
+        <TabsList className="flex h-auto w-full justify-start gap-1 overflow-x-auto rounded-lg p-1 sm:grid sm:grid-cols-5 sm:overflow-visible">
+          <TabsTrigger
+            value="inflation"
+            className="min-h-10 min-w-12 flex-none px-3 sm:flex-1"
+            aria-label={t("macro.inflation.tab")}
+          >
             <TrendingUp className="h-4 w-4" />
             <span className="hidden sm:inline">{t("macro.inflation.tab")}</span>
           </TabsTrigger>
           <TabsTrigger
             value="purchasingPower"
-            className="flex items-center gap-2"
+            className="min-h-10 min-w-12 flex-none px-3 sm:flex-1"
             aria-label={t("macro.purchasingPower.tab")}
           >
             <DollarSign className="h-4 w-4" />
             <span className="hidden sm:inline">{t("macro.purchasingPower.tab")}</span>
           </TabsTrigger>
-          <TabsTrigger value="realRate" className="flex items-center gap-2" aria-label={t("macro.realRate.tab")}>
+          <TabsTrigger
+            value="realRate"
+            className="min-h-10 min-w-12 flex-none px-3 sm:flex-1"
+            aria-label={t("macro.realRate.tab")}
+          >
             <Percent className="h-4 w-4" />
             <span className="hidden sm:inline">{t("macro.realRate.tab")}</span>
           </TabsTrigger>
-          <TabsTrigger value="cpiAdjust" className="flex items-center gap-2" aria-label={t("macro.cpiAdjust.tab")}>
+          <TabsTrigger
+            value="cpiAdjust"
+            className="min-h-10 min-w-12 flex-none px-3 sm:flex-1"
+            aria-label={t("macro.cpiAdjust.tab")}
+          >
             <Scale className="h-4 w-4" />
             <span className="hidden sm:inline">{t("macro.cpiAdjust.tab")}</span>
           </TabsTrigger>
-          <TabsTrigger value="ppp" className="flex items-center gap-2" aria-label={t("macro.ppp.tab")}>
+          <TabsTrigger
+            value="ppp"
+            className="min-h-10 min-w-12 flex-none px-3 sm:flex-1"
+            aria-label={t("macro.ppp.tab")}
+          >
             <Globe className="h-4 w-4" />
             <span className="hidden sm:inline">{t("macro.ppp.tab")}</span>
           </TabsTrigger>
@@ -583,10 +599,10 @@ export default function MacroPage() {
               </CardContent>
             </Card>
 
-            <Card className="flex flex-col justify-center items-center bg-muted/30">
-              <div className="text-center space-y-2">
+            <Card className="flex min-w-0 flex-col items-center justify-center bg-muted/30 p-4">
+              <div className="min-w-0 max-w-full space-y-2 text-center">
                 <h3 className="text-lg font-medium text-muted-foreground">{t("macro.inflation.rate")}</h3>
-                <div className="text-5xl font-bold text-primary tracking-tighter">
+                <div className="max-w-full break-words text-4xl font-bold text-primary sm:text-5xl">
                   {isFiniteNumber(infResult) ? `${(infResult * 100).toFixed(4)}%` : EMPTY_RESULT}
                 </div>
               </div>
@@ -650,20 +666,20 @@ export default function MacroPage() {
               </CardContent>
             </Card>
 
-            <Card className="flex flex-col justify-center items-center bg-muted/30">
-              <div className="text-center space-y-6">
-                <div>
+            <Card className="flex min-w-0 flex-col items-center justify-center bg-muted/30 p-4">
+              <div className="min-w-0 max-w-full space-y-6 text-center">
+                <div className="min-w-0">
                   <h3 className="text-lg font-medium text-muted-foreground">
                     {t("macro.purchasingPower.futureValue")}
                   </h3>
-                  <div className="text-4xl font-bold text-primary tracking-tighter mt-2">
+                  <div className="mt-2 max-w-full break-words text-3xl font-bold text-primary sm:text-4xl">
                     {isFiniteNumber(ppResult) ? formatCurrency(ppResult) : EMPTY_RESULT}
                   </div>
                 </div>
                 {isFiniteNumber(ppResult) && (
-                  <div className="p-4 bg-red-50 dark:bg-red-950 rounded-lg">
+                  <div className="max-w-full rounded-lg bg-red-50 p-4 dark:bg-red-950">
                     <p className="text-sm text-muted-foreground">{t("macro.purchasingPower.loss")}</p>
-                    <p className="text-2xl font-bold text-red-600">
+                    <p className="break-words text-2xl font-bold text-red-600">
                       {formatCurrency((parseOptionalNumber(ppAmount) ?? 0) - ppResult)}
                     </p>
                   </div>
@@ -716,10 +732,10 @@ export default function MacroPage() {
               </CardContent>
             </Card>
 
-            <Card className="flex flex-col justify-center items-center bg-muted/30">
-              <div className="text-center space-y-2">
+            <Card className="flex min-w-0 flex-col items-center justify-center bg-muted/30 p-4">
+              <div className="min-w-0 max-w-full space-y-2 text-center">
                 <h3 className="text-lg font-medium text-muted-foreground">{t("macro.realRate.real")}</h3>
-                <div className="text-5xl font-bold text-primary tracking-tighter">
+                <div className="max-w-full break-words text-4xl font-bold text-primary sm:text-5xl">
                   {isFiniteNumber(realResult) ? `${(realResult * 100).toFixed(4)}%` : EMPTY_RESULT}
                 </div>
               </div>
@@ -749,9 +765,7 @@ export default function MacroPage() {
                     min="0"
                     step="0.01"
                   />
-                  {cpiErrors.find((e) => e.field === "amount") && (
-                    <p className="text-sm text-red-500">{cpiErrors.find((e) => e.field === "amount")?.message}</p>
-                  )}
+                  <ValidationError error={cpiErrors.find((e) => e.field === "amount")?.message ?? null} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="macro-cpi-from">{t("macro.cpiAdjust.fromCPI")}</Label>
@@ -763,9 +777,7 @@ export default function MacroPage() {
                     min="0"
                     step="0.01"
                   />
-                  {cpiErrors.find((e) => e.field === "fromCPI") && (
-                    <p className="text-sm text-red-500">{cpiErrors.find((e) => e.field === "fromCPI")?.message}</p>
-                  )}
+                  <ValidationError error={cpiErrors.find((e) => e.field === "fromCPI")?.message ?? null} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="macro-cpi-to">{t("macro.cpiAdjust.toCPI")}</Label>
@@ -777,9 +789,7 @@ export default function MacroPage() {
                     min="0"
                     step="0.01"
                   />
-                  {cpiErrors.find((e) => e.field === "toCPI") && (
-                    <p className="text-sm text-red-500">{cpiErrors.find((e) => e.field === "toCPI")?.message}</p>
-                  )}
+                  <ValidationError error={cpiErrors.find((e) => e.field === "toCPI")?.message ?? null} />
                 </div>
                 {cpiErrors.length > 0 && (
                   <Alert variant="destructive" className="py-2">
@@ -790,10 +800,10 @@ export default function MacroPage() {
               </CardContent>
             </Card>
 
-            <Card className="flex flex-col justify-center items-center bg-muted/30">
-              <div className="text-center space-y-2">
+            <Card className="flex min-w-0 flex-col items-center justify-center bg-muted/30 p-4">
+              <div className="min-w-0 max-w-full space-y-2 text-center">
                 <h3 className="text-lg font-medium text-muted-foreground">{t("macro.cpiAdjust.adjusted")}</h3>
-                <div className="text-5xl font-bold text-primary tracking-tighter">
+                <div className="max-w-full break-words text-4xl font-bold text-primary sm:text-5xl">
                   {isFiniteNumber(cpiResult) ? formatCurrency(cpiResult) : EMPTY_RESULT}
                 </div>
               </div>
@@ -823,9 +833,7 @@ export default function MacroPage() {
                     min="0"
                     step="0.01"
                   />
-                  {pppErrors.find((e) => e.field === "domestic") && (
-                    <p className="text-sm text-red-500">{pppErrors.find((e) => e.field === "domestic")?.message}</p>
-                  )}
+                  <ValidationError error={pppErrors.find((e) => e.field === "domestic")?.message ?? null} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="macro-ppp-foreign">{t("macro.ppp.foreign")}</Label>
@@ -837,9 +845,7 @@ export default function MacroPage() {
                     min="0"
                     step="0.01"
                   />
-                  {pppErrors.find((e) => e.field === "foreign") && (
-                    <p className="text-sm text-red-500">{pppErrors.find((e) => e.field === "foreign")?.message}</p>
-                  )}
+                  <ValidationError error={pppErrors.find((e) => e.field === "foreign")?.message ?? null} />
                 </div>
                 {pppErrors.length > 0 && (
                   <Alert variant="destructive" className="py-2">
@@ -850,10 +856,10 @@ export default function MacroPage() {
               </CardContent>
             </Card>
 
-            <Card className="flex flex-col justify-center items-center bg-muted/30">
-              <div className="text-center space-y-2">
+            <Card className="flex min-w-0 flex-col items-center justify-center bg-muted/30 p-4">
+              <div className="min-w-0 max-w-full space-y-2 text-center">
                 <h3 className="text-lg font-medium text-muted-foreground">{t("macro.ppp.rate")}</h3>
-                <div className="text-5xl font-bold text-primary tracking-tighter">
+                <div className="max-w-full break-words text-4xl font-bold text-primary sm:text-5xl">
                   {isFiniteNumber(pppResult) ? pppResult.toFixed(4) : EMPTY_RESULT}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">{t("macro.ppp.rateDesc")}</p>

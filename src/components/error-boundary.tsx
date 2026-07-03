@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
 import { logger } from "@/lib/logger";
+import { useLanguage } from "@/lib/i18n";
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -14,6 +15,41 @@ interface ErrorBoundaryProps {
 interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
+}
+
+function ErrorFallback({ error, onRetry }: { error: Error | null; onRetry: () => void }) {
+  const { t } = useLanguage();
+
+  return (
+    <div className="flex min-h-[400px] items-center justify-center px-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <AlertTriangle className="h-5 w-5 shrink-0" />
+            <span className="min-w-0 break-words">{t("common.errorTitle")}</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-4 break-words text-sm text-muted-foreground">
+            {error?.message || t("common.unexpectedError")}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="default" size="sm" onClick={onRetry}>
+              {t("common.tryAgain")}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+              {t("common.refreshPage")}
+            </Button>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/" prefetch={false}>
+                {t("common.home")}
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
 
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
@@ -32,36 +68,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   render() {
     if (this.state.hasError) {
-      return (
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Card className="max-w-md">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-destructive">
-                <AlertTriangle className="h-5 w-5" />
-                Something went wrong
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                {this.state.error?.message || "An unexpected error occurred."}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Button variant="default" size="sm" onClick={() => this.setState({ hasError: false, error: null })}>
-                  Try again
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-                  Refresh page
-                </Button>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link href="/" prefetch={false}>
-                    Go home
-                  </Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      );
+      return <ErrorFallback error={this.state.error} onRetry={() => this.setState({ hasError: false, error: null })} />;
     }
 
     return this.props.children;

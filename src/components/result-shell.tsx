@@ -34,7 +34,7 @@ export function ResultShell({
     <section className={cn("space-y-6", className)}>
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between" data-pdf-block>
         <div className="space-y-1">
-          <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
+          <h2 className="text-xl font-semibold">{title}</h2>
           {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
         </div>
         {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}

@@ -46,6 +46,13 @@ export default function BondsPage() {
   });
 
   const bondValidation = useMemo(() => {
+    const messages = {
+      faceValue: t("bonds.validation.facePositive"),
+      couponRate: t("bonds.validation.couponRange"),
+      yearsToMaturity: t("bonds.validation.yearsRange"),
+      ytm: t("bonds.validation.ytmRange"),
+      frequency: t("bonds.validation.frequencyValid"),
+    } as const;
     const result = BondInputSchema.safeParse({
       faceValue: parseOptionalNumber(faceValue) ?? Number.NaN,
       couponRate: parseOptionalNumber(couponRate) ?? Number.NaN,
@@ -55,8 +62,13 @@ export default function BondsPage() {
     });
     return result.success
       ? {}
-      : Object.fromEntries(result.error.issues.map((issue) => [String(issue.path[0]), issue.message]));
-  }, [couponRate, faceValue, frequency, years, ytm]);
+      : Object.fromEntries(
+          result.error.issues.map((issue) => {
+            const field = String(issue.path[0]) as keyof typeof messages;
+            return [field, messages[field] ?? t("bonds.validation.invalidInputs")];
+          })
+        );
+  }, [couponRate, faceValue, frequency, t, years, ytm]);
 
   const hasBondErrors = Object.keys(bondValidation).length > 0;
 
@@ -143,13 +155,13 @@ export default function BondsPage() {
 
   const rowLabels = ["1 yr", "5 yrs", "10 yrs", "15 yrs", "20 yrs"];
   const colLabels = ["2%", "3%", "4%", "5%", "6%"];
-  const formatCell = (v: number) => (Number.isFinite(v) ? `$${v.toFixed(0)}` : "N/A");
+  const formatCell = (v: number) => (Number.isFinite(v) ? `$${v.toFixed(0)}` : t("common.notAvailable"));
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("bonds.title")}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">{t("bonds.title")}</h1>
           <p className="text-muted-foreground mt-2">{t("bonds.subtitle")}</p>
         </div>
         <div className="flex flex-wrap gap-2 items-center">
@@ -306,13 +318,13 @@ export default function BondsPage() {
               ) : null
             }
             summary={
-              <section aria-label="Bond calculation results">
+              <section aria-label={t("bonds.metrics")}>
                 <h2 className="text-xl font-semibold mb-2">{t("bonds.metrics")}</h2>
                 <div
                   className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
                   role="region"
                   aria-live="polite"
-                  aria-label="Bond calculation results"
+                  aria-label={t("bonds.metrics")}
                 >
                   <Card>
                     <CardHeader className="p-4 pb-2">
@@ -321,7 +333,7 @@ export default function BondsPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
-                      <div className="text-2xl font-bold">{formatCurrency(metrics.price)}</div>
+                      <div className="break-words text-2xl font-bold">{formatCurrency(metrics.price)}</div>
                       <p className="text-xs text-muted-foreground">
                         {metrics.price < parseRequiredNumber(faceValue) ? t("bonds.discount") : t("bonds.premium")}
                       </p>
@@ -334,7 +346,7 @@ export default function BondsPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
-                      <div className="text-2xl font-bold">{`${metrics.macDuration.toFixed(2)} ${t("common.year")}`}</div>
+                      <div className="break-words text-2xl font-bold">{`${metrics.macDuration.toFixed(2)} ${t("common.year")}`}</div>
                     </CardContent>
                   </Card>
                   <Card>
@@ -344,7 +356,7 @@ export default function BondsPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
-                      <div className="text-2xl font-bold">{metrics.modDuration.toFixed(2)}</div>
+                      <div className="break-words text-2xl font-bold">{metrics.modDuration.toFixed(2)}</div>
                       <p className="text-xs text-muted-foreground">{`Sens: ${(metrics.modDuration * 1).toFixed(2)}% / 1% ${"\u0394"}Yield`}</p>
                     </CardContent>
                   </Card>
@@ -355,7 +367,7 @@ export default function BondsPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
-                      <div className="text-2xl font-bold">{metrics.convexity.toFixed(2)}</div>
+                      <div className="break-words text-2xl font-bold">{metrics.convexity.toFixed(2)}</div>
                     </CardContent>
                   </Card>
                 </div>

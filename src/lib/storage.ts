@@ -50,7 +50,11 @@ export function safeGetJSON<T>(key: string, fallback: T): T {
 }
 
 export function safeSetJSON(key: string, value: unknown) {
-  safeSetItem(key, JSON.stringify(value));
+  try {
+    safeSetItem(key, JSON.stringify(value));
+  } catch {
+    // Ignore JSON serialization failures.
+  }
 }
 
 export function safeGetSessionJSON<T>(key: string, fallback: T): T {
@@ -74,7 +78,7 @@ export function safeSetSessionJSON(key: string, value: unknown) {
   try {
     window.sessionStorage.setItem(key, JSON.stringify(value));
   } catch {
-    // Ignore session storage write failures.
+    // Ignore session storage serialization/write failures.
   }
 }
 

@@ -28,6 +28,8 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
   const { t } = useLanguage();
   const { history, pageHistory, removeFromHistory, removeManyFromHistory, clearHistory, isInitialized } =
     useCalculationHistory({ page });
+  const panelId = `${page}-history-panel`;
+  const panelTitleId = `${page}-history-panel-title`;
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -69,6 +71,21 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
     }
   }, [favorites, isInitialized, visibleFavorites]);
 
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
+
   const filtered = useMemo(() => {
     if (!searchQuery.trim()) return pageHistory;
     const q = searchQuery.toLowerCase();
@@ -88,6 +105,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
   const handleRestore = (item: CalculationHistoryItem) => {
     if (onRestore) {
       onRestore(item.inputs);
+      setIsOpen(false);
       toast.success(t("history.restored"));
     }
   };
@@ -164,7 +182,9 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
       <Button
         variant="outline"
         size="sm"
-        className="fixed bottom-22 right-4 lg:bottom-4 z-50 gap-2 shadow-lg"
+        className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom)+0.75rem)] right-4 z-50 gap-2 shadow-lg lg:bottom-4"
+        aria-controls={panelId}
+        aria-expanded={isOpen}
         onClick={() => setIsOpen(!isOpen)}
       >
         <Clock className="h-4 w-4" />
@@ -178,13 +198,19 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
+            id={panelId}
+            role="dialog"
+            aria-modal="false"
+            aria-labelledby={panelTitleId}
             className={cn(
-              "fixed inset-x-3 bottom-20 z-50 max-h-[75vh] rounded-3xl border bg-card shadow-xl sm:inset-x-auto sm:right-4 sm:bottom-36 sm:w-[calc(100vw-2rem)] sm:max-w-[420px] sm:max-h-[min(65vh,600px)] sm:rounded-xl lg:bottom-20",
+              "fixed inset-x-3 bottom-[calc(4rem+env(safe-area-inset-bottom)+1rem)] z-50 max-h-[min(72vh,34rem)] rounded-3xl border bg-card shadow-xl sm:inset-x-auto sm:right-4 sm:bottom-36 sm:w-[calc(100vw-2rem)] sm:max-w-[420px] sm:max-h-[min(65vh,600px)] sm:rounded-xl lg:bottom-20",
               className
             )}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 border-b">
-              <CardTitle className="text-sm font-semibold">{t("history.title")}</CardTitle>
+              <CardTitle id={panelTitleId} className="text-sm font-semibold">
+                {t("history.title")}
+              </CardTitle>
               <div className="flex gap-1 items-center">
                 {batchMode ? (
                   <>
@@ -195,6 +221,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
                       variant="ghost"
                       size="sm"
                       className="h-8 text-destructive hover:text-destructive"
+                      disabled={selectedIds.size === 0}
                       onClick={deleteSelected}
                     >
                       <Trash2 className="h-4 w-4 mr-1" />
@@ -203,7 +230,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8"
+                      className="h-10 w-10 sm:h-8 sm:w-8"
                       aria-label={t("history.cancelSelection")}
                       onClick={() => {
                         setBatchMode(false);
@@ -218,7 +245,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8"
+                      className="h-10 w-10 sm:h-8 sm:w-8"
                       onClick={() => setBatchMode(true)}
                       title={t("history.select")}
                       aria-label={t("history.select")}
@@ -228,7 +255,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8"
+                      className="h-10 w-10 sm:h-8 sm:w-8"
                       onClick={() => setClearDialogOpen(true)}
                       title={t("history.clearAll")}
                       aria-label={t("history.clearAll")}
@@ -238,7 +265,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8"
+                      className="h-10 w-10 sm:h-8 sm:w-8"
                       onClick={() => setIsOpen(false)}
                       aria-label={t("history.closePanel")}
                     >
@@ -254,6 +281,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
               <div className="relative mb-3">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
+                  aria-label={t("history.searchPlaceholder")}
                   placeholder={t("history.searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -283,7 +311,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
                         {batchMode && (
                           <button
                             type="button"
-                            className="mt-0.5 shrink-0"
+                            className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-md sm:h-6 sm:w-6"
                             aria-label={selectedIds.has(item.id) ? t("history.deselectItem") : t("history.selectItem")}
                             onClick={(e) => {
                               e.stopPropagation();
@@ -320,7 +348,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7"
+                          className="h-10 w-10 sm:h-8 sm:w-8"
                           onClick={(e) => {
                             e.stopPropagation();
                             toggleFavorite(item.id);
@@ -337,7 +365,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-7 w-7"
+                              className="h-10 w-10 sm:h-8 sm:w-8"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleRestore(item);
@@ -350,7 +378,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-7 w-7 text-destructive hover:text-destructive"
+                              className="h-10 w-10 text-destructive hover:text-destructive sm:h-8 sm:w-8"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 removeFromHistory(item.id);
@@ -374,7 +402,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
       <ConfirmDialog
         open={clearDialogOpen}
         onOpenChange={setClearDialogOpen}
-        title={t("history.confirmClear") || "Clear all history?"}
+        title={t("history.confirmClear")}
         description={t("history.noHistoryDesc")}
         confirmLabel={t("history.clearAll")}
         destructive

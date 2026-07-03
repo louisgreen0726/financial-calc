@@ -352,7 +352,7 @@ function TVMPageContent() {
       <div className="min-w-0 space-y-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("tvm.title")}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold">{t("tvm.title")}</h1>
             <p className="text-muted-foreground mt-2">{t("tvm.subtitle")}</p>
           </div>
         </div>
@@ -590,7 +590,7 @@ function TVMPageContent() {
             summary={
               <Card className="bg-muted/30 border-dashed">
                 <CardContent className="flex flex-col items-center justify-center p-6 sm:p-8 text-center">
-                  <p className="max-w-full overflow-hidden text-balance break-words text-3xl font-bold tracking-tighter text-primary sm:text-5xl">
+                  <p className="max-w-full overflow-hidden text-balance break-words text-3xl font-bold text-primary sm:text-5xl">
                     {result === null
                       ? ""
                       : target === "nper"

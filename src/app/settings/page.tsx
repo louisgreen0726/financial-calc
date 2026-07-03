@@ -50,13 +50,13 @@ export default function SettingsPage() {
   const handleClearHistory = () => {
     safeRemoveItem(HISTORY_KEY);
     window.dispatchEvent(new CustomEvent("financial-calc-history-changed"));
-    toast.success(t("history.cleared") || "History cleared");
+    toast.success(t("history.cleared"));
   };
 
   const handleExportHistory = () => {
     const history = safeGetItem(HISTORY_KEY);
     if (!history) {
-      toast.error(t("export.noData") || "No data to export");
+      toast.error(t("export.noData"));
       return;
     }
     const blob = new Blob([history], { type: "application/json" });
@@ -69,13 +69,13 @@ export default function SettingsPage() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    toast.success(t("export.jsonSuccess") || "History exported");
+    toast.success(t("export.jsonSuccess"));
   };
 
   return (
     <div className="space-y-6 w-full md:max-w-3xl">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("settings.title") || "Settings"}</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">{t("settings.title")}</h1>
         <p className="text-muted-foreground mt-2">{t("settings.customizeExperience")}</p>
       </div>
 
@@ -176,11 +176,11 @@ export default function SettingsPage() {
                   variant={currency === code ? "default" : "outline"}
                   size="sm"
                   onClick={() => handleSetCurrency(code)}
-                  className={cn("min-h-11 justify-start gap-2", currency === code && "bg-primary")}
+                  className={cn("min-h-11 min-w-0 justify-start gap-2", currency === code && "bg-primary")}
                 >
-                  <Coins className="h-4 w-4" />
-                  <span className="font-semibold">{code}</span>
-                  <span className="truncate text-xs opacity-80">{CURRENCY_NAMES[code]}</span>
+                  <Coins className="h-4 w-4 shrink-0" />
+                  <span className="shrink-0 font-semibold">{code}</span>
+                  <span className="min-w-0 truncate text-xs opacity-80">{CURRENCY_NAMES[code]}</span>
                 </Button>
               ))}
             </div>
@@ -233,7 +233,7 @@ export default function SettingsPage() {
       <ConfirmDialog
         open={clearDialogOpen}
         onOpenChange={setClearDialogOpen}
-        title={t("history.confirmClear") || "Clear all calculation history?"}
+        title={t("history.confirmClear")}
         description={t("settings.dataManagementDesc")}
         confirmLabel={t("settings.clearAllHistory")}
         destructive

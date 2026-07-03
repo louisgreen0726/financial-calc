@@ -29,6 +29,13 @@ type Translations = {
     add: string;
     remove: string;
     clear: string;
+    cancel: string;
+    cancelCalculation: string;
+    secondsRemaining: string;
+    errorTitle: string;
+    unexpectedError: string;
+    tryAgain: string;
+    refreshPage: string;
     light: string;
     dark: string;
     system: string;
@@ -128,6 +135,11 @@ type Translations = {
     runtimeError: string;
     stepsTitle: string;
     stepsDesc: string;
+    showSteps: string;
+    hideSteps: string;
+    formula: string;
+    stepByStep: string;
+    finalResult: string;
     presets: {
       retirement: string;
       loanPayoff: string;
@@ -181,6 +193,17 @@ type Translations = {
     validation: {
       invalidInputs: string;
       ddmDisclosure: string;
+      capmRate: string;
+      capmBeta: string;
+      capmMarketReturn: string;
+      waccEquity: string;
+      waccDebt: string;
+      waccCostEquity: string;
+      waccCostDebt: string;
+      waccTax: string;
+      ddmDividend: string;
+      ddmRequiredReturn: string;
+      ddmGrowthRate: string;
     };
   };
   bonds: {
@@ -213,6 +236,11 @@ type Translations = {
       ytmHelp: string;
       yearsHelp: string;
       frequencyHelp: string;
+      facePositive: string;
+      couponRange: string;
+      ytmRange: string;
+      yearsRange: string;
+      frequencyValid: string;
     };
   };
   portfolio: {
@@ -277,6 +305,14 @@ type Translations = {
       vega: string;
       rho: string;
     };
+    validation: {
+      invalidInputs: string;
+      spotPositive: string;
+      strikePositive: string;
+      timeRange: string;
+      rateRange: string;
+      volatilityRange: string;
+    };
   };
   risk: {
     title: string;
@@ -292,6 +328,12 @@ type Translations = {
     cvarDesc: string;
     dist: string;
     distDesc: string;
+    validation: {
+      invalidInputs: string;
+      valuePositive: string;
+      volatilityRange: string;
+      horizonPositive: string;
+    };
   };
   loans: {
     title: string;
@@ -317,6 +359,9 @@ type Translations = {
     errorPositiveAmount: string;
     errorPositiveRate: string;
     errorPositiveYears: string;
+    errorValidRate: string;
+    errorValidYears: string;
+    errorValidMethod: string;
     noData: string;
   };
   macro: {
@@ -511,6 +556,7 @@ type Translations = {
   };
   export: {
     title: string;
+    reportTitle: string;
     csv: string;
     json: string;
     pdf: string;
@@ -541,6 +587,13 @@ const en: Translations = {
     add: "Add",
     remove: "Remove",
     clear: "Clear",
+    cancel: "Cancel",
+    cancelCalculation: "Cancel calculation",
+    secondsRemaining: "~{seconds}s remaining",
+    errorTitle: "Something went wrong",
+    unexpectedError: "An unexpected error occurred.",
+    tryAgain: "Try again",
+    refreshPage: "Refresh page",
     light: "Light",
     dark: "Dark",
     system: "System",
@@ -640,6 +693,11 @@ const en: Translations = {
     runtimeError: "An error occurred during calculation. Please verify your inputs.",
     stepsTitle: "Calculation steps",
     stepsDesc: "Open the detailed derivation when you want to inspect the formula path.",
+    showSteps: "Show calculation steps",
+    hideSteps: "Hide calculation steps",
+    formula: "Formula",
+    stepByStep: "Step by step",
+    finalResult: "Final result",
     presets: {
       retirement: "Retirement Savings",
       loanPayoff: "Loan Payoff",
@@ -702,6 +760,17 @@ const en: Translations = {
     validation: {
       invalidInputs: "Please correct the highlighted inputs to view a reliable result.",
       ddmDisclosure: "Open to edit dividend growth assumptions on smaller screens.",
+      capmRate: "Enter a valid risk-free rate.",
+      capmBeta: "Enter a valid beta value.",
+      capmMarketReturn: "Enter a valid expected market return.",
+      waccEquity: "Equity value must be non-negative, and total capital must be greater than zero.",
+      waccDebt: "Debt value must be non-negative.",
+      waccCostEquity: "Cost of equity is outside the supported range.",
+      waccCostDebt: "Cost of debt must be within the supported range.",
+      waccTax: "Tax rate must be between 0% and 100%.",
+      ddmDividend: "Dividend must be zero or greater.",
+      ddmRequiredReturn: "Required return must be valid and greater than the growth rate.",
+      ddmGrowthRate: "Growth rate must be a valid number.",
     },
   },
   bonds: {
@@ -733,6 +802,11 @@ const en: Translations = {
       ytmHelp: "Yield to maturity, the expected annualized return if the bond is held to maturity.",
       yearsHelp: "Number of years until the bond matures.",
       frequencyHelp: "Coupon payment frequency per year: 1 = annual, 2 = semiannual, 4 = quarterly, 12 = monthly.",
+      facePositive: "Face value must be positive.",
+      couponRange: "Coupon rate must be within the supported range.",
+      ytmRange: "Yield to maturity must be within the supported range.",
+      yearsRange: "Years to maturity must be positive, within range, and align with the payment frequency.",
+      frequencyValid: "Choose a supported payment frequency.",
     },
   },
   portfolio: {
@@ -797,6 +871,14 @@ const en: Translations = {
       vega: "Vega (ν)",
       rho: "Rho (ρ)",
     },
+    validation: {
+      invalidInputs: "Please correct the highlighted option inputs.",
+      spotPositive: "Spot price must be positive.",
+      strikePositive: "Strike price must be positive.",
+      timeRange: "Time to maturity must be within the supported range.",
+      rateRange: "Risk-free rate is outside the supported range.",
+      volatilityRange: "Volatility must be within the supported range.",
+    },
   },
   risk: {
     title: "Risk Management",
@@ -812,6 +894,12 @@ const en: Translations = {
     cvarDesc: "Expected loss beyond VaR cutoff",
     dist: "Return Distribution",
     distDesc: "Normal distribution of potential portfolio returns",
+    validation: {
+      invalidInputs: "Please correct the highlighted risk inputs.",
+      valuePositive: "Portfolio value must be positive.",
+      volatilityRange: "Volatility must be within the supported range.",
+      horizonPositive: "Time horizon must be positive and within the supported range.",
+    },
   },
   loans: {
     title: "Loan & Mortgage Calculator",
@@ -837,6 +925,9 @@ const en: Translations = {
     errorPositiveAmount: "Loan amount must be positive",
     errorPositiveRate: "Interest rate cannot be negative",
     errorPositiveYears: "Loan term must be positive",
+    errorValidRate: "Interest rate must be within the supported range",
+    errorValidYears: "Loan term must be positive and within the supported range",
+    errorValidMethod: "Choose a supported loan method",
     noData: "No schedule data available",
   },
   macro: {
@@ -1038,6 +1129,7 @@ const en: Translations = {
   },
   export: {
     title: "Export",
+    reportTitle: "Financial Calculation Report",
     csv: "Export CSV",
     json: "Export JSON",
     pdf: "Export PDF",
@@ -1067,6 +1159,13 @@ const zh: Translations = {
     add: "新增",
     remove: "删除",
     clear: "重置",
+    cancel: "取消",
+    cancelCalculation: "取消计算",
+    secondsRemaining: "剩余约 {seconds} 秒",
+    errorTitle: "出现了一些问题",
+    unexpectedError: "发生了意外错误。",
+    tryAgain: "重试",
+    refreshPage: "刷新页面",
     light: "浅色",
     dark: "深色",
     system: "跟随系统",
@@ -1166,6 +1265,11 @@ const zh: Translations = {
     runtimeError: "计算过程中发生错误，请核对输入后重试。",
     stepsTitle: "计算步骤",
     stepsDesc: "需要查看公式推导时，可展开详细步骤。",
+    showSteps: "展开计算步骤",
+    hideSteps: "收起计算步骤",
+    formula: "公式",
+    stepByStep: "分步推导",
+    finalResult: "最终结果",
     presets: {
       retirement: "退休储蓄",
       loanPayoff: "贷款还清",
@@ -1228,6 +1332,17 @@ const zh: Translations = {
     validation: {
       invalidInputs: "请先修正高亮输入项，再查看可信结果。",
       ddmDisclosure: "在较小屏幕上可展开编辑股利增长假设。",
+      capmRate: "请输入有效的无风险利率。",
+      capmBeta: "请输入有效的贝塔系数。",
+      capmMarketReturn: "请输入有效的预期市场回报。",
+      waccEquity: "股权市值不能为负，且总资本必须大于零。",
+      waccDebt: "债务市值不能为负。",
+      waccCostEquity: "股权成本超出支持范围。",
+      waccCostDebt: "债务成本必须处于支持范围内。",
+      waccTax: "企业税率必须在 0% 到 100% 之间。",
+      ddmDividend: "下一期股利不能为负。",
+      ddmRequiredReturn: "要求回报率必须有效，并且高于增长率。",
+      ddmGrowthRate: "请输入有效的股利增长率。",
     },
   },
   bonds: {
@@ -1259,6 +1374,11 @@ const zh: Translations = {
       ytmHelp: "到期收益率，表示持有至到期的预期年化回报率。",
       yearsHelp: "距离债券到期的剩余年数。",
       frequencyHelp: "每年付息次数：1 = 每年，2 = 每半年，4 = 每季度，12 = 每月。",
+      facePositive: "票面面值必须为正数。",
+      couponRange: "票息率必须处于支持范围内。",
+      ytmRange: "到期收益率必须处于支持范围内。",
+      yearsRange: "剩余期限必须为正数、处于支持范围内，并与付息频率匹配。",
+      frequencyValid: "请选择支持的付息频率。",
     },
   },
   portfolio: {
@@ -1323,6 +1443,14 @@ const zh: Translations = {
       vega: "Vega (ν)",
       rho: "Rho (ρ)",
     },
+    validation: {
+      invalidInputs: "请先修正高亮期权输入项。",
+      spotPositive: "标的现价必须为正数。",
+      strikePositive: "行权价格必须为正数。",
+      timeRange: "剩余期限必须处于支持范围内。",
+      rateRange: "无风险利率超出支持范围。",
+      volatilityRange: "波动率必须处于支持范围内。",
+    },
   },
   risk: {
     title: "风险管理",
@@ -1338,6 +1466,12 @@ const zh: Translations = {
     cvarDesc: "超过 VaR 阈值后的平均预期损失",
     dist: "回报分布模拟",
     distDesc: "基于正态分布假设的损益分布",
+    validation: {
+      invalidInputs: "请先修正高亮风险输入项。",
+      valuePositive: "投资组合总值必须为正数。",
+      volatilityRange: "波动率必须处于支持范围内。",
+      horizonPositive: "时间跨度必须为正数且处于支持范围内。",
+    },
   },
   loans: {
     title: "贷款与按揭计算器",
@@ -1363,6 +1497,9 @@ const zh: Translations = {
     errorPositiveAmount: "贷款总额必须为正数",
     errorPositiveRate: "利率不能为负数",
     errorPositiveYears: "贷款期限必须为正数",
+    errorValidRate: "利率必须处于支持范围内",
+    errorValidYears: "贷款期限必须为正数且处于支持范围内",
+    errorValidMethod: "请选择支持的还款方式",
     noData: "暂无还款计划数据",
   },
   macro: {
@@ -1565,6 +1702,7 @@ const zh: Translations = {
   },
   export: {
     title: "导出",
+    reportTitle: "财务计算报告",
     csv: "导出 CSV",
     json: "导出 JSON",
     pdf: "导出 PDF",

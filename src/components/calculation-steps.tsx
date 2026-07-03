@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { ChevronDown, ChevronRight, Calculator } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLanguage } from "@/lib/i18n";
 
 interface CalcStep {
   label: string;
@@ -59,17 +60,22 @@ function FormattedFormula({ text }: { text: string }) {
  * Collapsible calculation steps display with formula derivation.
  */
 export function CalculationSteps({ formula, inputs, steps, result, className }: CalculationStepsProps) {
+  const { t } = useLanguage();
+  const contentId = useId();
   const [isOpen, setIsOpen] = useState(false);
 
   return (
     <div className={cn("rounded-xl border bg-card", className)}>
       <button
-        className="w-full flex items-center justify-between p-4 text-sm font-medium hover:bg-accent/50 transition-colors"
+        type="button"
+        className="flex w-full items-center justify-between p-4 text-sm font-medium transition-colors hover:bg-accent/50"
+        aria-controls={contentId}
+        aria-expanded={isOpen}
         onClick={() => setIsOpen(!isOpen)}
       >
         <span className="flex items-center gap-2">
           <Calculator className="h-4 w-4 text-primary" />
-          {isOpen ? "Hide" : "Show"} calculation steps
+          {isOpen ? t("tvm.hideSteps") : t("tvm.showSteps")}
         </span>
         {isOpen ? (
           <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -81,6 +87,7 @@ export function CalculationSteps({ formula, inputs, steps, result, className }: 
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            id={contentId}
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -90,8 +97,8 @@ export function CalculationSteps({ formula, inputs, steps, result, className }: 
             <div className="px-4 pb-4 space-y-4">
               {/* Formula */}
               <div className="p-3 bg-muted rounded-lg border-l-4 border-primary">
-                <div className="text-xs text-muted-foreground mb-1">Formula</div>
-                <div className="text-sm font-medium font-mono">
+                <div className="text-xs text-muted-foreground mb-1">{t("tvm.formula")}</div>
+                <div className="overflow-x-auto text-sm font-medium font-mono">
                   <FormattedFormula text={formula} />
                 </div>
               </div>
@@ -108,7 +115,7 @@ export function CalculationSteps({ formula, inputs, steps, result, className }: 
 
               {/* Steps */}
               <div className="space-y-2">
-                <div className="text-xs text-muted-foreground font-medium">Step by Step</div>
+                <div className="text-xs text-muted-foreground font-medium">{t("tvm.stepByStep")}</div>
                 {steps.map((step, i) => (
                   <div key={i} className="flex gap-3">
                     <div className="flex flex-col items-center">
@@ -121,7 +128,7 @@ export function CalculationSteps({ formula, inputs, steps, result, className }: 
                       <div className="text-sm font-medium">{step.label}</div>
                       <div className="font-mono text-sm mt-0.5">{step.value}</div>
                       {step.formula && (
-                        <div className="text-xs text-muted-foreground mt-1 font-mono">
+                        <div className="mt-1 overflow-x-auto text-xs text-muted-foreground font-mono">
                           <FormattedFormula text={step.formula} />
                         </div>
                       )}
@@ -132,8 +139,8 @@ export function CalculationSteps({ formula, inputs, steps, result, className }: 
 
               {/* Final Result */}
               <div className="p-4 bg-gradient-to-r from-primary/10 to-blue-50/30 dark:from-primary/10 dark:to-blue-950/20 rounded-xl border border-primary/20">
-                <div className="text-xs text-muted-foreground mb-1">Final Result</div>
-                <div className="text-2xl font-bold">{result.toLocaleString()}</div>
+                <div className="text-xs text-muted-foreground mb-1">{t("tvm.finalResult")}</div>
+                <div className="break-words text-2xl font-bold">{result.toLocaleString()}</div>
               </div>
             </div>
           </motion.div>

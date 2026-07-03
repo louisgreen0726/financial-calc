@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,9 @@ const FAVORITES_KEY = `${STORAGE_PREFIX}favorites`;
 export default function HistoryPage() {
   const { t } = useLanguage();
   const router = useRouter();
-  const { history, removeFromHistory, clearAllHistory, isInitialized } = useCalculationHistory({ page: "all" });
+  const { history, removeFromHistory, removeManyFromHistory, clearAllHistory, isInitialized } = useCalculationHistory({
+    page: "all",
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [batchMode, setBatchMode] = useState(false);
@@ -55,10 +57,25 @@ export default function HistoryPage() {
       return new Set();
     }
   });
+  const validHistoryIds = useMemo(() => new Set(history.map((item) => item.id)), [history]);
+  const visibleFavorites = useMemo(
+    () => new Set([...favorites].filter((id) => validHistoryIds.has(id))),
+    [favorites, validHistoryIds]
+  );
+
+  useEffect(() => {
+    if (!isInitialized) {
+      return;
+    }
+
+    if (visibleFavorites.size !== favorites.size) {
+      safeSetJSON(FAVORITES_KEY, [...visibleFavorites]);
+    }
+  }, [favorites, isInitialized, visibleFavorites]);
 
   const toggleFavorite = (id: string) => {
     setFavorites((prev) => {
-      const next = new Set(prev);
+      const next = new Set([...prev].filter((favoriteId) => validHistoryIds.has(favoriteId)));
       if (next.has(id)) next.delete(id);
       else next.add(id);
       safeSetJSON(FAVORITES_KEY, [...next]);
@@ -79,9 +96,9 @@ export default function HistoryPage() {
   // Filter by tab
   const filteredHistory = useMemo(() => {
     if (activeTab === "all") return history;
-    if (activeTab === "favorites") return history.filter((item) => favorites.has(item.id));
+    if (activeTab === "favorites") return history.filter((item) => visibleFavorites.has(item.id));
     return groupedHistory[activeTab] || [];
-  }, [activeTab, history, favorites, groupedHistory]);
+  }, [activeTab, history, visibleFavorites, groupedHistory]);
 
   // Filter by search
   const searchedHistory = useMemo(() => {
@@ -97,8 +114,9 @@ export default function HistoryPage() {
   }, [filteredHistory, searchQuery, pageTitleMap]);
 
   const sortedHistory = useMemo(
-    () => [...searchedHistory].sort((a, b) => (favorites.has(b.id) ? 1 : 0) - (favorites.has(a.id) ? 1 : 0)),
-    [searchedHistory, favorites]
+    () =>
+      [...searchedHistory].sort((a, b) => (visibleFavorites.has(b.id) ? 1 : 0) - (visibleFavorites.has(a.id) ? 1 : 0)),
+    [searchedHistory, visibleFavorites]
   );
 
   const handleRestore = (item: CalculationHistoryItem) => {
@@ -113,6 +131,8 @@ export default function HistoryPage() {
 
   const handleClearAll = () => {
     clearAllHistory();
+    setFavorites(new Set());
+    safeSetJSON(FAVORITES_KEY, []);
     setSelectedIds(new Set());
     setBatchMode(false);
     toast.success(t("history.cleared"));
@@ -128,7 +148,7 @@ export default function HistoryPage() {
   };
 
   const deleteSelected = () => {
-    selectedIds.forEach((id) => removeFromHistory(id));
+    removeManyFromHistory(selectedIds);
     toast.success(`${selectedIds.size} ${t("history.itemsDeleted")}`);
     setSelectedIds(new Set());
     setBatchMode(false);
@@ -164,7 +184,7 @@ export default function HistoryPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("history.title") || "History"}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold">{t("history.title")}</h1>
             <p className="text-muted-foreground mt-2">{t("history.loading")}</p>
           </div>
         </div>
@@ -191,6 +211,7 @@ export default function HistoryPage() {
             <Input
               id="history-search"
               name="history-search"
+              aria-label={t("history.searchPlaceholder")}
               placeholder={t("history.searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -202,13 +223,20 @@ export default function HistoryPage() {
               <span className="text-sm text-muted-foreground">
                 {selectedIds.size} {t("history.itemsSelected")}
               </span>
-              <Button variant="ghost" size="sm" onClick={deleteSelected} className="text-destructive">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={deleteSelected}
+                className="text-destructive"
+                disabled={selectedIds.size === 0}
+              >
                 <Trash2 className="h-4 w-4 mr-1" />
                 {t("history.delete")}
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
+                className="h-10 w-10 sm:h-9 sm:w-9"
                 aria-label={t("history.cancelSelection")}
                 onClick={() => {
                   setBatchMode(false);
@@ -244,7 +272,7 @@ export default function HistoryPage() {
                   exit={{ opacity: 0, height: 0 }}
                   className={cn(
                     "flex items-start justify-between p-4 rounded-xl border bg-card group transition-colors",
-                    favorites.has(item.id) && "border-primary/30 bg-primary/5",
+                    visibleFavorites.has(item.id) && "border-primary/30 bg-primary/5",
                     selectedIds.has(item.id) && "ring-2 ring-primary"
                   )}
                 >
@@ -252,7 +280,7 @@ export default function HistoryPage() {
                     {batchMode && (
                       <button
                         type="button"
-                        className="mt-1 shrink-0"
+                        className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-md sm:h-7 sm:w-7"
                         aria-label={selectedIds.has(item.id) ? t("history.deselectItem") : t("history.selectItem")}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -273,7 +301,9 @@ export default function HistoryPage() {
                           {pageTitleMap[item.page] || item.page}
                         </span>
                         <span className="text-xs text-muted-foreground">{formatDate(item.timestamp)}</span>
-                        {favorites.has(item.id) && <Star className="h-4 w-4 fill-primary text-primary shrink-0" />}
+                        {visibleFavorites.has(item.id) && (
+                          <Star className="h-4 w-4 fill-primary text-primary shrink-0" />
+                        )}
                       </div>
                       <p className="text-sm text-muted-foreground mt-1 break-words leading-5">
                         {formatInputs(item.inputs)}
@@ -292,7 +322,7 @@ export default function HistoryPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-9 w-9"
+                      className="h-10 w-10"
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleFavorite(item.id);
@@ -300,14 +330,16 @@ export default function HistoryPage() {
                       title={t("history.favorites")}
                       aria-label={t("history.favorites")}
                     >
-                      <Star className={cn("h-4 w-4", favorites.has(item.id) ? "fill-primary text-primary" : "")} />
+                      <Star
+                        className={cn("h-4 w-4", visibleFavorites.has(item.id) ? "fill-primary text-primary" : "")}
+                      />
                     </Button>
                     {!batchMode && (
                       <>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-9 w-9"
+                          className="h-10 w-10"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleRestore(item);
@@ -320,7 +352,7 @@ export default function HistoryPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-9 w-9 text-destructive hover:text-destructive"
+                          className="h-10 w-10 text-destructive hover:text-destructive"
                           onClick={(e) => {
                             e.stopPropagation();
                             removeFromHistory(item.id);
@@ -346,9 +378,7 @@ export default function HistoryPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-            {t("history.title") || "Calculation History"}
-          </h1>
+          <h1 className="text-2xl md:text-3xl font-bold">{t("history.title")}</h1>
           <p className="text-muted-foreground mt-2">
             {history.length} {t("history.recorded")}
           </p>
@@ -381,7 +411,7 @@ export default function HistoryPage() {
             </TabsTrigger>
             <TabsTrigger value="favorites" className="gap-2">
               <Star className="h-4 w-4" />
-              {t("history.favorites")} ({history.filter((h) => favorites.has(h.id)).length})
+              {t("history.favorites")} ({history.filter((h) => visibleFavorites.has(h.id)).length})
             </TabsTrigger>
             {Object.entries(groupedHistory).map(([page, items]) => (
               <TabsTrigger key={page} value={page} className="gap-2">
@@ -395,7 +425,7 @@ export default function HistoryPage() {
       <ConfirmDialog
         open={clearDialogOpen}
         onOpenChange={setClearDialogOpen}
-        title={t("history.confirmClear") || "Clear all history?"}
+        title={t("history.confirmClear")}
         description={t("history.noHistoryDesc")}
         confirmLabel={t("history.clearAll")}
         destructive

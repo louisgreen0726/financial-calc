@@ -108,7 +108,7 @@ export default function Home() {
                       {t(item.descKey)}
                     </CardDescription>
                     <div className="flex items-center text-sm font-bold text-primary opacity-0 group-hover:opacity-100 transition-all duration-300 transform -translate-x-4 group-hover:translate-x-0">
-                      {t("home.openModule") || "Open Module"} <ArrowRight className="ml-2 h-4 w-4" />
+                      {t("home.openModule")} <ArrowRight className="ml-2 h-4 w-4" />
                     </div>
                   </CardContent>
                 </MotionCard>
@@ -130,7 +130,7 @@ export default function Home() {
             <div className="p-2 rounded-lg bg-secondary">
               <Clock className="w-5 h-5 text-muted-foreground" />
             </div>
-            <h2 className="text-xl md:text-2xl font-bold tracking-tight font-display">{t("history.recent")}</h2>
+            <h2 className="text-xl md:text-2xl font-bold font-display">{t("history.recent")}</h2>
           </div>
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
             {history.slice(0, 4).map((item) => {

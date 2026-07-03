@@ -14,6 +14,9 @@ import {
 const isValid = (n: number): boolean => Number.isFinite(n) && !Number.isNaN(n);
 const isSupportedBondFrequency = (frequency: number) =>
   [ANNUAL_FREQUENCY, SEMIANNUAL_FREQUENCY, QUARTERLY_FREQUENCY, MONTHLY_FREQUENCY].includes(frequency);
+const isSupportedPaymentTiming = (type: number) => type === 0 || type === 1;
+const isSupportedLoanMethod = (method: string) => method === "CPM" || method === "CAM";
+const isSupportedOptionType = (type: string) => type === "call" || type === "put";
 const toWholePeriods = (years: number, frequency: number) => {
   const periods = years * frequency;
   return Number.isInteger(periods) ? periods : NaN;
@@ -112,8 +115,9 @@ export type OptionType = "call" | "put";
 export const Finance = {
   // === TVM ===
   pv: (rate: number, nper: number, pmt: number, fv: number = 0, type: PaymentTiming = 0): number => {
-    if (!isValid(rate) || !isValid(nper) || !isValid(pmt) || !isValid(fv)) return NaN;
-    if (nper === 0) return NaN;
+    if (!isValid(rate) || !isValid(nper) || !isValid(pmt) || !isValid(fv) || !isSupportedPaymentTiming(type))
+      return NaN;
+    if (nper <= 0 || rate <= -1) return NaN;
     if (rate === 0) return -(fv + pmt * nper);
     const term = Math.pow(1 + rate, nper);
     if (!isFinite(term)) return NaN;
@@ -121,8 +125,9 @@ export const Finance = {
     return pv;
   },
   fv: (rate: number, nper: number, pmt: number, pv: number, type: PaymentTiming = 0): number => {
-    if (!isValid(rate) || !isValid(nper) || !isValid(pmt) || !isValid(pv)) return NaN;
-    if (nper === 0) return NaN;
+    if (!isValid(rate) || !isValid(nper) || !isValid(pmt) || !isValid(pv) || !isSupportedPaymentTiming(type))
+      return NaN;
+    if (nper <= 0 || rate <= -1) return NaN;
     if (rate === 0) return -(pv + pmt * nper);
     const term = Math.pow(1 + rate, nper);
     if (!isFinite(term)) return NaN;
@@ -130,8 +135,8 @@ export const Finance = {
     return fv;
   },
   pmt: (rate: number, nper: number, pv: number, fv: number = 0, type: PaymentTiming = 0): number => {
-    if (!isValid(rate) || !isValid(nper) || !isValid(pv) || !isValid(fv)) return NaN;
-    if (nper === 0) return NaN;
+    if (!isValid(rate) || !isValid(nper) || !isValid(pv) || !isValid(fv) || !isSupportedPaymentTiming(type)) return NaN;
+    if (nper <= 0 || rate <= -1) return NaN;
     if (rate === 0) return -(pv + fv) / nper;
     const term = Math.pow(1 + rate, nper);
     if (!isFinite(term)) return NaN;
@@ -139,7 +144,8 @@ export const Finance = {
     return pmt;
   },
   nper: (rate: number, pmt: number, pv: number, fv: number = 0, type: PaymentTiming = 0): number => {
-    if (!isValid(rate) || !isValid(pmt) || !isValid(pv) || !isValid(fv)) return NaN;
+    if (!isValid(rate) || !isValid(pmt) || !isValid(pv) || !isValid(fv) || !isSupportedPaymentTiming(type)) return NaN;
+    if (rate <= -1) return NaN;
     if (rate === 0) {
       if (pmt === 0) return NaN;
       return -(pv + fv) / pmt;
@@ -160,8 +166,16 @@ export const Finance = {
     type: PaymentTiming = 0,
     guess: number = 0.1
   ): number => {
-    if (!isValid(nper) || !isValid(pmt) || !isValid(pv) || !isValid(fv) || !isValid(guess)) return NaN;
-    if (nper === 0) return NaN;
+    if (
+      !isValid(nper) ||
+      !isValid(pmt) ||
+      !isValid(pv) ||
+      !isValid(fv) ||
+      !isValid(guess) ||
+      !isSupportedPaymentTiming(type)
+    )
+      return NaN;
+    if (nper <= 0) return NaN;
 
     const cashFlowValue = (candidateRate: number): number => {
       if (candidateRate <= -1) return NaN;
@@ -277,7 +291,7 @@ export const Finance = {
     method: LoanMethod = "CPM"
   ): AmortizationItem[] => {
     if (!isValid(principal) || !isValid(rate) || !isValid(nper)) return [];
-    if (principal <= 0 || nper <= 0) return [];
+    if (principal <= 0 || nper <= 0 || !isSupportedLoanMethod(method)) return [];
     const periods = Math.round(nper);
     if (periods > MAX_PERIODS) return [];
     const schedule: AmortizationItem[] = [];
@@ -497,6 +511,7 @@ export const Finance = {
    */
   blackScholes: (type: OptionType, S: number, K: number, t: number, r: number, sigma: number): number => {
     if (!isValid(S) || !isValid(K) || !isValid(t) || !isValid(r) || !isValid(sigma)) return NaN;
+    if (!isSupportedOptionType(type)) return NaN;
     if (S <= 0 || K <= 0 || t < 0 || sigma < 0) return NaN;
     if (t <= 0) {
       return type === "call" ? Math.max(S - K, 0) : Math.max(K - S, 0);
@@ -521,6 +536,7 @@ export const Finance = {
   greeks: (type: OptionType, S: number, K: number, t: number, r: number, sigma: number): GreeksResult => {
     const zero: GreeksResult = { delta: 0, gamma: 0, theta: 0, vega: 0, rho: 0 };
     if (!isValid(S) || !isValid(K) || !isValid(t) || !isValid(r) || !isValid(sigma)) return zero;
+    if (!isSupportedOptionType(type)) return zero;
     if (t <= 0 || S <= 0 || K <= 0 || sigma <= 0) return zero;
 
     const d1 = (Math.log(S / K) + (r + 0.5 * sigma * sigma) * t) / (sigma * Math.sqrt(t));
@@ -595,12 +611,13 @@ export const Finance = {
   },
   growingAnnuityPV: (rate: number, nper: number, pmt: number, growthRate: number): number => {
     if (!isValid(rate) || !isValid(nper) || !isValid(pmt) || !isValid(growthRate)) return NaN;
-    if (nper === 0) return NaN;
+    if (nper <= 0 || rate <= -1 || growthRate < -1) return NaN;
     if (Math.abs(rate - growthRate) < 1e-10) {
       return (pmt * nper) / (1 + rate);
     }
     const numerator = 1 - Math.pow((1 + growthRate) / (1 + rate), nper);
     const denominator = rate - growthRate;
-    return (pmt * numerator) / denominator;
+    const result = (pmt * numerator) / denominator;
+    return isValid(result) ? result : NaN;
   },
 };

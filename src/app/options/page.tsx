@@ -52,6 +52,13 @@ export default function OptionsPage() {
   );
 
   const validation = useMemo(() => {
+    const messages = {
+      S: t("options.validation.spotPositive"),
+      K: t("options.validation.strikePositive"),
+      t: t("options.validation.timeRange"),
+      r: t("options.validation.rateRange"),
+      sigma: t("options.validation.volatilityRange"),
+    } as const;
     const result = OptionsInputSchema.safeParse({
       S: parsedInputs.S ?? Number.NaN,
       K: parsedInputs.K ?? Number.NaN,
@@ -62,8 +69,13 @@ export default function OptionsPage() {
 
     return result.success
       ? {}
-      : Object.fromEntries(result.error.issues.map((issue) => [String(issue.path[0]), issue.message]));
-  }, [parsedInputs]);
+      : Object.fromEntries(
+          result.error.issues.map((issue) => {
+            const field = String(issue.path[0]) as keyof typeof messages;
+            return [field, messages[field] ?? t("options.validation.invalidInputs")];
+          })
+        );
+  }, [parsedInputs, t]);
 
   const hasValidationErrors = Object.keys(validation).length > 0;
 
@@ -128,7 +140,7 @@ export default function OptionsPage() {
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("options.title")}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold">{t("options.title")}</h1>
             <p className="text-muted-foreground mt-2">{t("options.subtitle")}</p>
           </div>
         </div>
@@ -249,26 +261,26 @@ export default function OptionsPage() {
                       <CardDescription>{t("options.buy")}</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-3xl font-bold mb-4">{formatCurrency(results.callPrice)}</div>
+                      <div className="mb-4 break-words text-3xl font-bold">{formatCurrency(results.callPrice)}</div>
                       <div className="grid grid-cols-1 gap-y-2 text-sm sm:grid-cols-2 sm:gap-x-4">
-                        <div className="flex justify-between">
-                          <span>{t("options.greeks.delta")}</span>
+                        <div className="flex justify-between gap-3">
+                          <span className="min-w-0">{t("options.greeks.delta")}</span>
                           <span className="font-mono">{results.callGreeks.delta.toFixed(4)}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span>{t("options.greeks.gamma")}</span>
+                        <div className="flex justify-between gap-3">
+                          <span className="min-w-0">{t("options.greeks.gamma")}</span>
                           <span className="font-mono">{results.callGreeks.gamma.toFixed(4)}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span>{t("options.greeks.theta")}</span>
+                        <div className="flex justify-between gap-3">
+                          <span className="min-w-0">{t("options.greeks.theta")}</span>
                           <span className="font-mono">{results.callGreeks.theta.toFixed(4)}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span>{t("options.greeks.vega")}</span>
+                        <div className="flex justify-between gap-3">
+                          <span className="min-w-0">{t("options.greeks.vega")}</span>
                           <span className="font-mono">{results.callGreeks.vega.toFixed(4)}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span>{t("options.greeks.rho")}</span>
+                        <div className="flex justify-between gap-3">
+                          <span className="min-w-0">{t("options.greeks.rho")}</span>
                           <span className="font-mono">{results.callGreeks.rho.toFixed(4)}</span>
                         </div>
                       </div>
@@ -282,26 +294,26 @@ export default function OptionsPage() {
                       <CardDescription>{t("options.sell")}</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-3xl font-bold mb-4">{formatCurrency(results.putPrice)}</div>
+                      <div className="mb-4 break-words text-3xl font-bold">{formatCurrency(results.putPrice)}</div>
                       <div className="grid grid-cols-1 gap-y-2 text-sm sm:grid-cols-2 sm:gap-x-4">
-                        <div className="flex justify-between">
-                          <span>{t("options.greeks.delta")}</span>
+                        <div className="flex justify-between gap-3">
+                          <span className="min-w-0">{t("options.greeks.delta")}</span>
                           <span className="font-mono">{results.putGreeks.delta.toFixed(4)}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span>{t("options.greeks.gamma")}</span>
+                        <div className="flex justify-between gap-3">
+                          <span className="min-w-0">{t("options.greeks.gamma")}</span>
                           <span className="font-mono">{results.putGreeks.gamma.toFixed(4)}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span>{t("options.greeks.theta")}</span>
+                        <div className="flex justify-between gap-3">
+                          <span className="min-w-0">{t("options.greeks.theta")}</span>
                           <span className="font-mono">{results.putGreeks.theta.toFixed(4)}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span>{t("options.greeks.vega")}</span>
+                        <div className="flex justify-between gap-3">
+                          <span className="min-w-0">{t("options.greeks.vega")}</span>
                           <span className="font-mono">{results.putGreeks.vega.toFixed(4)}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span>{t("options.greeks.rho")}</span>
+                        <div className="flex justify-between gap-3">
+                          <span className="min-w-0">{t("options.greeks.rho")}</span>
                           <span className="font-mono">{results.putGreeks.rho.toFixed(4)}</span>
                         </div>
                       </div>

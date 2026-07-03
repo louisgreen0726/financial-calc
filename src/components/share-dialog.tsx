@@ -78,11 +78,11 @@ export function ShareDialog({ open, onOpenChange, title, results, inputs, shareU
     try {
       await copyTextToClipboard(text);
       setCopied(key);
-      toast.success(t("common.copySuccess") || "Copied!");
+      toast.success(t("common.copySuccess"));
       setTimeout(() => setCopied(null), 2000);
     } catch (error) {
       logger.error("Failed to copy share payload:", error);
-      toast.error(t("common.copyError") || "Failed to copy");
+      toast.error(t("common.copyError"));
     }
   };
 
@@ -119,42 +119,43 @@ export function ShareDialog({ open, onOpenChange, title, results, inputs, shareU
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn("sm:max-w-md", className)}>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Share2 className="h-5 w-5" />
-            {t("share.title") || "Share Results"}
+          <DialogTitle className="flex min-w-0 items-center gap-2">
+            <Share2 className="h-5 w-5 shrink-0" />
+            <span className="min-w-0 break-words">{t("share.title")}</span>
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           {canNativeShare && (
-            <Button className="w-full justify-start gap-3" onClick={shareNative}>
-              <Share2 className="h-4 w-4" />
-              <span>{t("share.title") || "Share Results"}</span>
+            <Button className="min-h-11 w-full min-w-0 justify-start gap-3" onClick={shareNative}>
+              <Share2 className="h-4 w-4 shrink-0" />
+              <span className="min-w-0 truncate">{t("share.title")}</span>
             </Button>
           )}
 
           {hasShareUrl ? (
-            <Button variant="outline" className="w-full justify-start gap-3" onClick={copyLink}>
+            <Button variant="outline" className="min-h-11 w-full min-w-0 justify-start gap-3" onClick={copyLink}>
               {copied === "link" ? <Check className="h-4 w-4 text-emerald-500" /> : <Link2 className="h-4 w-4" />}
-              <span>{t("share.copyLink") || "Copy shareable link"}</span>
+              <span className="min-w-0 truncate">{t("share.copyLink")}</span>
             </Button>
           ) : null}
 
-          {/* Copy as Markdown */}
-          <Button variant="outline" className="w-full justify-start gap-3" onClick={copyMarkdown}>
+          <Button variant="outline" className="min-h-11 w-full min-w-0 justify-start gap-3" onClick={copyMarkdown}>
             {copied === "markdown" ? <Check className="h-4 w-4 text-emerald-500" /> : <FileText className="h-4 w-4" />}
-            <span>{t("share.copyMarkdown") || "Copy as Markdown table"}</span>
+            <span className="min-w-0 truncate">{t("share.copyMarkdown")}</span>
           </Button>
 
-          {/* Copy as Plain Text */}
-          <Button variant="outline" className="w-full justify-start gap-3" onClick={copyPlainText}>
+          <Button variant="outline" className="min-h-11 w-full min-w-0 justify-start gap-3" onClick={copyPlainText}>
             {copied === "text" ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
-            <span>{t("share.copyText") || "Copy as plain text"}</span>
+            <span className="min-w-0 truncate">{t("share.copyText")}</span>
           </Button>
 
-          {/* Print / Save as PDF */}
-          <Button variant="outline" className="w-full justify-start gap-3" onClick={() => window.print()}>
-            <Download className="h-4 w-4" />
-            <span>{t("share.print") || "Print / Save as PDF"}</span>
+          <Button
+            variant="outline"
+            className="min-h-11 w-full min-w-0 justify-start gap-3"
+            onClick={() => window.print()}
+          >
+            <Download className="h-4 w-4 shrink-0" />
+            <span className="min-w-0 truncate">{t("share.print")}</span>
           </Button>
         </div>
       </DialogContent>

@@ -88,6 +88,12 @@ function LoansPageContent() {
   );
 
   const loanValidation = useMemo(() => {
+    const messages = {
+      amount: t("loans.errorPositiveAmount"),
+      rate: t("loans.errorValidRate"),
+      years: t("loans.errorValidYears"),
+      method: t("loans.errorValidMethod"),
+    } as const;
     const result = LoanInputSchema.safeParse({
       amount: parsedLoanInputs.amount ?? Number.NaN,
       rate: parsedLoanInputs.rate ?? Number.NaN,
@@ -97,16 +103,21 @@ function LoansPageContent() {
 
     return result.success
       ? {}
-      : Object.fromEntries(result.error.issues.map((issue) => [String(issue.path[0]), issue.message]));
-  }, [method, parsedLoanInputs]);
+      : Object.fromEntries(
+          result.error.issues.map((issue) => {
+            const field = String(issue.path[0]) as keyof typeof messages;
+            return [field, messages[field] ?? t("loans.emptySchedule")];
+          })
+        );
+  }, [method, parsedLoanInputs, t]);
 
   const validationError = useMemo(() => {
-    if (loanValidation.amount) return t("loans.errorPositiveAmount") || String(loanValidation.amount);
-    if (loanValidation.rate) return t("loans.errorPositiveRate") || String(loanValidation.rate);
-    if (loanValidation.years) return t("loans.errorPositiveYears") || String(loanValidation.years);
+    if (loanValidation.amount) return String(loanValidation.amount);
+    if (loanValidation.rate) return String(loanValidation.rate);
+    if (loanValidation.years) return String(loanValidation.years);
     if (loanValidation.method) return String(loanValidation.method);
     return null;
-  }, [loanValidation, t]);
+  }, [loanValidation]);
 
   const schedule = useMemo(() => {
     if (
@@ -165,7 +176,7 @@ function LoansPageContent() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("loans.title")}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">{t("loans.title")}</h1>
           <p className="text-muted-foreground mt-2">{t("loans.subtitle")}</p>
         </div>
         <HistoryPanel
@@ -219,9 +230,7 @@ function LoansPageContent() {
                 onChange={(e) => setAmount(e.target.value)}
                 className={loanValidation.amount ? "border-destructive" : ""}
               />
-              <ValidationError
-                error={loanValidation.amount ? t("loans.errorPositiveAmount") || validationError : null}
-              />
+              <ValidationError error={loanValidation.amount ? String(loanValidation.amount) : null} />
             </div>
 
             <div className="space-y-2">
@@ -235,7 +244,7 @@ function LoansPageContent() {
                 onChange={(e) => setRate(e.target.value)}
                 className={loanValidation.rate ? "border-destructive" : ""}
               />
-              <ValidationError error={loanValidation.rate ? t("loans.errorPositiveRate") || validationError : null} />
+              <ValidationError error={loanValidation.rate ? String(loanValidation.rate) : null} />
             </div>
 
             <div className="space-y-2">
@@ -249,7 +258,7 @@ function LoansPageContent() {
                 onChange={(e) => setYears(e.target.value)}
                 className={loanValidation.years ? "border-destructive" : ""}
               />
-              <ValidationError error={loanValidation.years ? t("loans.errorPositiveYears") || validationError : null} />
+              <ValidationError error={loanValidation.years ? String(loanValidation.years) : null} />
             </div>
 
             {validationError && (
@@ -295,11 +304,7 @@ function LoansPageContent() {
             description={t("loans.subtitle")}
             isReady={loanReady}
             emptyTitle={t("loans.schedule")}
-            emptyDescription={
-              validationError ||
-              t("loans.emptySchedule") ||
-              "Please enter valid positive values for all fields to generate the amortization schedule."
-            }
+            emptyDescription={validationError || t("loans.emptySchedule")}
             actions={
               loanReady ? (
                 <ResultActions
@@ -356,7 +361,7 @@ function LoansPageContent() {
                     <CardContent className="flex-1 min-h-0">
                       {schedule.length === 0 ? (
                         <div className="flex items-center justify-center h-[150px] sm:h-[200px] text-muted-foreground text-sm">
-                          {t("loans.noData") || "Enter valid loan details to see breakdown"}
+                          {t("loans.noData")}
                         </div>
                       ) : (
                         <ResponsiveContainer width="100%" height={180}>
@@ -398,7 +403,7 @@ function LoansPageContent() {
                     <CardContent className="flex-1 min-h-0">
                       {schedule.length === 0 ? (
                         <div className="flex items-center justify-center h-[150px] sm:h-[200px] text-muted-foreground text-sm">
-                          {t("loans.noData") || "Enter valid loan details to see breakdown"}
+                          {t("loans.noData")}
                         </div>
                       ) : (
                         <ResponsiveContainer width="100%" height={180}>
@@ -441,7 +446,7 @@ function LoansPageContent() {
                     <CardTitle className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                       <span>{t("loans.schedule")}</span>
                       <span className="text-xs font-normal text-muted-foreground">
-                        {schedule.length} {t("common.rows") || "rows"}
+                        {schedule.length} {t("common.rows")}
                       </span>
                     </CardTitle>
                   </CardHeader>
@@ -450,11 +455,7 @@ function LoansPageContent() {
                       <div className="flex items-center justify-center h-[400px] text-muted-foreground">
                         <Alert variant="destructive" className="mx-6">
                           <AlertCircle className="h-4 w-4" />
-                          <AlertDescription>
-                            {validationError ||
-                              t("loans.emptySchedule") ||
-                              "Please enter valid positive values for all fields to generate the amortization schedule."}
-                          </AlertDescription>
+                          <AlertDescription>{validationError || t("loans.emptySchedule")}</AlertDescription>
                         </Alert>
                       </div>
                     ) : (

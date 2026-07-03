@@ -56,19 +56,19 @@ export default function CashFlowPage() {
     if (!result.success) {
       return {
         isValid: false,
-        message: result.error.issues[0]?.message ?? "Invalid cash-flow inputs.",
+        message: t("cashFlow.invalidInputs"),
       };
     }
 
     if (hasInvalidFlow || parsedRate === null) {
       return {
         isValid: false,
-        message: "Please enter valid numeric inputs for discount rate and cash flows.",
+        message: t("cashFlow.invalidInputs"),
       };
     }
 
     return { isValid: true, message: null };
-  }, [flows, hasInvalidFlow, parsedRate]);
+  }, [flows, hasInvalidFlow, parsedRate, t]);
 
   const addFlow = () => {
     setHasInteracted(true);
@@ -120,7 +120,7 @@ export default function CashFlowPage() {
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("cashFlow.title")}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold">{t("cashFlow.title")}</h1>
             <p className="text-muted-foreground mt-2">{t("cashFlow.subtitle")}</p>
           </div>
         </div>
@@ -236,7 +236,7 @@ export default function CashFlowPage() {
                     </CardHeader>
                     <CardContent>
                       <div
-                        className={`text-2xl font-bold ${calculateMetrics.npv >= 0 ? "text-primary" : "text-destructive"}`}
+                        className={`break-words text-2xl font-bold ${calculateMetrics.npv >= 0 ? "text-primary" : "text-destructive"}`}
                       >
                         {formatCurrency(calculateMetrics.npv)}
                       </div>
@@ -247,9 +247,9 @@ export default function CashFlowPage() {
                       <CardTitle className="text-sm font-medium text-muted-foreground">{t("cashFlow.irr")}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">
+                      <div className="break-words text-2xl font-bold">
                         {isNaN(calculateMetrics.irr) || !isFinite(calculateMetrics.irr) ? (
-                          <span className="text-muted-foreground">N/A</span>
+                          <span className="text-muted-foreground">{t("common.notAvailable")}</span>
                         ) : (
                           `${(calculateMetrics.irr * 100).toFixed(2)}%`
                         )}
@@ -263,10 +263,10 @@ export default function CashFlowPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">
+                      <div className="break-words text-2xl font-bold">
                         {Number.isFinite(calculateMetrics.payback) && calculateMetrics.payback >= 0
                           ? `${calculateMetrics.payback.toFixed(1)} ${t("common.year")}`
-                          : "N/A"}
+                          : t("common.notAvailable")}
                       </div>
                     </CardContent>
                   </Card>

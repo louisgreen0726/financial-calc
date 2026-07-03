@@ -25,6 +25,15 @@ test("nper and rate are mutually consistent for a typical annuity", () => {
   expect(Finance.rate(nper, pmt, pv, fv, 0, rate)).toBeCloseTo(rate, 6);
 });
 
+test("TVM helpers reject singular or invalid runtime inputs", () => {
+  expect(Number.isNaN(Finance.pv(-1, 10, 100, 0))).toBe(true);
+  expect(Number.isNaN(Finance.fv(-1, 10, 100, 1000))).toBe(true);
+  expect(Number.isNaN(Finance.pmt(-1, 10, 1000, 0))).toBe(true);
+  expect(Number.isNaN(Finance.nper(-1, 100, -1000, 0))).toBe(true);
+  expect(Number.isNaN(Finance.rate(0, 100, -1000, 0))).toBe(true);
+  expect(Number.isNaN(Finance.pv(0.05, 10, 100, 0, 2 as never))).toBe(true);
+});
+
 test("bondPrice matches a premium-bond benchmark", () => {
   const price = Finance.bondPrice(1000, 0.05, 10, 0.04, 2);
   expect(price).toBeCloseTo(1081.76, 2);
@@ -46,6 +55,10 @@ test("loan amortization supports zero-interest fixed payments", () => {
   expect(schedule[0]?.payment).toBeCloseTo(100, 8);
   expect(schedule[0]?.interest).toBe(0);
   expect(schedule.at(-1)?.balance).toBe(0);
+});
+
+test("loan amortization rejects unsupported runtime methods", () => {
+  expect(Finance.amortizationSchedule(1200, 0.01, 12, "BAD" as never)).toEqual([]);
 });
 
 test("CAM amortization keeps principal constant until the final rounding period", () => {
@@ -114,6 +127,17 @@ test("black scholes supports discounted deterministic zero-volatility pricing", 
   expect(Finance.blackScholes("put", 95, 100, 1, 0.05, 0)).toBeCloseTo(0.1229, 4);
 });
 
+test("option helpers reject unsupported runtime option types", () => {
+  expect(Number.isNaN(Finance.blackScholes("straddle" as never, 100, 100, 1, 0.05, 0.2))).toBe(true);
+  expect(Finance.greeks("straddle" as never, 100, 100, 1, 0.05, 0.2)).toEqual({
+    delta: 0,
+    gamma: 0,
+    theta: 0,
+    vega: 0,
+    rho: 0,
+  });
+});
+
 test("macro helpers reject singular negative inflation cases", () => {
   expect(Number.isNaN(Finance.purchasingPower(100, -1, 10))).toBe(true);
   expect(Number.isNaN(Finance.realInterestRate(0.05, -1))).toBe(true);
@@ -160,4 +184,10 @@ test("rate falls back to a bracketed solver when the initial guess is poor", () 
 test("annuity due helpers match explicit begin-period TVM calls", () => {
   expect(Finance.annuityDuePV(0.01, 24, 50, 1000)).toBeCloseTo(Finance.pv(0.01, 24, 50, 1000, 1), 8);
   expect(Finance.annuityDueFV(0.01, 24, 50, 1000)).toBeCloseTo(Finance.fv(0.01, 24, 50, 1000, 1), 8);
+});
+
+test("growing annuity rejects singular discount rates and non-positive periods", () => {
+  expect(Number.isNaN(Finance.growingAnnuityPV(-1, 10, 100, -1))).toBe(true);
+  expect(Number.isNaN(Finance.growingAnnuityPV(0.05, 0, 100, 0.02))).toBe(true);
+  expect(Number.isNaN(Finance.growingAnnuityPV(0.05, -1, 100, 0.02))).toBe(true);
 });

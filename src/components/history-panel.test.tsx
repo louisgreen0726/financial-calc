@@ -121,4 +121,23 @@ describe("HistoryPanel pending restore", () => {
     expect([...historyMock.removeManyFromHistory.mock.calls[0][0]]).toEqual(["1"]);
     expect(historyMock.removeFromHistory).not.toHaveBeenCalled();
   });
+
+  it("opens with dialog semantics and closes on Escape", async () => {
+    render(<HistoryPanel page="tvm" onRestore={vi.fn()} />);
+
+    const toggle = screen.getByRole("button", { name: /history.title/ });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(toggle);
+
+    const dialog = await screen.findByRole("dialog", { name: "history.title" });
+    expect(dialog).toBeInTheDocument();
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+
+    fireEvent.keyDown(window, { key: "Escape" });
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "history.title" })).not.toBeInTheDocument();
+    });
+  });
 });

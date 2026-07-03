@@ -13,7 +13,10 @@ export function MobileNav() {
   const normalizedPathname = pathname.replace(/\/$/, "") || "/";
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-card/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_rgba(15,23,42,0.12)] backdrop-blur-xl supports-[backdrop-filter]:bg-card/80 lg:hidden">
+    <nav
+      aria-label="Primary navigation"
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-card/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_rgba(15,23,42,0.12)] backdrop-blur-xl supports-[backdrop-filter]:bg-card/80 lg:hidden"
+    >
       <div className="grid h-16 grid-cols-4 gap-1 px-2 py-2">
         {MOBILE_PRIMARY_NAV.map(({ href, icon: Icon, labelKey }) => {
           const isActive = (href.replace(/\/$/, "") || "/") === normalizedPathname;
@@ -29,6 +32,7 @@ export function MobileNav() {
                   : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               )}
               aria-current={isActive ? "page" : undefined}
+              aria-label={t(labelKey) || labelKey}
             >
               <span
                 className={cn(
