@@ -40,18 +40,19 @@ export function ResponsiveDisclosure({
     return () => mediaQuery.removeEventListener("change", update);
   }, []);
 
-  if (isDesktop) {
-    return <div className={className}>{children}</div>;
-  }
-
   return (
     <details
-      className={cn("overflow-hidden rounded-3xl border border-white/10 bg-card/70 shadow-sm group", className)}
-      open={isOpen}
-      onToggle={(event) => setUserOpen(event.currentTarget.open)}
+      className={cn(
+        "overflow-hidden rounded-3xl border border-white/10 bg-card/70 shadow-sm group lg:overflow-visible lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none",
+        className
+      )}
+      open={isDesktop || isOpen}
+      onToggle={(event) => {
+        if (!isDesktop) setUserOpen(event.currentTarget.open);
+      }}
     >
       <summary
-        className="flex cursor-pointer list-none items-start justify-between gap-4 px-4 py-4 marker:hidden"
+        className="flex cursor-pointer list-none items-start justify-between gap-4 px-4 py-4 marker:hidden lg:hidden"
         onClick={() => setHasUserToggled(true)}
       >
         <div className="min-w-0">
@@ -60,7 +61,9 @@ export function ResponsiveDisclosure({
         </div>
         <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
       </summary>
-      <div className={cn("border-t border-white/10 px-3 pb-3 pt-2", contentClassName)}>{children}</div>
+      <div className={cn("border-t border-white/10 px-3 pb-3 pt-2 lg:border-0 lg:p-0", contentClassName)}>
+        {children}
+      </div>
     </details>
   );
 }

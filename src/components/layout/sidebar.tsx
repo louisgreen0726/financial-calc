@@ -60,8 +60,9 @@ export const Sidebar = React.memo(function Sidebar({
 
   return (
     <div
+      data-pdf-exclude="true"
       className={cn(
-        "h-full min-h-0 flex flex-col overflow-hidden bg-card/60 backdrop-blur-2xl border border-white/10 shadow-2xl relative",
+        "no-print h-full min-h-0 flex flex-col overflow-hidden bg-card/60 backdrop-blur-2xl border border-white/10 shadow-2xl relative",
         className
       )}
     >
@@ -76,7 +77,7 @@ export const Sidebar = React.memo(function Sidebar({
               </div>
               <div className="flex flex-col leading-none">
                 <span className="text-lg font-bold box-decoration-clone font-display">FinCalc</span>
-                <span className="text-[10px] mt-1 font-semibold uppercase tracking-widest text-primary/80">Pro</span>
+                <span className="text-[10px] mt-1 font-semibold uppercase tracking-widest text-primary">Pro</span>
               </div>
             </Link>
           </div>
@@ -98,119 +99,122 @@ export const Sidebar = React.memo(function Sidebar({
           </div>
         </div>
 
-        <ScrollArea className="min-h-0 flex-1 px-2">
-          <div className="mt-2 space-y-6 px-2 pb-6">
-            <AnimatePresence initial={false}>
-              {sections.map((section) => {
-                const isSearching = query.trim().length > 0;
-                const isExpanded = isSearching || (expanded[section.titleKey] ?? true);
-                const sectionId = `${searchId}-section-${section.titleKey.replace(/\W+/g, "-")}`;
+        <nav aria-label={t("common.primaryNavigation")} className="min-h-0 flex-1">
+          <ScrollArea className="h-full px-2">
+            <div className="mt-2 space-y-6 px-2 pb-6">
+              <AnimatePresence initial={false}>
+                {sections.map((section) => {
+                  const isSearching = query.trim().length > 0;
+                  const isExpanded = isSearching || (expanded[section.titleKey] ?? true);
+                  const sectionId = `${searchId}-section-${section.titleKey.replace(/\W+/g, "-")}`;
 
-                return (
-                  <section key={section.titleKey} className="space-y-2">
-                    <button
-                      type="button"
-                      className="group flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-                      aria-expanded={isExpanded}
-                      aria-controls={sectionId}
-                      onClick={() => toggleSection(section.titleKey)}
-                    >
-                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/60 group-hover:text-foreground transition-colors mix-blend-luminosity">
-                        {t(section.titleKey)}
-                      </h3>
-                      <span
-                        className="ml-2 text-muted-foreground/40 group-hover:text-foreground transition-colors"
-                        aria-hidden="true"
+                  return (
+                    <section key={section.titleKey} className="space-y-2">
+                      <button
+                        type="button"
+                        className="group flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                        aria-expanded={isExpanded}
+                        aria-controls={sectionId}
+                        onClick={() => toggleSection(section.titleKey)}
                       >
-                        {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                      </span>
-                    </button>
-                    <AnimatePresence>
-                      {isExpanded && (
-                        <motion.div
-                          id={sectionId}
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.2, ease: "easeInOut" }}
-                          style={{ overflow: "hidden" }}
+                        <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">
+                          {t(section.titleKey)}
+                        </h3>
+                        <span
+                          className="ml-2 text-muted-foreground/40 group-hover:text-foreground transition-colors"
+                          aria-hidden="true"
                         >
-                          <div className="space-y-1">
-                            {section.items.map((item) => {
-                              const isActive = (item.href.replace(/\/$/, "") || "/") === normalizedPathname;
-                              return (
-                                <Button
-                                  key={item.href}
-                                  asChild
-                                  variant="ghost"
-                                  className={cn(
-                                    "w-full justify-start px-3 py-2.5 h-10 rounded-xl font-medium transition-all duration-300 relative overflow-hidden group",
-                                    isActive
-                                      ? "text-foreground shadow-sm bg-background/50 border border-white/5"
-                                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground border border-transparent"
-                                  )}
-                                >
-                                  <Link
-                                    href={item.href}
-                                    prefetch={false}
-                                    className="flex items-center w-full relative z-10"
-                                    onClick={onNavigate}
+                          {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                        </span>
+                      </button>
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div
+                            id={sectionId}
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.2, ease: "easeInOut" }}
+                            style={{ overflow: "hidden" }}
+                          >
+                            <div className="space-y-1">
+                              {section.items.map((item) => {
+                                const isActive = (item.href.replace(/\/$/, "") || "/") === normalizedPathname;
+                                return (
+                                  <Button
+                                    key={item.href}
+                                    asChild
+                                    variant="ghost"
+                                    className={cn(
+                                      "w-full justify-start px-3 py-2.5 h-10 rounded-xl font-medium transition-all duration-300 relative overflow-hidden group",
+                                      isActive
+                                        ? "text-foreground shadow-sm bg-background/50 border border-white/5"
+                                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground border border-transparent"
+                                    )}
                                   >
-                                    <item.icon
-                                      className={cn(
-                                        "mr-3 h-4 w-4 transition-transform duration-300 group-hover:scale-110",
-                                        isActive ? "text-primary" : "text-muted-foreground/70"
+                                    <Link
+                                      href={item.href}
+                                      prefetch={false}
+                                      className="flex items-center w-full relative z-10"
+                                      onClick={onNavigate}
+                                      aria-current={isActive ? "page" : undefined}
+                                    >
+                                      <item.icon
+                                        className={cn(
+                                          "mr-3 h-4 w-4 transition-transform duration-300 group-hover:scale-110",
+                                          isActive ? "text-primary" : "text-muted-foreground/70"
+                                        )}
+                                      />
+                                      <span className={cn(isActive ? "text-foreground font-semibold" : "font-medium")}>
+                                        {t(item.titleKey)}
+                                      </span>
+
+                                      {/* Active State Background Gradient Indicator */}
+                                      {isActive && (
+                                        <motion.div
+                                          layoutId="sidebar-active"
+                                          className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-100 pointer-events-none -z-10"
+                                          initial={false}
+                                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                        />
                                       )}
-                                    />
-                                    <span className={cn(isActive ? "text-foreground font-semibold" : "font-medium")}>
-                                      {t(item.titleKey)}
-                                    </span>
 
-                                    {/* Active State Background Gradient Indicator */}
-                                    {isActive && (
-                                      <motion.div
-                                        layoutId="sidebar-active"
-                                        className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-100 pointer-events-none -z-10"
-                                        initial={false}
-                                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                                      />
-                                    )}
-
-                                    {/* Active State Left Bar */}
-                                    {isActive && (
-                                      <motion.div
-                                        layoutId="sidebar-active-bar"
-                                        className="absolute left-0 top-1/4 bottom-1/4 w-1 bg-primary rounded-r-full"
-                                        initial={false}
-                                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                                      />
-                                    )}
-                                  </Link>
-                                </Button>
-                              );
-                            })}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </section>
-                );
-              })}
-              {sections.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-white/10 px-3 py-6 text-center text-sm text-muted-foreground">
-                  {t("history.noResults")}
-                </div>
-              ) : null}
-            </AnimatePresence>
-          </div>
-        </ScrollArea>
+                                      {/* Active State Left Bar */}
+                                      {isActive && (
+                                        <motion.div
+                                          layoutId="sidebar-active-bar"
+                                          className="absolute left-0 top-1/4 bottom-1/4 w-1 bg-primary rounded-r-full"
+                                          initial={false}
+                                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                        />
+                                      )}
+                                    </Link>
+                                  </Button>
+                                );
+                              })}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </section>
+                  );
+                })}
+                {sections.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-white/10 px-3 py-6 text-center text-sm text-muted-foreground">
+                    {t("history.noResults")}
+                  </div>
+                ) : null}
+              </AnimatePresence>
+            </div>
+          </ScrollArea>
+        </nav>
 
         <div className="shrink-0 px-6 py-4">
           <div className="p-3 rounded-xl bg-background/30 backdrop-blur-md border border-white/5 flex flex-col items-center justify-center gap-1">
-            <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">
+            <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
               {t("sidebar.edition")}
             </p>
-            <p className="text-xs font-mono text-muted-foreground/30">{t("sidebar.version")}</p>
+            <p className="text-xs font-mono text-muted-foreground">{t("sidebar.version")}</p>
           </div>
         </div>
       </div>

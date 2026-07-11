@@ -92,6 +92,14 @@ export default function BondsPage() {
     Number.isFinite(metrics.modDuration) &&
     Number.isFinite(metrics.convexity);
   const bondReady = !hasBondErrors && metricsAreFinite;
+  const parsedFaceValue = parseRequiredNumber(faceValue);
+  const parTolerance = Math.max(1, Math.abs(parsedFaceValue)) * 1e-10;
+  const priceStatus =
+    Math.abs(metrics.price - parsedFaceValue) <= parTolerance
+      ? t("bonds.par")
+      : metrics.price < parsedFaceValue
+        ? t("bonds.discount")
+        : t("bonds.premium");
 
   const { addToHistory } = useCalculationHistory({ page: "bonds" });
 
@@ -153,9 +161,11 @@ export default function BondsPage() {
     return data;
   }, [bondReady, faceValue, couponRate, frequency]);
 
-  const rowLabels = ["1 yr", "5 yrs", "10 yrs", "15 yrs", "20 yrs"];
+  const rowLabels = [1, 5, 10, 15, 20].map(
+    (value) => `${value} ${value === 1 ? t("common.year") : t("history.yearsUnit")}`
+  );
   const colLabels = ["2%", "3%", "4%", "5%", "6%"];
-  const formatCell = (v: number) => (Number.isFinite(v) ? `$${v.toFixed(0)}` : t("common.notAvailable"));
+  const formatCell = (v: number) => (Number.isFinite(v) ? formatCurrency(v) : t("common.notAvailable"));
 
   return (
     <div className="space-y-6">
@@ -198,9 +208,15 @@ export default function BondsPage() {
                 }}
                 onBlur={() => setShowErrors(true)}
                 type="number"
-                aria-describedby="bond-face-help"
+                aria-invalid={Boolean(showErrors && bondValidation.faceValue)}
+                aria-describedby={
+                  showErrors && bondValidation.faceValue ? "bond-face-help bond-face-error" : "bond-face-help"
+                }
               />
-              <ValidationError error={showErrors ? (bondValidation.faceValue as string | null) : null} />
+              <ValidationError
+                id="bond-face-error"
+                error={showErrors ? (bondValidation.faceValue as string | null) : null}
+              />
               <p id="bond-face-help" className="sr-only">
                 {t("bonds.validation.faceHelp")}
               </p>
@@ -217,9 +233,15 @@ export default function BondsPage() {
                 }}
                 onBlur={() => setShowErrors(true)}
                 type="number"
-                aria-describedby="bond-coupon-help"
+                aria-invalid={Boolean(showErrors && bondValidation.couponRate)}
+                aria-describedby={
+                  showErrors && bondValidation.couponRate ? "bond-coupon-help bond-coupon-error" : "bond-coupon-help"
+                }
               />
-              <ValidationError error={showErrors ? (bondValidation.couponRate as string | null) : null} />
+              <ValidationError
+                id="bond-coupon-error"
+                error={showErrors ? (bondValidation.couponRate as string | null) : null}
+              />
               <p id="bond-coupon-help" className="sr-only">
                 {t("bonds.validation.couponHelp")}
               </p>
@@ -235,9 +257,10 @@ export default function BondsPage() {
                 }}
                 onBlur={() => setShowErrors(true)}
                 type="number"
-                aria-describedby="bond-ytm-help"
+                aria-invalid={Boolean(showErrors && bondValidation.ytm)}
+                aria-describedby={showErrors && bondValidation.ytm ? "bond-ytm-help bond-ytm-error" : "bond-ytm-help"}
               />
-              <ValidationError error={showErrors ? (bondValidation.ytm as string | null) : null} />
+              <ValidationError id="bond-ytm-error" error={showErrors ? (bondValidation.ytm as string | null) : null} />
               <p id="bond-ytm-help" className="sr-only">
                 {t("bonds.validation.ytmHelp")}
               </p>
@@ -253,9 +276,15 @@ export default function BondsPage() {
                 }}
                 onBlur={() => setShowErrors(true)}
                 type="number"
-                aria-describedby="bond-years-help"
+                aria-invalid={Boolean(showErrors && bondValidation.yearsToMaturity)}
+                aria-describedby={
+                  showErrors && bondValidation.yearsToMaturity ? "bond-years-help bond-years-error" : "bond-years-help"
+                }
               />
-              <ValidationError error={showErrors ? (bondValidation.yearsToMaturity as string | null) : null} />
+              <ValidationError
+                id="bond-years-error"
+                error={showErrors ? (bondValidation.yearsToMaturity as string | null) : null}
+              />
               <p id="bond-years-help" className="sr-only">
                 {t("bonds.validation.yearsHelp")}
               </p>
@@ -272,7 +301,14 @@ export default function BondsPage() {
                   setShowErrors(true);
                 }}
               >
-                <SelectTrigger id="bond-freq" aria-labelledby="bond-freq-label" aria-describedby="bond-freq-help">
+                <SelectTrigger
+                  id="bond-freq"
+                  aria-labelledby="bond-freq-label"
+                  aria-invalid={Boolean(showErrors && bondValidation.frequency)}
+                  aria-describedby={
+                    showErrors && bondValidation.frequency ? "bond-freq-help bond-freq-error" : "bond-freq-help"
+                  }
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -285,7 +321,10 @@ export default function BondsPage() {
               <p id="bond-freq-help" className="sr-only">
                 {t("bonds.validation.frequencyHelp")}
               </p>
-              <ValidationError error={showErrors ? (bondValidation.frequency as string | null) : null} />
+              <ValidationError
+                id="bond-freq-error"
+                error={showErrors ? (bondValidation.frequency as string | null) : null}
+              />
             </div>
           </CardContent>
         </Card>
@@ -320,12 +359,7 @@ export default function BondsPage() {
             summary={
               <section aria-label={t("bonds.metrics")}>
                 <h2 className="text-xl font-semibold mb-2">{t("bonds.metrics")}</h2>
-                <div
-                  className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
-                  role="region"
-                  aria-live="polite"
-                  aria-label={t("bonds.metrics")}
-                >
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                   <Card>
                     <CardHeader className="p-4 pb-2">
                       <CardTitle className="text-xs font-medium text-muted-foreground uppercase">
@@ -334,9 +368,7 @@ export default function BondsPage() {
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
                       <div className="break-words text-2xl font-bold">{formatCurrency(metrics.price)}</div>
-                      <p className="text-xs text-muted-foreground">
-                        {metrics.price < parseRequiredNumber(faceValue) ? t("bonds.discount") : t("bonds.premium")}
-                      </p>
+                      <p className="text-xs text-muted-foreground">{priceStatus}</p>
                     </CardContent>
                   </Card>
                   <Card>
@@ -357,7 +389,7 @@ export default function BondsPage() {
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
                       <div className="break-words text-2xl font-bold">{metrics.modDuration.toFixed(2)}</div>
-                      <p className="text-xs text-muted-foreground">{`Sens: ${(metrics.modDuration * 1).toFixed(2)}% / 1% ${"\u0394"}Yield`}</p>
+                      <p className="text-xs text-muted-foreground">{`${metrics.modDuration.toFixed(2)}% / 1% ${"\u0394"} ${t("bonds.ytm")}`}</p>
                     </CardContent>
                   </Card>
                   <Card>
@@ -388,7 +420,7 @@ export default function BondsPage() {
                       <CardDescription>{t("bonds.subtitle")}</CardDescription>
                     </CardHeader>
                     <CardContent className="flex-1 min-h-0">
-                      <ClientOnlyChart>
+                      <ClientOnlyChart ariaLabel={`${t("bonds.curve")}. ${t("bonds.subtitle")}`}>
                         {({ width, height }) => (
                           <LineChart
                             width={width}
@@ -408,7 +440,7 @@ export default function BondsPage() {
                               stroke="hsl(var(--muted-foreground))"
                               fontSize={10}
                               domain={["auto", "auto"]}
-                              tickFormatter={(val) => `$${val}`}
+                              tickFormatter={(val) => formatCurrency(Number(val))}
                             />
                             <Tooltip
                               formatter={(value) => formatCurrency(Number(value ?? 0))}
@@ -442,10 +474,13 @@ export default function BondsPage() {
                     </CardHeader>
                     <CardContent className="min-w-0 overflow-hidden p-0">
                       <SensitivityHeatmap
+                        className="hidden sm:block"
                         data={sensitivityData}
                         rowLabels={rowLabels}
                         colLabels={colLabels}
                         formatCell={formatCell}
+                        caption={t("bonds.priceSensitivity")}
+                        cornerLabel={`${t("bonds.ytm")} / ${t("bonds.years")}`}
                       />
                       <div className="grid gap-3 border-t border-white/10 p-4 sm:hidden">
                         <p className="text-sm font-semibold text-muted-foreground">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -9,23 +9,22 @@ import { Moon, Sun, Monitor, Globe, Trash2, Download, Coins } from "lucide-react
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
+  CURRENCY_CHANGED_EVENT,
   CURRENCY_KEY,
   DEFAULT_CURRENCY,
+  FAVORITES_CLEAR_GENERATION_KEY,
+  FAVORITES_CHANGED_EVENT,
+  FAVORITES_KEY,
+  HISTORY_CHANGED_EVENT,
+  HISTORY_CLEAR_GENERATION_KEY,
   HISTORY_KEY,
   SUPPORTED_CURRENCIES,
   type SupportedCurrency,
 } from "@/lib/constants";
 import { safeGetItem, safeRemoveItem, safeSetItem } from "@/lib/storage";
+import { nextStorageGeneration, withStorageKeyLock } from "@/lib/storage-coordinator";
 import { useTheme } from "@/components/theme-provider";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-
-const CURRENCY_NAMES: Record<SupportedCurrency, string> = {
-  USD: "US Dollar",
-  CNY: "Chinese Yuan",
-  EUR: "Euro",
-  GBP: "British Pound",
-  JPY: "Japanese Yen",
-};
 
 function isSupportedCurrency(value: string | null): value is SupportedCurrency {
   return SUPPORTED_CURRENCIES.includes(value as SupportedCurrency);
@@ -34,23 +33,49 @@ function isSupportedCurrency(value: string | null): value is SupportedCurrency {
 export default function SettingsPage() {
   const { t, language, setLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
-  const [currency, setCurrency] = useState<SupportedCurrency>(() => {
-    const saved = safeGetItem(CURRENCY_KEY);
-    return isSupportedCurrency(saved) ? saved : DEFAULT_CURRENCY;
-  });
+  const [currency, setCurrency] = useState<SupportedCurrency>(DEFAULT_CURRENCY);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
 
+  useEffect(() => {
+    const saved = safeGetItem(CURRENCY_KEY);
+    if (isSupportedCurrency(saved)) {
+      queueMicrotask(() => setCurrency(saved));
+    }
+  }, []);
+
   const handleSetCurrency = (nextCurrency: SupportedCurrency) => {
-    setCurrency(nextCurrency);
-    safeSetItem(CURRENCY_KEY, nextCurrency);
-    window.dispatchEvent(new CustomEvent("financial-calc-currency-changed", { detail: nextCurrency }));
-    toast.success(`${t("settings.currency")}: ${nextCurrency}`);
+    const persisted = safeSetItem(CURRENCY_KEY, nextCurrency);
+    if (persisted) {
+      setCurrency(nextCurrency);
+      window.dispatchEvent(new CustomEvent(CURRENCY_CHANGED_EVENT, { detail: nextCurrency }));
+      toast.success(`${t("settings.currency")}: ${nextCurrency}`);
+    } else {
+      toast.error(t("common.storageError"));
+    }
   };
 
-  const handleClearHistory = () => {
-    safeRemoveItem(HISTORY_KEY);
-    window.dispatchEvent(new CustomEvent("financial-calc-history-changed"));
-    toast.success(t("history.cleared"));
+  const handleClearHistory = async () => {
+    try {
+      const [historyCleared, favoritesCleared] = await Promise.all([
+        withStorageKeyLock(HISTORY_KEY, () => {
+          const nextGeneration = nextStorageGeneration(safeGetItem(HISTORY_CLEAR_GENERATION_KEY));
+          return safeSetItem(HISTORY_CLEAR_GENERATION_KEY, String(nextGeneration)) && safeRemoveItem(HISTORY_KEY);
+        }),
+        withStorageKeyLock(FAVORITES_KEY, () => {
+          const nextGeneration = nextStorageGeneration(safeGetItem(FAVORITES_CLEAR_GENERATION_KEY));
+          return safeSetItem(FAVORITES_CLEAR_GENERATION_KEY, String(nextGeneration)) && safeRemoveItem(FAVORITES_KEY);
+        }),
+      ]);
+      window.dispatchEvent(new CustomEvent(HISTORY_CHANGED_EVENT));
+      window.dispatchEvent(new CustomEvent(FAVORITES_CHANGED_EVENT));
+      if (historyCleared && favoritesCleared) {
+        toast.success(t("history.cleared"));
+      } else {
+        toast.error(t("common.storageError"));
+      }
+    } catch {
+      toast.error(t("common.storageError"));
+    }
   };
 
   const handleExportHistory = () => {
@@ -95,27 +120,33 @@ export default function SettingsPage() {
             </p>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-3" role="group" aria-labelledby="settings-theme-label">
               <Button
+                type="button"
                 variant={theme === "light" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setTheme("light")}
+                aria-pressed={theme === "light"}
                 className={cn("min-h-11 justify-start gap-2", theme === "light" && "bg-primary")}
               >
                 <Sun className="h-4 w-4" />
                 {t("settings.light")}
               </Button>
               <Button
+                type="button"
                 variant={theme === "dark" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setTheme("dark")}
+                aria-pressed={theme === "dark"}
                 className={cn("min-h-11 justify-start gap-2", theme === "dark" && "bg-primary")}
               >
                 <Moon className="h-4 w-4" />
                 {t("settings.dark")}
               </Button>
               <Button
+                type="button"
                 variant={theme === "system" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setTheme("system")}
+                aria-pressed={theme === "system"}
                 className={cn("min-h-11 justify-start gap-2", theme === "system" && "bg-primary")}
               >
                 <Monitor className="h-4 w-4" />
@@ -136,18 +167,22 @@ export default function SettingsPage() {
               aria-labelledby="settings-language-label"
             >
               <Button
+                type="button"
                 variant={language === "en" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setLanguage("en")}
+                aria-pressed={language === "en"}
                 className={cn("min-h-11 justify-start gap-2", language === "en" && "bg-primary")}
               >
                 <Globe className="h-4 w-4" />
                 English
               </Button>
               <Button
+                type="button"
                 variant={language === "zh" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setLanguage("zh")}
+                aria-pressed={language === "zh"}
                 className={cn("min-h-11 justify-start gap-2", language === "zh" && "bg-primary")}
               >
                 <Globe className="h-4 w-4" />
@@ -173,14 +208,16 @@ export default function SettingsPage() {
               {SUPPORTED_CURRENCIES.map((code) => (
                 <Button
                   key={code}
+                  type="button"
                   variant={currency === code ? "default" : "outline"}
                   size="sm"
                   onClick={() => handleSetCurrency(code)}
+                  aria-pressed={currency === code}
                   className={cn("min-h-11 min-w-0 justify-start gap-2", currency === code && "bg-primary")}
                 >
                   <Coins className="h-4 w-4 shrink-0" />
                   <span className="shrink-0 font-semibold">{code}</span>
-                  <span className="min-w-0 truncate text-xs opacity-80">{CURRENCY_NAMES[code]}</span>
+                  <span className="min-w-0 truncate text-xs">{t(`settings.currencyNames.${code}`)}</span>
                 </Button>
               ))}
             </div>

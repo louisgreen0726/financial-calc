@@ -32,8 +32,9 @@ export const Header = React.memo(function Header({ className }: HeaderProps) {
 
   return (
     <header
+      data-pdf-exclude="true"
       className={cn(
-        "sticky top-2 z-50 flex h-14 w-full min-w-0 items-center justify-between gap-2 px-3 transition-all duration-300 sm:px-4 lg:px-6",
+        "no-print sticky top-2 z-50 flex h-14 w-full min-w-0 items-center justify-between gap-2 px-3 transition-all duration-300 sm:px-4 lg:px-6",
         className
       )}
     >
@@ -43,7 +44,7 @@ export const Header = React.memo(function Header({ className }: HeaderProps) {
           <Link
             href="/"
             prefetch={false}
-            className="shrink-0 text-sm font-medium text-muted-foreground/70 transition-colors hover:text-foreground"
+            className="shrink-0 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             {t("common.home")}
           </Link>

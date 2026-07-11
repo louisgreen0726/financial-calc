@@ -21,6 +21,114 @@ const BLOCK_GAP_MM = 5;
 const DEFAULT_CAPTURE_TIMEOUT_MS = 12000;
 const CHART_CAPTURE_TIMEOUT_MS = 18000;
 
+const CSS_COLOR_PROPERTIES = [
+  "color",
+  "background-color",
+  "border-top-color",
+  "border-right-color",
+  "border-bottom-color",
+  "border-left-color",
+  "outline-color",
+  "text-decoration-color",
+  "-webkit-text-stroke-color",
+  "caret-color",
+  "column-rule-color",
+  "fill",
+  "stroke",
+  "stop-color",
+  "flood-color",
+  "lighting-color",
+] as const;
+
+const CSS_COLOR_VARIABLES = [
+  "--color-red-50",
+  "--color-red-200",
+  "--color-red-500",
+  "--color-red-600",
+  "--color-red-800",
+  "--color-red-950",
+  "--color-orange-500",
+  "--color-amber-500",
+  "--color-yellow-50",
+  "--color-yellow-200",
+  "--color-yellow-500",
+  "--color-yellow-800",
+  "--color-yellow-950",
+  "--color-emerald-50",
+  "--color-emerald-300",
+  "--color-emerald-500",
+  "--color-emerald-600",
+  "--color-emerald-700",
+  "--color-emerald-950",
+  "--color-sky-300",
+  "--color-blue-50",
+  "--color-blue-200",
+  "--color-blue-500",
+  "--color-blue-600",
+  "--color-blue-800",
+  "--color-blue-950",
+  "--color-violet-300",
+  "--color-violet-600",
+  "--color-purple-500",
+  "--color-slate-500",
+  "--color-white",
+  "--color-black",
+] as const;
+
+const UNSUPPORTED_HTML2CANVAS_COLOR_FUNCTION = /\b(?:color-mix|color|oklab|oklch|lab|lch|device-cmyk)\(/i;
+const UNSUPPORTED_HTML2CANVAS_VALUE = /\b(?:color-mix|color|oklab|oklch|lab|lch|device-cmyk)\(/i;
+
+function rgbaFromCanvas(context: CanvasRenderingContext2D, value: string): string | null {
+  if (!UNSUPPORTED_HTML2CANVAS_COLOR_FUNCTION.test(value)) {
+    return null;
+  }
+
+  const sentinel = "rgba(1, 2, 3, 0.4)";
+  context.clearRect(0, 0, 1, 1);
+  context.fillStyle = sentinel;
+  context.fillStyle = value;
+  if (context.fillStyle === sentinel) {
+    return null;
+  }
+
+  context.clearRect(0, 0, 1, 1);
+  context.fillRect(0, 0, 1, 1);
+  const [red, green, blue, alpha] = context.getImageData(0, 0, 1, 1).data;
+  return `rgba(${red}, ${green}, ${blue}, ${(alpha / 255).toFixed(3)})`;
+}
+
+function normalizeUnsupportedCloneColors(clonedDocument: Document, colorContext?: CanvasRenderingContext2D) {
+  const view = clonedDocument.defaultView ?? (typeof window !== "undefined" ? window : null);
+  if (!colorContext || !view) {
+    return;
+  }
+
+  const rootStyles = view.getComputedStyle(clonedDocument.documentElement);
+  for (const variable of CSS_COLOR_VARIABLES) {
+    const rgba = rgbaFromCanvas(colorContext, rootStyles.getPropertyValue(variable));
+    if (rgba) {
+      clonedDocument.documentElement.style.setProperty(variable, rgba, "important");
+    }
+  }
+
+  for (const element of clonedDocument.querySelectorAll<HTMLElement>("*")) {
+    const styles = view.getComputedStyle(element);
+    for (const property of CSS_COLOR_PROPERTIES) {
+      const rgba = rgbaFromCanvas(colorContext, styles.getPropertyValue(property));
+      if (rgba) {
+        element.style.setProperty(property, rgba, "important");
+      }
+    }
+
+    for (const property of ["box-shadow", "text-shadow", "filter", "backdrop-filter"] as const) {
+      const value = styles.getPropertyValue(property);
+      if (UNSUPPORTED_HTML2CANVAS_VALUE.test(value)) {
+        element.style.setProperty(property, "none", "important");
+      }
+    }
+  }
+}
+
 function getVisibleElementHeight(element: HTMLElement) {
   const rect = element.getBoundingClientRect();
   return rect.width > 0 && rect.height > 0 ? rect.height : element.offsetHeight;
@@ -60,7 +168,7 @@ function getExportBlocks(root: HTMLElement) {
   return children.length > 0 ? children : [root];
 }
 
-function addPdfPrintStyles(clonedDocument: Document) {
+export function preparePdfClone(clonedDocument: Document, colorContext?: CanvasRenderingContext2D) {
   const style = clonedDocument.createElement("style");
   style.textContent = `
     html, body {
@@ -70,6 +178,9 @@ function addPdfPrintStyles(clonedDocument: Document) {
     * {
       text-shadow: none !important;
       box-shadow: none !important;
+      background-image: none !important;
+      filter: none !important;
+      backdrop-filter: none !important;
       animation: none !important;
       transition: none !important;
       caret-color: transparent !important;
@@ -85,12 +196,30 @@ function addPdfPrintStyles(clonedDocument: Document) {
     button, [role="button"], [data-pdf-exclude="true"] {
       display: none !important;
     }
+    [data-pdf-expand="true"] {
+      overflow: visible !important;
+      max-height: none !important;
+      height: auto !important;
+    }
+    [data-pdf-expand="true"] thead {
+      position: static !important;
+    }
     svg, canvas, img {
       break-inside: avoid !important;
       page-break-inside: avoid !important;
     }
   `;
   clonedDocument.head.appendChild(style);
+
+  clonedDocument.querySelectorAll<HTMLElement>('[data-pdf-expand="true"]').forEach((element) => {
+    element.style.setProperty("overflow", "visible", "important");
+    element.style.setProperty("max-height", "none", "important");
+    element.style.setProperty("height", "auto", "important");
+  });
+
+  // Tailwind v4 emits color-mix(in oklab, ...) for alpha utilities, but html2canvas
+  // cannot parse that syntax. Resolve only unsupported computed colors in the clone.
+  normalizeUnsupportedCloneColors(clonedDocument, colorContext);
 }
 
 function hasComplexChart(element: HTMLElement) {
@@ -119,6 +248,9 @@ async function captureElement(
     options.timeoutMs ?? (hasComplexChart(element) ? CHART_CAPTURE_TIMEOUT_MS : DEFAULT_CAPTURE_TIMEOUT_MS);
   const label = options.label ?? "PDF capture";
 
+  const colorCanvas = document.createElement("canvas");
+  const colorContext = colorCanvas.getContext("2d");
+
   return withTimeout(
     html2canvas(element, {
       scale,
@@ -127,7 +259,7 @@ async function captureElement(
       backgroundColor: "#ffffff",
       imageTimeout: 5000,
       removeContainer: true,
-      onclone: addPdfPrintStyles,
+      onclone: (clonedDocument) => preparePdfClone(clonedDocument, colorContext ?? undefined),
     }),
     timeoutMs,
     label

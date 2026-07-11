@@ -42,7 +42,7 @@ export function ConfirmDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" closeLabel={t("common.close")}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className={destructive ? "h-5 w-5 text-destructive" : "h-5 w-5 text-primary"} />
@@ -52,10 +52,10 @@ export function ConfirmDialog({
         </DialogHeader>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            {cancelLabel ?? t("history.cancelSelection") ?? "Cancel"}
+            {cancelLabel ?? t("common.cancel")}
           </Button>
           <Button type="button" variant={destructive ? "destructive" : "default"} onClick={handleConfirm}>
-            {confirmLabel ?? t("history.clearAll") ?? "Confirm"}
+            {confirmLabel ?? t("common.confirm")}
           </Button>
         </DialogFooter>
       </DialogContent>

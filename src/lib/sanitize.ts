@@ -1,17 +1,20 @@
-import DOMPurify from "isomorphic-dompurify";
+export const MAX_SANITIZED_INPUT_LENGTH = 120;
+
+const TEXT_WHITESPACE = /[\t\n\r]+/g;
+const CONTROL_CHARACTERS = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]/g;
 
 /**
- * Sanitize user input to prevent XSS attacks
+ * Normalize plain-text input without converting user-visible characters into HTML entities.
  * @param input Raw user input string
- * @returns Sanitized string safe for display
+ * @param maxLength Maximum number of Unicode code points to retain
+ * @returns Normalized, single-line plain text
  */
-export function sanitizeInput(input: string): string {
+export function sanitizeInput(input: string, maxLength = MAX_SANITIZED_INPUT_LENGTH): string {
   if (!input) return "";
-  return DOMPurify.sanitize(input, {
-    ALLOWED_TAGS: [], // No HTML tags allowed
-    ALLOWED_ATTR: [], // No attributes allowed
-    KEEP_CONTENT: true,
-  });
+  if (!Number.isFinite(maxLength) || maxLength <= 0) return "";
+
+  const normalized = input.normalize("NFC").replace(TEXT_WHITESPACE, " ").replace(CONTROL_CHARACTERS, "");
+  return Array.from(normalized).slice(0, Math.floor(maxLength)).join("");
 }
 
 /**

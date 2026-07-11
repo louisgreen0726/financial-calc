@@ -18,10 +18,10 @@ describe("storage utilities", () => {
   });
 
   it("reads and writes plain localStorage values safely", () => {
-    safeSetItem("plain-key", "value");
+    expect(safeSetItem("plain-key", "value")).toBe(true);
     expect(safeGetItem("plain-key")).toBe("value");
 
-    safeRemoveItem("plain-key");
+    expect(safeRemoveItem("plain-key")).toBe(true);
     expect(safeGetItem("plain-key")).toBeNull();
   });
 
@@ -34,14 +34,16 @@ describe("storage utilities", () => {
   });
 
   it("ignores localStorage JSON serialization failures", () => {
-    expect(() => safeSetJSON("bigint-key", { value: BigInt(1) })).not.toThrow();
+    expect(safeSetJSON("undefined-key", undefined)).toBe(false);
+    expect(safeSetJSON("bigint-key", { value: BigInt(1) })).toBe(false);
 
     const circular: Record<string, unknown> = {};
     circular.self = circular;
 
-    expect(() => safeSetJSON("circular-key", circular)).not.toThrow();
+    expect(safeSetJSON("circular-key", circular)).toBe(false);
     expect(safeGetItem("bigint-key")).toBeNull();
     expect(safeGetItem("circular-key")).toBeNull();
+    expect(safeGetItem("undefined-key")).toBeNull();
   });
 
   it("reads and writes JSON sessionStorage values with fallback", () => {
@@ -53,7 +55,21 @@ describe("storage utilities", () => {
   });
 
   it("ignores sessionStorage JSON serialization failures", () => {
-    expect(() => safeSetSessionJSON("bigint-session-key", { value: BigInt(1) })).not.toThrow();
+    expect(safeSetSessionJSON("undefined-session-key", undefined)).toBe(false);
+    expect(safeSetSessionJSON("bigint-session-key", { value: BigInt(1) })).toBe(false);
+    expect(window.sessionStorage.getItem("undefined-session-key")).toBeNull();
     expect(window.sessionStorage.getItem("bigint-session-key")).toBeNull();
+  });
+
+  it("reports storage API failures without throwing", () => {
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new DOMException("Quota exceeded", "QuotaExceededError");
+    });
+
+    expect(safeSetItem("blocked-key", "value")).toBe(false);
+    expect(safeSetJSON("blocked-json", { value: true })).toBe(false);
+    expect(safeSetSessionJSON("blocked-session", { value: true })).toBe(false);
+
+    setItem.mockRestore();
   });
 });

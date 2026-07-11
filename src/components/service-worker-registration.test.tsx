@@ -34,7 +34,7 @@ describe("ServiceWorkerRegistration", () => {
     render(<ServiceWorkerRegistration />);
 
     await waitFor(() => {
-      expect(register).toHaveBeenCalledWith("/sw.js?v=v0.4.0", { scope: "/" });
+      expect(register).toHaveBeenCalledWith("/sw.js", { scope: "/", updateViaCache: "none" });
       expect(update).toHaveBeenCalled();
     });
   });
@@ -96,7 +96,7 @@ describe("ServiceWorkerRegistration", () => {
     render(<ServiceWorkerRegistration />);
 
     await waitFor(() => {
-      expect(register).toHaveBeenCalledWith("/sw.js?v=v0.4.0", { scope: "/" });
+      expect(register).toHaveBeenCalledWith("/sw.js", { scope: "/", updateViaCache: "none" });
       expect(logger.error).toHaveBeenCalled();
     });
   });
@@ -112,7 +112,7 @@ describe("ServiceWorkerRegistration", () => {
     render(<ServiceWorkerRegistration />);
 
     await waitFor(() => {
-      expect(register).toHaveBeenCalledWith("/sw.js?v=v0.4.0", { scope: "/" });
+      expect(register).toHaveBeenCalledWith("/sw.js", { scope: "/", updateViaCache: "none" });
       expect(update).toHaveBeenCalled();
       expect(logger.warn).toHaveBeenCalled();
     });
@@ -130,7 +130,7 @@ describe("ServiceWorkerRegistration", () => {
     render(<ServiceWorkerRegistration />);
 
     await waitFor(() => {
-      expect(register).toHaveBeenCalledWith("/calc/sw.js?v=v0.4.0", { scope: "/calc/" });
+      expect(register).toHaveBeenCalledWith("/calc/sw.js", { scope: "/calc/", updateViaCache: "none" });
     });
   });
 });

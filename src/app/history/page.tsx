@@ -1,33 +1,39 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from "@/lib/i18n";
 import { useCalculationHistory, CalculationHistoryItem } from "@/hooks/use-calculation-history";
 import { NAV_CONFIG } from "@/lib/nav-config";
 import { formatHistoryResult } from "@/lib/history-format";
-import { PENDING_RESTORE_KEY, STORAGE_PREFIX } from "@/lib/constants";
-import { safeGetJSON, safeSetJSON, safeSetSessionJSON } from "@/lib/storage";
+import { PENDING_RESTORE_KEY } from "@/lib/constants";
+import { safeSetSessionJSON } from "@/lib/storage";
 import { Clock, Trash2, RotateCcw, Search, Star, FileSpreadsheet, X, CheckSquare, Square } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useExport } from "@/hooks/use-export";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-
-const FAVORITES_KEY = `${STORAGE_PREFIX}favorites`;
+import { useHistoryFavorites } from "@/hooks/use-history-favorites";
 
 export default function HistoryPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const router = useRouter();
-  const { history, removeFromHistory, removeManyFromHistory, clearAllHistory, isInitialized } = useCalculationHistory({
-    page: "all",
-  });
+  const {
+    history,
+    removeFromHistory,
+    removeManyFromHistory,
+    clearAllHistory,
+    retryPersistence,
+    isInitialized,
+    persistenceStatus,
+    persistenceError,
+    hasPendingPersistence,
+  } = useCalculationHistory({ page: "all" });
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [batchMode, setBatchMode] = useState(false);
@@ -35,6 +41,15 @@ export default function HistoryPage() {
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
 
   const { exportToCSV } = useExport({ filename: "calculation-history" });
+  const historyFormatOptions = useMemo(
+    () => ({
+      locale: language,
+      notAvailable: t("common.notAvailable"),
+      periodsUnit: t("history.periodsUnit"),
+      yearsUnit: t("history.yearsUnit"),
+    }),
+    [language, t]
+  );
 
   // Get page title mapping
   const pageTitleMap = useMemo(() => {
@@ -48,40 +63,17 @@ export default function HistoryPage() {
     return map;
   }, [t]);
 
-  // Favorites from localStorage
-  const [favorites, setFavorites] = useState<Set<string>>(() => {
-    if (typeof window === "undefined") return new Set();
-    try {
-      return new Set(safeGetJSON<string[]>(FAVORITES_KEY, []));
-    } catch {
-      return new Set();
-    }
-  });
   const validHistoryIds = useMemo(() => new Set(history.map((item) => item.id)), [history]);
-  const visibleFavorites = useMemo(
-    () => new Set([...favorites].filter((id) => validHistoryIds.has(id))),
-    [favorites, validHistoryIds]
-  );
-
-  useEffect(() => {
-    if (!isInitialized) {
-      return;
-    }
-
-    if (visibleFavorites.size !== favorites.size) {
-      safeSetJSON(FAVORITES_KEY, [...visibleFavorites]);
-    }
-  }, [favorites, isInitialized, visibleFavorites]);
-
-  const toggleFavorite = (id: string) => {
-    setFavorites((prev) => {
-      const next = new Set([...prev].filter((favoriteId) => validHistoryIds.has(favoriteId)));
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      safeSetJSON(FAVORITES_KEY, [...next]);
-      return next;
-    });
-  };
+  const {
+    favorites: visibleFavorites,
+    toggleFavorite,
+    removeFavorites,
+    clearFavorites,
+    retryPersistence: retryFavoritePersistence,
+    persistenceStatus: favoritePersistenceStatus,
+    persistenceError: favoritePersistenceError,
+    hasPendingPersistence: hasPendingFavoritePersistence,
+  } = useHistoryFavorites(validHistoryIds);
 
   // Group history by page
   const groupedHistory = useMemo(() => {
@@ -106,12 +98,12 @@ export default function HistoryPage() {
     const q = searchQuery.toLowerCase();
     return filteredHistory.filter(
       (item) =>
-        formatHistoryResult(item).toLowerCase().includes(q) ||
+        formatHistoryResult(item, historyFormatOptions).toLowerCase().includes(q) ||
         Object.values(item.inputs).some((v) => String(v).toLowerCase().includes(q)) ||
         (item.label && item.label.toLowerCase().includes(q)) ||
         (pageTitleMap[item.page] && pageTitleMap[item.page].toLowerCase().includes(q))
     );
-  }, [filteredHistory, searchQuery, pageTitleMap]);
+  }, [filteredHistory, historyFormatOptions, searchQuery, pageTitleMap]);
 
   const sortedHistory = useMemo(
     () =>
@@ -120,22 +112,34 @@ export default function HistoryPage() {
   );
 
   const handleRestore = (item: CalculationHistoryItem) => {
-    safeSetSessionJSON(PENDING_RESTORE_KEY, {
+    const persisted = safeSetSessionJSON(PENDING_RESTORE_KEY, {
       page: item.page,
       inputs: item.inputs,
       timestamp: Date.now(),
     });
+    if (!persisted) {
+      toast.error(t("common.storageError"));
+      return;
+    }
+
     router.push(`/${item.page}/`);
     toast.success(t("history.restored"));
   };
 
+  const persistenceMessage =
+    persistenceError === "unsupported-version"
+      ? t("history.persistenceUnsupported")
+      : persistenceError === "storage" || favoritePersistenceError === "storage"
+        ? t("history.persistenceFailed")
+        : persistenceStatus === "saving" || favoritePersistenceStatus === "saving"
+          ? t("history.saving")
+          : t("history.persistencePending");
+
   const handleClearAll = () => {
     clearAllHistory();
-    setFavorites(new Set());
-    safeSetJSON(FAVORITES_KEY, []);
+    clearFavorites();
     setSelectedIds(new Set());
     setBatchMode(false);
-    toast.success(t("history.cleared"));
   };
 
   const toggleSelect = (id: string) => {
@@ -149,13 +153,18 @@ export default function HistoryPage() {
 
   const deleteSelected = () => {
     removeManyFromHistory(selectedIds);
-    toast.success(`${selectedIds.size} ${t("history.itemsDeleted")}`);
+    removeFavorites(selectedIds);
     setSelectedIds(new Set());
     setBatchMode(false);
   };
 
+  const handleDelete = (id: string) => {
+    removeFromHistory(id);
+    removeFavorites([id]);
+  };
+
   const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleString();
+    return new Date(timestamp).toLocaleString(language === "zh" ? "zh-CN" : "en-US");
   };
 
   const formatInputs = (inputs: Record<string, number | string>) => {
@@ -172,7 +181,7 @@ export default function HistoryPage() {
     const data = history.map((item) => ({
       page: pageTitleMap[item.page] || item.page,
       inputs: JSON.stringify(item.inputs),
-      result: formatHistoryResult(item),
+      result: formatHistoryResult(item, historyFormatOptions),
       label: item.label || "",
       timestamp: formatDate(item.timestamp),
     }));
@@ -196,7 +205,7 @@ export default function HistoryPage() {
     <Card className="rounded-xl">
       <CardContent className="flex flex-col items-center justify-center py-16">
         <Clock className="h-16 w-16 text-muted-foreground/30 mb-4" />
-        <h3 className="text-lg font-semibold mb-2">{t("history.noHistory")}</h3>
+        <h2 className="text-lg font-semibold mb-2">{t("history.noHistory")}</h2>
         <p className="text-muted-foreground text-center max-w-sm">{t("history.noHistoryDesc")}</p>
       </CardContent>
     </Card>
@@ -296,7 +305,9 @@ export default function HistoryPage() {
                     )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-base sm:text-lg break-all">{formatHistoryResult(item)}</span>
+                        <span className="font-bold text-base sm:text-lg break-all">
+                          {formatHistoryResult(item, historyFormatOptions)}
+                        </span>
                         <span className="text-sm px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
                           {pageTitleMap[item.page] || item.page}
                         </span>
@@ -316,7 +327,7 @@ export default function HistoryPage() {
                       "flex gap-1 ml-2 shrink-0",
                       batchMode
                         ? "opacity-100"
-                        : "opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                        : "opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity"
                     )}
                   >
                     <Button
@@ -329,6 +340,7 @@ export default function HistoryPage() {
                       }}
                       title={t("history.favorites")}
                       aria-label={t("history.favorites")}
+                      aria-pressed={visibleFavorites.has(item.id)}
                     >
                       <Star
                         className={cn("h-4 w-4", visibleFavorites.has(item.id) ? "fill-primary text-primary" : "")}
@@ -355,7 +367,7 @@ export default function HistoryPage() {
                           className="h-10 w-10 text-destructive hover:text-destructive"
                           onClick={(e) => {
                             e.stopPropagation();
-                            removeFromHistory(item.id);
+                            handleDelete(item.id);
                           }}
                           title={t("history.delete")}
                           aria-label={t("history.delete")}
@@ -400,27 +412,72 @@ export default function HistoryPage() {
         </div>
       </div>
 
+      {(hasPendingPersistence || hasPendingFavoritePersistence) && (
+        <div
+          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-foreground"
+          role="status"
+        >
+          <span>{persistenceMessage}</span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              void Promise.all([retryPersistence(), retryFavoritePersistence()]);
+            }}
+          >
+            {t("history.retrySave")}
+          </Button>
+        </div>
+      )}
+
       {history.length === 0 ? (
         renderEmptyState()
       ) : (
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full min-w-0">
-          <TabsList className="mb-4 flex w-full max-w-full flex-nowrap justify-start overflow-x-auto px-1 py-1 whitespace-nowrap [scrollbar-width:thin]">
-            <TabsTrigger value="all" className="gap-2">
+        <div className="w-full min-w-0">
+          <div
+            className="mb-4 flex w-full max-w-full flex-nowrap justify-start gap-1 overflow-x-auto rounded-lg bg-muted p-1 whitespace-nowrap [scrollbar-width:thin]"
+            role="group"
+            aria-label={t("history.filter")}
+          >
+            <Button
+              type="button"
+              variant={activeTab === "all" ? "secondary" : "ghost"}
+              size="sm"
+              className="gap-2"
+              aria-pressed={activeTab === "all"}
+              onClick={() => setActiveTab("all")}
+            >
               <Clock className="h-4 w-4" />
               {t("history.all")} ({history.length})
-            </TabsTrigger>
-            <TabsTrigger value="favorites" className="gap-2">
+            </Button>
+            <Button
+              type="button"
+              variant={activeTab === "favorites" ? "secondary" : "ghost"}
+              size="sm"
+              className="gap-2"
+              aria-pressed={activeTab === "favorites"}
+              onClick={() => setActiveTab("favorites")}
+            >
               <Star className="h-4 w-4" />
               {t("history.favorites")} ({history.filter((h) => visibleFavorites.has(h.id)).length})
-            </TabsTrigger>
+            </Button>
             {Object.entries(groupedHistory).map(([page, items]) => (
-              <TabsTrigger key={page} value={page} className="gap-2">
+              <Button
+                key={page}
+                type="button"
+                variant={activeTab === page ? "secondary" : "ghost"}
+                size="sm"
+                className="gap-2"
+                aria-pressed={activeTab === page}
+                onClick={() => setActiveTab(page)}
+              >
                 {pageTitleMap[page] || page} ({items.length})
-              </TabsTrigger>
+              </Button>
             ))}
-          </TabsList>
+          </div>
           {renderHistoryList()}
-        </Tabs>
+        </div>
       )}
       <ConfirmDialog
         open={clearDialogOpen}

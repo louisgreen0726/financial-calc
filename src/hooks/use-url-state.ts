@@ -53,8 +53,8 @@ export function useUrlState<T extends Record<string, UrlStateValue>>({
   const state = derivedState;
 
   const buildUrl = useCallback(
-    (nextState: T = state) => {
-      const params = new URLSearchParams(searchParams.toString());
+    (nextState: T = state, preserveExistingParams = true) => {
+      const params = preserveExistingParams ? new URLSearchParams(searchParams.toString()) : new URLSearchParams();
 
       for (const [key, value] of Object.entries(nextState)) {
         const paramKey = prefix ? `${prefix}_${key}` : key;
@@ -99,7 +99,7 @@ export function useUrlState<T extends Record<string, UrlStateValue>>({
     router.replace(pathname, { scroll: false });
   }, [pathname, router]);
 
-  const shareUrl = toAbsoluteAppUrl(buildUrl(state));
+  const shareUrl = toAbsoluteAppUrl(buildUrl(state, false));
 
   return {
     state,

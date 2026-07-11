@@ -23,6 +23,7 @@ import { ResultShell } from "@/components/result-shell";
 import { ResultActions } from "@/components/result-actions";
 import { useShareableUrl } from "@/hooks/use-shareable-url";
 import { MAX_CASH_FLOWS } from "@/lib/constants";
+import { parseCashFlowHistory, serializeCashFlowHistory } from "@/lib/cash-flow-history";
 
 export default function CashFlowPage() {
   const { t } = useLanguage();
@@ -45,6 +46,7 @@ export default function CashFlowPage() {
   const parsedRate = parseOptionalNumber(rate);
   const parsedFlows = useMemo(() => flowInputs.map((flow) => parseOptionalNumber(flow)), [flowInputs]);
   const hasInvalidFlow = parsedFlows.some((flow) => flow === null);
+  const rateInvalid = parsedRate === null || parsedRate <= -100;
   const flows = parsedFlows.map((flow) => flow ?? 0);
 
   const validation = useMemo(() => {
@@ -87,22 +89,22 @@ export default function CashFlowPage() {
 
   const calculateMetrics = useMemo(() => {
     if (!validation.isValid || parsedRate === null) {
-      return { npv: 0, irr: Number.NaN, payback: -1 };
+      return { npv: 0, irr: Number.NaN, payback: -1, signChanges: 0 };
     }
 
     const r = parsedRate / 100;
     const npv = Finance.npv(r, flows);
     const irr = Finance.irr(flows);
-
     const payback = Finance.paybackPeriod(flows);
+    const signChanges = Finance.cashFlowSignChanges(flows);
 
-    return { npv, irr, payback };
+    return { npv, irr, payback, signChanges };
   }, [flows, parsedRate, validation.isValid]);
   const resultReady = validation.isValid && Number.isFinite(calculateMetrics.npv);
 
   useHistoryRecorder({
     addToHistory,
-    inputs: { rate, flows: flowInputs.join(",") },
+    inputs: { rate, flows: serializeCashFlowHistory(flowInputs) },
     result: calculateMetrics.npv,
     label: "NPV",
     resultFormat: "currency",
@@ -110,7 +112,7 @@ export default function CashFlowPage() {
   });
 
   const chartData = flows.map((val, i) => ({
-    period: `${t("common.year")} ${i}`,
+    period: `${t("cashFlow.period")} ${i}`,
     amount: val,
     color: val >= 0 ? "hsl(var(--primary))" : "hsl(var(--destructive))", // Emerald for positive, Rose for negative
   }));
@@ -127,7 +129,7 @@ export default function CashFlowPage() {
 
         <div id="cash-flow-report-content" className="grid gap-6 lg:grid-cols-12">
           {/* Input Section */}
-          <Card className="lg:col-span-5 h-fit">
+          <Card className="lg:col-span-5 h-fit" data-pdf-expand="true">
             <CardHeader>
               <CardTitle>{t("cashFlow.inputsTitle")}</CardTitle>
               <CardDescription>{t("cashFlow.inputsDesc")}</CardDescription>
@@ -144,11 +146,18 @@ export default function CashFlowPage() {
                       setHasInteracted(true);
                       setRate(e.target.value);
                     }}
+                    aria-invalid={rateInvalid}
+                    aria-describedby={rateInvalid ? "cash-flow-validation-error" : undefined}
                     className="flex-1"
                   />
                   <div className="flex items-center text-sm text-muted-foreground">%</div>
                 </div>
-                {!validation.isValid && <ErrorDisplay message={validation.message} variant="warning" />}
+                {!validation.isValid && (
+                  <ErrorDisplay id="cash-flow-validation-error" message={validation.message} variant="warning" />
+                )}
+                {calculateMetrics.signChanges > 1 && (
+                  <ErrorDisplay message={t("cashFlow.irrAmbiguous")} variant="warning" />
+                )}
               </div>
 
               <div className="space-y-3">
@@ -156,9 +165,9 @@ export default function CashFlowPage() {
                   <span>{t("cashFlow.period")}</span>
                   <span>{t("cashFlow.flow")}</span>
                 </div>
-                <div className="space-y-2 max-h-[250px] sm:max-h-[400px] pr-2 overflow-y-auto">
+                <div className="space-y-2 max-h-[250px] sm:max-h-[400px] pr-2 overflow-y-auto" data-pdf-expand="true">
                   {flowInputs.map((flow, i) => {
-                    const periodLabel = i === 0 ? t("common.initial") : `${t("common.year")} ${i}`;
+                    const periodLabel = i === 0 ? t("common.initial") : `${t("cashFlow.period")} ${i}`;
 
                     return (
                       <div
@@ -169,6 +178,8 @@ export default function CashFlowPage() {
                         <Input
                           type="number"
                           aria-label={`${periodLabel} ${t("cashFlow.flow")}`}
+                          aria-invalid={parsedFlows[i] === null}
+                          aria-describedby={parsedFlows[i] === null ? "cash-flow-validation-error" : undefined}
                           value={flow}
                           onChange={(e) => updateFlow(i, e.target.value)}
                           className={
@@ -176,6 +187,7 @@ export default function CashFlowPage() {
                           }
                         />
                         <Button
+                          type="button"
                           variant="ghost"
                           size="icon"
                           className="h-10 w-10"
@@ -190,6 +202,7 @@ export default function CashFlowPage() {
                   })}
                 </div>
                 <Button
+                  type="button"
                   onClick={addFlow}
                   variant="outline"
                   className="w-full border-dashed mt-2"
@@ -265,7 +278,7 @@ export default function CashFlowPage() {
                     <CardContent>
                       <div className="break-words text-2xl font-bold">
                         {Number.isFinite(calculateMetrics.payback) && calculateMetrics.payback >= 0
-                          ? `${calculateMetrics.payback.toFixed(1)} ${t("common.year")}`
+                          ? `${calculateMetrics.payback.toFixed(1)} ${t("cashFlow.period")}`
                           : t("common.notAvailable")}
                       </div>
                     </CardContent>
@@ -287,7 +300,7 @@ export default function CashFlowPage() {
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="flex-1 w-full min-h-0">
-                        <ClientOnlyChart>
+                        <ClientOnlyChart ariaLabel={`${t("cashFlow.visualization")}. ${t("cashFlow.chartDisclosure")}`}>
                           {({ width, height }) => (
                             <BarChart
                               width={width}
@@ -309,7 +322,7 @@ export default function CashFlowPage() {
                                 fontSize={10}
                                 tickLine={false}
                                 axisLine={false}
-                                tickFormatter={(value) => `$${value}`}
+                                tickFormatter={(value) => formatCurrency(Number(value))}
                               />
                               <Tooltip
                                 cursor={{ fill: "hsl(var(--muted)/0.3)" }}
@@ -356,10 +369,7 @@ export default function CashFlowPage() {
         onRestore={(inputs) => {
           if (inputs.rate !== undefined) setRate(String(inputs.rate));
           if (inputs.flows !== undefined) {
-            const restoredFlows = String(inputs.flows)
-              .split(",")
-              .map((value) => value.trim())
-              .filter((value) => parseOptionalNumber(value) !== null);
+            const restoredFlows = parseCashFlowHistory(inputs.flows);
 
             if (restoredFlows.length > 0) {
               setFlowInputs(restoredFlows.slice(0, MAX_CASH_FLOWS));

@@ -19,6 +19,8 @@ import { useHistoryRecorder } from "@/hooks/use-history-recorder";
 import { HistoryPanel } from "@/components/history-panel";
 import { ClientOnlyChart } from "@/components/client-only-chart";
 import { useShareableUrl } from "@/hooks/use-shareable-url";
+import { TRADING_DAYS_PER_YEAR } from "@/lib/constants";
+import { buildRiskDistributionData, getRiskTailGradientOffset } from "@/lib/chart-data";
 
 export default function RiskPage() {
   const { t } = useLanguage();
@@ -99,9 +101,9 @@ export default function RiskPage() {
     const d = parsedInputs.days ?? 1;
 
     // Scale volatility to horizon
-    const sigmaHorizon = sigmaAnnual * Math.sqrt(d / 252);
+    const sigmaHorizon = sigmaAnnual * Math.sqrt(d / TRADING_DAYS_PER_YEAR);
 
-    // Precise z-score via inverse normal CDF (Beasley-Springer-Moro algorithm)
+    // Precise z-score via Acklam's inverse normal CDF approximation.
     const z = Finance.normCDFInverse(conf);
 
     const VaR_pct = z * sigmaHorizon;
@@ -119,29 +121,13 @@ export default function RiskPage() {
 
   // Generate Distribution Curve
   const chartData = useMemo(() => {
-    const data: { dev: number; return: number; loss: number; prob: number; isTail: boolean }[] = [];
     if (!resultReady) {
-      return data;
+      return [];
     }
-    const sigma = metrics.sigmaHorizon;
-    const P = parsedInputs.value ?? 0;
-    const tailZ = metrics.z; // precise z from normCDFInverse, matches confidence level
-    // Show range from -4 std dev to +4 std dev
-    for (let i = -4; i <= 4; i += 0.1) {
-      const ret = i * sigma;
-      const prob = Finance.normPDF(i); // pdf of standard normal
-      const loss = -ret * P;
 
-      data.push({
-        dev: i,
-        return: ret,
-        loss: loss,
-        prob: prob,
-        isTail: i < -tailZ, // dynamically matches current confidence level
-      });
-    }
-    return data;
+    return buildRiskDistributionData(metrics.sigmaHorizon, parsedInputs.value ?? 0, metrics.z);
   }, [metrics, parsedInputs, resultReady]);
+  const tailGradientOffset = getRiskTailGradientOffset(metrics.z);
 
   useHistoryRecorder({
     addToHistory,
@@ -186,8 +172,10 @@ export default function RiskPage() {
                 onChange={(e) => updateField(setValue)(e.target.value)}
                 type="number"
                 min="0"
+                aria-invalid={Boolean(validation.value)}
+                aria-describedby={validation.value ? "risk-value-error" : undefined}
               />
-              <ValidationError error={validation.value as string | null} />
+              <ValidationError id="risk-value-error" error={validation.value as string | null} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="risk-volatility">{t("risk.vol")}</Label>
@@ -197,8 +185,10 @@ export default function RiskPage() {
                 onChange={(e) => updateField(setVolatility)(e.target.value)}
                 type="number"
                 min="0"
+                aria-invalid={Boolean(validation.volatility)}
+                aria-describedby={validation.volatility ? "risk-volatility-error" : undefined}
               />
-              <ValidationError error={validation.volatility as string | null} />
+              <ValidationError id="risk-volatility-error" error={validation.volatility as string | null} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="risk-days">{t("risk.horizon")}</Label>
@@ -208,8 +198,10 @@ export default function RiskPage() {
                 onChange={(e) => updateField(setDays)(e.target.value)}
                 type="number"
                 min="1"
+                aria-invalid={Boolean(validation.days)}
+                aria-describedby={validation.days ? "risk-days-error" : undefined}
               />
-              <ValidationError error={validation.days as string | null} />
+              <ValidationError id="risk-days-error" error={validation.days as string | null} />
             </div>
             <div className="space-y-2">
               <Label id="risk-confidence-label" htmlFor="risk-confidence">
@@ -294,49 +286,46 @@ export default function RiskPage() {
                   <CardDescription>{t("risk.distDesc")}</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 min-h-0">
-                  <ClientOnlyChart>
+                  <ClientOnlyChart ariaLabel={`${t("risk.dist")}. ${t("risk.distDesc")}`}>
                     {({ width, height }) => (
                       <AreaChart width={width} height={height} data={chartData}>
                         <defs>
                           <linearGradient id="colorProb" x1="0" y1="0" x2="1" y2="0">
-                            <stop offset="0%" stopColor="hsl(var(--destructive))" stopOpacity={0.5} />
+                            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                            <stop offset={`${tailGradientOffset}%`} stopColor="hsl(var(--primary))" stopOpacity={0.3} />
                             <stop
-                              offset={`${Math.max(0, Math.min(100, ((4 - metrics.z) / 8) * 100))}%`}
+                              offset={`${tailGradientOffset}%`}
                               stopColor="hsl(var(--destructive))"
                               stopOpacity={0.5}
                             />
-                            <stop
-                              offset={`${Math.max(0, Math.min(100, ((4 - metrics.z) / 8) * 100))}%`}
-                              stopColor="hsl(var(--primary))"
-                              stopOpacity={0.3}
-                            />
-                            <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                            <stop offset="100%" stopColor="hsl(var(--destructive))" stopOpacity={0.5} />
                           </linearGradient>
                           <linearGradient id="strokeProb" x1="0" y1="0" x2="1" y2="0">
-                            <stop offset="0%" stopColor="hsl(var(--destructive))" stopOpacity={1} />
+                            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={1} />
+                            <stop offset={`${tailGradientOffset}%`} stopColor="hsl(var(--primary))" stopOpacity={1} />
                             <stop
-                              offset={`${Math.max(0, Math.min(100, ((4 - metrics.z) / 8) * 100))}%`}
+                              offset={`${tailGradientOffset}%`}
                               stopColor="hsl(var(--destructive))"
                               stopOpacity={1}
                             />
-                            <stop
-                              offset={`${Math.max(0, Math.min(100, ((4 - metrics.z) / 8) * 100))}%`}
-                              stopColor="hsl(var(--primary))"
-                              stopOpacity={1}
-                            />
-                            <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={1} />
+                            <stop offset="100%" stopColor="hsl(var(--destructive))" stopOpacity={1} />
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                         <XAxis
+                          type="number"
                           dataKey="loss"
+                          domain={["dataMin", "dataMax"]}
                           tickFormatter={(v) => formatCurrency(v)}
                           stroke="hsl(var(--muted-foreground))"
                           fontSize={10}
                           minTickGap={22}
                         />
                         <YAxis hide />
-                        <Tooltip labelFormatter={() => ""} formatter={(value) => Number(value ?? 0).toFixed(4)} />
+                        <Tooltip
+                          labelFormatter={(value) => formatCurrency(Number(value))}
+                          formatter={(value) => Number(value ?? 0).toFixed(4)}
+                        />
                         <Area
                           type="monotone"
                           dataKey="prob"
@@ -346,6 +335,7 @@ export default function RiskPage() {
                         />
                         <ReferenceLine
                           x={metrics.VaR_val}
+                          ifOverflow="extendDomain"
                           stroke="hsl(var(--destructive))"
                           strokeWidth={2}
                           label={{ value: "VaR", fill: "hsl(var(--destructive))", fontSize: 11 }}

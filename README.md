@@ -30,10 +30,10 @@ The app is no longer just a calculator demo. It includes a full app shell, respo
 - **Cash Flow**: NPV, IRR, and payback period
 - **Equity**: CAPM, WACC, and DDM
 - **Bonds**: price, duration, convexity, yield curve, and sensitivity heatmap
-- **Portfolio**: Monte Carlo efficient-frontier simulation with worker and client fallback
+- **Portfolio**: reproducible Monte Carlo risk-return sampling with worker and client fallback
 - **Options**: Black-Scholes pricing and Greeks
 - **Risk**: VaR, CVaR, and distribution visualization
-- **Loans**: CPM/CAM amortization schedules with virtualized table rendering
+- **Loans**: CPM/CAM amortization schedules with a complete accessible table
 - **Macro**: inflation, purchasing power, real rate, CPI adjustment, and PPP exchange rate
 
 ### Supporting pages
@@ -53,7 +53,9 @@ Recent hardening work is reflected in the current source:
 - history restore no longer re-records restored entries as fresh calculations
 - TVM clears stale results and calculation steps when target, payment timing, or inputs change
 - mobile sidebar content now satisfies Radix Dialog title/description requirements and closes after navigation
-- PWA metadata, manifest, icons, and service worker scope respect `NEXT_PUBLIC_BASE_PATH`
+- PWA metadata, install icons, generated precache assets, and service worker caches respect `NEXT_PUBLIC_BASE_PATH`
+- Monte Carlo simulations run in a Webpack-built worker and always include equal-weight and single-asset baselines
+- PDF libraries load only when a user starts a PDF export
 - Recharts tooltip formatters and auto-calculation hooks are compatible with the current stricter dependency/lint versions
 
 ## Tech Stack
@@ -64,13 +66,12 @@ Recent hardening work is reflected in the current source:
 - **Styling**: Tailwind CSS 4, shadcn/ui, Radix UI
 - **Charts and animation**: Recharts, Framer Motion
 - **Forms and validation**: Zod, React Hook Form utilities
-- **Tables and large lists**: `@tanstack/react-virtual`
 - **Export**: html2canvas, jsPDF, CSV/JSON helpers
 - **Testing**: Vitest, Testing Library, jsdom
 
 ## Requirements
 
-- Node.js >= 20
+- Node.js >= 20.19.0
 - npm
 
 The repository includes `.nvmrc` with the target Node major version.
@@ -107,10 +108,11 @@ npx tsc --noEmit
 npm run lint
 npm run test
 npm run build
-npm audit --omit=dev
+npm audit
 ```
 
-The current codebase has been verified with the full gate above. The Vitest suite currently covers 16 test files and 124 tests.
+The current codebase is verified with the full gate above, including focused coverage for PWA registration, sharing,
+worker concurrency, and export safety.
 
 ## Recommended Pre-Commit Gate
 
@@ -122,7 +124,7 @@ npx tsc --noEmit
 npm run lint
 npm run test
 npm run build
-npm audit --omit=dev
+npm audit
 ```
 
 The project also has a Husky pre-commit hook that runs `lint-staged` for staged source files.
@@ -148,13 +150,20 @@ npm run preview
 Deployment notes:
 
 - `next.config.ts` uses `output: "export"`
+- development and production builds intentionally use Webpack so the TypeScript Monte Carlo worker is emitted as executable JavaScript
+- the build scans `out/` after Next finishes and writes `out/precache-manifest.js`; do not edit that generated file
 - production does not require `next start`
 - production does not assume server-side API routes or a Node runtime
 - static routes use trailing slashes
 - service worker registration lives in `src/components/service-worker-registration.tsx`
 - the service worker file is `public/sw.js`
-- app manifest and icons live under `public/`
-- `NEXT_PUBLIC_BASE_PATH` is supported by metadata and service worker registration
+- app manifest, PNG install icons, and the development precache placeholder live under `public/`
+- `NEXT_PUBLIC_BASE_PATH` is supported by metadata, navigation, and service worker registration
+- for a base-path deployment, build with `NEXT_PUBLIC_BASE_PATH=/calc` and configure the static host to map `/calc/` to the same exported `out/` directory; exported files remain at the root of `out/`, not inside an additional `calc/` folder
+- `public/_headers` supplies security and cache headers for hosts that support the Netlify/Cloudflare Pages format
+- hosts that do not consume `_headers` must map the same CSP, referrer, nosniff, frame, permissions, and cache policies in their own configuration
+- for a base-path deployment, prefix the host-specific `/_next/static/*`, `/sw.js`, `/precache-manifest.js`, and `/manifest.json` header rules with that base path
+- HTML, `sw.js`, and the precache manifest must be revalidated; hashed `/_next/static/*` assets should be cached as immutable for one year
 
 ## Project Structure
 
@@ -184,12 +193,14 @@ financial-calc/
 - `src/hooks/use-shareable-url.ts`: share URL restore/build flow
 - `src/components/service-worker-registration.tsx`: browser-side service worker registration
 - `public/sw.js`: static-export service worker
+- `scripts/generate-precache-manifest.mjs`: post-build static asset and route manifest generator
+- `public/_headers`: static-host security and cache policy template
 
 ## Dependency Notes
 
 Dependencies have been updated within the package.json semver ranges. Remaining newer versions reported by `npm outdated` are either major-version upgrades or versions blocked by explicit package constraints. Handle those as separate migration work rather than routine maintenance.
 
-After a clean `npm ci`, npm may still mark a few `@emnapi` / `@napi-rs` / `@tybys` WASM helper packages as extraneous; they are peer/optional helper packages pulled through the native/WASM toolchain. `npm audit --omit=dev`, typecheck, lint, tests, and build are clean.
+After a clean `npm ci`, npm may still mark a few `@emnapi` / `@napi-rs` / `@tybys` WASM helper packages as extraneous; they are peer/optional helper packages pulled through the native/WASM toolchain. `npm audit`, typecheck, lint, tests, and build are clean.
 
 ## AI Generation Disclosure
 

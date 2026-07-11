@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Trash2, Plus, Play, PieChart as PieIcon, RefreshCw, Loader2 } from "lucide-react";
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ZAxis } from "recharts";
 import { formatNumber } from "@/lib/utils";
@@ -22,10 +22,17 @@ import { ErrorDisplay } from "@/components/ui/error-display";
 import { SectionActionBar } from "@/components/section-action-bar";
 import { ResultActions } from "@/components/result-actions";
 import { clampEqualCorrelation, getMinimumEqualCorrelation, type PortfolioPoint } from "@/lib/portfolio-math";
+import { normalizeRestoredPortfolioAssets } from "@/lib/portfolio-state";
 import { useCalculationHistory } from "@/hooks/use-calculation-history";
 import { HistoryPanel } from "@/components/history-panel";
 import { useShareableUrl } from "@/hooks/use-shareable-url";
-import { MAX_MONTE_CARLO_SIMULATIONS, MAX_PORTFOLIO_ASSETS } from "@/lib/constants";
+import {
+  MAX_INTEREST_RATE,
+  MAX_MONTE_CARLO_SIMULATIONS,
+  MAX_PORTFOLIO_ASSETS,
+  MAX_VOLATILITY,
+  MIN_INTEREST_RATE,
+} from "@/lib/constants";
 
 interface Asset {
   id: number;
@@ -44,6 +51,7 @@ const DEFAULT_PORTFOLIO_ASSETS: Asset[] = [
 
 export default function PortfolioPage() {
   const { t } = useLanguage();
+  const formatSharpe = (value: number | null) => (value === null ? t("common.notAvailable") : formatNumber(value));
   const [rf, setRf] = useState(3.0);
   const [assets, setAssets] = useState<Asset[]>(DEFAULT_PORTFOLIO_ASSETS);
   const [correlation, setCorrelation] = useState(0.2);
@@ -179,6 +187,15 @@ export default function PortfolioPage() {
     );
   };
 
+  const isAssetFieldInvalid = (index: number, field: "name" | "return" | "risk") => {
+    const asset = parsedAssets[index];
+    if (!asset) return true;
+    if (field === "name") return asset.name.length === 0;
+    if (field === "return")
+      return asset.return === null || asset.return < MIN_INTEREST_RATE || asset.return > MAX_INTEREST_RATE;
+    return asset.risk === null || asset.risk < 0 || asset.risk > MAX_VOLATILITY;
+  };
+
   const startSimulation = () => {
     if (!portfolioValidation.isValid || assets.length < 2) return;
     const runSignature = inputSignature;
@@ -204,7 +221,7 @@ export default function PortfolioPage() {
         if (d?.simulations) setSimulations(d.simulations);
         if (d?.optimal) setOptimal(d.optimal);
         if (d?.minVol) setMinVol(d.minVol);
-        if (d?.optimal) {
+        if (d?.optimal && d.optimal.sharpe !== null) {
           addToHistory(
             {
               assets: JSON.stringify(assets),
@@ -227,21 +244,8 @@ export default function PortfolioPage() {
   const restorePortfolio = (inputs: Record<string, number | string>) => {
     if (typeof inputs.assets === "string") {
       try {
-        const restoredAssets = JSON.parse(inputs.assets) as Asset[];
-        const isValidAssets =
-          Array.isArray(restoredAssets) &&
-          restoredAssets.length >= 2 &&
-          restoredAssets.every(
-            (asset) =>
-              typeof asset.id === "number" &&
-              typeof asset.name === "string" &&
-              typeof asset.return === "string" &&
-              typeof asset.risk === "string"
-          );
-
-        if (isValidAssets) {
-          setAssets(restoredAssets.slice(0, MAX_PORTFOLIO_ASSETS));
-        }
+        const restoredAssets = normalizeRestoredPortfolioAssets(JSON.parse(inputs.assets));
+        if (restoredAssets.length >= 2) setAssets(restoredAssets);
       } catch {
         // Ignore malformed old history entries.
       }
@@ -298,196 +302,246 @@ export default function PortfolioPage() {
 
       <div className="grid min-w-0 gap-6 xl:grid-cols-12">
         <Card className="xl:col-span-4 h-fit">
-          <CardHeader>
-            <CardTitle>{t("portfolio.workflow.settings")}</CardTitle>
-            <CardDescription>{t("portfolio.workflow.runHint")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6 min-w-0">
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span id="portfolio-rf-label" className="text-sm font-medium">
-                  {t("portfolio.rf")}: {rf}%
-                </span>
-                <span id="portfolio-correlation-label" className="text-sm font-medium">
-                  {t("portfolio.corr")}: {effectiveCorrelation}
-                </span>
+          <form
+            id="portfolio-simulation-form"
+            className="flex flex-col gap-6"
+            onSubmit={(event) => {
+              event.preventDefault();
+              startSimulation();
+            }}
+          >
+            <CardHeader>
+              <CardTitle>{t("portfolio.workflow.settings")}</CardTitle>
+              <CardDescription>{t("portfolio.workflow.runHint")}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6 min-w-0">
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span id="portfolio-rf-label" className="text-sm font-medium">
+                    {t("portfolio.rf")}: {rf}%
+                  </span>
+                  <span id="portfolio-correlation-label" className="text-sm font-medium">
+                    {t("portfolio.corr")}: {effectiveCorrelation}
+                  </span>
+                </div>
+                <Slider
+                  aria-labelledby="portfolio-rf-label"
+                  aria-label={t("portfolio.rf")}
+                  name="portfolio-risk-free-rate"
+                  value={[rf]}
+                  onValueChange={(v) => setRf(v[0])}
+                  max={10}
+                  step={0.1}
+                  className="pb-4"
+                />
+                <Slider
+                  aria-labelledby="portfolio-correlation-label"
+                  aria-label={t("portfolio.corr")}
+                  name="portfolio-correlation"
+                  value={[effectiveCorrelation]}
+                  onValueChange={(v) => setCorrelation(v[0])}
+                  min={minimumCorrelation}
+                  max={1}
+                  step={0.1}
+                />
+                {!portfolioValidation.isValid && (
+                  <ErrorDisplay
+                    id="portfolio-validation-error"
+                    message={portfolioValidation.message}
+                    variant="warning"
+                  />
+                )}
               </div>
-              <Slider
-                aria-labelledby="portfolio-rf-label"
-                aria-label={t("portfolio.rf")}
-                name="portfolio-risk-free-rate"
-                value={[rf]}
-                onValueChange={(v) => setRf(v[0])}
-                max={10}
-                step={0.1}
-                className="pb-4"
-              />
-              <Slider
-                aria-labelledby="portfolio-correlation-label"
-                aria-label={t("portfolio.corr")}
-                name="portfolio-correlation"
-                value={[effectiveCorrelation]}
-                onValueChange={(v) => setCorrelation(v[0])}
-                min={minimumCorrelation}
-                max={1}
-                step={0.1}
-              />
-              {!portfolioValidation.isValid && <ErrorDisplay message={portfolioValidation.message} variant="warning" />}
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="portfolio-seed">{t("portfolio.seed")}</Label>
-              <Input
-                id="portfolio-seed"
-                name="portfolio-seed"
-                value={seed}
-                onChange={(event) => setSeed(sanitizeInput(event.target.value))}
-              />
-              <p className="text-xs text-muted-foreground">{t("portfolio.seedDesc")}</p>
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="portfolio-seed">{t("portfolio.seed")}</Label>
+                <Input
+                  id="portfolio-seed"
+                  name="portfolio-seed"
+                  value={seed}
+                  onChange={(event) => setSeed(sanitizeInput(event.target.value))}
+                  aria-describedby="portfolio-seed-description"
+                />
+                <p id="portfolio-seed-description" className="text-xs text-muted-foreground">
+                  {t("portfolio.seedDesc")}
+                </p>
+              </div>
 
-            <ResponsiveDisclosure
-              title={t("portfolio.workflow.assets")}
-              description={t("portfolio.validation.universeDisclosure")}
-              defaultOpen={true}
-            >
-              <div className="hidden overflow-x-auto rounded-2xl border border-white/10 bg-background/30 p-2 sm:block sm:p-3">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[100px]">{t("portfolio.asset")}</TableHead>
-                      <TableHead>{t("portfolio.ret")}</TableHead>
-                      <TableHead>{t("portfolio.risk")}</TableHead>
-                      <TableHead className="w-[40px]"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {assets.map((asset) => (
-                      <TableRow key={asset.id}>
-                        <TableCell>
+              <ResponsiveDisclosure
+                title={t("portfolio.workflow.assets")}
+                description={t("portfolio.validation.universeDisclosure")}
+                defaultOpen={true}
+              >
+                <div className="hidden overflow-x-auto rounded-2xl border border-white/10 bg-background/30 p-2 sm:block sm:p-3">
+                  <Table>
+                    <TableCaption className="sr-only">{t("portfolio.workflow.assets")}</TableCaption>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead scope="col" className="w-[100px]">
+                          {t("portfolio.asset")}
+                        </TableHead>
+                        <TableHead scope="col">{t("portfolio.ret")}</TableHead>
+                        <TableHead scope="col">{t("portfolio.risk")}</TableHead>
+                        <TableHead scope="col" className="w-[40px]">
+                          <span className="sr-only">{t("common.remove")}</span>
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {assets.map((asset, index) => (
+                        <TableRow key={asset.id}>
+                          <TableCell>
+                            <Input
+                              id={`portfolio-desktop-asset-name-${asset.id}`}
+                              name={`portfolio-desktop-asset-name-${asset.id}`}
+                              aria-label={t("portfolio.asset")}
+                              aria-invalid={isAssetFieldInvalid(index, "name")}
+                              aria-describedby={
+                                isAssetFieldInvalid(index, "name") ? "portfolio-validation-error" : undefined
+                              }
+                              value={asset.name}
+                              onChange={(e) => updateAsset(asset.id, "name", e.target.value)}
+                              className="h-10 w-28 min-w-[7rem]"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              id={`portfolio-desktop-asset-return-${asset.id}`}
+                              name={`portfolio-desktop-asset-return-${asset.id}`}
+                              aria-label={`${t("portfolio.ret")}: ${asset.name}`}
+                              aria-invalid={isAssetFieldInvalid(index, "return")}
+                              aria-describedby={
+                                isAssetFieldInvalid(index, "return") ? "portfolio-validation-error" : undefined
+                              }
+                              type="number"
+                              value={asset.return}
+                              onChange={(e) => updateAsset(asset.id, "return", e.target.value)}
+                              className="h-10 w-[4.5rem] min-w-[4.5rem]"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              id={`portfolio-desktop-asset-risk-${asset.id}`}
+                              name={`portfolio-desktop-asset-risk-${asset.id}`}
+                              aria-label={`${t("portfolio.risk")}: ${asset.name}`}
+                              aria-invalid={isAssetFieldInvalid(index, "risk")}
+                              aria-describedby={
+                                isAssetFieldInvalid(index, "risk") ? "portfolio-validation-error" : undefined
+                              }
+                              type="number"
+                              value={asset.risk}
+                              onChange={(e) => updateAsset(asset.id, "risk", e.target.value)}
+                              className="h-10 w-[4.5rem] min-w-[4.5rem]"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-10 w-10 text-destructive"
+                              onClick={() => removeAsset(asset.id)}
+                              aria-label={t("common.remove")}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                <div className="space-y-3 sm:hidden">
+                  {assets.map((asset, index) => (
+                    <div key={asset.id} className="rounded-2xl border border-white/10 bg-background/40 p-4 space-y-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-semibold">{t("portfolio.validation.assetCardTitle")}</p>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-10 w-10 text-destructive"
+                          onClick={() => removeAsset(asset.id)}
+                          aria-label={t("common.remove")}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`portfolio-asset-name-${asset.id}`}>{t("portfolio.asset")}</Label>
+                        <Input
+                          id={`portfolio-asset-name-${asset.id}`}
+                          name={`portfolio-asset-name-${asset.id}`}
+                          aria-label={t("portfolio.asset")}
+                          aria-invalid={isAssetFieldInvalid(index, "name")}
+                          aria-describedby={
+                            isAssetFieldInvalid(index, "name") ? "portfolio-validation-error" : undefined
+                          }
+                          value={asset.name}
+                          onChange={(e) => updateAsset(asset.id, "name", e.target.value)}
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label htmlFor={`portfolio-asset-return-${asset.id}`}>{t("portfolio.ret")}</Label>
                           <Input
-                            id={`portfolio-desktop-asset-name-${asset.id}`}
-                            name={`portfolio-desktop-asset-name-${asset.id}`}
-                            aria-label={t("portfolio.asset")}
-                            value={asset.name}
-                            onChange={(e) => updateAsset(asset.id, "name", e.target.value)}
-                            className="h-10 w-28 min-w-[7rem]"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            id={`portfolio-desktop-asset-return-${asset.id}`}
-                            name={`portfolio-desktop-asset-return-${asset.id}`}
-                            aria-label={`${t("portfolio.ret")} for ${asset.name}`}
+                            id={`portfolio-asset-return-${asset.id}`}
+                            name={`portfolio-asset-return-${asset.id}`}
+                            aria-label={`${t("portfolio.ret")}: ${asset.name}`}
+                            aria-invalid={isAssetFieldInvalid(index, "return")}
+                            aria-describedby={
+                              isAssetFieldInvalid(index, "return") ? "portfolio-validation-error" : undefined
+                            }
                             type="number"
                             value={asset.return}
                             onChange={(e) => updateAsset(asset.id, "return", e.target.value)}
-                            className="h-10 w-[4.5rem] min-w-[4.5rem]"
                           />
-                        </TableCell>
-                        <TableCell>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`portfolio-asset-risk-${asset.id}`}>{t("portfolio.risk")}</Label>
                           <Input
-                            id={`portfolio-desktop-asset-risk-${asset.id}`}
-                            name={`portfolio-desktop-asset-risk-${asset.id}`}
-                            aria-label={`${t("portfolio.risk")} for ${asset.name}`}
+                            id={`portfolio-asset-risk-${asset.id}`}
+                            name={`portfolio-asset-risk-${asset.id}`}
+                            aria-label={`${t("portfolio.risk")}: ${asset.name}`}
+                            aria-invalid={isAssetFieldInvalid(index, "risk")}
+                            aria-describedby={
+                              isAssetFieldInvalid(index, "risk") ? "portfolio-validation-error" : undefined
+                            }
                             type="number"
                             value={asset.risk}
                             onChange={(e) => updateAsset(asset.id, "risk", e.target.value)}
-                            className="h-10 w-[4.5rem] min-w-[4.5rem]"
                           />
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-10 w-10 text-destructive"
-                            onClick={() => removeAsset(asset.id)}
-                            aria-label={t("common.remove")}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-              <div className="space-y-3 sm:hidden">
-                {assets.map((asset) => (
-                  <div key={asset.id} className="rounded-2xl border border-white/10 bg-background/40 p-4 space-y-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold">{t("portfolio.validation.assetCardTitle")}</p>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-10 w-10 text-destructive"
-                        onClick={() => removeAsset(asset.id)}
-                        aria-label={t("common.remove")}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor={`portfolio-asset-name-${asset.id}`}>{t("portfolio.asset")}</Label>
-                      <Input
-                        id={`portfolio-asset-name-${asset.id}`}
-                        name={`portfolio-asset-name-${asset.id}`}
-                        aria-label={t("portfolio.asset")}
-                        value={asset.name}
-                        onChange={(e) => updateAsset(asset.id, "name", e.target.value)}
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor={`portfolio-asset-return-${asset.id}`}>{t("portfolio.ret")}</Label>
-                        <Input
-                          id={`portfolio-asset-return-${asset.id}`}
-                          name={`portfolio-asset-return-${asset.id}`}
-                          aria-label={`${t("portfolio.ret")} for ${asset.name}`}
-                          type="number"
-                          value={asset.return}
-                          onChange={(e) => updateAsset(asset.id, "return", e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`portfolio-asset-risk-${asset.id}`}>{t("portfolio.risk")}</Label>
-                        <Input
-                          id={`portfolio-asset-risk-${asset.id}`}
-                          name={`portfolio-asset-risk-${asset.id}`}
-                          aria-label={`${t("portfolio.risk")} for ${asset.name}`}
-                          type="number"
-                          value={asset.risk}
-                          onChange={(e) => updateAsset(asset.id, "risk", e.target.value)}
-                        />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </ResponsiveDisclosure>
+                  ))}
+                </div>
+              </ResponsiveDisclosure>
 
-            <Button
-              variant="outline"
-              className="w-full border-dashed"
-              onClick={addAsset}
-              disabled={assets.length >= MAX_PORTFOLIO_ASSETS}
-            >
-              <Plus className="mr-2 h-4 w-4" /> {t("portfolio.add")}
-            </Button>
-
-            <div className="rounded-2xl border border-dashed border-white/10 bg-background/20 p-4 space-y-3 xl:hidden">
-              <p className="text-sm font-semibold">{t("portfolio.workflow.results")}</p>
-              <p className="text-sm text-muted-foreground">{t("portfolio.workflow.resultsHint")}</p>
-              <Button onClick={startSimulation} className="w-full gap-2" disabled={isRunning}>
-                {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                {isRunning
-                  ? t("common.loading")
-                  : visibleSimulations.length > 0
-                    ? t("portfolio.rerun")
-                    : t("portfolio.run")}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-dashed"
+                onClick={addAsset}
+                disabled={assets.length >= MAX_PORTFOLIO_ASSETS}
+              >
+                <Plus className="mr-2 h-4 w-4" /> {t("portfolio.add")}
               </Button>
-            </div>
-          </CardContent>
+
+              <div className="rounded-2xl border border-dashed border-white/10 bg-background/20 p-4 space-y-3 xl:hidden">
+                <p className="text-sm font-semibold">{t("portfolio.workflow.results")}</p>
+                <p className="text-sm text-muted-foreground">{t("portfolio.workflow.resultsHint")}</p>
+                <Button type="submit" className="w-full gap-2" disabled={isRunning}>
+                  {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                  {isRunning
+                    ? t("common.loading")
+                    : visibleSimulations.length > 0
+                      ? t("portfolio.rerun")
+                      : t("portfolio.run")}
+                </Button>
+              </div>
+            </CardContent>
+          </form>
         </Card>
 
         <div id="portfolio-report-content" className="min-w-0 space-y-6 xl:col-span-8">
@@ -509,7 +563,8 @@ export default function PortfolioPage() {
             actions={
               <>
                 <Button
-                  onClick={startSimulation}
+                  type="submit"
+                  form="portfolio-simulation-form"
                   variant="outline"
                   className="gap-2 hidden xl:inline-flex"
                   disabled={isRunning}
@@ -525,7 +580,7 @@ export default function PortfolioPage() {
                   <ResultActions
                     title={t("portfolio.title")}
                     results={{
-                      [t("portfolio.maxSharpe")]: `${t("portfolio.ratio")}: ${formatNumber(visibleOptimal.sharpe)}`,
+                      [t("portfolio.maxSharpe")]: `${t("portfolio.ratio")}: ${formatSharpe(visibleOptimal.sharpe)}`,
                       [t("portfolio.minVol")]:
                         `${formatNumber(visibleMinVol.ret)}% / ${formatNumber(visibleMinVol.risk)}%`,
                     }}
@@ -575,7 +630,7 @@ export default function PortfolioPage() {
                     <PieIcon className="h-5 w-5" /> {t("portfolio.maxSharpe")}
                   </CardTitle>
                   <CardDescription>
-                    {t("portfolio.ratio")}: {formatNumber(visibleOptimal.sharpe)}
+                    {t("portfolio.ratio")}: {formatSharpe(visibleOptimal.sharpe)}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -634,7 +689,16 @@ export default function PortfolioPage() {
                 <CardDescription>{t("portfolio.frontierDesc")}</CardDescription>
               </CardHeader>
               <CardContent className="min-h-[240px] flex-1 px-0">
-                <div ref={setChartElement} className="h-full min-h-[240px] w-full">
+                <div
+                  ref={setChartElement}
+                  className="h-full min-h-[240px] w-full"
+                  role={visibleSimulations.length > 0 ? "img" : undefined}
+                  aria-label={
+                    visibleSimulations.length > 0
+                      ? `${t("portfolio.frontier")}. ${t("portfolio.frontierDesc")}`
+                      : undefined
+                  }
+                >
                   {visibleSimulations.length > 0 ? (
                     chartsReady && chartSize.width > 0 && chartSize.height > 0 ? (
                       <ScatterChart
@@ -646,7 +710,7 @@ export default function PortfolioPage() {
                         <XAxis
                           type="number"
                           dataKey="risk"
-                          name="Risk"
+                          name={t("portfolio.risk")}
                           label={{ value: `${t("portfolio.risk")}`, position: "bottom", offset: 0 }}
                           stroke="hsl(var(--muted-foreground))"
                           fontSize={10}
@@ -655,7 +719,7 @@ export default function PortfolioPage() {
                         <YAxis
                           type="number"
                           dataKey="ret"
-                          name="Return"
+                          name={t("portfolio.ret")}
                           label={{ value: `${t("portfolio.ret")}`, angle: -90, position: "insideLeft" }}
                           stroke="hsl(var(--muted-foreground))"
                           fontSize={10}
@@ -677,7 +741,7 @@ export default function PortfolioPage() {
                                     {t("portfolio.risk")}: {formatNumber(data.risk)}%
                                   </p>
                                   <p className="text-sm text-muted-foreground">
-                                    {t("portfolio.ratio")}: {formatNumber(data.sharpe)}
+                                    {t("portfolio.ratio")}: {formatSharpe(data.sharpe)}
                                   </p>
                                 </div>
                               );
@@ -686,14 +750,14 @@ export default function PortfolioPage() {
                           }}
                         />
                         <Scatter
-                          name="Portfolios"
+                          name={t("portfolio.title")}
                           data={visibleSimulations}
                           fill="hsl(var(--primary))"
                           fillOpacity={0.4}
                         />
                         {visibleOptimal && (
                           <Scatter
-                            name="Max Sharpe"
+                            name={t("portfolio.maxSharpe")}
                             data={[visibleOptimal]}
                             fill="hsl(var(--chart-4))"
                             shape="star"
@@ -702,7 +766,7 @@ export default function PortfolioPage() {
                         )}
                         {visibleMinVol && (
                           <Scatter
-                            name="Min Volatility"
+                            name={t("portfolio.minVol")}
                             data={[visibleMinVol]}
                             fill="hsl(var(--chart-2))"
                             shape="diamond"

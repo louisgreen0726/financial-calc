@@ -5,6 +5,7 @@ import {
   clampEqualCorrelation,
   createSeededRandom,
   getMinimumEqualCorrelation,
+  makeDeterministicBaselineWeights,
   makeRandomWeights,
   summarizePortfolioSimulations,
 } from "@/lib/portfolio-math";
@@ -29,6 +30,21 @@ describe("portfolio-math", () => {
     expect(weights[0]).toBeCloseTo(0.5, 8);
     expect(weights[1]).toBeCloseTo(0.5, 8);
     expect(weights.reduce((sum, value) => sum + value, 0)).toBeCloseTo(1, 8);
+  });
+
+  it("rejects non-integer random-weight dimensions", () => {
+    expect(makeRandomWeights(2.5)).toEqual([]);
+  });
+
+  it("provides deterministic equal-weight and corner baselines", () => {
+    expect(makeDeterministicBaselineWeights(3)).toEqual([
+      [1 / 3, 1 / 3, 1 / 3],
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1],
+    ]);
+    expect(makeDeterministicBaselineWeights(0)).toEqual([]);
+    expect(makeDeterministicBaselineWeights(2.5)).toEqual([]);
   });
 
   it("generates deterministic random sequences from the same seed", () => {
@@ -70,6 +86,31 @@ describe("portfolio-math", () => {
   it("rejects malformed assets and weights", () => {
     expect(() => calculatePortfolioPoint([{ name: "A", return: 8, risk: 10 }], [], 0, 2)).toThrow(/matching/);
     expect(() => calculatePortfolioPoint([{ name: "A", return: 8, risk: -1 }], [1], 0, 2)).toThrow(/finite/);
+    expect(() =>
+      calculatePortfolioPoint(
+        [
+          { name: "A", return: 8, risk: 10 },
+          { name: "B", return: 6, risk: 8 },
+        ],
+        [1, 1],
+        0,
+        2
+      )
+    ).toThrow(/sum to one/);
+    expect(() => calculatePortfolioPoint([{ name: "A", return: 8, risk: 10 }], [1], 0, Number.NaN)).toThrow(
+      /Risk-free rate/
+    );
+  });
+
+  it("uses explicit Sharpe semantics for zero-risk portfolios", () => {
+    const assets = [
+      { name: "A", return: 10, risk: 10 },
+      { name: "B", return: 10, risk: 10 },
+    ];
+
+    expect(calculatePortfolioPoint(assets, [0.5, 0.5], -1, 2).sharpe).toBeNull();
+    expect(calculatePortfolioPoint(assets, [0.5, 0.5], -1, 12).sharpe).toBeNull();
+    expect(calculatePortfolioPoint(assets, [0.5, 0.5], -1, 10).sharpe).toBeNull();
   });
 
   it("summarizes optimal and minimum-volatility portfolios", () => {
@@ -87,5 +128,13 @@ describe("portfolio-math", () => {
 
   it("summarizes empty simulations safely", () => {
     expect(summarizePortfolioSimulations([])).toEqual({ simulations: [], optimal: null, minVol: null });
+  });
+
+  it("ignores zero-risk portfolios whose Sharpe ratio is undefined", () => {
+    const undefinedPoint = { ret: 2, risk: 0, sharpe: null, weights: [0.5, 0.5] };
+    const finitePoint = { ret: 5, risk: 10, sharpe: 0.3, weights: [1, 0] };
+    const arbitragePoint = { ret: 8, risk: 0, sharpe: null, weights: [0, 1] };
+
+    expect(summarizePortfolioSimulations([undefinedPoint, finitePoint, arbitragePoint]).optimal).toBe(finitePoint);
   });
 });

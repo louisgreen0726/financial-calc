@@ -117,9 +117,10 @@ export default function MacroPage() {
     const nominal = parseOptionalNumber(nominalRate);
     const inflation = parseOptionalNumber(realInfRate);
 
-    if (nominal === null || inflation === null || inflation <= -100) {
-      errors.push({ field: "rate", message: t("macro.realRate.error.invalidRate") });
-    }
+    if (nominal === null || nominal <= -100)
+      errors.push({ field: "nominal", message: t("macro.realRate.error.invalidRate") });
+    if (inflation === null || inflation <= -100)
+      errors.push({ field: "inflation", message: t("macro.realRate.error.invalidRate") });
 
     return errors;
   }, [nominalRate, realInfRate, t]);
@@ -472,6 +473,20 @@ export default function MacroPage() {
     },
   });
 
+  const inflationStartError = inflationErrors.find((error) => error.field === "startPrice")?.message ?? null;
+  const inflationEndError = inflationErrors.find((error) => error.field === "endPrice")?.message ?? null;
+  const inflationYearsError = inflationErrors.find((error) => error.field === "years")?.message ?? null;
+  const ppAmountError = ppErrors.find((error) => error.field === "amount")?.message ?? null;
+  const ppRateError = ppErrors.find((error) => error.field === "rate")?.message ?? null;
+  const ppYearsError = ppErrors.find((error) => error.field === "years")?.message ?? null;
+  const nominalRateError = realRateErrors.find((error) => error.field === "nominal")?.message ?? null;
+  const realInflationError = realRateErrors.find((error) => error.field === "inflation")?.message ?? null;
+  const cpiAmountError = cpiErrors.find((error) => error.field === "amount")?.message ?? null;
+  const cpiFromError = cpiErrors.find((error) => error.field === "fromCPI")?.message ?? null;
+  const cpiToError = cpiErrors.find((error) => error.field === "toCPI")?.message ?? null;
+  const pppDomesticError = pppErrors.find((error) => error.field === "domestic")?.message ?? null;
+  const pppForeignError = pppErrors.find((error) => error.field === "foreign")?.message ?? null;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
@@ -563,8 +578,10 @@ export default function MacroPage() {
                     onChange={(e) => updateField(setStartPrice)(e.target.value)}
                     min="0"
                     step="0.01"
+                    aria-invalid={Boolean(inflationStartError)}
+                    aria-describedby={inflationStartError ? "macro-inflation-start-error" : undefined}
                   />
-                  <ValidationError error={inflationErrors.find((e) => e.field === "startPrice")?.message ?? null} />
+                  <ValidationError id="macro-inflation-start-error" error={inflationStartError} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="macro-inflation-end">{t("macro.inflation.endPrice")}</Label>
@@ -575,8 +592,10 @@ export default function MacroPage() {
                     onChange={(e) => updateField(setEndPrice)(e.target.value)}
                     min="0"
                     step="0.01"
+                    aria-invalid={Boolean(inflationEndError)}
+                    aria-describedby={inflationEndError ? "macro-inflation-end-error" : undefined}
                   />
-                  <ValidationError error={inflationErrors.find((e) => e.field === "endPrice")?.message ?? null} />
+                  <ValidationError id="macro-inflation-end-error" error={inflationEndError} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="macro-inflation-years">{t("macro.inflation.years")}</Label>
@@ -587,8 +606,10 @@ export default function MacroPage() {
                     onChange={(e) => updateField(setInfYears)(e.target.value)}
                     min="0"
                     step="0.1"
+                    aria-invalid={Boolean(inflationYearsError)}
+                    aria-describedby={inflationYearsError ? "macro-inflation-years-error" : undefined}
                   />
-                  <ValidationError error={inflationErrors.find((e) => e.field === "years")?.message ?? null} />
+                  <ValidationError id="macro-inflation-years-error" error={inflationYearsError} />
                 </div>
                 {inflationErrors.length > 0 && (
                   <Alert variant="destructive" className="py-2">
@@ -631,8 +652,10 @@ export default function MacroPage() {
                     onChange={(e) => updateField(setPpAmount)(e.target.value)}
                     min="0"
                     step="0.01"
+                    aria-invalid={Boolean(ppAmountError)}
+                    aria-describedby={ppAmountError ? "macro-pp-amount-error" : undefined}
                   />
-                  <ValidationError error={ppErrors.find((e) => e.field === "amount")?.message ?? null} />
+                  <ValidationError id="macro-pp-amount-error" error={ppAmountError} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="macro-pp-rate">{t("macro.purchasingPower.inflation")}</Label>
@@ -642,8 +665,10 @@ export default function MacroPage() {
                     value={ppRate}
                     onChange={(e) => updateField(setPpRate)(e.target.value)}
                     step="0.01"
+                    aria-invalid={Boolean(ppRateError)}
+                    aria-describedby={ppRateError ? "macro-pp-rate-error" : undefined}
                   />
-                  <ValidationError error={ppErrors.find((e) => e.field === "rate")?.message ?? null} />
+                  <ValidationError id="macro-pp-rate-error" error={ppRateError} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="macro-pp-years">{t("macro.purchasingPower.years")}</Label>
@@ -654,8 +679,10 @@ export default function MacroPage() {
                     onChange={(e) => updateField(setPpYears)(e.target.value)}
                     min="0"
                     step="0.1"
+                    aria-invalid={Boolean(ppYearsError)}
+                    aria-describedby={ppYearsError ? "macro-pp-years-error" : undefined}
                   />
-                  <ValidationError error={ppErrors.find((e) => e.field === "years")?.message ?? null} />
+                  <ValidationError id="macro-pp-years-error" error={ppYearsError} />
                 </div>
                 {ppErrors.length > 0 && (
                   <Alert variant="destructive" className="py-2">
@@ -709,8 +736,10 @@ export default function MacroPage() {
                     value={nominalRate}
                     onChange={(e) => updateField(setNominalRate)(e.target.value)}
                     step="0.01"
+                    aria-invalid={Boolean(nominalRateError)}
+                    aria-describedby={nominalRateError ? "macro-real-nominal-error" : undefined}
                   />
-                  <ValidationError error={realRateErrors.find((e) => e.field === "rate")?.message ?? null} />
+                  <ValidationError id="macro-real-nominal-error" error={nominalRateError} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="macro-real-inflation">{t("macro.realRate.inflation")}</Label>
@@ -720,8 +749,10 @@ export default function MacroPage() {
                     value={realInfRate}
                     onChange={(e) => updateField(setRealInfRate)(e.target.value)}
                     step="0.01"
+                    aria-invalid={Boolean(realInflationError)}
+                    aria-describedby={realInflationError ? "macro-real-inflation-error" : undefined}
                   />
-                  <ValidationError error={realRateErrors.find((e) => e.field === "rate")?.message ?? null} />
+                  <ValidationError id="macro-real-inflation-error" error={realInflationError} />
                 </div>
                 {realRateErrors.length > 0 && (
                   <Alert variant="destructive" className="py-2">
@@ -764,8 +795,10 @@ export default function MacroPage() {
                     onChange={(e) => updateField(setCpiAmount)(e.target.value)}
                     min="0"
                     step="0.01"
+                    aria-invalid={Boolean(cpiAmountError)}
+                    aria-describedby={cpiAmountError ? "macro-cpi-amount-error" : undefined}
                   />
-                  <ValidationError error={cpiErrors.find((e) => e.field === "amount")?.message ?? null} />
+                  <ValidationError id="macro-cpi-amount-error" error={cpiAmountError} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="macro-cpi-from">{t("macro.cpiAdjust.fromCPI")}</Label>
@@ -776,8 +809,10 @@ export default function MacroPage() {
                     onChange={(e) => updateField(setFromCPI)(e.target.value)}
                     min="0"
                     step="0.01"
+                    aria-invalid={Boolean(cpiFromError)}
+                    aria-describedby={cpiFromError ? "macro-cpi-from-error" : undefined}
                   />
-                  <ValidationError error={cpiErrors.find((e) => e.field === "fromCPI")?.message ?? null} />
+                  <ValidationError id="macro-cpi-from-error" error={cpiFromError} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="macro-cpi-to">{t("macro.cpiAdjust.toCPI")}</Label>
@@ -788,8 +823,10 @@ export default function MacroPage() {
                     onChange={(e) => updateField(setToCPI)(e.target.value)}
                     min="0"
                     step="0.01"
+                    aria-invalid={Boolean(cpiToError)}
+                    aria-describedby={cpiToError ? "macro-cpi-to-error" : undefined}
                   />
-                  <ValidationError error={cpiErrors.find((e) => e.field === "toCPI")?.message ?? null} />
+                  <ValidationError id="macro-cpi-to-error" error={cpiToError} />
                 </div>
                 {cpiErrors.length > 0 && (
                   <Alert variant="destructive" className="py-2">
@@ -832,8 +869,10 @@ export default function MacroPage() {
                     onChange={(e) => updateField(setDomesticPrice)(e.target.value)}
                     min="0"
                     step="0.01"
+                    aria-invalid={Boolean(pppDomesticError)}
+                    aria-describedby={pppDomesticError ? "macro-ppp-domestic-error" : undefined}
                   />
-                  <ValidationError error={pppErrors.find((e) => e.field === "domestic")?.message ?? null} />
+                  <ValidationError id="macro-ppp-domestic-error" error={pppDomesticError} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="macro-ppp-foreign">{t("macro.ppp.foreign")}</Label>
@@ -844,8 +883,10 @@ export default function MacroPage() {
                     onChange={(e) => updateField(setForeignPrice)(e.target.value)}
                     min="0"
                     step="0.01"
+                    aria-invalid={Boolean(pppForeignError)}
+                    aria-describedby={pppForeignError ? "macro-ppp-foreign-error" : undefined}
                   />
-                  <ValidationError error={pppErrors.find((e) => e.field === "foreign")?.message ?? null} />
+                  <ValidationError id="macro-ppp-foreign-error" error={pppForeignError} />
                 </div>
                 {pppErrors.length > 0 && (
                   <Alert variant="destructive" className="py-2">

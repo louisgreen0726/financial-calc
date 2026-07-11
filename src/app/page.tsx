@@ -15,13 +15,23 @@ import { MotionPage, StaggeredList, MotionListItem, MotionCard } from "@/compone
 import { motion } from "framer-motion";
 import { WorkspaceHomeSection } from "@/components/workspace-home-section";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export default function Home() {
   const allNavItems = useMemo(() => NAV_CONFIG.flatMap((section) => section.items), []);
   const shouldReduceMotion = useReducedMotion();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { history } = useCalculationHistory({ page: "home" });
   const latestHistoryItem = history[0];
+  const historyFormatOptions = useMemo(
+    () => ({
+      locale: language,
+      notAvailable: t("common.notAvailable"),
+      periodsUnit: t("history.periodsUnit"),
+      yearsUnit: t("history.yearsUnit"),
+    }),
+    [language, t]
+  );
 
   const getPageConfig = (pageStr: string) => {
     return allNavItems.find((item) => item.href.includes(pageStr));
@@ -29,14 +39,18 @@ export default function Home() {
 
   const prepareRestore = (item: typeof latestHistoryItem) => {
     if (!item) {
-      return;
+      return false;
     }
 
-    safeSetSessionJSON(PENDING_RESTORE_KEY, {
+    const persisted = safeSetSessionJSON(PENDING_RESTORE_KEY, {
       page: item.page,
       inputs: item.inputs,
       timestamp: Date.now(),
     });
+    if (!persisted) {
+      toast.error(t("common.storageError"));
+    }
+    return persisted;
   };
 
   return (
@@ -52,7 +66,7 @@ export default function Home() {
           {t("home.title")}
         </motion.h1>
         <motion.p
-          className="mx-auto max-w-2xl text-base font-medium text-muted-foreground/80 sm:text-xl md:mx-0 md:text-2xl"
+          className="mx-auto max-w-2xl text-base font-medium text-muted-foreground sm:text-xl md:mx-0 md:text-2xl"
           initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.8, delay: 0.1, ease: "easeOut" }}
@@ -70,7 +84,9 @@ export default function Home() {
                   ? t(getPageConfig(latestHistoryItem.page)!.titleKey)
                   : latestHistoryItem.page}
               </p>
-              <p className="text-2xl font-display font-bold">{formatHistoryResult(latestHistoryItem)}</p>
+              <p className="text-2xl font-display font-bold">
+                {formatHistoryResult(latestHistoryItem, historyFormatOptions)}
+              </p>
               {latestHistoryItem.label ? (
                 <p className="text-sm font-medium text-primary">{latestHistoryItem.label}</p>
               ) : null}
@@ -79,7 +95,9 @@ export default function Home() {
               <Link
                 href={`/${latestHistoryItem.page}`}
                 prefetch={false}
-                onClick={() => prepareRestore(latestHistoryItem)}
+                onClick={(event) => {
+                  if (!prepareRestore(latestHistoryItem)) event.preventDefault();
+                }}
               >
                 {t("home.continueAction")}
               </Link>
@@ -92,11 +110,18 @@ export default function Home() {
         <StaggeredList className="relative z-10 grid gap-5 sm:grid-cols-2 xl:grid-cols-3 md:gap-6">
           {allNavItems.map((item, i) => (
             <MotionListItem key={item.href} index={i} className="list-none group block h-full">
-              <Link href={item.href} prefetch={false} className="group flex-1">
+              <Link
+                href={item.href}
+                prefetch={false}
+                className="group flex-1 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
                 <MotionCard className="h-full glass-card rounded-2xl hover:bg-background/80 hover:shadow-[0_12px_40px_-15px_hsl(var(--primary)_/_30%)] hover:-translate-y-1 transition-all duration-300 relative overflow-visible transform-gpu">
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none rounded-2xl" />
                   <CardHeader className="pb-2 px-5 pt-5">
-                    <CardTitle className="flex items-start gap-3 font-display text-base sm:text-lg md:text-base">
+                    <CardTitle
+                      as="h3"
+                      className="flex items-start gap-3 font-display text-base sm:text-lg md:text-base"
+                    >
                       <div className="p-2.5 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-[0_0_15px_hsl(var(--primary)_/_50%)] transition-all duration-300 shrink-0">
                         <item.icon className="h-5 w-5" />
                       </div>
@@ -104,10 +129,10 @@ export default function Home() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3 pt-0 px-5 pb-5">
-                    <CardDescription className="text-sm font-medium text-muted-foreground/80 leading-relaxed line-clamp-2">
+                    <CardDescription className="text-sm font-medium text-muted-foreground leading-relaxed line-clamp-2">
                       {t(item.descKey)}
                     </CardDescription>
-                    <div className="flex items-center text-sm font-bold text-primary opacity-0 group-hover:opacity-100 transition-all duration-300 transform -translate-x-4 group-hover:translate-x-0">
+                    <div className="flex items-center text-sm font-bold text-primary opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-all duration-300 transform -translate-x-4 group-hover:translate-x-0 group-focus-visible:translate-x-0">
                       {t("home.openModule")} <ArrowRight className="ml-2 h-4 w-4" />
                     </div>
                   </CardContent>
@@ -141,20 +166,25 @@ export default function Home() {
                   href={`/${item.page}`}
                   prefetch={false}
                   className="group"
-                  onClick={() => prepareRestore(item)}
+                  onClick={(event) => {
+                    if (!prepareRestore(item)) event.preventDefault();
+                  }}
                 >
                   <Card className="h-full glass-card rounded-xl hover:-translate-y-[2px] transition-all duration-200 overflow-hidden">
                     <CardHeader className="p-4 pb-2 border-b border-border/50 bg-muted/20">
-                      <CardTitle className="text-sm font-semibold flex items-center justify-between text-muted-foreground gap-2">
+                      <CardTitle
+                        as="h3"
+                        className="text-sm font-semibold flex items-center justify-between text-muted-foreground gap-2"
+                      >
                         <span className="truncate">{navItem ? t(navItem.titleKey) : item.page}</span>
                         <span className="text-[10px] font-mono opacity-60 bg-background px-2 py-0.5 rounded-md shrink-0">
-                          {new Date(item.timestamp).toLocaleDateString()}
+                          {new Date(item.timestamp).toLocaleDateString(language === "zh" ? "zh-CN" : "en-US")}
                         </span>
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 pt-3 flex flex-col justify-center min-h-[80px]">
                       <div className="text-xl md:text-2xl font-display font-bold text-foreground truncate">
-                        {formatHistoryResult(item)}
+                        {formatHistoryResult(item, historyFormatOptions)}
                       </div>
                       {item.label && (
                         <p className="text-xs text-primary font-medium mt-1 uppercase tracking-wider truncate">

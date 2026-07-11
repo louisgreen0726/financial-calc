@@ -30,12 +30,12 @@ export function useHistoryRecorder({
   const lastSignatureRef = useRef<string | null>(null);
 
   const signature = useMemo(() => {
-    if (!enabled || !isFinite(result) || Number.isNaN(result)) {
+    if (!enabled || !Number.isFinite(result)) {
       return null;
     }
 
-    return stableSerialize({ inputs, result, label, resultFormat, resultUnit });
-  }, [enabled, inputs, label, result, resultFormat, resultUnit]);
+    return stableSerialize({ inputs, result, resultFormat, resultUnit });
+  }, [enabled, inputs, result, resultFormat, resultUnit]);
 
   useEffect(() => {
     if (!signature || signature === lastSignatureRef.current) {

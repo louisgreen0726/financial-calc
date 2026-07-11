@@ -22,12 +22,15 @@ const basePath = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(/\/$/, "");
 const withBasePath = (path: string) => `${basePath}${path}`;
 
 export const metadata: Metadata = {
-  title: "FinCalc Pro | Professional Financial Calculator",
+  title: {
+    default: "FinCalc Pro | Professional Financial Calculator",
+    template: "%s | FinCalc Pro",
+  },
   description: "Advanced financial modeling and valuation tools.",
   manifest: withBasePath("/manifest.json"),
   icons: {
     icon: withBasePath("/favicon.ico"),
-    apple: withBasePath("/icon.svg"),
+    apple: withBasePath("/icon-192.png"),
   },
   openGraph: {
     title: "FinCalc Pro",

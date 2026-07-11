@@ -35,11 +35,10 @@ export function ServiceWorkerRegistration() {
       return;
     }
 
-    const serviceWorkerVersion = process.env.NEXT_PUBLIC_APP_VERSION ?? "v0.4.0";
-    const serviceWorkerUrl = `${normalizedBasePath}/sw.js?v=${encodeURIComponent(serviceWorkerVersion)}`;
+    const serviceWorkerUrl = `${normalizedBasePath}/sw.js`;
 
     navigator.serviceWorker
-      .register(serviceWorkerUrl, { scope })
+      .register(serviceWorkerUrl, { scope, updateViaCache: "none" })
       .then((registration) => {
         logger.info("[PWA] Service Worker registered:", registration.scope);
 

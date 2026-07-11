@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { LANGUAGE_KEY } from "@/lib/constants";
+import { CURRENCY_CHANGED_EVENT, CURRENCY_KEY, LANGUAGE_KEY } from "@/lib/constants";
 import { safeGetItem, safeSetItem } from "@/lib/storage";
 
 // --- Types ---
@@ -30,6 +30,8 @@ type Translations = {
     remove: string;
     clear: string;
     cancel: string;
+    close: string;
+    confirm: string;
     cancelCalculation: string;
     secondsRemaining: string;
     errorTitle: string;
@@ -41,11 +43,20 @@ type Translations = {
     system: string;
     toggleMenu: string;
     toggleTheme: string;
+    skipToContent: string;
+    primaryNavigation: string;
+    errorLabel: string;
+    warningLabel: string;
+    infoLabel: string;
+    dismissMessage: string;
+    switchToChinese: string;
+    switchToEnglish: string;
     home: string;
     copy: string;
     copied: string;
     copySuccess: string;
     copyError: string;
+    storageError: string;
     more: string;
     notAvailable: string;
     rows: string;
@@ -55,6 +66,14 @@ type Translations = {
     min: string;
     max: string;
     example: string;
+    validation: {
+      required: string;
+      invalidNumber: string;
+      negative: string;
+      zero: string;
+      min: string;
+      max: string;
+    };
   };
   sidebar: {
     edition: string;
@@ -140,6 +159,19 @@ type Translations = {
     formula: string;
     stepByStep: string;
     finalResult: string;
+    derivation: {
+      rateDecimal: string;
+      compoundFactor: string;
+      discountFactor: string;
+      cashFlowRatio: string;
+      initialGuess: string;
+      npvIteration: string;
+      perPeriod: string;
+      refineUntilZero: string;
+      versus: string;
+      periodsUnit: string;
+      iterativeMethod: string;
+    };
     presets: {
       retirement: string;
       loanPayoff: string;
@@ -163,6 +195,7 @@ type Translations = {
     chartDisclosure: string;
     infoDisclosure: string;
     invalidInputs: string;
+    irrAmbiguous: string;
   };
   equity: {
     title: string;
@@ -220,6 +253,7 @@ type Translations = {
     fairPrice: string;
     discount: string;
     premium: string;
+    par: string;
     macDur: string;
     modDur: string;
     convexity: string;
@@ -346,6 +380,8 @@ type Translations = {
     rate: string;
     term: string;
     monthly: string;
+    firstPayment: string;
+    lastPayment: string;
     totalInt: string;
     totalCost: string;
     breakdown: string;
@@ -470,6 +506,14 @@ type Translations = {
     itemsDeleted: string;
     recent: string;
     recorded: string;
+    filter: string;
+    periodsUnit: string;
+    yearsUnit: string;
+    persistencePending: string;
+    persistenceFailed: string;
+    persistenceUnsupported: string;
+    retrySave: string;
+    saving: string;
   };
   sensitivity: {
     title: string;
@@ -493,6 +537,13 @@ type Translations = {
     language: string;
     currency: string;
     currencyDesc: string;
+    currencyNames: {
+      USD: string;
+      CNY: string;
+      EUR: string;
+      GBP: string;
+      JPY: string;
+    };
     behavior: string;
     behaviorDesc: string;
     autoCalculate: string;
@@ -588,6 +639,8 @@ const en: Translations = {
     remove: "Remove",
     clear: "Clear",
     cancel: "Cancel",
+    close: "Close",
+    confirm: "Confirm",
     cancelCalculation: "Cancel calculation",
     secondsRemaining: "~{seconds}s remaining",
     errorTitle: "Something went wrong",
@@ -599,11 +652,20 @@ const en: Translations = {
     system: "System",
     toggleMenu: "Toggle Menu",
     toggleTheme: "Toggle Theme",
+    skipToContent: "Skip to content",
+    primaryNavigation: "Primary navigation",
+    errorLabel: "Error",
+    warningLabel: "Warning",
+    infoLabel: "Information",
+    dismissMessage: "Dismiss message",
+    switchToChinese: "Switch to Chinese",
+    switchToEnglish: "Switch to English",
     home: "Home",
     copy: "Copy",
     copied: "Copied",
     copySuccess: "Copied to clipboard",
     copyError: "Failed to copy",
+    storageError: "The change is active for this session but could not be saved in browser storage.",
     more: "More",
     notAvailable: "N/A",
     rows: "rows",
@@ -613,6 +675,14 @@ const en: Translations = {
     min: "Min",
     max: "Max",
     example: "Example",
+    validation: {
+      required: "This field is required.",
+      invalidNumber: "Please enter a valid number.",
+      negative: "Value cannot be negative.",
+      zero: "Value cannot be zero.",
+      min: "Value must be at least {value}.",
+      max: "Value must be no more than {value}.",
+    },
   },
   sidebar: {
     edition: "Professional Edition",
@@ -629,8 +699,8 @@ const en: Translations = {
     investing: {
       title: "Investing",
       equity: { title: "Stock Valuation", desc: "DDM, CAPM, and WACC models" },
-      portfolio: { title: "Portfolio Optimization", desc: "Markowitz, Efficient Frontier, Sharpe" },
-      bonds: { title: "Bonds & Fixed Income", desc: "Duration, Convexity, YTM, Pricing" },
+      portfolio: { title: "Portfolio Optimization", desc: "Monte Carlo risk-return sampling and Sharpe ratios" },
+      bonds: { title: "Bonds & Fixed Income", desc: "Pricing, duration, and convexity from a supplied YTM" },
     },
     derivatives: {
       title: "Derivatives & Risk",
@@ -698,9 +768,22 @@ const en: Translations = {
     formula: "Formula",
     stepByStep: "Step by step",
     finalResult: "Final result",
+    derivation: {
+      rateDecimal: "Rate as decimal",
+      compoundFactor: "Compound factor",
+      discountFactor: "Discount factor",
+      cashFlowRatio: "Cash-flow ratio",
+      initialGuess: "Initial guess",
+      npvIteration: "NPV iteration",
+      perPeriod: "per period",
+      refineUntilZero: "Refine until NPV is approximately zero",
+      versus: "versus",
+      periodsUnit: "periods",
+      iterativeMethod: "Newton-Raphson iteration",
+    },
     presets: {
       retirement: "Retirement Savings",
-      loanPayoff: "Loan Payoff",
+      loanPayoff: "5-Year Loan (Monthly)",
       collegeFund: "College Fund",
     },
   },
@@ -721,6 +804,8 @@ const en: Translations = {
     chartDisclosure: "Open the chart when you need period-by-period detail.",
     infoDisclosure: "Show guidance for reading these results.",
     invalidInputs: "Please enter valid numeric inputs for discount rate and cash flows.",
+    irrAmbiguous:
+      "These cash flows change sign more than once, so IRR may have multiple valid solutions. Treat the displayed IRR as one candidate and use NPV as the primary decision measure.",
   },
   equity: {
     title: "Equity Valuation",
@@ -738,8 +823,8 @@ const en: Translations = {
     wacc: {
       tab: "WACC",
       title: "Capital Structure",
-      eqVal: "Equity Value ($)",
-      debtVal: "Debt Value ($)",
+      eqVal: "Equity Value",
+      debtVal: "Debt Value",
       costEq: "Cost of Equity (%)",
       costDebt: "Cost of Debt (%)",
       tax: "Corporate Tax Rate (%)",
@@ -775,7 +860,7 @@ const en: Translations = {
   },
   bonds: {
     title: "Bond Valuation",
-    subtitle: "Calculate Bond Price, Yield to Maturity, Duration, and Convexity.",
+    subtitle: "Calculate price, duration, and convexity from a supplied yield to maturity.",
     characteristics: "Bond Parameters",
     face: "Face Value",
     coupon: "Coupon Rate (%)",
@@ -786,6 +871,7 @@ const en: Translations = {
     fairPrice: "Fair Price",
     discount: "Discount",
     premium: "Premium",
+    par: "At Par",
     macDur: "Macaulay Duration",
     modDur: "Modified Duration",
     convexity: "Convexity",
@@ -811,7 +897,7 @@ const en: Translations = {
   },
   portfolio: {
     title: "Portfolio Optimization",
-    subtitle: "Modern Portfolio Theory simulation (Markowitz). Discover the Efficient Frontier.",
+    subtitle: "Sample portfolio risk and return with a reproducible Monte Carlo simulation.",
     run: "Run Monte Carlo",
     rerun: "Run again",
     universe: "Asset Universe",
@@ -824,10 +910,10 @@ const en: Translations = {
     ret: "Ret (%)",
     risk: "Risk (%)",
     add: "Add Asset",
-    frontier: "Efficient Frontier",
-    frontierDesc: "Risk (Standard Deviation) vs Return",
-    maxSharpe: "Max Sharpe Portfolio",
-    minVol: "Min Volatility Portfolio",
+    frontier: "Sampled Risk-Return Map",
+    frontierDesc: "Risk versus return across deterministic baselines and Monte Carlo samples",
+    maxSharpe: "Best Sampled Sharpe Portfolio",
+    minVol: "Lowest-Volatility Sample",
     ratio: "Ratio",
     retRisk: "Return / Risk",
     empty: "Add assets and click Run Monte Carlo",
@@ -835,15 +921,15 @@ const en: Translations = {
       settings: "Simulation settings",
       assets: "Asset inputs",
       results: "Portfolio results",
-      chart: "Frontier chart",
+      chart: "Risk-return chart",
       runHint: "Tune assumptions first, then run the simulation when the asset set looks right.",
       resultsHint: "Review the best portfolios first, then open the chart for deeper comparison.",
-      chartHint: "Keep the frontier collapsed on small screens until you need deeper comparison detail.",
+      chartHint: "Expand the sampled portfolio map when you need deeper comparison detail.",
     },
     validation: {
       invalidInputs: "Please correct the highlighted asset inputs before running the simulation.",
       universeDisclosure: "Manage assets here. Keep at least two assets with valid risk and return values.",
-      frontierDisclosure: "Keep the chart collapsed on phones until you need detailed frontier exploration.",
+      frontierDisclosure: "Keep the chart collapsed on phones until you need detailed sample exploration.",
       assetCardTitle: "Asset details",
       correlationRange: "For this number of assets, correlation must be at least {min}.",
     },
@@ -865,11 +951,11 @@ const en: Translations = {
     payoff: "Intrinsic Value Payoff",
     intrinsic: "Value at Expiration vs Spot Price",
     greeks: {
-      delta: "Delta (Δ)",
-      gamma: "Gamma (Γ)",
-      theta: "Theta (Θ)",
-      vega: "Vega (ν)",
-      rho: "Rho (ρ)",
+      delta: "Delta (per 1 spot unit)",
+      gamma: "Gamma (per 1 spot unit)",
+      theta: "Theta (per day)",
+      vega: "Vega (per 1 vol. point)",
+      rho: "Rho (per 1 rate point)",
     },
     validation: {
       invalidInputs: "Please correct the highlighted option inputs.",
@@ -884,9 +970,9 @@ const en: Translations = {
     title: "Risk Management",
     subtitle: "Value at Risk (VaR) and Expected Shortfall (CVaR) calculator.",
     params: "Risk Parameters",
-    val: "Portfolio Value ($)",
+    val: "Portfolio Value",
     vol: "Annual Volatility (%)",
-    horizon: "Time Horizon (Days)",
+    horizon: "Time Horizon (Trading Days)",
     conf: "Confidence Level",
     var: "Value at Risk (VaR)",
     varDesc: "% of portfolio",
@@ -912,6 +998,8 @@ const en: Translations = {
     rate: "Annual Rate (%)",
     term: "Term (Years)",
     monthly: "Monthly Payment",
+    firstPayment: "First Payment",
+    lastPayment: "Last Payment",
     totalInt: "Total Interest",
     totalCost: "Total Cost",
     breakdown: "Cost Breakdown",
@@ -950,7 +1038,7 @@ const en: Translations = {
       tab: "Purchasing Power",
       title: "Purchasing Power Calculator",
       desc: "See how inflation erodes the purchasing power of money over time.",
-      amount: "Current Amount ($)",
+      amount: "Current Amount",
       inflation: "Annual Inflation Rate (%)",
       years: "Years",
       futureValue: "Future Purchasing Power",
@@ -976,7 +1064,7 @@ const en: Translations = {
       tab: "CPI Adjustment",
       title: "CPI Inflation Adjustment",
       desc: "Adjust monetary amounts for inflation using Consumer Price Index values.",
-      amount: "Amount to Adjust ($)",
+      amount: "Amount to Adjust",
       fromCPI: "From CPI",
       toCPI: "To CPI",
       adjusted: "Inflation-Adjusted Amount",
@@ -1036,6 +1124,14 @@ const en: Translations = {
     itemsDeleted: "items deleted",
     recent: "Recent Calculations",
     recorded: "calculations recorded",
+    filter: "Filter calculation history",
+    periodsUnit: "periods",
+    yearsUnit: "years",
+    persistencePending: "Changes are waiting to be saved and will retry automatically.",
+    persistenceFailed: "History could not be saved. Your changes will retry automatically.",
+    persistenceUnsupported: "This history was created by a newer app version and cannot be changed here.",
+    retrySave: "Retry saving",
+    saving: "Saving history changes...",
   },
   sensitivity: {
     title: "Sensitivity Analysis",
@@ -1059,6 +1155,13 @@ const en: Translations = {
     language: "Language / 语言",
     currency: "Display currency",
     currencyDesc: "Choose the currency symbol used when values are formatted throughout the app.",
+    currencyNames: {
+      USD: "US Dollar",
+      CNY: "Chinese Yuan",
+      EUR: "Euro",
+      GBP: "British Pound",
+      JPY: "Japanese Yen",
+    },
     behavior: "Behavior",
     behaviorDesc: "Customize how calculations work",
     autoCalculate: "Auto-calculate",
@@ -1100,9 +1203,9 @@ const en: Translations = {
     stockVal: "Stock Valuation",
     stockValDesc: "DDM (Dividend Discount Model), CAPM, and WACC calculations.",
     portfolioOpt: "Portfolio Optimization",
-    portfolioOptDesc: "Monte Carlo simulation for efficient frontier and optimal portfolios.",
+    portfolioOptDesc: "Monte Carlo sampling with deterministic baselines for exploring portfolio trade-offs.",
     bondsCalc: "Bonds & Fixed Income",
-    bondsCalcDesc: "YTM, Duration, Convexity, and bond pricing calculations.",
+    bondsCalcDesc: "Bond price, duration, and convexity calculations using a supplied YTM.",
     optionsCalc: "Options Pricing",
     optionsCalcDesc: "Black-Scholes option pricing with Greeks (Delta, Gamma, Theta, Vega, Rho).",
     riskMetrics: "Risk Metrics",
@@ -1160,6 +1263,8 @@ const zh: Translations = {
     remove: "删除",
     clear: "重置",
     cancel: "取消",
+    close: "关闭",
+    confirm: "确认",
     cancelCalculation: "取消计算",
     secondsRemaining: "剩余约 {seconds} 秒",
     errorTitle: "出现了一些问题",
@@ -1171,11 +1276,20 @@ const zh: Translations = {
     system: "跟随系统",
     toggleMenu: "切换菜单",
     toggleTheme: "切换主题",
+    skipToContent: "跳转到主要内容",
+    primaryNavigation: "主导航",
+    errorLabel: "错误",
+    warningLabel: "警告",
+    infoLabel: "提示",
+    dismissMessage: "关闭提示",
+    switchToChinese: "切换为中文",
+    switchToEnglish: "切换为英文",
     home: "首页",
     copy: "复制",
     copied: "已复制",
     copySuccess: "已复制到剪贴板",
     copyError: "复制失败",
+    storageError: "本次会话已应用该更改，但浏览器存储写入失败，刷新后可能丢失。",
     more: "更多",
     notAvailable: "暂无",
     rows: "行",
@@ -1185,6 +1299,14 @@ const zh: Translations = {
     min: "最小值",
     max: "最大值",
     example: "示例",
+    validation: {
+      required: "此项为必填项。",
+      invalidNumber: "请输入有效数字。",
+      negative: "数值不能为负数。",
+      zero: "数值不能为零。",
+      min: "数值不得小于 {value}。",
+      max: "数值不得大于 {value}。",
+    },
   },
   sidebar: {
     edition: "专业版",
@@ -1201,8 +1323,8 @@ const zh: Translations = {
     investing: {
       title: "投资分析",
       equity: { title: "股票估值模型", desc: "DDM、CAPM 与 WACC 模型" },
-      portfolio: { title: "投资组合优化", desc: "马科维茨模型, 有效前沿, 夏普比率" },
-      bonds: { title: "债券与固定收益", desc: "久期, 凸性, 到期收益率 (YTM)" },
+      portfolio: { title: "投资组合优化", desc: "蒙特卡洛风险收益抽样与夏普比率" },
+      bonds: { title: "债券与固定收益", desc: "基于给定 YTM 计算价格、久期与凸性" },
     },
     derivatives: {
       title: "衍生品与风险",
@@ -1270,9 +1392,22 @@ const zh: Translations = {
     formula: "公式",
     stepByStep: "分步推导",
     finalResult: "最终结果",
+    derivation: {
+      rateDecimal: "利率转换为小数",
+      compoundFactor: "复利因子",
+      discountFactor: "折现因子",
+      cashFlowRatio: "现金流比值",
+      initialGuess: "初始猜测",
+      npvIteration: "NPV 迭代",
+      perPeriod: "每期",
+      refineUntilZero: "迭代至 NPV 约等于零",
+      versus: "对比",
+      periodsUnit: "期",
+      iterativeMethod: "牛顿-拉夫森迭代",
+    },
     presets: {
       retirement: "退休储蓄",
-      loanPayoff: "贷款还清",
+      loanPayoff: "5 年期贷款（按月）",
       collegeFund: "教育基金",
     },
   },
@@ -1293,6 +1428,8 @@ const zh: Translations = {
     chartDisclosure: "需要逐期查看现金流时，再展开图表。",
     infoDisclosure: "展开查看这些指标的解读说明。",
     invalidInputs: "请输入有效的折现率与现金流数值。",
+    irrAmbiguous:
+      "现金流符号发生了多次变化，因此 IRR 可能存在多个有效解。当前结果仅是其中一个候选值，投资判断应优先参考 NPV。",
   },
   equity: {
     title: "股票估值",
@@ -1310,8 +1447,8 @@ const zh: Translations = {
     wacc: {
       tab: "WACC 计算",
       title: "资本结构",
-      eqVal: "股权市值 ($)",
-      debtVal: "债务市值 ($)",
+      eqVal: "股权市值",
+      debtVal: "债务市值",
       costEq: "股权成本 (%)",
       costDebt: "债务成本 (%)",
       tax: "企业税率 (%)",
@@ -1347,7 +1484,7 @@ const zh: Translations = {
   },
   bonds: {
     title: "债券估值",
-    subtitle: "计算债券理论价格、到期收益率(YTM)、久期及凸性。",
+    subtitle: "根据给定的到期收益率 (YTM) 计算债券理论价格、久期及凸性。",
     characteristics: "债券参数",
     face: "票面面值",
     coupon: "票息率 (%)",
@@ -1358,6 +1495,7 @@ const zh: Translations = {
     fairPrice: "公允价格",
     discount: "折价发行",
     premium: "溢价发行",
+    par: "平价",
     macDur: "麦考利久期",
     modDur: "修正久期",
     convexity: "凸性",
@@ -1383,7 +1521,7 @@ const zh: Translations = {
   },
   portfolio: {
     title: "投资组合优化",
-    subtitle: "基于现代投资组合理论 (MPT) 的蒙特卡洛模拟，寻找有效前沿。",
+    subtitle: "通过可复现的蒙特卡洛模拟抽样组合风险与收益。",
     run: "执行蒙特卡洛模拟",
     rerun: "重新运行模拟",
     universe: "资产池配置",
@@ -1396,10 +1534,10 @@ const zh: Translations = {
     ret: "预期回报 (%)",
     risk: "风险/波动率 (%)",
     add: "添加资产",
-    frontier: "有效前沿图",
-    frontierDesc: "风险 (标准差) vs 预期回报",
-    maxSharpe: "最大夏普比率组合",
-    minVol: "最小波动率组合",
+    frontier: "抽样风险收益图",
+    frontierDesc: "确定性基准与蒙特卡洛样本的风险收益分布",
+    maxSharpe: "采样中夏普比率最佳组合",
+    minVol: "采样中最低波动组合",
     ratio: "夏普比率",
     retRisk: "回报 / 风险",
     empty: "请添加至少两个资产并点击执行模拟",
@@ -1407,15 +1545,15 @@ const zh: Translations = {
       settings: "模拟参数",
       assets: "资产输入",
       results: "组合结果",
-      chart: "前沿图表",
+      chart: "风险收益图",
       runHint: "先调整假设参数，再在资产设置确认后运行模拟。",
       resultsHint: "先查看最优组合摘要，再按需展开图表做更深入比较。",
-      chartHint: "在小屏上保持图表折叠，只有需要细看时再展开。",
+      chartHint: "需要深入比较时，可展开查看抽样组合分布。",
     },
     validation: {
       invalidInputs: "请先修正高亮资产输入，再运行模拟。",
       universeDisclosure: "在这里管理资产，至少保留两个具有有效风险与回报数据的资产。",
-      frontierDisclosure: "手机上默认折叠图表，需要深入查看有效前沿时再展开。",
+      frontierDisclosure: "手机上默认折叠图表，需要深入查看抽样分布时再展开。",
       assetCardTitle: "资产明细",
       correlationRange: "当前资产数量下，相关系数至少应为 {min}。",
     },
@@ -1434,14 +1572,14 @@ const zh: Translations = {
     put: "看跌期权 (Put)",
     buy: "买入权利",
     sell: "卖出权利",
-    payoff: "到期盈亏图",
+    payoff: "到期内在价值图",
     intrinsic: "内在价值分析",
     greeks: {
-      delta: "Delta (Δ)",
-      gamma: "Gamma (Γ)",
-      theta: "Theta (Θ)",
-      vega: "Vega (ν)",
-      rho: "Rho (ρ)",
+      delta: "Delta（标的每变动 1 单位）",
+      gamma: "Gamma（标的每变动 1 单位）",
+      theta: "Theta（每日）",
+      vega: "Vega（波动率每变动 1 个百分点）",
+      rho: "Rho（利率每变动 1 个百分点）",
     },
     validation: {
       invalidInputs: "请先修正高亮期权输入项。",
@@ -1456,9 +1594,9 @@ const zh: Translations = {
     title: "风险管理",
     subtitle: "计算在险价值 (VaR) 与预期亏损 (CVaR/Expected Shortfall)。",
     params: "风险模型参数",
-    val: "投资组合总值 ($)",
+    val: "投资组合总值",
     vol: "年化波动率 (%)",
-    horizon: "时间跨度 (天)",
+    horizon: "时间跨度（交易日）",
     conf: "置信水平",
     var: "在险价值 (VaR)",
     varDesc: "最大可能损失 (按置信度)",
@@ -1484,6 +1622,8 @@ const zh: Translations = {
     rate: "年化利率 (%)",
     term: "贷款期限 (年)",
     monthly: "首月月供",
+    firstPayment: "首期还款",
+    lastPayment: "末期还款",
     totalInt: "累计支付利息",
     totalCost: "还款总额",
     breakdown: "本息构成",
@@ -1522,7 +1662,7 @@ const zh: Translations = {
       tab: "购买力",
       title: "购买力计算器",
       desc: "查看通胀如何随时间侵蚀货币购买力。",
-      amount: "当前金额 ($)",
+      amount: "当前金额",
       inflation: "年均通胀率 (%)",
       years: "年数",
       futureValue: "未来购买力",
@@ -1548,7 +1688,7 @@ const zh: Translations = {
       tab: "CPI调整",
       title: "CPI通胀调整",
       desc: "使用消费者价格指数调整货币金额。",
-      amount: "待调整金额 ($)",
+      amount: "待调整金额",
       fromCPI: "起始CPI",
       toCPI: "目标CPI",
       adjusted: "通胀调整后金额",
@@ -1608,6 +1748,14 @@ const zh: Translations = {
     itemsDeleted: "项已删除",
     recent: "最近计算记录",
     recorded: "条计算记录",
+    filter: "筛选计算历史",
+    periodsUnit: "期",
+    yearsUnit: "年",
+    persistencePending: "更改正在等待保存，并会自动重试。",
+    persistenceFailed: "历史记录暂时无法保存，所做更改会自动重试。",
+    persistenceUnsupported: "该历史记录由更新版本的应用创建，当前版本无法修改。",
+    retrySave: "重新尝试保存",
+    saving: "正在保存历史记录更改...",
   },
   sensitivity: {
     title: "敏感性分析",
@@ -1631,6 +1779,13 @@ const zh: Translations = {
     language: "语言 / Language",
     currency: "显示币种",
     currencyDesc: "选择应用中格式化金额时使用的币种符号。",
+    currencyNames: {
+      USD: "美元",
+      CNY: "人民币",
+      EUR: "欧元",
+      GBP: "英镑",
+      JPY: "日元",
+    },
     behavior: "行为",
     behaviorDesc: "自定义计算方式",
     autoCalculate: "自动计算",
@@ -1672,9 +1827,9 @@ const zh: Translations = {
     stockVal: "股票估值",
     stockValDesc: "股利折现模型 (DDM)、CAPM 与 WACC 计算。",
     portfolioOpt: "投资组合优化",
-    portfolioOptDesc: "蒙特卡洛模拟有效前沿和最优投资组合。",
+    portfolioOptDesc: "结合确定性基准与蒙特卡洛采样，探索投资组合的风险收益权衡。",
     bondsCalc: "债券与固定收益",
-    bondsCalcDesc: "YTM、久期、凸性和债券定价计算。",
+    bondsCalcDesc: "根据给定 YTM 计算债券价格、久期与凸性。",
     optionsCalc: "期权定价",
     optionsCalcDesc: "Black-Scholes 期权定价及希腊字母分析（Delta、Gamma、Theta、Vega、Rho）。",
     riskMetrics: "风险指标",
@@ -1731,13 +1886,30 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>("en");
+  const [, setHydrated] = useState(false);
+  const [, setFormatRevision] = useState(0);
 
   useEffect(() => {
     document.documentElement.dataset.finCalcHydrated = "true";
+    queueMicrotask(() => setHydrated(true));
     const saved = safeGetItem(LANGUAGE_KEY);
     if (saved === "en" || saved === "zh") {
       queueMicrotask(() => setLanguage(saved));
     }
+  }, []);
+
+  useEffect(() => {
+    const refreshFormat = () => setFormatRevision((revision) => revision + 1);
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === CURRENCY_KEY) refreshFormat();
+    };
+
+    window.addEventListener(CURRENCY_CHANGED_EVENT, refreshFormat);
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener(CURRENCY_CHANGED_EVENT, refreshFormat);
+      window.removeEventListener("storage", handleStorage);
+    };
   }, []);
 
   const handleSetLanguage = (lang: Language) => {

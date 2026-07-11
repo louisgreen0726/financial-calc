@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import {
   calculatePortfolioPoint,
   createSeededRandom,
+  makeDeterministicBaselineWeights,
   makeRandomWeights,
   summarizePortfolioSimulations,
   type PortfolioPoint,
@@ -30,9 +31,7 @@ interface MonteCarloResult {
 }
 
 type WorkerMessage =
-  | { type: "progress"; data: number }
-  | { type: "result"; data: MonteCarloResult }
-  | { type: "error"; data: string };
+  { type: "progress"; data: number } | { type: "result"; data: MonteCarloResult } | { type: "error"; data: string };
 
 /**
  * Hook that manages Web Worker for Monte Carlo simulation with progress reporting.
@@ -73,21 +72,24 @@ export function useMonteCarloSimulation() {
         return;
       }
 
-      const results: PortfolioPoint[] = [];
-      const chunkSize = Math.max(50, Math.floor(simulationsTarget / 20));
+      const baselineWeights = makeDeterministicBaselineWeights(assets.length);
+      const results = baselineWeights.map((weights) => calculatePortfolioPoint(assets, weights, correlation, rf));
+      const randomSimulationTarget = Math.max(0, Math.floor(simulationsTarget) - baselineWeights.length);
+      const totalSimulationTarget = baselineWeights.length + randomSimulationTarget;
+      const chunkSize = Math.max(50, Math.floor(randomSimulationTarget / 20));
 
-      for (let start = 0; start < simulationsTarget; start += chunkSize) {
+      for (let start = 0; start < randomSimulationTarget; start += chunkSize) {
         if (activeRunIdRef.current !== runId) {
           return;
         }
 
-        const end = Math.min(start + chunkSize, simulationsTarget);
+        const end = Math.min(start + chunkSize, randomSimulationTarget);
         for (let i = start; i < end; i++) {
           const weights = makeRandomWeights(assets.length, random);
           results.push(calculatePortfolioPoint(assets, weights, correlation, rf));
         }
 
-        const nextProgress = Math.round((end / simulationsTarget) * 100);
+        const nextProgress = Math.round(((baselineWeights.length + end) / totalSimulationTarget) * 100);
         setProgress(nextProgress);
         options.onProgress?.(nextProgress);
 
@@ -118,13 +120,22 @@ export function useMonteCarloSimulation() {
 
       const runId = activeRunIdRef.current + 1;
       activeRunIdRef.current = runId;
+      let createdWorker: Worker | null = null;
 
       try {
         const worker = new Worker(new URL("../workers/monte-carlo.worker.ts", import.meta.url), { type: "module" });
+        createdWorker = worker;
         workerRef.current = worker;
+        const isActiveWorker = () => activeRunIdRef.current === runId && workerRef.current === worker;
+        const terminateWorker = () => {
+          worker.terminate();
+          if (workerRef.current === worker) {
+            workerRef.current = null;
+          }
+        };
 
         worker.onmessage = (event: MessageEvent<WorkerMessage>) => {
-          if (activeRunIdRef.current !== runId) {
+          if (!isActiveWorker()) {
             return;
           }
 
@@ -136,8 +147,7 @@ export function useMonteCarloSimulation() {
           }
 
           if (message.type === "result") {
-            workerRef.current?.terminate();
-            workerRef.current = null;
+            terminateWorker();
             setError(null);
             setResult(message.data);
             setIsRunning(false);
@@ -147,8 +157,7 @@ export function useMonteCarloSimulation() {
           }
 
           const nextError = new Error(message.data);
-          workerRef.current?.terminate();
-          workerRef.current = null;
+          terminateWorker();
           void computeInProcess(payload, options, runId).catch(() => {
             if (activeRunIdRef.current !== runId) return;
             setError(nextError);
@@ -158,9 +167,12 @@ export function useMonteCarloSimulation() {
         };
 
         worker.onerror = () => {
+          if (!isActiveWorker()) {
+            return;
+          }
+
           const nextError = new Error("Monte Carlo worker execution failed");
-          workerRef.current?.terminate();
-          workerRef.current = null;
+          terminateWorker();
           void computeInProcess(payload, options, runId).catch((fallbackError) => {
             if (activeRunIdRef.current !== runId) return;
             const finalError = fallbackError instanceof Error ? fallbackError : nextError;
@@ -172,6 +184,13 @@ export function useMonteCarloSimulation() {
 
         worker.postMessage(payload);
       } catch (workerError) {
+        if (createdWorker) {
+          createdWorker.terminate();
+          if (workerRef.current === createdWorker) {
+            workerRef.current = null;
+          }
+        }
+
         const nextError =
           workerError instanceof Error ? workerError : new Error("Monte Carlo worker initialization failed");
         try {

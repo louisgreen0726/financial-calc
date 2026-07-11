@@ -80,9 +80,9 @@ describe("useUrlState", () => {
     );
   });
 
-  it("exposes an absolute share URL while keeping router updates relative", () => {
+  it("exposes an absolute share URL containing only calculator state", () => {
     navigationMock.pathname = "/tvm/";
-    navigationMock.searchParams = new URLSearchParams("source=share");
+    navigationMock.searchParams = new URLSearchParams("source=share&token=secret&fc_rate=4");
 
     const { result } = renderHook(() =>
       useUrlState({
@@ -91,6 +91,24 @@ describe("useUrlState", () => {
       })
     );
 
-    expect(result.current.shareUrl).toBe(`${window.location.origin}/tvm?source=share&fc_rate=5&fc_nper=10`);
+    expect(result.current.shareUrl).toBe(`${window.location.origin}/tvm?fc_rate=4&fc_nper=10`);
+  });
+
+  it("does not leak unrelated parameters from loan calculator links", () => {
+    navigationMock.pathname = "/loans/";
+    navigationMock.searchParams = new URLSearchParams(
+      "utm_source=newsletter&token=secret&loans_amount=250000&loans_rate=4.25"
+    );
+
+    const { result } = renderHook(() =>
+      useUrlState({
+        defaultValues: { method: "CPM", amount: "500000", rate: "4.5", years: "30" },
+        prefix: "loans",
+      })
+    );
+
+    expect(result.current.shareUrl).toBe(
+      `${window.location.origin}/loans?loans_method=CPM&loans_amount=250000&loans_rate=4.25&loans_years=30`
+    );
   });
 });

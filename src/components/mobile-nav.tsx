@@ -14,8 +14,9 @@ export function MobileNav() {
 
   return (
     <nav
-      aria-label="Primary navigation"
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-card/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_rgba(15,23,42,0.12)] backdrop-blur-xl supports-[backdrop-filter]:bg-card/80 lg:hidden"
+      aria-label={t("common.primaryNavigation")}
+      data-pdf-exclude="true"
+      className="no-print fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-card/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_rgba(15,23,42,0.12)] backdrop-blur-xl supports-[backdrop-filter]:bg-card/80 lg:hidden"
     >
       <div className="grid h-16 grid-cols-4 gap-1 px-2 py-2">
         {MOBILE_PRIMARY_NAV.map(({ href, icon: Icon, labelKey }) => {

@@ -42,7 +42,8 @@ const TVM_PRESETS = {
   },
   loanPayoff: {
     labelKey: "tvm.presets.loanPayoff",
-    values: { target: "pmt", rate: "4.5", nper: "60", pmt: "0", pv: "25000", fv: "0", type: "0" as const },
+    // Five-year loan: 4.5% nominal APR / 12 = 0.375% per monthly period.
+    values: { target: "pmt", rate: "0.375", nper: "60", pmt: "0", pv: "25000", fv: "0", type: "0" as const },
   },
   collegeFund: {
     labelKey: "tvm.presets.collegeFund",
@@ -96,13 +97,22 @@ function TVMPageContent() {
   const [calculationError, setCalculationError] = useState<string | null>(null);
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
 
-  const { errors, validateField, validateAll, clearErrors } = useFormValidation();
+  const { errors, validateField, validateAll, clearErrors } = useFormValidation({
+    required: t("common.validation.required"),
+    invalidNumber: t("common.validation.invalidNumber"),
+    negative: t("common.validation.negative"),
+    zero: t("common.validation.zero"),
+    min: (value) => t("common.validation.min").replace("{value}", String(value)),
+    max: (value) => t("common.validation.max").replace("{value}", String(value)),
+  });
+
   const { addToHistory } = useCalculationHistory({ page: "tvm" });
   const [calcSteps, setCalcSteps] = useState<{
     formula: string;
     inputs: Record<string, number>;
     steps: { label: string; value: string; formula?: string }[];
     result: number;
+    formattedResult: string;
   } | null>(null);
 
   const handleInputChange = (field: string, value: string, setter: (val: string) => void) => {
@@ -124,6 +134,9 @@ function TVMPageContent() {
       options.allowZero = false;
       options.min = 1;
       options.max = MAX_PERIODS;
+    } else if (field === "pmt" || field === "pv" || field === "fv") {
+      // TVM uses cash-flow signs: deposits/payments and balances may be negative.
+      options.allowNegative = true;
     }
 
     validateField(field, value, options);
@@ -161,13 +174,13 @@ function TVMPageContent() {
       };
     }
     if (target !== "pmt") {
-      fieldsToValidate.pmt = { value: pmt, options: { required: true } };
+      fieldsToValidate.pmt = { value: pmt, options: { required: true, allowNegative: true } };
     }
     if (target !== "pv") {
-      fieldsToValidate.pv = { value: pv, options: { required: true } };
+      fieldsToValidate.pv = { value: pv, options: { required: true, allowNegative: true } };
     }
     if (target !== "fv") {
-      fieldsToValidate.fv = { value: fv, options: { required: true } };
+      fieldsToValidate.fv = { value: fv, options: { required: true, allowNegative: true } };
     }
 
     const isValid = validateAll(fieldsToValidate);
@@ -206,7 +219,7 @@ function TVMPageContent() {
           break;
       }
 
-      if (isNaN(res) || !isFinite(res)) {
+      if (isNaN(res) || !isFinite(res) || (target === "nper" && res <= 0)) {
         setCalculationError(t("tvm.invalidResult"));
         setResult(null);
       } else {
@@ -221,62 +234,62 @@ function TVMPageContent() {
 
         const stepData = {
           fv: {
-            formula: `FV = -(PV(1+r)^n + PMT ${SYMBOLS.multiply} (1+r${SYMBOLS.multiply}type) ${SYMBOLS.multiply} [((1+r)^n - 1) / r])`,
+            formula: `FV = -(PV(1+r)^n + PMT ${SYMBOLS.multiply} (1+r${SYMBOLS.multiply}T) ${SYMBOLS.multiply} [((1+r)^n - 1) / r])`,
             steps: [
               {
-                label: "Rate as decimal",
+                label: t("tvm.derivation.rateDecimal"),
                 value: `${rate}% ${SYMBOLS.arrowRight} ${r.toFixed(4)}`,
                 formula: "r = rate / 100",
               },
               {
-                label: "Compound factor",
+                label: t("tvm.derivation.compoundFactor"),
                 value: `(1+${r.toFixed(4)})^${n} = ${compoundFactor.toFixed(4)}`,
                 formula: "(1+r)^n",
               },
               {
-                label: "Future Value",
-                value: `$${res.toFixed(2)}`,
-                formula: `PV(1+r)^n + PMT ${SYMBOLS.multiply} annuity`,
+                label: t("tvm.futureValue"),
+                value: formatCurrencyLocale(res),
+                formula: `PV(1+r)^n + PMT ${SYMBOLS.multiply} AF`,
               },
             ],
           },
           pv: {
-            formula: `PV = -(FV + PMT ${SYMBOLS.multiply} (1+r${SYMBOLS.multiply}type) ${SYMBOLS.multiply} [((1+r)^n - 1) / r]) / (1+r)^n`,
+            formula: `PV = -(FV + PMT ${SYMBOLS.multiply} (1+r${SYMBOLS.multiply}T) ${SYMBOLS.multiply} [((1+r)^n - 1) / r]) / (1+r)^n`,
             steps: [
               {
-                label: "Rate as decimal",
+                label: t("tvm.derivation.rateDecimal"),
                 value: `${rate}% ${SYMBOLS.arrowRight} ${r.toFixed(4)}`,
                 formula: "r = rate / 100",
               },
               {
-                label: "Discount factor",
+                label: t("tvm.derivation.discountFactor"),
                 value: `1 / ${compoundFactor.toFixed(4)} = ${(1 / compoundFactor).toFixed(4)}`,
                 formula: "1/(1+r)^n",
               },
               {
-                label: "Present Value",
-                value: `$${res.toFixed(2)}`,
-                formula: `PV = FV/(1+r)^n + PMT ${SYMBOLS.multiply} factor`,
+                label: t("tvm.presentValue"),
+                value: formatCurrencyLocale(res),
+                formula: `PV = FV/(1+r)^n + PMT ${SYMBOLS.multiply} DF`,
               },
             ],
           },
           pmt: {
-            formula: `PMT = -(FV + PV(1+r)^n) / ((1+r${SYMBOLS.multiply}type) ${SYMBOLS.multiply} [((1+r)^n - 1) / r])`,
+            formula: `PMT = -(FV + PV(1+r)^n) / ((1+r${SYMBOLS.multiply}T) ${SYMBOLS.multiply} [((1+r)^n - 1) / r])`,
             steps: [
               {
-                label: "Rate as decimal",
+                label: t("tvm.derivation.rateDecimal"),
                 value: `${rate}% ${SYMBOLS.arrowRight} ${r.toFixed(4)}`,
                 formula: "r = rate / 100",
               },
               {
-                label: "Compound factor",
+                label: t("tvm.derivation.compoundFactor"),
                 value: `(1+${r.toFixed(4)})^${n} = ${compoundFactor.toFixed(4)}`,
                 formula: "(1+r)^n",
               },
               {
-                label: "Payment",
-                value: `$${res.toFixed(2)}`,
-                formula: `PMT = (FV-PV${SYMBOLS.multiply}factor) / annuity`,
+                label: t("tvm.payment"),
+                value: formatCurrencyLocale(res),
+                formula: `PMT = (FV-PV${SYMBOLS.multiply}DF) / AF`,
               },
             ],
           },
@@ -284,33 +297,60 @@ function TVMPageContent() {
             formula: `n = ln[(FV${SYMBOLS.multiply}r+PMT)/(PV${SYMBOLS.multiply}r+PMT)] / ln(1+r)`,
             steps: [
               {
-                label: "Rate as decimal",
+                label: t("tvm.derivation.rateDecimal"),
                 value: `${rate}% ${SYMBOLS.arrowRight} ${r.toFixed(4)}`,
                 formula: "r = rate / 100",
               },
               {
-                label: "Cash flow ratio",
-                value: `${fut}${SYMBOLS.multiply}${r}+${p} vs ${pres}${SYMBOLS.multiply}${r}+${p}`,
+                label: t("tvm.derivation.cashFlowRatio"),
+                value: `${fut}${SYMBOLS.multiply}${r}+${p} ${t("tvm.derivation.versus")} ${pres}${SYMBOLS.multiply}${r}+${p}`,
                 formula: `(FV${SYMBOLS.multiply}r+PMT)/(PV${SYMBOLS.multiply}r+PMT)`,
               },
-              { label: "Periods", value: `${res.toFixed(2)} periods`, formula: "n = ln(ratio) / ln(1+r)" },
+              {
+                label: t("tvm.periods"),
+                value: `${res.toFixed(2)} ${t("tvm.derivation.periodsUnit")}`,
+                formula: `n = ln[(FV${SYMBOLS.multiply}r+PMT)/(PV${SYMBOLS.multiply}r+PMT)] / ln(1+r)`,
+              },
             ],
           },
           rate: {
-            formula: "Iterative Newton-Raphson approximation",
+            formula: t("tvm.derivation.iterativeMethod"),
             steps: [
-              { label: "Initial guess", value: "10% per period" },
-              { label: "NPV iteration", value: `Refine until NPV ${SYMBOLS.approximately} 0` },
-              { label: "Annual rate", value: `${(res * 100).toFixed(4)}%`, formula: `rate ${SYMBOLS.multiply} 100` },
+              {
+                label: t("tvm.derivation.initialGuess"),
+                value: `10% ${t("tvm.derivation.perPeriod")}`,
+              },
+              {
+                label: t("tvm.derivation.npvIteration"),
+                value: `${t("tvm.derivation.refineUntilZero")} (NPV ${SYMBOLS.approximately} 0)`,
+              },
+              {
+                label: t("tvm.annualRate"),
+                value: `${(res * 100).toFixed(4)}%`,
+                formula: `r ${SYMBOLS.multiply} 100`,
+              },
             ],
           },
         };
 
         setCalcSteps({
           formula: stepData[target].formula,
-          inputs: { Rate: parseRequiredNumber(rate), Periods: n, PMT: p, PV: pres, FV: fut },
+          inputs: {
+            [t("tvm.annualRate")]: parseRequiredNumber(rate),
+            [t("tvm.periods")]: n,
+            [t("tvm.payment")]: p,
+            [t("tvm.presentValue")]: pres,
+            [t("tvm.futureValue")]: fut,
+            [t("tvm.paymentMode")]: paymentType,
+          },
           steps: stepData[target].steps,
           result: res,
+          formattedResult:
+            target === "rate"
+              ? `${(res * 100).toFixed(4)}%`
+              : target === "nper"
+                ? `${res.toFixed(2)} ${t("tvm.derivation.periodsUnit")}`
+                : formatCurrencyLocale(res),
         });
       }
     } catch (e) {
@@ -347,6 +387,14 @@ function TVMPageContent() {
     clearErrors();
   };
 
+  const getVisibleError = (field: TVMTarget) =>
+    field !== target && touchedFields[field] && errors[field] ? errors[field] : null;
+  const rateError = getVisibleError("rate");
+  const nperError = getVisibleError("nper");
+  const pmtError = getVisibleError("pmt");
+  const pvError = getVisibleError("pv");
+  const fvError = getVisibleError("fv");
+
   return (
     <>
       <div className="min-w-0 space-y-6">
@@ -369,183 +417,205 @@ function TVMPageContent() {
               </CardTitle>
               <CardDescription>{t("tvm.emptyState")}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label id="tvm-target-label" htmlFor="tvm-target">
-                  {t("common.solveFor")}
-                </Label>
-                <Select
-                  value={target}
-                  onValueChange={(v) => {
-                    setTarget(normalizeTVMTarget(v));
-                    setResult(null);
-                    setCalculationError(null);
-                    setCalcSteps(null);
-                  }}
-                >
-                  <SelectTrigger id="tvm-target" aria-labelledby="tvm-target-label">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="fv">{t("tvm.fv")}</SelectItem>
-                    <SelectItem value="pv">{t("tvm.pv")}</SelectItem>
-                    <SelectItem value="pmt">{t("tvm.pmt")}</SelectItem>
-                    <SelectItem value="nper">{t("tvm.nper")}</SelectItem>
-                    <SelectItem value="rate">{t("tvm.rate")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <CardContent>
+              <form
+                className="space-y-6"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  handleCalculate();
+                }}
+              >
+                <div className="space-y-2">
+                  <Label id="tvm-target-label" htmlFor="tvm-target">
+                    {t("common.solveFor")}
+                  </Label>
+                  <Select
+                    value={target}
+                    onValueChange={(v) => {
+                      setTarget(normalizeTVMTarget(v));
+                      setResult(null);
+                      setCalculationError(null);
+                      setCalcSteps(null);
+                    }}
+                  >
+                    <SelectTrigger id="tvm-target" aria-labelledby="tvm-target-label">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="fv">{t("tvm.fv")}</SelectItem>
+                      <SelectItem value="pv">{t("tvm.pv")}</SelectItem>
+                      <SelectItem value="pmt">{t("tvm.pmt")}</SelectItem>
+                      <SelectItem value="nper">{t("tvm.nper")}</SelectItem>
+                      <SelectItem value="rate">{t("tvm.rate")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="space-y-2">
-                <Label id="tvm-preset-label" htmlFor="tvm-preset">
-                  {t("tvm.quickPreset")}
-                </Label>
-                <Select onValueChange={(value) => applyPreset(value as keyof typeof TVM_PRESETS)}>
-                  <SelectTrigger id="tvm-preset" aria-labelledby="tvm-preset-label">
-                    <SelectValue placeholder={t("tvm.chooseScenario")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(TVM_PRESETS).map(([key, preset]) => (
-                      <SelectItem key={key} value={key}>
-                        {t(preset.labelKey)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                <div className="space-y-2">
+                  <Label id="tvm-preset-label" htmlFor="tvm-preset">
+                    {t("tvm.quickPreset")}
+                  </Label>
+                  <Select onValueChange={(value) => applyPreset(value as keyof typeof TVM_PRESETS)}>
+                    <SelectTrigger id="tvm-preset" aria-labelledby="tvm-preset-label">
+                      <SelectValue placeholder={t("tvm.chooseScenario")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(TVM_PRESETS).map(([key, preset]) => (
+                        <SelectItem key={key} value={key}>
+                          {t(preset.labelKey)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              {calculationError && (
-                <ErrorDisplay message={calculationError} onDismiss={() => setCalculationError(null)} className="mb-4" />
-              )}
+                {calculationError && (
+                  <ErrorDisplay
+                    message={calculationError}
+                    onDismiss={() => setCalculationError(null)}
+                    className="mb-4"
+                  />
+                )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="tvm-rate" className={target === "rate" ? "text-primary font-bold" : ""}>
-                    {t("tvm.annualRate")}
-                  </Label>
-                  <Input
-                    id="tvm-rate"
-                    type="number"
-                    value={rate}
-                    onChange={(e) => handleInputChange("rate", e.target.value, setRate)}
-                    disabled={target === "rate"}
-                    className={cn(
-                      errors.rate && touchedFields.rate && "border-destructive focus-visible:ring-destructive"
-                    )}
-                  />
-                  <ValidationError error={errors.rate && touchedFields.rate ? errors.rate : null} />
-                  <InputRangeHint
-                    min={0}
-                    max={100}
-                    unit="%"
-                    example="5"
-                    currentValue={parseRequiredNumber(rate, Number.NaN)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="tvm-nper" className={target === "nper" ? "text-primary font-bold" : ""}>
-                    {t("tvm.periods")}
-                  </Label>
-                  <Input
-                    id="tvm-nper"
-                    type="number"
-                    value={nper}
-                    onChange={(e) => handleInputChange("nper", e.target.value, setNper)}
-                    disabled={target === "nper"}
-                    className={cn(
-                      errors.nper && touchedFields.nper && "border-destructive focus-visible:ring-destructive"
-                    )}
-                  />
-                  <ValidationError error={errors.nper && touchedFields.nper ? errors.nper : null} />
-                  <InputRangeHint
-                    min={1}
-                    max={600}
-                    unit="periods"
-                    example="10"
-                    currentValue={parseRequiredNumber(nper, Number.NaN)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="tvm-pmt" className={target === "pmt" ? "text-primary font-bold" : ""}>
-                    {t("tvm.payment")}
-                  </Label>
-                  <Input
-                    id="tvm-pmt"
-                    type="number"
-                    value={pmt}
-                    onChange={(e) => handleInputChange("pmt", e.target.value, setPmt)}
-                    disabled={target === "pmt"}
-                    className={cn(
-                      errors.pmt && touchedFields.pmt && "border-destructive focus-visible:ring-destructive"
-                    )}
-                  />
-                  <ValidationError error={errors.pmt && touchedFields.pmt ? errors.pmt : null} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="tvm-pv" className={target === "pv" ? "text-primary font-bold" : ""}>
-                    {t("tvm.presentValue")}
-                  </Label>
-                  <Input
-                    id="tvm-pv"
-                    type="number"
-                    value={pv}
-                    onChange={(e) => handleInputChange("pv", e.target.value, setPv)}
-                    disabled={target === "pv"}
-                    className={cn(errors.pv && touchedFields.pv && "border-destructive focus-visible:ring-destructive")}
-                  />
-                  <ValidationError error={errors.pv && touchedFields.pv ? errors.pv : null} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="tvm-fv" className={target === "fv" ? "text-primary font-bold" : ""}>
-                    {t("tvm.futureValue")}
-                  </Label>
-                  <Input
-                    id="tvm-fv"
-                    type="number"
-                    value={fv}
-                    onChange={(e) => handleInputChange("fv", e.target.value, setFv)}
-                    disabled={target === "fv"}
-                    className={cn(errors.fv && touchedFields.fv && "border-destructive focus-visible:ring-destructive")}
-                  />
-                  <ValidationError error={errors.fv && touchedFields.fv ? errors.fv : null} />
-                </div>
-              </div>
-
-              <div className="space-y-3 pt-2">
-                <p id="tvm-payment-mode-label" className="text-sm font-medium leading-none">
-                  {t("tvm.paymentMode")}
-                </p>
-                <RadioGroup
-                  value={type}
-                  onValueChange={(v) => {
-                    setType(v as "0" | "1");
-                    setResult(null);
-                    setCalculationError(null);
-                    setCalcSteps(null);
-                  }}
-                  className="grid gap-3 sm:grid-cols-2"
-                  aria-labelledby="tvm-payment-mode-label"
-                >
-                  <div className="flex min-h-11 items-center space-x-2 rounded-xl border border-white/10 px-3 py-2">
-                    <RadioGroupItem value="0" id="end" />
-                    <Label htmlFor="end">{t("tvm.end")}</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="tvm-rate" className={target === "rate" ? "text-primary font-bold" : ""}>
+                      {t("tvm.annualRate")}
+                    </Label>
+                    <Input
+                      id="tvm-rate"
+                      type="number"
+                      value={rate}
+                      onChange={(e) => handleInputChange("rate", e.target.value, setRate)}
+                      disabled={target === "rate"}
+                      aria-invalid={Boolean(rateError)}
+                      aria-describedby={rateError ? "tvm-rate-error" : undefined}
+                      className={cn(rateError && "border-destructive focus-visible:ring-destructive")}
+                    />
+                    <ValidationError id="tvm-rate-error" error={rateError} />
+                    <InputRangeHint
+                      min={0}
+                      max={100}
+                      unit="%"
+                      example="5"
+                      currentValue={parseRequiredNumber(rate, Number.NaN)}
+                    />
                   </div>
-                  <div className="flex min-h-11 items-center space-x-2 rounded-xl border border-white/10 px-3 py-2">
-                    <RadioGroupItem value="1" id="begin" />
-                    <Label htmlFor="begin">{t("tvm.begin")}</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="tvm-nper" className={target === "nper" ? "text-primary font-bold" : ""}>
+                      {t("tvm.periods")}
+                    </Label>
+                    <Input
+                      id="tvm-nper"
+                      type="number"
+                      value={nper}
+                      onChange={(e) => handleInputChange("nper", e.target.value, setNper)}
+                      disabled={target === "nper"}
+                      aria-invalid={Boolean(nperError)}
+                      aria-describedby={nperError ? "tvm-nper-error" : undefined}
+                      className={cn(nperError && "border-destructive focus-visible:ring-destructive")}
+                    />
+                    <ValidationError id="tvm-nper-error" error={nperError} />
+                    <InputRangeHint
+                      min={1}
+                      max={600}
+                      unit={t("tvm.derivation.periodsUnit")}
+                      example="10"
+                      currentValue={parseRequiredNumber(nper, Number.NaN)}
+                    />
                   </div>
-                </RadioGroup>
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tvm-pmt" className={target === "pmt" ? "text-primary font-bold" : ""}>
+                      {t("tvm.payment")}
+                    </Label>
+                    <Input
+                      id="tvm-pmt"
+                      type="number"
+                      value={pmt}
+                      onChange={(e) => handleInputChange("pmt", e.target.value, setPmt)}
+                      disabled={target === "pmt"}
+                      aria-invalid={Boolean(pmtError)}
+                      aria-describedby={pmtError ? "tvm-pmt-error" : undefined}
+                      className={cn(pmtError && "border-destructive focus-visible:ring-destructive")}
+                    />
+                    <ValidationError id="tvm-pmt-error" error={pmtError} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tvm-pv" className={target === "pv" ? "text-primary font-bold" : ""}>
+                      {t("tvm.presentValue")}
+                    </Label>
+                    <Input
+                      id="tvm-pv"
+                      type="number"
+                      value={pv}
+                      onChange={(e) => handleInputChange("pv", e.target.value, setPv)}
+                      disabled={target === "pv"}
+                      aria-invalid={Boolean(pvError)}
+                      aria-describedby={pvError ? "tvm-pv-error" : undefined}
+                      className={cn(pvError && "border-destructive focus-visible:ring-destructive")}
+                    />
+                    <ValidationError id="tvm-pv-error" error={pvError} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tvm-fv" className={target === "fv" ? "text-primary font-bold" : ""}>
+                      {t("tvm.futureValue")}
+                    </Label>
+                    <Input
+                      id="tvm-fv"
+                      type="number"
+                      value={fv}
+                      onChange={(e) => handleInputChange("fv", e.target.value, setFv)}
+                      disabled={target === "fv"}
+                      aria-invalid={Boolean(fvError)}
+                      aria-describedby={fvError ? "tvm-fv-error" : undefined}
+                      className={cn(fvError && "border-destructive focus-visible:ring-destructive")}
+                    />
+                    <ValidationError id="tvm-fv-error" error={fvError} />
+                  </div>
+                </div>
 
-              <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
-                <Button onClick={handleCalculate} className="w-full" size="lg">
-                  {t("common.calculate")} {target.toUpperCase()}
-                </Button>
-                <Button onClick={handleClear} variant="outline" size="lg" className="gap-2 w-full sm:w-auto">
-                  <RotateCcw className="h-4 w-4" />
-                  {t("common.clear")}
-                </Button>
-              </div>
+                <div className="space-y-3 pt-2">
+                  <p id="tvm-payment-mode-label" className="text-sm font-medium leading-none">
+                    {t("tvm.paymentMode")}
+                  </p>
+                  <RadioGroup
+                    value={type}
+                    onValueChange={(v) => {
+                      setType(v as "0" | "1");
+                      setResult(null);
+                      setCalculationError(null);
+                      setCalcSteps(null);
+                    }}
+                    className="grid gap-3 sm:grid-cols-2"
+                    aria-labelledby="tvm-payment-mode-label"
+                  >
+                    <div className="flex min-h-11 items-center space-x-2 rounded-xl border border-white/10 px-3 py-2">
+                      <RadioGroupItem value="0" id="end" />
+                      <Label htmlFor="end">{t("tvm.end")}</Label>
+                    </div>
+                    <div className="flex min-h-11 items-center space-x-2 rounded-xl border border-white/10 px-3 py-2">
+                      <RadioGroupItem value="1" id="begin" />
+                      <Label htmlFor="begin">{t("tvm.begin")}</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+                  <Button type="submit" className="w-full" size="lg">
+                    {t("common.calculate")} {target.toUpperCase()}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleClear}
+                    variant="outline"
+                    size="lg"
+                    className="gap-2 w-full sm:w-auto"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    {t("common.clear")}
+                  </Button>
+                </div>
+              </form>
             </CardContent>
           </Card>
 

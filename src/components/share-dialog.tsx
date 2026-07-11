@@ -9,6 +9,7 @@ import { Share2, Link2, FileText, Copy, Download, Check } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { copyTextToClipboard } from "@/lib/clipboard";
 import { logger } from "@/lib/logger";
+import { generateShareMarkdown } from "@/lib/share-markdown";
 
 interface ShareDialogProps {
   open: boolean;
@@ -38,26 +39,20 @@ export function ShareDialog({ open, onOpenChange, title, results, inputs, shareU
     return formatCurrency(value);
   };
 
-  const formatMarkdownCell = (value: number | string): string => {
-    return String(value).replace(/\|/g, "\\|").replace(/\r?\n/g, "<br>");
-  };
-
   const generateMarkdown = (): string => {
-    const lines = [`## ${title}\n`];
-    if (inputs) {
-      lines.push(`### ${t("share.inputsHeading")}\n`);
-      lines.push(`| ${t("share.parameterLabel")} | ${t("share.valueLabel")} |\n|---|---|\n`);
-      Object.entries(inputs).forEach(([k, v]) => {
-        lines.push(`| ${formatMarkdownCell(k)} | ${formatMarkdownCell(v)} |\n`);
-      });
-      lines.push("\n");
-    }
-    lines.push(`### ${t("share.resultsHeading")}\n`);
-    lines.push(`| ${t("share.metricLabel")} | ${t("share.valueLabel")} |\n|---|---|\n`);
-    Object.entries(results).forEach(([k, v]) => {
-      lines.push(`| ${formatMarkdownCell(k)} | ${formatMarkdownCell(formatResultValue(v))} |\n`);
+    return generateShareMarkdown({
+      title,
+      results,
+      inputs,
+      labels: {
+        inputsHeading: t("share.inputsHeading"),
+        resultsHeading: t("share.resultsHeading"),
+        parameterLabel: t("share.parameterLabel"),
+        metricLabel: t("share.metricLabel"),
+        valueLabel: t("share.valueLabel"),
+      },
+      formatResultValue,
     });
-    return lines.join("");
   };
 
   const generatePlainText = (): string => {
@@ -117,7 +112,11 @@ export function ShareDialog({ open, onOpenChange, title, results, inputs, shareU
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn("sm:max-w-md", className)}>
+      <DialogContent
+        data-pdf-exclude="true"
+        className={cn("no-print sm:max-w-md", className)}
+        closeLabel={t("common.close")}
+      >
         <DialogHeader>
           <DialogTitle className="flex min-w-0 items-center gap-2">
             <Share2 className="h-5 w-5 shrink-0" />

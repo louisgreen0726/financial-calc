@@ -20,7 +20,12 @@ export const MobileSidebar = React.memo(function MobileSidebar() {
           <Menu className="w-6 h-6" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="p-0 w-[82vw] max-w-[300px] bg-background border-r flex flex-col">
+      <SheetContent
+        side="left"
+        closeLabel={t("common.close")}
+        data-pdf-exclude="true"
+        className="no-print p-0 w-[82vw] max-w-[300px] bg-background border-r flex flex-col"
+      >
         <SheetTitle className="sr-only">{t("common.toggleMenu")}</SheetTitle>
         <SheetDescription className="sr-only">{t("sidebar.search")}</SheetDescription>
         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">

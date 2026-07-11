@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { parseOptionalNumber } from "@/lib/input-utils";
 import {
   normalizePathname,
@@ -21,8 +21,41 @@ interface UseShareableUrlOptions<T extends ShareState> {
   onRestore?: (state: Partial<T>) => void;
 }
 
-export function buildShareableUrl(pathname: string, search: string, prefix: string, state: ShareState) {
-  const params = new URLSearchParams(search);
+const LOCATION_SEPARATOR = "\u0000";
+
+function subscribeToLocation(onStoreChange: () => void) {
+  if (typeof window === "undefined") {
+    return () => undefined;
+  }
+
+  window.addEventListener("popstate", onStoreChange);
+  return () => window.removeEventListener("popstate", onStoreChange);
+}
+
+function getLocationSnapshot() {
+  return typeof window === "undefined"
+    ? ""
+    : `${window.location.pathname}${LOCATION_SEPARATOR}${window.location.search}`;
+}
+
+function getServerLocationSnapshot() {
+  return "";
+}
+
+function parseLocationSnapshot(snapshot: string) {
+  const separatorIndex = snapshot.indexOf(LOCATION_SEPARATOR);
+  if (separatorIndex < 0) {
+    return { pathname: "", search: "" };
+  }
+
+  return {
+    pathname: snapshot.slice(0, separatorIndex),
+    search: snapshot.slice(separatorIndex + LOCATION_SEPARATOR.length),
+  };
+}
+
+export function buildShareableUrl(pathname: string, prefix: string, state: ShareState) {
+  const params = new URLSearchParams();
 
   for (const [key, value] of Object.entries(state)) {
     const paramKey = `${prefix}_${key}`;
@@ -68,28 +101,35 @@ export function readShareableState<T extends ShareState>(search: string, prefix:
 export function useShareableUrl<T extends ShareState>({
   prefix,
   state,
-  defaults = state,
+  defaults,
   onRestore,
 }: UseShareableUrlOptions<T>) {
-  const restoredRef = useRef(false);
+  const lastRestoreSignatureRef = useRef("");
+  const [initialDefaults] = useState<T>(() => defaults ?? state);
+  const restoreDefaults = defaults ?? initialDefaults;
+  const locationSnapshot = useSyncExternalStore(subscribeToLocation, getLocationSnapshot, getServerLocationSnapshot);
+  const location = useMemo(() => parseLocationSnapshot(locationSnapshot), [locationSnapshot]);
 
   useEffect(() => {
-    if (!onRestore || restoredRef.current || typeof window === "undefined") {
+    if (!onRestore || !locationSnapshot) {
       return;
     }
 
-    restoredRef.current = true;
-    const restored = readShareableState(window.location.search, prefix, defaults);
-    if (Object.keys(restored).length > 0) {
-      onRestore(restored);
+    const restoreSignature = `${prefix}${LOCATION_SEPARATOR}${locationSnapshot}`;
+    if (lastRestoreSignatureRef.current === restoreSignature) {
+      return;
     }
-  }, [defaults, onRestore, prefix]);
+
+    lastRestoreSignatureRef.current = restoreSignature;
+    const restored = readShareableState(location.search, prefix, restoreDefaults);
+    onRestore({ ...restoreDefaults, ...restored });
+  }, [location.search, locationSnapshot, onRestore, prefix, restoreDefaults]);
 
   return useMemo(() => {
-    if (typeof window === "undefined") {
+    if (!location.pathname) {
       return "";
     }
 
-    return buildShareableUrl(window.location.pathname, window.location.search, prefix, state);
-  }, [prefix, state]);
+    return buildShareableUrl(location.pathname, prefix, state);
+  }, [location.pathname, prefix, state]);
 }

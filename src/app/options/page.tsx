@@ -18,6 +18,7 @@ import { parseOptionalNumber } from "@/lib/input-utils";
 import { OptionsInputSchema } from "@/lib/validation";
 import { ErrorDisplay, ValidationError } from "@/components/ui/error-display";
 import { useShareableUrl } from "@/hooks/use-shareable-url";
+import { buildOptionPayoffData, getOptionPayoffDomain } from "@/lib/chart-data";
 
 export default function OptionsPage() {
   const { t } = useLanguage();
@@ -81,7 +82,13 @@ export default function OptionsPage() {
 
   const results = useMemo(() => {
     if (hasValidationErrors) {
-      const emptyGreeks = { delta: 0, gamma: 0, theta: 0, vega: 0, rho: 0 };
+      const emptyGreeks = {
+        delta: Number.NaN,
+        gamma: Number.NaN,
+        theta: Number.NaN,
+        vega: Number.NaN,
+        rho: Number.NaN,
+      };
       return { callPrice: Number.NaN, putPrice: Number.NaN, callGreeks: emptyGreeks, putGreeks: emptyGreeks };
     }
 
@@ -99,11 +106,21 @@ export default function OptionsPage() {
 
     return { callPrice, putPrice, callGreeks, putGreeks };
   }, [hasValidationErrors, parsedInputs]);
-  const greeksAreFinite = [...Object.values(results.callGreeks), ...Object.values(results.putGreeks)].every(
-    Number.isFinite
-  );
-  const resultReady =
-    !hasValidationErrors && Number.isFinite(results.callPrice) && Number.isFinite(results.putPrice) && greeksAreFinite;
+  const resultReady = !hasValidationErrors && Number.isFinite(results.callPrice) && Number.isFinite(results.putPrice);
+  const formatGreek = (value: number) => (Number.isFinite(value) ? value.toFixed(4) : t("common.notAvailable"));
+  const exportResults = useMemo(() => {
+    const serializeGreeks = (greeks: typeof results.callGreeks) =>
+      Object.fromEntries(
+        Object.entries(greeks).map(([key, value]) => [key, Number.isFinite(value) ? value : t("common.notAvailable")])
+      );
+
+    return {
+      callPrice: results.callPrice,
+      putPrice: results.putPrice,
+      callGreeks: serializeGreeks(results.callGreeks),
+      putGreeks: serializeGreeks(results.putGreeks),
+    };
+  }, [results, t]);
 
   const { addToHistory } = useCalculationHistory({ page: "options" });
 
@@ -122,18 +139,12 @@ export default function OptionsPage() {
       return [];
     }
 
-    const K = parsedInputs.K;
-    const S_center = parsedInputs.S;
-    const data = [];
-    for (let s = S_center * 0.5; s <= S_center * 1.5; s += S_center * 0.05) {
-      data.push({
-        spot: s,
-        intrinsicCall: Math.max(s - K, 0),
-        intrinsicPut: Math.max(K - s, 0),
-      });
-    }
-    return data;
+    return buildOptionPayoffData(parsedInputs.S, parsedInputs.K);
   }, [parsedInputs, resultReady]);
+  const chartSpotDomain = useMemo(
+    () => getOptionPayoffDomain(parsedInputs.S ?? 0, parsedInputs.K ?? 0),
+    [parsedInputs.K, parsedInputs.S]
+  );
 
   return (
     <>
@@ -166,8 +177,10 @@ export default function OptionsPage() {
                   }}
                   type="number"
                   min="0"
+                  aria-invalid={Boolean(validation.S)}
+                  aria-describedby={validation.S ? "opt-spot-error" : undefined}
                 />
-                <ValidationError error={validation.S as string | null} />
+                <ValidationError id="opt-spot-error" error={validation.S as string | null} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="opt-strike">{t("options.strike")}</Label>
@@ -180,8 +193,10 @@ export default function OptionsPage() {
                   }}
                   type="number"
                   min="0"
+                  aria-invalid={Boolean(validation.K)}
+                  aria-describedby={validation.K ? "opt-strike-error" : undefined}
                 />
-                <ValidationError error={validation.K as string | null} />
+                <ValidationError id="opt-strike-error" error={validation.K as string | null} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="opt-time">{t("options.time")}</Label>
@@ -195,8 +210,10 @@ export default function OptionsPage() {
                   type="number"
                   min="0"
                   step="0.1"
+                  aria-invalid={Boolean(validation.t)}
+                  aria-describedby={validation.t ? "opt-time-error" : undefined}
                 />
-                <ValidationError error={validation.t as string | null} />
+                <ValidationError id="opt-time-error" error={validation.t as string | null} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="opt-rate">{t("options.rate")}</Label>
@@ -209,8 +226,10 @@ export default function OptionsPage() {
                   }}
                   type="number"
                   step="0.1"
+                  aria-invalid={Boolean(validation.r)}
+                  aria-describedby={validation.r ? "opt-rate-error" : undefined}
                 />
-                <ValidationError error={validation.r as string | null} />
+                <ValidationError id="opt-rate-error" error={validation.r as string | null} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="opt-vol">{t("options.vol")}</Label>
@@ -224,8 +243,10 @@ export default function OptionsPage() {
                   type="number"
                   min="0"
                   step="1"
+                  aria-invalid={Boolean(validation.sigma)}
+                  aria-describedby={validation.sigma ? "opt-vol-error" : undefined}
                 />
-                <ValidationError error={validation.sigma as string | null} />
+                <ValidationError id="opt-vol-error" error={validation.sigma as string | null} />
               </div>
             </CardContent>
           </Card>
@@ -245,7 +266,7 @@ export default function OptionsPage() {
                     inputs={{ spot, strike, time, rate, volatility }}
                     shareUrl={shareUrl}
                     exportData={chartData as unknown as Record<string, unknown>[]}
-                    exportJson={results}
+                    exportJson={exportResults}
                     pdfElementId="options-report-content"
                     pdfFilename="options-analysis"
                     pdfTitle={t("options.title")}
@@ -265,23 +286,23 @@ export default function OptionsPage() {
                       <div className="grid grid-cols-1 gap-y-2 text-sm sm:grid-cols-2 sm:gap-x-4">
                         <div className="flex justify-between gap-3">
                           <span className="min-w-0">{t("options.greeks.delta")}</span>
-                          <span className="font-mono">{results.callGreeks.delta.toFixed(4)}</span>
+                          <span className="font-mono">{formatGreek(results.callGreeks.delta)}</span>
                         </div>
                         <div className="flex justify-between gap-3">
                           <span className="min-w-0">{t("options.greeks.gamma")}</span>
-                          <span className="font-mono">{results.callGreeks.gamma.toFixed(4)}</span>
+                          <span className="font-mono">{formatGreek(results.callGreeks.gamma)}</span>
                         </div>
                         <div className="flex justify-between gap-3">
                           <span className="min-w-0">{t("options.greeks.theta")}</span>
-                          <span className="font-mono">{results.callGreeks.theta.toFixed(4)}</span>
+                          <span className="font-mono">{formatGreek(results.callGreeks.theta)}</span>
                         </div>
                         <div className="flex justify-between gap-3">
                           <span className="min-w-0">{t("options.greeks.vega")}</span>
-                          <span className="font-mono">{results.callGreeks.vega.toFixed(4)}</span>
+                          <span className="font-mono">{formatGreek(results.callGreeks.vega)}</span>
                         </div>
                         <div className="flex justify-between gap-3">
                           <span className="min-w-0">{t("options.greeks.rho")}</span>
-                          <span className="font-mono">{results.callGreeks.rho.toFixed(4)}</span>
+                          <span className="font-mono">{formatGreek(results.callGreeks.rho)}</span>
                         </div>
                       </div>
                     </CardContent>
@@ -298,23 +319,23 @@ export default function OptionsPage() {
                       <div className="grid grid-cols-1 gap-y-2 text-sm sm:grid-cols-2 sm:gap-x-4">
                         <div className="flex justify-between gap-3">
                           <span className="min-w-0">{t("options.greeks.delta")}</span>
-                          <span className="font-mono">{results.putGreeks.delta.toFixed(4)}</span>
+                          <span className="font-mono">{formatGreek(results.putGreeks.delta)}</span>
                         </div>
                         <div className="flex justify-between gap-3">
                           <span className="min-w-0">{t("options.greeks.gamma")}</span>
-                          <span className="font-mono">{results.putGreeks.gamma.toFixed(4)}</span>
+                          <span className="font-mono">{formatGreek(results.putGreeks.gamma)}</span>
                         </div>
                         <div className="flex justify-between gap-3">
                           <span className="min-w-0">{t("options.greeks.theta")}</span>
-                          <span className="font-mono">{results.putGreeks.theta.toFixed(4)}</span>
+                          <span className="font-mono">{formatGreek(results.putGreeks.theta)}</span>
                         </div>
                         <div className="flex justify-between gap-3">
                           <span className="min-w-0">{t("options.greeks.vega")}</span>
-                          <span className="font-mono">{results.putGreeks.vega.toFixed(4)}</span>
+                          <span className="font-mono">{formatGreek(results.putGreeks.vega)}</span>
                         </div>
                         <div className="flex justify-between gap-3">
                           <span className="min-w-0">{t("options.greeks.rho")}</span>
-                          <span className="font-mono">{results.putGreeks.rho.toFixed(4)}</span>
+                          <span className="font-mono">{formatGreek(results.putGreeks.rho)}</span>
                         </div>
                       </div>
                     </CardContent>
@@ -328,7 +349,7 @@ export default function OptionsPage() {
                     <CardDescription>{t("options.intrinsic")}</CardDescription>
                   </CardHeader>
                   <CardContent className="flex-1 min-h-0">
-                    <ClientOnlyChart>
+                    <ClientOnlyChart ariaLabel={`${t("options.payoff")}. ${t("options.intrinsic")}`}>
                       {({ width, height }) => (
                         <LineChart
                           width={width}
@@ -338,7 +359,9 @@ export default function OptionsPage() {
                         >
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                           <XAxis
+                            type="number"
                             dataKey="spot"
+                            domain={chartSpotDomain}
                             stroke="hsl(var(--muted-foreground))"
                             fontSize={10}
                             minTickGap={18}
@@ -351,6 +374,7 @@ export default function OptionsPage() {
                           />
                           <ReferenceLine
                             x={parsedInputs.K ?? 0}
+                            ifOverflow="extendDomain"
                             stroke="hsl(var(--muted-foreground))"
                             strokeDasharray="3 3"
                             label="K"

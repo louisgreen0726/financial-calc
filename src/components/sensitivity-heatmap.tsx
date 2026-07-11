@@ -2,16 +2,20 @@
 
 import * as React from "react";
 import { useTheme } from "@/components/theme-provider";
+import { cn } from "@/lib/utils";
 
 type Props = {
   data: number[][];
   rowLabels: string[];
   colLabels: string[];
   formatCell: (v: number) => string;
+  caption: string;
+  cornerLabel: string;
+  className?: string;
 };
 
 // Simple 2D heatmap table with colored cells based on value magnitude
-export function SensitivityHeatmap({ data, rowLabels, colLabels, formatCell }: Props) {
+export function SensitivityHeatmap({ data, rowLabels, colLabels, formatCell, caption, cornerLabel, className }: Props) {
   // Determine min/max for color scaling
   let min = Number.POSITIVE_INFINITY;
   let max = Number.NEGATIVE_INFINITY;
@@ -44,15 +48,20 @@ export function SensitivityHeatmap({ data, rowLabels, colLabels, formatCell }: P
   };
 
   return (
-    <div className="max-w-full overflow-x-auto rounded-lg bg-blue-50 p-1 dark:bg-blue-950">
+    <div className={cn("max-w-full overflow-x-auto rounded-lg bg-blue-50 p-1 dark:bg-blue-950", className)}>
       <table className="min-w-[640px] border-collapse overflow-hidden rounded-lg">
+        <caption className="sr-only">{caption}</caption>
         <thead>
           <tr className="bg-muted">
-            <th className="px-4 py-3 text-left text-sm font-semibold text-muted-foreground min-w-[80px]">
-              YTM \ Years
+            <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-muted-foreground min-w-[80px]">
+              {cornerLabel}
             </th>
             {colLabels.map((cl) => (
-              <th key={cl} className="px-4 py-3 text-center text-sm font-semibold text-muted-foreground min-w-[80px]">
+              <th
+                key={cl}
+                scope="col"
+                className="px-4 py-3 text-center text-sm font-semibold text-muted-foreground min-w-[80px]"
+              >
                 {cl}
               </th>
             ))}
@@ -61,7 +70,9 @@ export function SensitivityHeatmap({ data, rowLabels, colLabels, formatCell }: P
         <tbody className="divide-y divide-border">
           {data.map((row, rowIndex) => (
             <tr key={`row-${rowIndex}`} className="hover:bg-muted/50 transition-colors">
-              <td className="px-4 py-3 text-sm font-medium text-muted-foreground bg-muted/30">{rowLabels[rowIndex]}</td>
+              <th scope="row" className="px-4 py-3 text-left text-sm font-medium text-muted-foreground bg-muted/30">
+                {rowLabels[rowIndex]}
+              </th>
               {row.map((val, colIndex) => (
                 <td
                   key={`cell-${rowIndex}-${colIndex}`}

@@ -46,11 +46,17 @@ export const PERCENTAGE_DECIMAL_PLACES = 2;
 // LocalStorage keys
 export const STORAGE_PREFIX = "financial-calc-";
 export const HISTORY_KEY = `${STORAGE_PREFIX}history`;
+export const FAVORITES_KEY = `${STORAGE_PREFIX}favorites`;
+export const HISTORY_CLEAR_GENERATION_KEY = `${STORAGE_PREFIX}history-clear-generation`;
+export const FAVORITES_CLEAR_GENERATION_KEY = `${STORAGE_PREFIX}favorites-clear-generation`;
 export const SETTINGS_KEY = `${STORAGE_PREFIX}settings`;
 export const DRAFTS_KEY = `${STORAGE_PREFIX}drafts`;
 export const PENDING_RESTORE_KEY = `${STORAGE_PREFIX}pending-restore`;
 export const LANGUAGE_KEY = `${STORAGE_PREFIX}language`;
 export const CURRENCY_KEY = `${STORAGE_PREFIX}currency`;
+export const HISTORY_CHANGED_EVENT = "financial-calc-history-changed";
+export const FAVORITES_CHANGED_EVENT = "financial-calc-favorites-changed";
+export const CURRENCY_CHANGED_EVENT = "financial-calc-currency-changed";
 
 // URL parameters
 export const URL_PARAM_PREFIX = "fc_";
@@ -68,6 +74,19 @@ export const KEYBOARD_SHORTCUTS = {
 // History limits
 export const MAX_HISTORY_ITEMS = 50;
 export const HISTORY_EXPIRY_DAYS = 30;
+
+export const CALCULATOR_PAGE_IDS = [
+  "tvm",
+  "cash-flow",
+  "equity",
+  "portfolio",
+  "bonds",
+  "options",
+  "risk",
+  "loans",
+  "macro",
+] as const;
+export type CalculatorPageId = (typeof CALCULATOR_PAGE_IDS)[number];
 
 // Page default values
 export const TVM_DEFAULTS = {

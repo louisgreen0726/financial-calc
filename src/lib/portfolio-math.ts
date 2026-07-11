@@ -8,7 +8,7 @@ export interface PortfolioAssetInput {
 export interface PortfolioPoint {
   ret: number;
   risk: number;
-  sharpe: number;
+  sharpe: number | null;
   weights: number[];
 }
 
@@ -56,13 +56,26 @@ export function isValidEqualCorrelation(correlation: number, assetCount: number)
 }
 
 export function makeRandomWeights(assetCount: number, random: () => number = Math.random): number[] {
-  if (!Number.isFinite(assetCount) || assetCount <= 0) {
+  if (!Number.isInteger(assetCount) || assetCount <= 0) {
     return [];
   }
 
   const raw = Array.from({ length: assetCount }, () => -Math.log(Math.max(random(), 1e-15)));
   const sum = raw.reduce((acc, value) => acc + value, 0) || 1;
   return raw.map((weight) => weight / sum);
+}
+
+export function makeDeterministicBaselineWeights(assetCount: number): number[][] {
+  if (!Number.isInteger(assetCount) || assetCount <= 0) {
+    return [];
+  }
+
+  const equalWeight = Array.from({ length: assetCount }, () => 1 / assetCount);
+  const corners = Array.from({ length: assetCount }, (_, selectedIndex) =>
+    Array.from({ length: assetCount }, (__, index) => (index === selectedIndex ? 1 : 0))
+  );
+
+  return [equalWeight, ...corners];
 }
 
 export function calculatePortfolioPoint(
@@ -75,6 +88,10 @@ export function calculatePortfolioPoint(
     throw new Error("Assets and weights must be non-empty arrays with matching lengths.");
   }
 
+  if (!Number.isFinite(riskFreeRate)) {
+    throw new Error("Risk-free rate must be finite.");
+  }
+
   if (
     assets.some((asset) => !Number.isFinite(asset.return) || !Number.isFinite(asset.risk) || asset.risk < 0) ||
     weights.some((weight) => !Number.isFinite(weight) || weight < 0)
@@ -82,11 +99,19 @@ export function calculatePortfolioPoint(
     throw new Error("Portfolio assets and weights must contain finite non-negative risk and weight values.");
   }
 
+  const weightSum = weights.reduce((sum, weight) => sum + weight, 0);
+  if (Math.abs(weightSum - 1) > 1e-10) {
+    throw new Error("Portfolio weights must sum to one.");
+  }
+
   if (!isValidEqualCorrelation(correlation, assets.length)) {
     throw new Error("Correlation is outside the valid range for this asset count.");
   }
 
   const ret = weights.reduce((acc, weight, index) => acc + weight * assets[index].return, 0);
+  if (!Number.isFinite(ret)) {
+    throw new Error("Portfolio expected return overflowed the supported numeric range.");
+  }
   let variance = 0;
 
   for (let a = 0; a < assets.length; a++) {
@@ -96,12 +121,13 @@ export function calculatePortfolioPoint(
     }
   }
 
-  if (variance < -1e-8) {
+  if (!Number.isFinite(variance) || variance < -1e-8) {
     throw new Error("Portfolio covariance matrix produced negative variance.");
   }
 
   const risk = Math.sqrt(Math.max(0, variance));
-  const sharpe = risk > 0 ? (ret - riskFreeRate) / risk : 0;
+  const excessReturn = ret - riskFreeRate;
+  const sharpe = risk > 0 ? excessReturn / risk : null;
 
   return { ret, risk, sharpe, weights };
 }
@@ -111,7 +137,7 @@ export function summarizePortfolioSimulations(simulations: PortfolioPoint[]): Po
   let bestSharpe = -Infinity;
 
   for (const point of simulations) {
-    if (point.sharpe > bestSharpe) {
+    if (point.sharpe !== null && Number.isFinite(point.sharpe) && (optimal === null || point.sharpe > bestSharpe)) {
       bestSharpe = point.sharpe;
       optimal = point;
     }

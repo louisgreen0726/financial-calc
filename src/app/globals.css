@@ -52,30 +52,29 @@
   --popover: 0 0% 100%;
   --popover-foreground: 222 47% 11%;
 
-  /* Vibrant Teal Primary */
-  --primary: 173 86% 28%;
+  /* Accessible teal primary */
+  --primary: 173 90% 23%;
   --primary-foreground: 210 40% 98%;
 
   --secondary: 214 32% 91%;
   --secondary-foreground: 222 47% 11%;
 
   --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
+  --muted-foreground: 215 20% 44%;
 
   --accent: 210 40% 96.1%;
   --accent-foreground: 222.2 47.4% 11.2%;
 
-  /* Soft Red */
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
+  --destructive: 0 72% 42%;
+  --destructive-foreground: 0 0% 100%;
 
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 173 86% 28%;
+  --border: 215 25% 58%;
+  --input: 215 25% 58%;
+  --ring: 173 90% 23%;
 
   --radius: 0.5rem;
 
-  --chart-1: 173 86% 28%;
+  --chart-1: 173 90% 23%;
   --chart-2: 210 84% 36%;
   --chart-3: 25 78% 42%;
   --chart-4: 276 52% 42%;
@@ -106,12 +105,11 @@
   --accent: 217.2 32.6% 17.5%;
   --accent-foreground: 210 40% 98%;
 
-  /* Soft Red for dark mode */
-  --destructive: 0 62.8% 50.6%;
-  --destructive-foreground: 210 40% 98%;
+  --destructive: 0 75% 60%;
+  --destructive-foreground: 222 47% 11%;
 
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
+  --border: 215 20% 42%;
+  --input: 215 20% 42%;
   --ring: 173 80% 45%;
 
   --chart-1: 173 80% 45%;
@@ -300,14 +298,32 @@ textarea,
 
 /* Print styles */
 @media print {
+  @page {
+    margin: 12mm;
+  }
+
   nav,
   header,
   footer,
   button,
   [role="button"],
-  .no-print {
+  .no-print,
+  [data-pdf-exclude="true"],
+  [data-slot="dialog-overlay"],
+  [data-slot="dialog-content"],
+  [data-slot="sheet-overlay"],
+  [data-slot="sheet-content"] {
     display: none !important;
   }
+
+  html,
+  body,
+  html body[data-scroll-locked] {
+    width: 100% !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
   body,
   * {
     background: white !important;
@@ -319,18 +335,62 @@ textarea,
     backdrop-filter: none !important;
     box-shadow: none !important;
   }
-  main {
+
+  .app-shell {
     display: block !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    isolation: auto !important;
   }
+
+  .app-shell::before {
+    display: none !important;
+  }
+
+  [data-app-content="true"] {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    padding-left: 0 !important;
+  }
+
+  main,
+  [data-print-content="true"] {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  [data-pdf-expand="true"] {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
   [class*="card"],
   [class*="Card"] {
     border: 1px solid #ccc !important;
     break-inside: avoid;
   }
+
+  [data-slot="card"][data-pdf-expand="true"] {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  [data-pdf-expand="true"] thead {
+    position: static !important;
+  }
+
   svg,
   canvas {
     max-width: 100% !important;
   }
+
   a[href]::after {
     content: " (" attr(href) ")";
     font-size: 0.8em;

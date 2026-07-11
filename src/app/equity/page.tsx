@@ -179,7 +179,7 @@ export default function EquityPage() {
     Object.keys(ddmValidation).length > 0;
   const capmReady = Object.keys(capmValidation).length === 0 && Number.isFinite(capmResult);
   const waccReady = Object.keys(waccValidation).length === 0 && Number.isFinite(waccResult);
-  const ddmReady = Object.keys(ddmValidation).length === 0 && Number.isFinite(ddmResult) && ddmResult > 0;
+  const ddmReady = Object.keys(ddmValidation).length === 0 && Number.isFinite(ddmResult) && ddmResult >= 0;
 
   const markInteracted = (section: EquitySection) => {
     setInteractedSections((prev) => ({ ...prev, [section]: true }));
@@ -291,9 +291,13 @@ export default function EquityPage() {
                     }}
                     onBlur={() => setShowErrors(true)}
                     type="number"
-                    aria-describedby="capm-rf-help"
+                    aria-invalid={Boolean(showErrors && capmValidation.rf)}
+                    aria-describedby={showErrors && capmValidation.rf ? "capm-rf-help capm-rf-error" : "capm-rf-help"}
                   />
-                  <ValidationError error={showErrors ? (capmValidation.rf as string | null) : null} />
+                  <ValidationError
+                    id="capm-rf-error"
+                    error={showErrors ? (capmValidation.rf as string | null) : null}
+                  />
                   <p id="capm-rf-help" className="sr-only">
                     Risk-free rate used in the CAPM calculation.
                   </p>
@@ -310,9 +314,15 @@ export default function EquityPage() {
                     onBlur={() => setShowErrors(true)}
                     type="number"
                     step="0.1"
-                    aria-describedby="capm-beta-help"
+                    aria-invalid={Boolean(showErrors && capmValidation.beta)}
+                    aria-describedby={
+                      showErrors && capmValidation.beta ? "capm-beta-help capm-beta-error" : "capm-beta-help"
+                    }
                   />
-                  <ValidationError error={showErrors ? (capmValidation.beta as string | null) : null} />
+                  <ValidationError
+                    id="capm-beta-error"
+                    error={showErrors ? (capmValidation.beta as string | null) : null}
+                  />
                   <p id="capm-beta-help" className="sr-only">
                     CAPM beta input representing the asset&apos;s sensitivity to market movements.
                   </p>
@@ -328,9 +338,13 @@ export default function EquityPage() {
                     }}
                     onBlur={() => setShowErrors(true)}
                     type="number"
-                    aria-describedby="capm-rm-help"
+                    aria-invalid={Boolean(showErrors && capmValidation.rm)}
+                    aria-describedby={showErrors && capmValidation.rm ? "capm-rm-help capm-rm-error" : "capm-rm-help"}
                   />
-                  <ValidationError error={showErrors ? (capmValidation.rm as string | null) : null} />
+                  <ValidationError
+                    id="capm-rm-error"
+                    error={showErrors ? (capmValidation.rm as string | null) : null}
+                  />
                   <p id="capm-rm-help" className="sr-only">
                     CAPM market return input used in the calculation of expected return.
                   </p>
@@ -400,8 +414,13 @@ export default function EquityPage() {
                       }}
                       onBlur={() => setShowErrors(true)}
                       type="number"
+                      aria-invalid={Boolean(showErrors && waccValidation.equityValue)}
+                      aria-describedby={showErrors && waccValidation.equityValue ? "wacc-equity-error" : undefined}
                     />
-                    <ValidationError error={showErrors ? (waccValidation.equityValue as string | null) : null} />
+                    <ValidationError
+                      id="wacc-equity-error"
+                      error={showErrors ? (waccValidation.equityValue as string | null) : null}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="wacc-cost-eq">{t("equity.wacc.costEq")}</Label>
@@ -414,8 +433,13 @@ export default function EquityPage() {
                       }}
                       onBlur={() => setShowErrors(true)}
                       type="number"
+                      aria-invalid={Boolean(showErrors && waccValidation.costEquity)}
+                      aria-describedby={showErrors && waccValidation.costEquity ? "wacc-cost-equity-error" : undefined}
                     />
-                    <ValidationError error={showErrors ? (waccValidation.costEquity as string | null) : null} />
+                    <ValidationError
+                      id="wacc-cost-equity-error"
+                      error={showErrors ? (waccValidation.costEquity as string | null) : null}
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -430,8 +454,13 @@ export default function EquityPage() {
                       }}
                       onBlur={() => setShowErrors(true)}
                       type="number"
+                      aria-invalid={Boolean(showErrors && waccValidation.debtValue)}
+                      aria-describedby={showErrors && waccValidation.debtValue ? "wacc-debt-error" : undefined}
                     />
-                    <ValidationError error={showErrors ? (waccValidation.debtValue as string | null) : null} />
+                    <ValidationError
+                      id="wacc-debt-error"
+                      error={showErrors ? (waccValidation.debtValue as string | null) : null}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="wacc-cost-debt">{t("equity.wacc.costDebt")}</Label>
@@ -444,8 +473,13 @@ export default function EquityPage() {
                       }}
                       onBlur={() => setShowErrors(true)}
                       type="number"
+                      aria-invalid={Boolean(showErrors && waccValidation.costDebt)}
+                      aria-describedby={showErrors && waccValidation.costDebt ? "wacc-cost-debt-error" : undefined}
                     />
-                    <ValidationError error={showErrors ? (waccValidation.costDebt as string | null) : null} />
+                    <ValidationError
+                      id="wacc-cost-debt-error"
+                      error={showErrors ? (waccValidation.costDebt as string | null) : null}
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -459,8 +493,13 @@ export default function EquityPage() {
                     }}
                     onBlur={() => setShowErrors(true)}
                     type="number"
+                    aria-invalid={Boolean(showErrors && waccValidation.taxRate)}
+                    aria-describedby={showErrors && waccValidation.taxRate ? "wacc-tax-error" : undefined}
                   />
-                  <ValidationError error={showErrors ? (waccValidation.taxRate as string | null) : null} />
+                  <ValidationError
+                    id="wacc-tax-error"
+                    error={showErrors ? (waccValidation.taxRate as string | null) : null}
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -532,8 +571,13 @@ export default function EquityPage() {
                         onBlur={() => setShowErrors(true)}
                         type="number"
                         step="0.01"
+                        aria-invalid={Boolean(showErrors && ddmValidation.d1)}
+                        aria-describedby={showErrors && ddmValidation.d1 ? "ddm-div-error" : undefined}
                       />
-                      <ValidationError error={showErrors ? (ddmValidation.d1 as string | null) : null} />
+                      <ValidationError
+                        id="ddm-div-error"
+                        error={showErrors ? (ddmValidation.d1 as string | null) : null}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="ddm-req">{t("equity.ddm.req")}</Label>
@@ -546,8 +590,13 @@ export default function EquityPage() {
                         }}
                         onBlur={() => setShowErrors(true)}
                         type="number"
+                        aria-invalid={Boolean(showErrors && ddmValidation.r)}
+                        aria-describedby={showErrors && ddmValidation.r ? "ddm-req-error" : undefined}
                       />
-                      <ValidationError error={showErrors ? (ddmValidation.r as string | null) : null} />
+                      <ValidationError
+                        id="ddm-req-error"
+                        error={showErrors ? (ddmValidation.r as string | null) : null}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="ddm-growth">{t("equity.ddm.g")}</Label>
@@ -560,8 +609,13 @@ export default function EquityPage() {
                         }}
                         onBlur={() => setShowErrors(true)}
                         type="number"
+                        aria-invalid={Boolean(showErrors && ddmValidation.g)}
+                        aria-describedby={showErrors && ddmValidation.g ? "ddm-growth-error" : undefined}
                       />
-                      <ValidationError error={showErrors ? (ddmValidation.g as string | null) : null} />
+                      <ValidationError
+                        id="ddm-growth-error"
+                        error={showErrors ? (ddmValidation.g as string | null) : null}
+                      />
                     </div>
                   </div>
                 </ResponsiveDisclosure>

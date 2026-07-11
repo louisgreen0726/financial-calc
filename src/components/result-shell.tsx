@@ -49,7 +49,7 @@ export function ResultShell({
               <div className="flex flex-col items-center justify-center text-center py-8">
                 <h3 className="text-sm font-medium text-muted-foreground">{emptyTitle ?? title}</h3>
                 {emptyDescription ? (
-                  <p className="mt-2 text-sm text-muted-foreground/80 max-w-sm">{emptyDescription}</p>
+                  <p className="mt-2 text-sm text-muted-foreground max-w-sm">{emptyDescription}</p>
                 ) : null}
               </div>
             )}
@@ -57,7 +57,11 @@ export function ResultShell({
         </Card>
       ) : (
         <>
-          {summary}
+          {summary ? (
+            <div role="status" aria-live="polite" aria-atomic="true" data-result-status>
+              {summary}
+            </div>
+          ) : null}
           {details}
           {advanced}
         </>

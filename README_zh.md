@@ -31,10 +31,10 @@ Financial Calc 是一个基于 Next.js 16、React 19、TypeScript、Tailwind CSS
 - **Cash Flow**：NPV、IRR、投资回收期
 - **Equity**：CAPM、WACC、DDM
 - **Bonds**：债券定价、久期、凸性、收益率曲线、敏感性热力图
-- **Portfolio**：蒙特卡洛有效前沿模拟，支持 worker 与客户端回退
+- **Portfolio**：可复现的蒙特卡洛风险收益抽样，支持 worker 与客户端回退
 - **Options**：Black-Scholes 定价与 Greeks
 - **Risk**：VaR、CVaR、分布视图
-- **Loans**：等额本息 / 等额本金摊销表，表格使用虚拟滚动
+- **Loans**：等额本息 / 等额本金摊销表，完整表格支持辅助技术读取
 - **Macro**：通胀、购买力、实际利率、CPI 调整、PPP 汇率
 
 ### 辅助页面
@@ -54,7 +54,9 @@ Financial Calc 是一个基于 Next.js 16、React 19、TypeScript、Tailwind CSS
 - 从历史或分享链接恢复输入时，不会把恢复动作重新记为新的计算历史
 - TVM 在切换目标、付款模式或输入时会清理旧结果和旧计算步骤
 - 移动端 sidebar 满足 Radix Dialog 的 title/description 要求，点击导航后自动关闭
-- PWA metadata、manifest、icon 与 service worker scope 支持 `NEXT_PUBLIC_BASE_PATH`
+- PWA metadata、安装图标、构建生成的 precache 资源与 service worker 缓存支持 `NEXT_PUBLIC_BASE_PATH`
+- Monte Carlo 使用 Webpack 正确构建的 Worker，并固定加入等权组合与所有单资产角点基线
+- PDF 依赖只在用户实际发起 PDF 导出时加载
 - Recharts tooltip formatter 与自动计算 hook 已适配当前更严格的依赖类型与 lint 规则
 
 ## 技术栈
@@ -65,13 +67,12 @@ Financial Calc 是一个基于 Next.js 16、React 19、TypeScript、Tailwind CSS
 - **样式**：Tailwind CSS 4、shadcn/ui、Radix UI
 - **图表与动效**：Recharts、Framer Motion
 - **表单与校验**：Zod、React Hook Form 相关工具
-- **大列表/表格**：`@tanstack/react-virtual`
 - **导出**：html2canvas、jsPDF、CSV/JSON helpers
 - **测试**：Vitest、Testing Library、jsdom
 
 ## 环境要求
 
-- Node.js >= 20
+- Node.js >= 20.19.0
 - npm
 
 仓库内包含 `.nvmrc`，用于指示目标 Node 主版本。
@@ -108,10 +109,10 @@ npx tsc --noEmit
 npm run lint
 npm run test
 npm run build
-npm audit --omit=dev
+npm audit
 ```
 
-当前代码已经通过上述完整验证。Vitest 当前覆盖 16 个测试文件，共 124 个测试。
+当前代码通过上述完整验证，并针对 PWA 注册、分享链接、Worker 并发与导出安全提供了专项覆盖。
 
 ## 推荐提交前检查
 
@@ -123,7 +124,7 @@ npx tsc --noEmit
 npm run lint
 npm run test
 npm run build
-npm audit --omit=dev
+npm audit
 ```
 
 项目同时配置了 Husky pre-commit hook，会通过 `lint-staged` 处理 staged 的源码文件。
@@ -149,13 +150,20 @@ npm run preview
 部署说明：
 
 - `next.config.ts` 使用 `output: "export"`
+- 开发与生产构建固定使用 Webpack，确保 TypeScript Monte Carlo Worker 被输出为浏览器可执行 JavaScript
+- Next 构建完成后会扫描 `out/` 并生成 `out/precache-manifest.js`，不要手动编辑该生成文件
 - 生产环境不使用 `next start`
 - 生产环境不假设服务端 API routes 或 Node runtime
 - 静态路由使用 trailing slash
 - service worker 注册逻辑位于 `src/components/service-worker-registration.tsx`
 - service worker 文件为 `public/sw.js`
-- manifest 与图标位于 `public/`
-- `NEXT_PUBLIC_BASE_PATH` 已被 metadata 与 service worker 注册逻辑支持
+- manifest、PNG 安装图标与开发用 precache 占位文件位于 `public/`
+- `NEXT_PUBLIC_BASE_PATH` 已被 metadata、导航与 service worker 注册逻辑支持
+- 使用 base path 部署时，应以 `NEXT_PUBLIC_BASE_PATH=/calc` 构建，并让静态宿主将 `/calc/` 映射到同一份导出的 `out/` 目录；导出文件仍位于 `out/` 根目录，不要再额外嵌套一层 `calc/` 目录
+- `public/_headers` 为支持 Netlify/Cloudflare Pages 格式的宿主提供安全头与缓存策略
+- 不读取 `_headers` 的静态宿主必须在自己的配置中映射同等的 CSP、Referrer、nosniff、frame、permissions 与缓存策略
+- 使用 base path 部署时，需要给宿主配置中的 `/_next/static/*`、`/sw.js`、`/precache-manifest.js`、`/manifest.json` 规则增加对应前缀
+- HTML、`sw.js` 与 precache manifest 必须重新验证；带哈希的 `/_next/static/*` 资源应按 immutable 缓存一年
 
 ## 项目结构
 
@@ -185,12 +193,14 @@ financial-calc/
 - `src/hooks/use-shareable-url.ts`：分享链接恢复与构建流程
 - `src/components/service-worker-registration.tsx`：浏览器端 service worker 注册
 - `public/sw.js`：静态导出场景下使用的 service worker
+- `scripts/generate-precache-manifest.mjs`：构建后静态资源与路由清单生成器
+- `public/_headers`：静态宿主安全头与缓存策略模板
 
 ## 依赖说明
 
 依赖已经在 package.json 的 semver 范围内更新到较新的 minor/patch 版本。`npm outdated` 中剩余的新版本主要是 major 升级或被 package.json 明确固定的版本，应作为单独迁移任务处理，而不是常规维护中直接硬切。
 
-执行干净的 `npm ci` 后，npm 仍可能把少量 `@emnapi` / `@napi-rs` / `@tybys` WASM helper 包标记为 extraneous；它们来自 native/WASM 工具链的 peer/optional helper 链。当前 `npm audit --omit=dev`、typecheck、lint、test、build 均为通过状态。
+执行干净的 `npm ci` 后，npm 仍可能把少量 `@emnapi` / `@napi-rs` / `@tybys` WASM helper 包标记为 extraneous；它们来自 native/WASM 工具链的 peer/optional helper 链。当前 `npm audit`、typecheck、lint、test、build 均为通过状态。
 
 ## AI 生成说明
 

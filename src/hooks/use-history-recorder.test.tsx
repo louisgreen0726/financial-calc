@@ -64,4 +64,25 @@ describe("useHistoryRecorder", () => {
       expect(addToHistory).not.toHaveBeenCalled();
     });
   });
+
+  it("does not record again when only the localized display label changes", async () => {
+    const addToHistory = vi.fn();
+    const inputs = { value: "100000", days: "10" };
+    const { rerender } = renderHook(
+      ({ label }) =>
+        useHistoryRecorder({
+          addToHistory,
+          inputs,
+          result: 1234,
+          resultFormat: "currency",
+          label,
+          enabled: true,
+        }),
+      { initialProps: { label: "Value at Risk" } }
+    );
+
+    await waitFor(() => expect(addToHistory).toHaveBeenCalledTimes(1));
+    rerender({ label: "在险价值" });
+    expect(addToHistory).toHaveBeenCalledTimes(1);
+  });
 });

@@ -27,4 +27,14 @@ describe("formatHistoryResult", () => {
   it("does not render invalid stored values as currency", () => {
     expect(formatHistoryResult(item({ result: Number.NaN }))).toBe("N/A");
   });
+
+  it("uses localized fallback units and unavailable labels", () => {
+    expect(
+      formatHistoryResult(item({ result: 12, resultFormat: "periods" }), {
+        locale: "zh",
+        periodsUnit: "期",
+      })
+    ).toBe("12 期");
+    expect(formatHistoryResult(item({ result: Number.NaN }), { notAvailable: "暂无" })).toBe("暂无");
+  });
 });

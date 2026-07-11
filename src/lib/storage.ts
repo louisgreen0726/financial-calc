@@ -12,27 +12,29 @@ export function safeGetItem(key: string): string | null {
   }
 }
 
-export function safeSetItem(key: string, value: string) {
+export function safeSetItem(key: string, value: string): boolean {
   if (typeof window === "undefined") {
-    return;
+    return false;
   }
 
   try {
     window.localStorage.setItem(key, value);
+    return true;
   } catch {
-    // Ignore storage write failures.
+    return false;
   }
 }
 
-export function safeRemoveItem(key: string) {
+export function safeRemoveItem(key: string): boolean {
   if (typeof window === "undefined") {
-    return;
+    return false;
   }
 
   try {
     window.localStorage.removeItem(key);
+    return true;
   } catch {
-    // Ignore storage removal failures.
+    return false;
   }
 }
 
@@ -49,11 +51,12 @@ export function safeGetJSON<T>(key: string, fallback: T): T {
   }
 }
 
-export function safeSetJSON(key: string, value: unknown) {
+export function safeSetJSON(key: string, value: unknown): boolean {
   try {
-    safeSetItem(key, JSON.stringify(value));
+    const serialized = JSON.stringify(value);
+    return serialized === undefined ? false : safeSetItem(key, serialized);
   } catch {
-    // Ignore JSON serialization failures.
+    return false;
   }
 }
 
@@ -70,26 +73,33 @@ export function safeGetSessionJSON<T>(key: string, fallback: T): T {
   }
 }
 
-export function safeSetSessionJSON(key: string, value: unknown) {
+export function safeSetSessionJSON(key: string, value: unknown): boolean {
   if (typeof window === "undefined") {
-    return;
+    return false;
   }
 
   try {
-    window.sessionStorage.setItem(key, JSON.stringify(value));
+    const serialized = JSON.stringify(value);
+    if (serialized === undefined) {
+      return false;
+    }
+
+    window.sessionStorage.setItem(key, serialized);
+    return true;
   } catch {
-    // Ignore session storage serialization/write failures.
+    return false;
   }
 }
 
-export function safeRemoveSessionItem(key: string) {
+export function safeRemoveSessionItem(key: string): boolean {
   if (typeof window === "undefined") {
-    return;
+    return false;
   }
 
   try {
     window.sessionStorage.removeItem(key);
+    return true;
   } catch {
-    // Ignore session storage removal failures.
+    return false;
   }
 }

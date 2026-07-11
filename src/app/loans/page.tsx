@@ -5,7 +5,7 @@ import { Finance } from "@/lib/finance-math";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { formatCurrency } from "@/lib/utils";
 import {
   PieChart,
@@ -33,13 +33,13 @@ import { useCalculationHistory } from "@/hooks/use-calculation-history";
 import { useHistoryRecorder } from "@/hooks/use-history-recorder";
 import { HistoryPanel } from "@/components/history-panel";
 import { LoanInputSchema } from "@/lib/validation";
-import { VirtualTable } from "@/components/virtual-table";
 import { normalizeLoanMethod, type LoanMethodState } from "@/lib/route-state";
 
 function LoansPageContent() {
   const { t } = useLanguage();
   const {
     state: urlState,
+    setState,
     setField,
     shareUrl,
   } = useUrlState({
@@ -131,7 +131,7 @@ function LoansPageContent() {
 
     const P = parsedLoanInputs.amount;
     const r = parsedLoanInputs.rate / 100 / 12;
-    const n = Math.round(parsedLoanInputs.years * 12);
+    const n = parsedLoanInputs.years * 12;
 
     if (P <= 0 || r < 0 || n <= 0) {
       return [];
@@ -154,6 +154,18 @@ function LoansPageContent() {
   }, [schedule]);
   const statsAreFinite = Object.values(stats).every(Number.isFinite);
   const loanReady = schedule.length > 0 && statsAreFinite;
+  const paymentLabel = method === "CPM" ? t("loans.monthly") : t("loans.firstPayment");
+  const paymentResults =
+    method === "CPM"
+      ? { [t("loans.monthly")]: stats.monthlyPayment }
+      : {
+          [t("loans.firstPayment")]: stats.firstPayment,
+          [t("loans.lastPayment")]: stats.lastPayment,
+        };
+  const balanceChartData = useMemo(
+    () => schedule.filter((row) => row.period === 1 || row.period % 12 === 0 || row.period === schedule.length),
+    [schedule]
+  );
 
   const pieData = [
     { name: t("loans.principal"), value: parsedLoanInputs.amount ?? 0, color: "hsl(var(--primary))" },
@@ -182,10 +194,12 @@ function LoansPageContent() {
         <HistoryPanel
           page="loans"
           onRestore={(inputs) => {
-            if (inputs.amount !== undefined) setField("amount", String(inputs.amount));
-            if (inputs.rate !== undefined) setField("rate", String(inputs.rate));
-            if (inputs.years !== undefined) setField("years", String(inputs.years));
-            if (inputs.method !== undefined) setField("method", normalizeLoanMethod(inputs.method));
+            setState({
+              method: inputs.method !== undefined ? normalizeLoanMethod(inputs.method) : method,
+              amount: inputs.amount !== undefined ? String(inputs.amount) : amount,
+              rate: inputs.rate !== undefined ? String(inputs.rate) : rate,
+              years: inputs.years !== undefined ? String(inputs.years) : years,
+            });
             setHasInteracted(false);
           }}
         />
@@ -202,21 +216,25 @@ function LoansPageContent() {
               <span id="loans-method-label" className="text-sm font-medium">
                 {t("loans.method")}
               </span>
-              <Tabs
+              <RadioGroup
                 value={method}
                 onValueChange={(value) => setMethod(normalizeLoanMethod(value))}
-                className="w-full"
+                className="grid w-full grid-cols-2 gap-1 rounded-md bg-muted p-1"
                 aria-labelledby="loans-method-label"
               >
-                <TabsList className="w-full">
-                  <TabsTrigger value="CPM" className="flex-1">
+                <div className="flex min-w-0 items-center gap-2 rounded-sm px-3 py-2 has-[[data-state=checked]]:bg-background has-[[data-state=checked]]:shadow-sm">
+                  <RadioGroupItem id="loan-method-cpm" value="CPM" />
+                  <Label htmlFor="loan-method-cpm" className="min-w-0 flex-1 cursor-pointer text-center">
                     {t("loans.cpm")}
-                  </TabsTrigger>
-                  <TabsTrigger value="CAM" className="flex-1">
+                  </Label>
+                </div>
+                <div className="flex min-w-0 items-center gap-2 rounded-sm px-3 py-2 has-[[data-state=checked]]:bg-background has-[[data-state=checked]]:shadow-sm">
+                  <RadioGroupItem id="loan-method-cam" value="CAM" />
+                  <Label htmlFor="loan-method-cam" className="min-w-0 flex-1 cursor-pointer text-center">
                     {t("loans.cam")}
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
+                  </Label>
+                </div>
+              </RadioGroup>
             </div>
 
             <div className="space-y-2">
@@ -228,9 +246,14 @@ function LoansPageContent() {
                 step="0.01"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
+                aria-invalid={Boolean(loanValidation.amount)}
+                aria-describedby={loanValidation.amount ? "loan-amount-error" : undefined}
                 className={loanValidation.amount ? "border-destructive" : ""}
               />
-              <ValidationError error={loanValidation.amount ? String(loanValidation.amount) : null} />
+              <ValidationError
+                id="loan-amount-error"
+                error={loanValidation.amount ? String(loanValidation.amount) : null}
+              />
             </div>
 
             <div className="space-y-2">
@@ -242,9 +265,11 @@ function LoansPageContent() {
                 step="0.01"
                 value={rate}
                 onChange={(e) => setRate(e.target.value)}
+                aria-invalid={Boolean(loanValidation.rate)}
+                aria-describedby={loanValidation.rate ? "loan-rate-error" : undefined}
                 className={loanValidation.rate ? "border-destructive" : ""}
               />
-              <ValidationError error={loanValidation.rate ? String(loanValidation.rate) : null} />
+              <ValidationError id="loan-rate-error" error={loanValidation.rate ? String(loanValidation.rate) : null} />
             </div>
 
             <div className="space-y-2">
@@ -256,9 +281,14 @@ function LoansPageContent() {
                 step="1"
                 value={years}
                 onChange={(e) => setYears(e.target.value)}
+                aria-invalid={Boolean(loanValidation.years)}
+                aria-describedby={loanValidation.years ? "loan-term-error" : undefined}
                 className={loanValidation.years ? "border-destructive" : ""}
               />
-              <ValidationError error={loanValidation.years ? String(loanValidation.years) : null} />
+              <ValidationError
+                id="loan-term-error"
+                error={loanValidation.years ? String(loanValidation.years) : null}
+              />
             </div>
 
             {validationError && (
@@ -270,7 +300,7 @@ function LoansPageContent() {
 
             <div className="pt-4 bg-muted/40 p-4 rounded-lg space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{t("loans.monthly")}</span>
+                <span className="text-muted-foreground">{paymentLabel}</span>
                 <span className="font-bold">
                   {method === "CPM" ? (
                     formatCurrency(stats.monthlyPayment)
@@ -310,7 +340,7 @@ function LoansPageContent() {
                 <ResultActions
                   title={reportTitle}
                   results={{
-                    [t("loans.monthly")]: stats.monthlyPayment,
+                    ...paymentResults,
                     [t("loans.totalInt")]: stats.totalInterest,
                     [t("loans.totalCost")]: stats.totalPayment,
                   }}
@@ -329,7 +359,7 @@ function LoansPageContent() {
                 <CardContent className="pt-6">
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <div>
-                      <p className="text-sm text-muted-foreground">{t("loans.monthly")}</p>
+                      <p className="text-sm text-muted-foreground">{paymentLabel}</p>
                       <p className="text-xl font-bold">
                         {method === "CPM"
                           ? formatCurrency(stats.monthlyPayment)
@@ -337,6 +367,11 @@ function LoansPageContent() {
                             ? formatCurrency(stats.firstPayment)
                             : "-"}
                       </p>
+                      {method === "CAM" && schedule.length > 0 ? (
+                        <p className="text-xs text-muted-foreground">
+                          {t("loans.lastPayment")}: {formatCurrency(stats.lastPayment)}
+                        </p>
+                      ) : null}
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">{t("loans.totalInt")}</p>
@@ -364,33 +399,38 @@ function LoansPageContent() {
                           {t("loans.noData")}
                         </div>
                       ) : (
-                        <ResponsiveContainer width="100%" height={180}>
-                          <PieChart>
-                            <Pie
-                              data={pieData}
-                              dataKey="value"
-                              nameKey="name"
-                              cx="50%"
-                              cy="50%"
-                              innerRadius={48}
-                              outerRadius={72}
-                              paddingAngle={5}
-                            >
-                              {pieData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.color} />
-                              ))}
-                            </Pie>
-                            <Tooltip
-                              formatter={(value) => formatCurrency(Number(value ?? 0))}
-                              contentStyle={{
-                                backgroundColor: "hsl(var(--card))",
-                                borderRadius: "8px",
-                                border: "1px solid hsl(var(--border))",
-                              }}
-                            />
-                            <Legend verticalAlign="bottom" height={28} />
-                          </PieChart>
-                        </ResponsiveContainer>
+                        <div
+                          role="img"
+                          aria-label={`${t("loans.breakdown")}: ${t("loans.principal")} ${formatCurrency(parsedLoanInputs.amount ?? 0)}, ${t("loans.totalInt")} ${formatCurrency(stats.totalInterest)}`}
+                        >
+                          <ResponsiveContainer width="100%" height={180}>
+                            <PieChart>
+                              <Pie
+                                data={pieData}
+                                dataKey="value"
+                                nameKey="name"
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={48}
+                                outerRadius={72}
+                                paddingAngle={5}
+                              >
+                                {pieData.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.color} />
+                                ))}
+                              </Pie>
+                              <Tooltip
+                                formatter={(value) => formatCurrency(Number(value ?? 0))}
+                                contentStyle={{
+                                  backgroundColor: "hsl(var(--card))",
+                                  borderRadius: "8px",
+                                  border: "1px solid hsl(var(--border))",
+                                }}
+                              />
+                              <Legend verticalAlign="bottom" height={28} />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
                       )}
                     </CardContent>
                   </Card>
@@ -406,42 +446,47 @@ function LoansPageContent() {
                           {t("loans.noData")}
                         </div>
                       ) : (
-                        <ResponsiveContainer width="100%" height={180}>
-                          <AreaChart data={schedule.filter((_, i) => i % 12 === 0)}>
-                            <defs>
-                              <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                                <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                            <XAxis dataKey="period" hide />
-                            <YAxis hide domain={[0, "auto"]} />
-                            <Tooltip
-                              formatter={(value) => formatCurrency(Number(value ?? 0))}
-                              labelFormatter={(label) => `Month ${label}`}
-                              contentStyle={{
-                                backgroundColor: "hsl(var(--card))",
-                                borderRadius: "8px",
-                                border: "1px solid hsl(var(--border))",
-                              }}
-                            />
-                            <Area
-                              type="monotone"
-                              dataKey="balance"
-                              stroke="hsl(var(--primary))"
-                              fillOpacity={1}
-                              fill="url(#colorBalance)"
-                            />
-                          </AreaChart>
-                        </ResponsiveContainer>
+                        <div
+                          role="img"
+                          aria-label={`${t("loans.balance")}: ${formatCurrency(parsedLoanInputs.amount ?? 0)} ${"\u2192"} ${formatCurrency(schedule.at(-1)?.balance ?? 0)}`}
+                        >
+                          <ResponsiveContainer width="100%" height={180}>
+                            <AreaChart data={balanceChartData}>
+                              <defs>
+                                <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                              <XAxis dataKey="period" hide />
+                              <YAxis hide domain={[0, "auto"]} />
+                              <Tooltip
+                                formatter={(value) => formatCurrency(Number(value ?? 0))}
+                                labelFormatter={(label) => `${t("cashFlow.period")} ${label}`}
+                                contentStyle={{
+                                  backgroundColor: "hsl(var(--card))",
+                                  borderRadius: "8px",
+                                  border: "1px solid hsl(var(--border))",
+                                }}
+                              />
+                              <Area
+                                type="monotone"
+                                dataKey="balance"
+                                stroke="hsl(var(--primary))"
+                                fillOpacity={1}
+                                fill="url(#colorBalance)"
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
                       )}
                     </CardContent>
                   </Card>
                 </div>
 
                 {/* Schedule Table */}
-                <Card className="flex min-h-[320px] min-w-0 flex-1 flex-col overflow-hidden">
+                <Card className="flex min-h-[320px] min-w-0 flex-1 flex-col overflow-hidden" data-pdf-expand="true">
                   <CardHeader className="pb-3">
                     <CardTitle className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                       <span>{t("loans.schedule")}</span>
@@ -459,53 +504,49 @@ function LoansPageContent() {
                         </Alert>
                       </div>
                     ) : (
-                      <div className="w-full max-w-full overflow-x-auto rounded-b-lg border-t" role="table">
-                        <div className="grid min-w-[680px] grid-cols-[80px_repeat(3,minmax(120px,1fr))_minmax(150px,1fr)] border-b bg-background text-sm font-medium text-muted-foreground">
-                          <div className="px-4 py-3" role="columnheader">
-                            {t("cashFlow.period")}
-                          </div>
-                          <div className="px-4 py-3" role="columnheader">
-                            {t("loans.payment")}
-                          </div>
-                          <div className="px-4 py-3" role="columnheader">
-                            {t("loans.principal")}
-                          </div>
-                          <div className="px-4 py-3" role="columnheader">
-                            {t("loans.interest")}
-                          </div>
-                          <div className="px-4 py-3 text-right" role="columnheader">
-                            {t("loans.remBalance")}
-                          </div>
-                        </div>
-                        <VirtualTable
-                          data={schedule}
-                          rowHeight={44}
-                          height="22rem"
-                          minWidth="680px"
-                          className="max-h-[52vh] min-h-[18rem]"
-                          renderRow={(row) => (
-                            <div
-                              role="row"
-                              className="grid h-11 min-w-[680px] grid-cols-[80px_repeat(3,minmax(120px,1fr))_minmax(150px,1fr)] items-center border-b text-sm"
-                            >
-                              <div role="cell" className="px-4 font-mono text-xs">
-                                {row.period}
-                              </div>
-                              <div role="cell" className="px-4 font-mono text-xs">
-                                {formatCurrency(row.payment)}
-                              </div>
-                              <div role="cell" className="px-4 font-mono text-xs text-primary">
-                                {formatCurrency(row.principal)}
-                              </div>
-                              <div role="cell" className="px-4 font-mono text-xs text-destructive">
-                                {formatCurrency(row.interest)}
-                              </div>
-                              <div role="cell" className="px-4 text-right font-mono text-xs">
-                                {formatCurrency(row.balance)}
-                              </div>
-                            </div>
-                          )}
-                        />
+                      <div
+                        className="max-h-[52vh] min-h-[18rem] w-full max-w-full overflow-auto rounded-b-lg border-t"
+                        data-pdf-expand="true"
+                      >
+                        <table className="w-full min-w-[680px] border-collapse text-sm">
+                          <caption className="sr-only">
+                            {t("loans.schedule")}: {schedule.length} {t("common.rows")}
+                          </caption>
+                          <thead className="sticky top-0 z-10 bg-background text-muted-foreground">
+                            <tr className="border-b">
+                              <th scope="col" className="w-20 px-4 py-3 text-left font-medium">
+                                {t("cashFlow.period")}
+                              </th>
+                              <th scope="col" className="px-4 py-3 text-left font-medium">
+                                {t("loans.payment")}
+                              </th>
+                              <th scope="col" className="px-4 py-3 text-left font-medium">
+                                {t("loans.principal")}
+                              </th>
+                              <th scope="col" className="px-4 py-3 text-left font-medium">
+                                {t("loans.interest")}
+                              </th>
+                              <th scope="col" className="px-4 py-3 text-right font-medium">
+                                {t("loans.remBalance")}
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {schedule.map((row) => (
+                              <tr key={row.period} className="h-11 border-b hover:bg-muted/50">
+                                <th scope="row" className="px-4 text-left font-mono text-xs font-normal">
+                                  {row.period}
+                                </th>
+                                <td className="px-4 font-mono text-xs">{formatCurrency(row.payment)}</td>
+                                <td className="px-4 font-mono text-xs text-primary">{formatCurrency(row.principal)}</td>
+                                <td className="px-4 font-mono text-xs text-destructive">
+                                  {formatCurrency(row.interest)}
+                                </td>
+                                <td className="px-4 text-right font-mono text-xs">{formatCurrency(row.balance)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
                     )}
                   </CardContent>

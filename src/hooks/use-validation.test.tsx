@@ -102,6 +102,36 @@ describe("useFormValidation", () => {
     expect(result.current.errors).toHaveProperty("field1");
   });
 
+  it("uses caller-provided localized messages", () => {
+    const { result } = renderHook(() =>
+      useFormValidation({
+        required: "必填",
+        min: (value) => `不得小于 ${value}`,
+      })
+    );
+
+    act(() => {
+      result.current.validateField("required", "");
+      result.current.validateField("minimum", "1", { min: 2 });
+    });
+
+    expect(result.current.errors).toEqual({ required: "必填", minimum: "不得小于 2" });
+  });
+
+  it("reformats existing issues when localized messages change", () => {
+    const { result, rerender } = renderHook(({ required }) => useFormValidation({ required }), {
+      initialProps: { required: "Required" },
+    });
+
+    act(() => {
+      result.current.validateField("amount", "");
+    });
+    expect(result.current.errors.amount).toBe("Required");
+
+    rerender({ required: "必填" });
+    expect(result.current.errors.amount).toBe("必填");
+  });
+
   it("clears all errors on clearErrors", () => {
     const { result } = renderHook(() => useFormValidation());
 

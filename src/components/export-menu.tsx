@@ -12,7 +12,6 @@ import {
 import { Download, FileSpreadsheet, FileJson, FileText } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
 import { useExport } from "@/hooks/use-export";
-import { exportToPDF } from "@/lib/pdf-export";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
 import { cn } from "@/lib/utils";
@@ -42,6 +41,7 @@ export function ExportMenu({
   const handleExportPDF = async () => {
     setIsExporting(true);
     try {
+      const { exportToPDF } = await import("@/lib/pdf-export");
       await exportToPDF({
         filename: pdfFilename,
         elementId: pdfElementId,

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } fro
 
 interface ClientOnlyChartProps {
   children: ReactNode | ((size: { height: number; width: number }) => ReactNode);
+  ariaLabel?: string;
   className?: string;
   fallbackClassName?: string;
   minHeight?: number;
@@ -16,6 +17,7 @@ const getServerSnapshot = () => false;
 
 export function ClientOnlyChart({
   children,
+  ariaLabel,
   className = "h-full w-full",
   fallbackClassName = "h-full w-full",
   minHeight = 8,
@@ -53,7 +55,7 @@ export function ClientOnlyChart({
   const chartSize = { width: Math.floor(size.width), height: Math.floor(size.height) };
 
   return (
-    <div ref={containerRef} className={className}>
+    <div ref={containerRef} className={className} role={ariaLabel ? "img" : undefined} aria-label={ariaLabel}>
       {hasUsableSize ? (
         typeof children === "function" ? (
           children(chartSize)

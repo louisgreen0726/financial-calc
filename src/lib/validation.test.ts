@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { BondInputSchema, EquityWACCSchema, LoanInputSchema, OptionsInputSchema } from "@/lib/validation";
+import {
+  BondInputSchema,
+  EquityDDMSchema,
+  EquityWACCSchema,
+  LoanInputSchema,
+  OptionsInputSchema,
+  RiskInputSchema,
+} from "@/lib/validation";
 
 describe("shared validation schemas", () => {
   it("allows option maturity and volatility at zero because the pricing engine supports them", () => {
@@ -83,5 +90,25 @@ describe("shared validation schemas", () => {
 
   it("caps loan terms to the amortization schedule limit", () => {
     expect(LoanInputSchema.safeParse({ amount: 1000, rate: 5, years: 51, method: "CPM" }).success).toBe(false);
+  });
+
+  it("requires loan terms to resolve to a whole number of months", () => {
+    expect(LoanInputSchema.safeParse({ amount: 1000, rate: 5, years: 1.1, method: "CPM" }).success).toBe(false);
+    expect(LoanInputSchema.safeParse({ amount: 1000, rate: 5, years: 1.25, method: "CPM" }).success).toBe(true);
+  });
+
+  it("requires risk horizons to use whole trading days and meaningful confidence levels", () => {
+    const base = { value: 100000, volatility: 15, confidence: 0.95, days: 10 };
+
+    expect(RiskInputSchema.safeParse(base).success).toBe(true);
+    expect(RiskInputSchema.safeParse({ ...base, confidence: 0.5 }).success).toBe(false);
+    expect(RiskInputSchema.safeParse({ ...base, days: 1.5 }).success).toBe(false);
+    expect(RiskInputSchema.safeParse({ ...base, days: 100 * 252 + 1 }).success).toBe(false);
+  });
+
+  it("rejects DDM rates with non-positive gross factors", () => {
+    expect(EquityDDMSchema.safeParse({ d1: 2, r: 0.08, g: 0.03 }).success).toBe(true);
+    expect(EquityDDMSchema.safeParse({ d1: 2, r: -1.5, g: -2 }).success).toBe(false);
+    expect(EquityDDMSchema.safeParse({ d1: 2, r: 0.08, g: -1 }).success).toBe(false);
   });
 });

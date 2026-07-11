@@ -1,6 +1,13 @@
 import type { CalculationHistoryItem, HistoryResultFormat } from "@/hooks/use-calculation-history";
 import { formatCurrency, formatNumber } from "@/lib/utils";
 
+export interface HistoryFormatOptions {
+  locale?: string;
+  notAvailable?: string;
+  periodsUnit?: string;
+  yearsUnit?: string;
+}
+
 function inferHistoryFormat(item: CalculationHistoryItem): HistoryResultFormat {
   const label = item.label?.toLowerCase() ?? "";
 
@@ -23,28 +30,28 @@ function inferHistoryFormat(item: CalculationHistoryItem): HistoryResultFormat {
   return "currency";
 }
 
-export function formatHistoryResult(item: CalculationHistoryItem) {
+export function formatHistoryResult(item: CalculationHistoryItem, options: HistoryFormatOptions = {}) {
   if (!Number.isFinite(item.result)) {
-    return "N/A";
+    return options.notAvailable ?? "N/A";
   }
 
   const format = item.resultFormat ?? inferHistoryFormat(item);
 
   switch (format) {
     case "currency":
-      return formatCurrency(item.result);
+      return formatCurrency(item.result, options.locale);
     case "percent":
-      return `${formatNumber(item.result, 4)}%`;
+      return `${formatNumber(item.result, 4, options.locale)}%`;
     case "percentDecimal":
-      return `${formatNumber(item.result * 100, 4)}%`;
+      return `${formatNumber(item.result * 100, 4, options.locale)}%`;
     case "periods":
-      return `${formatNumber(item.result, 2)} ${item.resultUnit ?? "periods"}`;
+      return `${formatNumber(item.result, 2, options.locale)} ${item.resultUnit ?? options.periodsUnit ?? "periods"}`;
     case "years":
-      return `${formatNumber(item.result, 2)} ${item.resultUnit ?? "years"}`;
+      return `${formatNumber(item.result, 2, options.locale)} ${item.resultUnit ?? options.yearsUnit ?? "years"}`;
     case "ratio":
     case "number":
-      return formatNumber(item.result, 4);
+      return formatNumber(item.result, 4, options.locale);
     default:
-      return formatNumber(item.result, 4);
+      return formatNumber(item.result, 4, options.locale);
   }
 }

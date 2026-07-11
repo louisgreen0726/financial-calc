@@ -1,7 +1,6 @@
 import { z } from "zod";
 import {
   ANNUAL_FREQUENCY,
-  DAYS_PER_YEAR,
   MAX_CASH_FLOWS,
   MAX_INTEREST_RATE,
   MAX_PERIODS,
@@ -12,6 +11,7 @@ import {
   MONTHLY_FREQUENCY,
   QUARTERLY_FREQUENCY,
   SEMIANNUAL_FREQUENCY,
+  TRADING_DAYS_PER_YEAR,
 } from "@/lib/constants";
 
 export const TVMInputSchema = z.object({
@@ -87,8 +87,8 @@ export const EquityWACCSchema = z
 export const EquityDDMSchema = z
   .object({
     d1: z.number().finite().min(0, "Dividend must be non-negative"),
-    r: z.number().finite(),
-    g: z.number().finite(),
+    r: z.number().finite().gt(-1, "Required return must be greater than -100%"),
+    g: z.number().finite().gt(-1, "Growth rate must be greater than -100%"),
   })
   .refine((data) => data.r > data.g, {
     message: "Required return must be greater than growth rate",
@@ -119,26 +119,32 @@ export const CashFlowSchema = z.object({
     .max(MAX_CASH_FLOWS, `No more than ${MAX_CASH_FLOWS} cash flows are supported`),
 });
 
-export const LoanInputSchema = z.object({
-  amount: z.number().finite().positive("Loan amount must be positive"),
-  rate: z.number().finite().min(0, "Rate must be non-negative").max(MAX_INTEREST_RATE),
-  years: z
-    .number()
-    .finite()
-    .positive("Term must be positive")
-    .max(MAX_PERIODS / 12),
-  method: z.enum(["CPM", "CAM"]),
-});
+export const LoanInputSchema = z
+  .object({
+    amount: z.number().finite().positive("Loan amount must be positive"),
+    rate: z.number().finite().min(0, "Rate must be non-negative").max(MAX_INTEREST_RATE),
+    years: z
+      .number()
+      .finite()
+      .positive("Term must be positive")
+      .max(MAX_PERIODS / 12),
+    method: z.enum(["CPM", "CAM"]),
+  })
+  .refine((data) => Number.isInteger(data.years * 12), {
+    message: "Term must resolve to a whole number of months",
+    path: ["years"],
+  });
 
 export const RiskInputSchema = z.object({
   value: z.number().finite().positive("Portfolio value must be positive").max(1_000_000_000_000),
   volatility: z.number().finite().min(0).max(MAX_VOLATILITY),
-  confidence: z.number().finite().gt(0).lt(1),
+  confidence: z.number().finite().gt(0.5).lt(1),
   days: z
     .number()
     .finite()
+    .int("Horizon must be a whole number of trading days")
     .positive("Horizon must be positive")
-    .max(MAX_YEARS * DAYS_PER_YEAR),
+    .max(MAX_YEARS * TRADING_DAYS_PER_YEAR),
 });
 
 export const PortfolioAssetSchema = z.object({

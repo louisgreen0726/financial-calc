@@ -17,6 +17,7 @@ interface CalculationStepsProps {
   inputs: Record<string, number>;
   steps: CalcStep[];
   result: number;
+  formattedResult?: string;
   className?: string;
 }
 
@@ -59,7 +60,14 @@ function FormattedFormula({ text }: { text: string }) {
 /**
  * Collapsible calculation steps display with formula derivation.
  */
-export function CalculationSteps({ formula, inputs, steps, result, className }: CalculationStepsProps) {
+export function CalculationSteps({
+  formula,
+  inputs,
+  steps,
+  result,
+  formattedResult,
+  className,
+}: CalculationStepsProps) {
   const { t } = useLanguage();
   const contentId = useId();
   const [isOpen, setIsOpen] = useState(false);
@@ -140,7 +148,7 @@ export function CalculationSteps({ formula, inputs, steps, result, className }: 
               {/* Final Result */}
               <div className="p-4 bg-gradient-to-r from-primary/10 to-blue-50/30 dark:from-primary/10 dark:to-blue-950/20 rounded-xl border border-primary/20">
                 <div className="text-xs text-muted-foreground mb-1">{t("tvm.finalResult")}</div>
-                <div className="break-words text-2xl font-bold">{result.toLocaleString()}</div>
+                <div className="break-words text-2xl font-bold">{formattedResult ?? result.toLocaleString()}</div>
               </div>
             </div>
           </motion.div>

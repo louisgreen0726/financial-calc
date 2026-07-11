@@ -4,6 +4,7 @@
 import {
   calculatePortfolioPoint,
   createSeededRandom,
+  makeDeterministicBaselineWeights,
   makeRandomWeights,
   summarizePortfolioSimulations,
   type PortfolioPoint,
@@ -29,15 +30,20 @@ self.onmessage = (event: MessageEvent) => {
       return;
     }
 
-    const simulations: PortfolioPoint[] = [];
-    const step = Math.max(1, Math.floor(simCount / 20));
+    const baselineWeights = makeDeterministicBaselineWeights(assets.length);
+    const simulations: PortfolioPoint[] = baselineWeights.map((weights) =>
+      calculatePortfolioPoint(assets, weights, correlation, rf)
+    );
+    const randomSimulationCount = Math.max(0, Math.floor(simCount) - baselineWeights.length);
+    const totalSimulationCount = baselineWeights.length + randomSimulationCount;
+    const step = Math.max(1, Math.floor(randomSimulationCount / 20));
 
-    for (let i = 0; i < simCount; i++) {
+    for (let i = 0; i < randomSimulationCount; i++) {
       const weights = makeRandomWeights(assets.length, random);
       simulations.push(calculatePortfolioPoint(assets, weights, correlation, rf));
 
       if (step > 0 && i % step === 0) {
-        const progress = Math.round((i / simCount) * 100);
+        const progress = Math.round(((baselineWeights.length + i + 1) / totalSimulationCount) * 100);
         self.postMessage({ type: "progress", data: progress });
       }
     }

@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLanguage } from "@/lib/i18n";
@@ -17,6 +18,7 @@ import { useTheme } from "@/components/theme-provider";
 export const ModeToggle = React.memo(function ModeToggle() {
   const { setTheme, theme } = useTheme();
   const { t } = useLanguage();
+  const themeLabel = theme === "dark" ? t("common.dark") : theme === "light" ? t("common.light") : t("common.system");
 
   return (
     <DropdownMenu>
@@ -28,37 +30,32 @@ export const ModeToggle = React.memo(function ModeToggle() {
             "h-9 px-3 gap-2 rounded-full transition-all hover:bg-primary/10",
             theme === "dark" && "bg-primary/10 text-primary"
           )}
-          aria-label={t("common.toggleTheme")}
+          aria-label={`${t("common.toggleTheme")}: ${themeLabel}`}
         >
           <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
           <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="text-xs font-medium hidden sm:inline">
-            {theme === "dark" ? "深色" : theme === "light" ? "浅色" : "自动"}
-          </span>
+          <span className="text-xs font-medium hidden sm:inline">{themeLabel}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[120px]">
-        <DropdownMenuItem
-          onClick={() => setTheme("light")}
-          className={cn("gap-2 cursor-pointer", theme === "light" && "bg-primary/10")}
+        <DropdownMenuRadioGroup
+          value={theme}
+          onValueChange={(value) => setTheme(value as "light" | "dark" | "system")}
+          aria-label={t("settings.theme")}
         >
-          <Sun className="h-4 w-4" />
-          {t("common.light")}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => setTheme("dark")}
-          className={cn("gap-2 cursor-pointer", theme === "dark" && "bg-primary/10")}
-        >
-          <Moon className="h-4 w-4" />
-          {t("common.dark")}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => setTheme("system")}
-          className={cn("gap-2 cursor-pointer", theme === "system" && "bg-primary/10")}
-        >
-          <Monitor className="h-4 w-4" />
-          {t("common.system")}
-        </DropdownMenuItem>
+          <DropdownMenuRadioItem value="light" className="cursor-pointer gap-2">
+            <Sun className="h-4 w-4" />
+            {t("common.light")}
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="dark" className="cursor-pointer gap-2">
+            <Moon className="h-4 w-4" />
+            {t("common.dark")}
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="system" className="cursor-pointer gap-2">
+            <Monitor className="h-4 w-4" />
+            {t("common.system")}
+          </DropdownMenuRadioItem>
+        </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );
