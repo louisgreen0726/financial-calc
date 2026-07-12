@@ -1,0 +1,116 @@
+{
+  "sources": {
+    "numpyFinancial": {
+      "project": "NumPy Financial",
+      "commit": "f47e8af289f9abd34002267c6663869b9ed586a8",
+      "license": "BSD-3-Clause",
+      "url": "https://github.com/numpy/numpy-financial/blob/f47e8af289f9abd34002267c6663869b9ed586a8/numpy_financial/tests/test_financial.py"
+    },
+    "openGammaStrata": {
+      "project": "OpenGamma Strata",
+      "commit": "39c46e342a4a95ac083d66287f038f6ae276692a",
+      "license": "Apache-2.0",
+      "url": "https://github.com/OpenGamma/Strata/blob/39c46e342a4a95ac083d66287f038f6ae276692a/modules/pricer/src/test/java/com/opengamma/strata/pricer/impl/option/BlackScholesFormulaRepositoryTest.java"
+    }
+  },
+  "financialFunctions": [
+    {
+      "id": "numpy-pv-decimal",
+      "function": "pv",
+      "args": [0.07, 20, 12000, 0, 0],
+      "expected": -127128.17094619393,
+      "tolerance": 1e-8
+    },
+    {
+      "id": "numpy-fv-end",
+      "function": "fv",
+      "args": [0.075, 20, -2000, 0, 0],
+      "expected": 86609.36267304292,
+      "tolerance": 1e-8
+    },
+    {
+      "id": "numpy-fv-begin-google-sheets",
+      "function": "fv",
+      "args": [0.075, 20, -2000, 0, 1],
+      "expected": 93105.064874,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "numpy-pmt-decimal",
+      "function": "pmt",
+      "args": [0.006666666666666667, 60, 15000, 0, 0],
+      "expected": -304.14591432620524,
+      "tolerance": 1e-9
+    },
+    {
+      "id": "numpy-nper-google-sheets",
+      "function": "nper",
+      "args": [0.075, -2000, 0, 100000, 0],
+      "expected": 21.5449442,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "numpy-rate-decimal",
+      "function": "rate",
+      "args": [10, 0, -3500, 10000, 0],
+      "expected": 0.11069085371426893,
+      "tolerance": 1e-10
+    },
+    {
+      "id": "numpy-npv",
+      "function": "npv",
+      "args": [0.05, [-15000, 1500, 2500, 3500, 4500, 6000]],
+      "expected": 122.89,
+      "tolerance": 0.02
+    },
+    {
+      "id": "numpy-irr-positive",
+      "function": "irr",
+      "args": [[-100, 39, 59, 55, 20]],
+      "expected": 0.28095,
+      "tolerance": 0.003
+    },
+    {
+      "id": "numpy-irr-negative",
+      "function": "irr",
+      "args": [[-100, 0, 0, 74]],
+      "expected": -0.0955,
+      "tolerance": 0.001
+    }
+  ],
+  "blackScholesCalls": [
+    {
+      "id": "strata-low-strike-negative-rate",
+      "spot": 100,
+      "strike": 85,
+      "years": 4.5,
+      "volatility": 0.1,
+      "riskFreeRate": -0.01,
+      "dividendYield": -0.06,
+      "expected": 42.388192240722034,
+      "tolerance": 1e-10
+    },
+    {
+      "id": "strata-atm-moderate-volatility",
+      "spot": 100,
+      "strike": 100,
+      "years": 4.5,
+      "volatility": 0.2,
+      "riskFreeRate": 0.008,
+      "dividendYield": -0.042,
+      "expected": 32.87771664893447,
+      "tolerance": 1e-10
+    },
+    {
+      "id": "strata-high-strike-high-volatility",
+      "spot": 100,
+      "strike": 150,
+      "years": 4.5,
+      "volatility": 0.5,
+      "riskFreeRate": 0.1,
+      "dividendYield": 0.05,
+      "expected": 28.028353888253228,
+      "tolerance": 1e-10
+    }
+  ]
+}

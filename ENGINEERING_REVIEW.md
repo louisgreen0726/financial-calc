@@ -82,6 +82,19 @@ browser-level checks beyond the existing suite.
 - These 55 properties complement point benchmarks: they are fixed and reproducible, but broad enough to catch
   sign, discount-factor, scaling, and solver-bracketing regressions that isolated examples can miss.
 
+### Formula Follow-up: Independent Reference Vectors
+
+- Formula tests previously used local point expectations and internal mathematical properties; broad consistency did
+  not provide independent provenance. A pinned fixture now carries published NumPy Financial vectors for PV, FV,
+  PMT, NPER, RATE, NPV, and IRR plus three prices from OpenGamma Strata's precomputed Black-Scholes matrix.
+- Every source is fixed to a 40-character upstream commit with its repository URL and license. The fixture README
+  documents the Strata cost-of-carry mapping and prohibits regenerating expectations from this project's engine.
+- The first external run found a `1.4924e-5` ATM option difference caused by the existing standard-normal CDF
+  approximation. A piecewise high-precision rational/tail implementation now matches the selected Strata matrix to
+  `1e-10` absolute tolerance and has direct checks through `+/-8` standard deviations.
+- These references still do not constitute regulated-model certification. They add an independent regression layer;
+  institution-specific conventions, rounding, and approved-system comparison remain required for production use.
+
 ### Validation Follow-up: Restored Portfolio and Loan Domains
 
 - The Portfolio risk-free rate previously had three contracts: the engine accepted any finite value, the schema

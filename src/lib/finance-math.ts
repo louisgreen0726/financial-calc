@@ -131,6 +131,36 @@ const findBracketedRoot = (fn: (rate: number) => number): number => {
   return NaN;
 };
 
+const standardNormalCdf = (value: number): number => {
+  if (value === 0) return 0.5;
+  const z = Math.abs(value);
+  if (z > 37) return value > 0 ? 1 : 0;
+
+  const density = Math.exp((-z * z) / 2);
+  let tail: number;
+  if (z < 7.07106781186547) {
+    let numerator = 0.0352624965998911 * z + 0.700383064443688;
+    numerator = numerator * z + 6.37396220353165;
+    numerator = numerator * z + 33.912866078383;
+    numerator = numerator * z + 112.079291497871;
+    numerator = numerator * z + 221.213596169931;
+    numerator = numerator * z + 220.206867912376;
+
+    let denominator = 0.0883883476483184 * z + 1.75566716318264;
+    denominator = denominator * z + 16.064177579207;
+    denominator = denominator * z + 86.7807322029461;
+    denominator = denominator * z + 296.564248779674;
+    denominator = denominator * z + 637.333633378831;
+    denominator = denominator * z + 793.826512519948;
+    denominator = denominator * z + 440.413735824752;
+    tail = (density * numerator) / denominator;
+  } else {
+    tail = density / (z + 1 / (z + 2 / (z + 3 / (z + 4 / (z + 0.65))))) / 2.5066282746310002;
+  }
+
+  return value > 0 ? 1 - tail : tail;
+};
+
 // Type definitions
 export interface AmortizationItem {
   period: number;
@@ -577,19 +607,7 @@ export const Finance = {
   // Normal Distribution CDF
   normCDF: (x: number): number => {
     if (!isValid(x)) return NaN;
-    const a1 = 0.254829592;
-    const a2 = -0.284496736;
-    const a3 = 1.421413741;
-    const a4 = -1.453152027;
-    const a5 = 1.061405429;
-    const p = 0.3275911;
-
-    const sign = x < 0 ? -1 : 1;
-    x = Math.abs(x) / Math.sqrt(2.0);
-    const t = 1.0 / (1.0 + p * x);
-    const y = 1.0 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
-
-    return 0.5 * (1.0 + sign * y);
+    return standardNormalCdf(x);
   },
 
   // Normal Distribution PDF
