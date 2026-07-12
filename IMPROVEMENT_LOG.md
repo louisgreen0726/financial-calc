@@ -18,7 +18,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Review dependency upgrades and remove confirmed dead code without destabilizing generated UI primitives.
 - [x] Validate static deployment headers, base-path output, precache completeness, and cache invalidation in automation.
 - [x] Expand user-facing documentation with model assumptions, limitations, and worked examples.
-- [ ] Exercise service-worker installation and offline navigation from a real `/calc` base-path deployment.
+- [x] Exercise service-worker installation and offline navigation from a real `/calc` base-path deployment.
 - [ ] Add automated English/Chinese translation-key and route-copy coverage checks.
 - [ ] Add independently sourced reference fixtures for the highest-impact financial formulas.
 - [ ] Design bounded, schema-versioned history import/export with duplicate handling and validation.
@@ -474,3 +474,40 @@ Verification:
   verified.
 - Queue status: 4 active items remain; the next priority is real base-path PWA coverage, followed by automated i18n
   parity and formula reference fixtures.
+
+### Improvement 13: Real base-path PWA installation, offline, and update coverage
+
+Status: completed.
+
+Changes:
+
+- Parameterized the production PWA Playwright configuration and workflow around an explicit deployment base path,
+  while preserving the existing root-path test as a separate regression topology.
+- Added a dedicated `/calc` PWA configuration that builds with `NEXT_PUBLIC_BASE_PATH=/calc`, serves the root-level
+  `out/` tree through a `/calc/` host mapping, and runs the same install/offline/update contract in a fresh browser.
+- Extended assertions to require the exact worker scope, base-prefixed active/controller script URLs, base-prefixed
+  precache asset and navigation keys, and absence of cache requests that escape the configured base path.
+- Kept coverage for the more behavioral contract: install and control, offline navigation to an unvisited Options
+  route, an offline unknown-route HTML response with status 404, a waiting update prompt, `SKIP_WAITING`, controller
+  replacement, and application reload.
+- Browser testing exposed a test-host issue that static output validation could not see: `serve-handler` redirected
+  explicit `/calc/options/index.html` precache requests to absolute `/options/index`, losing the base path and aborting
+  worker installation. The host now disables clean-URL redirects only for explicit `.html` files while retaining
+  index resolution for normal `/calc/` and `/calc/options/` navigations.
+- Added the base-path PWA workflow to package scripts and CI, and documented both production PWA commands in English
+  and Chinese.
+
+Files and areas:
+
+- `playwright.pwa.config.ts` and `playwright.pwa-base-path.config.ts`
+- `e2e/pwa-offline.spec.ts` and `scripts/serve-pwa-e2e.mjs`
+- `package.json`, `.github/workflows/ci.yml`, both READMEs, and review/log documentation
+
+Verification:
+
+- Root production PWA workflow: 1 test passed after the server refactor.
+- `/calc` production PWA workflow: 1 test passed with exact scope, cache-prefix, offline route/404, and update checks.
+- Focused TypeScript and ESLint checks passed.
+- `npm run verify`: passed; 42 Vitest files and 354 tests passed, static artifact checks passed, and all route bundle
+  budgets passed.
+- `npm audit`: zero known vulnerabilities; expanded Prettier check and `git diff --check`: passed.

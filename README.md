@@ -139,8 +139,16 @@ npm run verify
 The same gate runs in GitHub Actions for pushes and pull requests, followed by a high-severity production dependency audit.
 The gate validates the generated precache manifest, internal HTML references, PWA metadata, and static-host header
 template. GitHub Actions also rebuilds with `NEXT_PUBLIC_BASE_PATH=/calc`, installs Chromium, and runs the Playwright
-browser workflows. Locally, install Chromium once with
+browser workflows, including production PWA installation/offline/update checks at both `/` and `/calc/`. Locally,
+install Chromium once with
 `npx playwright install chromium` before running `npm run test:e2e`.
+
+Run the production PWA workflows with:
+
+```bash
+npm run test:e2e:pwa
+npm run test:e2e:pwa:base-path
+```
 
 The project also has a Husky pre-commit hook that runs `lint-staged` for staged source files.
 
@@ -176,6 +184,7 @@ Deployment notes:
 - app manifest, PNG install icons, and the development precache placeholder live under `public/`
 - `NEXT_PUBLIC_BASE_PATH` is supported by metadata, navigation, and service worker registration
 - for a base-path deployment, build with `NEXT_PUBLIC_BASE_PATH=/calc` and configure the static host to map `/calc/` to the same exported `out/` directory; exported files remain at the root of `out/`, not inside an additional `calc/` folder
+- base-path hosts must preserve `/calc` when redirecting clean URLs; stripping it from precache requests such as `/calc/options/index.html` prevents service-worker installation
 - `public/_headers` supplies security and cache headers for hosts that support the Netlify/Cloudflare Pages format
 - hosts that do not consume `_headers` must map the same CSP, referrer, nosniff, frame, permissions, and cache policies in their own configuration
 - for a base-path deployment, prefix the host-specific `/_next/static/*`, `/sw.js`, `/precache-manifest.js`, and `/manifest.json` header rules with that base path

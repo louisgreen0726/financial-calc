@@ -53,6 +53,13 @@ browser-level checks beyond the existing suite.
   and status; network `Response.error()` values also take the cache path instead of becoming failed navigations.
 - The workflow installs a second worker, verifies that the localized update prompt waits for user action, sends
   `SKIP_WAITING`, observes the new controller, and confirms the application-triggered reload.
+- The same production workflow now runs against both root hosting and a real `/calc` deployment. The base-path case
+  requires an exact `/calc/` worker scope, base-prefixed worker/controller URLs, and base-prefixed precache requests
+  before exercising the same offline known/unknown routes and update activation.
+- This browser topology found that a static host's absolute clean-URL redirect can silently strip the deployment
+  prefix from explicit `index.html` precache requests and abort installation. The deterministic test host serves
+  exported `.html` files directly while retaining directory-index behavior for navigation; production hosts must
+  likewise preserve the configured prefix in every redirect.
 
 ### Accessibility Follow-up: Automated WCAG Baseline
 

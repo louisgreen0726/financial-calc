@@ -138,9 +138,16 @@ npm run verify
 
 GitHub Actions 会在推送和拉取请求中运行同一套门禁，并额外审计生产依赖中的高危漏洞。
 门禁会校验生成的 precache manifest、HTML 内部引用、PWA metadata 与静态宿主头模板。CI 还会使用
-`NEXT_PUBLIC_BASE_PATH=/calc` 重新构建、安装 Chromium 并执行 Playwright 浏览器工作流。本地首次运行
-`npm run test:e2e` 前，需要执行
+`NEXT_PUBLIC_BASE_PATH=/calc` 重新构建、安装 Chromium，并分别在 `/` 与 `/calc/` 执行 PWA 安装、离线与
+更新流程。本地首次运行 `npm run test:e2e` 前，需要执行
 `npx playwright install chromium` 安装浏览器。
+
+运行生产 PWA 工作流：
+
+```bash
+npm run test:e2e:pwa
+npm run test:e2e:pwa:base-path
+```
 
 项目同时配置了 Husky pre-commit hook，会通过 `lint-staged` 处理 staged 的源码文件。
 
@@ -176,6 +183,7 @@ npm run preview
 - manifest、PNG 安装图标与开发用 precache 占位文件位于 `public/`
 - `NEXT_PUBLIC_BASE_PATH` 已被 metadata、导航与 service worker 注册逻辑支持
 - 使用 base path 部署时，应以 `NEXT_PUBLIC_BASE_PATH=/calc` 构建，并让静态宿主将 `/calc/` 映射到同一份导出的 `out/` 目录；导出文件仍位于 `out/` 根目录，不要再额外嵌套一层 `calc/` 目录
+- base-path 宿主执行 clean URL 重定向时必须保留 `/calc`；如果把 `/calc/options/index.html` 等 precache 请求重定向到根路径，service worker 将无法安装
 - `public/_headers` 为支持 Netlify/Cloudflare Pages 格式的宿主提供安全头与缓存策略
 - 不读取 `_headers` 的静态宿主必须在自己的配置中映射同等的 CSP、Referrer、nosniff、frame、permissions 与缓存策略
 - 使用 base path 部署时，需要给宿主配置中的 `/_next/static/*`、`/sw.js`、`/precache-manifest.js`、`/manifest.json` 规则增加对应前缀

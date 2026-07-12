@@ -44,5 +44,8 @@ jobs:
       - name: Run production PWA workflow
         run: npm run test:e2e:pwa
 
+      - name: Run base-path production PWA workflow
+        run: npm run test:e2e:pwa:base-path
+
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
