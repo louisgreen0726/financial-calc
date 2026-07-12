@@ -4,6 +4,8 @@ import path from "node:path";
 import vm from "node:vm";
 import { fileURLToPath } from "node:url";
 
+import { validateStaticScriptPolicy } from "./generate-static-csp.mjs";
+
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const forbiddenPrecacheAssets = new Set(["/_headers", "/precache-manifest.js", "/sw.js"]);
 const requiredCspDirectives = [
@@ -291,6 +293,11 @@ export async function checkStaticExport({ rootDirectory = projectRoot, basePath 
   validateWebManifest(JSON.parse(await readFile(path.join(outputDirectory, "manifest.json"), "utf8")));
   const htmlFiles = await listHtmlFiles(outputDirectory);
   invariant(htmlFiles.length > 0, "Static export contains no HTML files.");
+  const scriptPolicies = await Promise.all(
+    htmlFiles.map(async (htmlPath) =>
+      validateStaticScriptPolicy(await readFile(htmlPath, "utf8"), path.relative(outputDirectory, htmlPath))
+    )
+  );
   const exportedRoutes = htmlFiles.map((htmlPath) => routeFromHtmlPath(htmlPath, outputDirectory)).filter(Boolean);
   const missingRoutes = exportedRoutes.filter((route) => !precacheManifest.routes.includes(route));
   const unexpectedRoutes = precacheManifest.routes.filter((route) => !exportedRoutes.includes(route));
@@ -304,11 +311,13 @@ export async function checkStaticExport({ rootDirectory = projectRoot, basePath 
     assets: precacheManifest.assets.length,
     routes: precacheManifest.routes.length,
     htmlFiles: htmlFiles.length,
+    inlineScriptHashes: scriptPolicies.reduce((total, policy) => total + policy.hashes, 0),
     references,
   };
   logger.log(
     `Static export verified${normalizedBasePath ? ` at ${normalizedBasePath}` : ""}: ${result.routes} routes, ` +
-      `${result.assets} precache assets, ${result.htmlFiles} HTML files, ${result.references} internal references.`
+      `${result.assets} precache assets, ${result.htmlFiles} HTML files, ${result.inlineScriptHashes} inline script ` +
+      `hashes, ${result.references} internal references.`
   );
   return result;
 }

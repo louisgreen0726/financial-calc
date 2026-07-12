@@ -20,6 +20,7 @@ The app is no longer just a calculator demo. It includes a full app shell, respo
 - Inbound shared state is length/cardinality bounded before parsing and malformed `json:` arrays fail closed
 - Self-describing, versioned CSV/JSON reports plus print-optimized, searchable PDF output; CSV includes a BOM
 - Manual PWA/service worker integration with base-path-aware registration
+- Build-generated SHA-256 policies allow only the exact inline scripts emitted in each static HTML document
 - Finite-result guards across calculator pages to avoid displaying `NaN` or `Infinity`
 - Updated dependency lockfile with current semver-compatible minor/patch releases
 
@@ -177,7 +178,8 @@ Deployment notes:
 
 - `next.config.ts` uses `output: "export"`
 - development and production builds intentionally use Webpack so the TypeScript Monte Carlo worker is emitted as executable JavaScript
-- the build scans `out/` after Next finishes and writes `out/precache-manifest.js`; do not edit that generated file
+- the build injects a per-document hash-based script CSP, then scans `out/` and writes `out/precache-manifest.js`; do
+  not edit generated HTML or the manifest after the build because the script hashes would become stale
 - `npm run static:check` validates the existing export, while `npm run test:static` rebuilds and validates a `/calc` base-path export
 - production does not require `next start`
 - production does not assume server-side API routes or a Node runtime
@@ -190,6 +192,10 @@ Deployment notes:
 - base-path hosts must preserve `/calc` when redirecting clean URLs; stripping it from precache requests such as `/calc/options/index.html` prevents service-worker installation
 - `public/_headers` supplies security and cache headers for hosts that support the Netlify/Cloudflare Pages format
 - hosts that do not consume `_headers` must map the same CSP, referrer, nosniff, frame, permissions, and cache policies in their own configuration
+- each HTML file also carries a build-generated `script-src` meta policy with exact SHA-256 hashes; it intersects with
+  the host header policy and protects scripts even on hosts with `_headers` matching or line-length limitations
+- the host CSP intentionally retains inline-style compatibility for React chart/component style attributes; script
+  execution does not inherit that exception
 - for a base-path deployment, prefix the host-specific `/_next/static/*`, `/sw.js`, `/precache-manifest.js`, and `/manifest.json` header rules with that base path
 - HTML, `sw.js`, and the precache manifest must be revalidated; hashed `/_next/static/*` assets should be cached as immutable for one year
 
@@ -224,6 +230,7 @@ financial-calc/
 - `src/components/service-worker-registration.tsx`: browser-side service worker registration
 - `public/sw.js`: static-export service worker
 - `scripts/generate-precache-manifest.mjs`: post-build static asset and route manifest generator
+- `scripts/generate-static-csp.mjs`: per-document inline-script hash policy generator and validator
 - `scripts/check-static-export.mjs`: static export, precache, base-path, manifest, and host-header validator
 - `public/_headers`: static-host security and cache policy template
 - the in-app Help page documents calculation timing, rate/statistical assumptions, worked examples, and model limitations in English and Chinese

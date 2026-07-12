@@ -21,8 +21,14 @@ interface StaticExportChecker {
   parsePrecacheManifest(source: string): { buildId: string; assets: string[]; routes: string[] };
 }
 
+interface StaticCspGenerator {
+  injectStaticScriptPolicy(html: string, filename?: string): string;
+}
+
 const checkerUrl = pathToFileURL(path.resolve(process.cwd(), "scripts", "check-static-export.mjs"));
 const checker = (await import(/* @vite-ignore */ checkerUrl.href)) as StaticExportChecker;
+const cspGeneratorUrl = pathToFileURL(path.resolve(process.cwd(), "scripts", "generate-static-csp.mjs"));
+const cspGenerator = (await import(/* @vite-ignore */ cspGeneratorUrl.href)) as StaticCspGenerator;
 const temporaryDirectories: string[] = [];
 
 const headers = `/*
@@ -63,7 +69,9 @@ async function createStaticExport({ basePath = "" } = {}) {
     path.join(rootDirectory, "out", "manifest.json"),
     JSON.stringify({ id: "./", start_url: ".", scope: "." })
   );
-  const html = `<link href="${basePath}/_next/static/app.js"><a href="${basePath}/tvm/">TVM</a>`;
+  const html = cspGenerator.injectStaticScriptPolicy(
+    `<html><head><link href="${basePath}/_next/static/app.js"></head><body><a href="${basePath}/tvm/">TVM</a></body></html>`
+  );
   await writeFile(path.join(rootDirectory, "out", "index.html"), html);
   await writeFile(path.join(rootDirectory, "out", "tvm", "index.html"), html);
   await writeFile(
@@ -129,7 +137,12 @@ describe("static export checker", () => {
     ).rejects.toThrow(/buildId/);
 
     await writeFile(path.join(rootDirectory, ".next", "BUILD_ID"), "build-123");
-    await writeFile(path.join(rootDirectory, "out", "index.html"), '<script src="/_next/static/app.js"></script>');
+    await writeFile(
+      path.join(rootDirectory, "out", "index.html"),
+      cspGenerator.injectStaticScriptPolicy(
+        '<html><head><script src="/_next/static/app.js"></script></head><body></body></html>'
+      )
+    );
     await expect(
       checker.checkStaticExport({ rootDirectory, basePath: "/calc", logger: { log: vi.fn() } })
     ).rejects.toThrow(/outside base path/);

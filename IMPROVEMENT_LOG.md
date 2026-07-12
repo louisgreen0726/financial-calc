@@ -24,11 +24,12 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Design bounded, schema-versioned history import/export with duplicate handling and validation.
 - [x] Profile CI jobs and split/cache independent gates where it reduces feedback time without weakening coverage.
 - [x] Extract VaR/CVaR calculations from the route component into a pure tested engine with external tail references.
-- [ ] Assess hash/nonce-based CSP generation for static export and document host-specific deployment feasibility.
+- [x] Assess and implement hash-based CSP generation for static export with host-independent enforcement.
 - [x] Add property/fuzz coverage for URL and history restoration across every calculator schema.
 - [ ] Add deterministic historical/stress scenarios alongside normal VaR without implying predictive certainty.
 - [ ] Audit input-unit labels and display/export rounding consistency across all calculators.
 - [ ] Plan and test remaining major dependency migrations as isolated compatibility batches.
+- [ ] Reduce `style-src 'unsafe-inline'` exposure by inventorying static versus runtime component/chart styles.
 
 ## 2026-07-13
 
@@ -769,3 +770,54 @@ Verification:
 - Current work: Improvement 19 is fully verified and ready to commit; static CSP feasibility is next.
 - Queue status: 4 active items remain: static CSP feasibility, deterministic risk stress scenarios, calculator-wide
   unit/rounding consistency, and isolated major dependency migrations.
+
+### Improvement 20: Host-independent hash-based script CSP for static export
+
+Status: completed.
+
+Changes:
+
+- Audited the final root export with an HTML parser: 16 documents contained 48 globally unique inline script bodies,
+  308 external script references, 121 style attributes, 19 style elements, and zero inline event-handler attributes.
+- Rejected a fixed nonce because it would be public and reusable in static files. A secure per-response nonce would
+  require the runtime server that this static-export architecture intentionally avoids.
+- Measured a global SHA-256 script allowlist at about 2,615 characters, above Cloudflare Pages' documented
+  2,000-character `_headers` line limit. Each document has only six inline scripts and needs about 370 characters.
+- Added a post-build generator that parses every HTML document, hashes its exact inline script text, and inserts a
+  `script-src 'self'` meta policy at the start of `<head>`. Blob permission is isolated to `worker-src`. This policy
+  intersects with the existing host header,
+  so the header's compatibility fallback cannot authorize an unlisted inline script.
+- Extended the static-export gate to recompute and validate every document policy before accepting the artifact.
+  Missing, duplicate, stale, late, or `unsafe-inline` script policies now fail the build contract.
+- Added focused generator/validator tests and updated end-to-end static-export fixtures to use the real policy generator.
+- Added a production browser probe that injects an unknown inline script, requires a `securitypolicyviolation`, and
+  proves the script did not execute while normal PWA hydration, offline navigation, and update activation still work.
+- Documented why inline styles remain a separate boundary: current React charts and UI primitives emit dynamic style
+  attributes, while script execution is now independently hash-restricted.
+
+Files and areas:
+
+- `scripts/generate-static-csp.mjs`, `scripts/check-static-export.mjs`, and `package.json`
+- `src/lib/static-csp.test.ts` and `src/lib/static-export-check.test.ts`
+- `e2e/pwa-offline.spec.ts`
+- English/Chinese deployment documentation and engineering review/log records
+
+Verification:
+
+- Focused CSP/static-export suite: 2 files and 8 tests passed; strict TypeScript and targeted formatting passed.
+- Root production build generated and validated 96 per-document hash entries across 16 HTML files; static export stayed
+  at 15 routes and 197 precache assets, and every route bundle budget passed.
+- Root production PWA suite: both the active attack probe and full install/offline/404/update workflow passed.
+- `/calc` production matrix also validated 96 hash entries, 706 internal references, every bundle budget, and both CSP
+  attack-probe and PWA lifecycle tests.
+- `npm run verify`: passed; 48 Vitest files and 404 tests passed, followed by the 15-route root static contract and all
+  route budgets. The final root PWA suite passed 2/2 against the newly generated artifact.
+- Production dependency audit reported zero vulnerabilities; extended formatting and `git diff --check` passed.
+
+### Progress checkpoint: 06:44 +08:00
+
+- Continuous-session elapsed time: 3 hours 38 minutes.
+- Completed improvement batches: 20; static inline scripts are now restricted by exact build-time hashes.
+- Current work: Improvement 20 is fully verified and ready to commit; deterministic risk stress scenarios are next.
+- Queue status: 4 active items remain: deterministic risk stress scenarios, calculator-wide unit/rounding consistency,
+  isolated major dependency migrations, and inline-style CSP reduction.

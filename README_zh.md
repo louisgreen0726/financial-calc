@@ -21,6 +21,7 @@ Financial Calc 是一个基于 Next.js 16、React 19、TypeScript、Tailwind CSS
 - 外部分享状态会在解析前限制长度与数组数量，畸形 `json:` 数组会按失败关闭处理
 - 支持自描述、带版本的 CSV / JSON 报告及打印优化的可搜索 PDF 输出；CSV 带 BOM
 - 手动 PWA / service worker 接入，注册逻辑支持 base path
+- 构建时生成 SHA-256 策略，只允许每份静态 HTML 中实际输出的内联脚本
 - 各计算页面加入有限数结果守卫，避免向用户展示 `NaN` 或 `Infinity`
 - 依赖 lockfile 已更新到 package.json semver 范围内较新的 minor/patch 版本
 
@@ -176,7 +177,8 @@ npm run preview
 
 - `next.config.ts` 使用 `output: "export"`
 - 开发与生产构建固定使用 Webpack，确保 TypeScript Monte Carlo Worker 被输出为浏览器可执行 JavaScript
-- Next 构建完成后会扫描 `out/` 并生成 `out/precache-manifest.js`，不要手动编辑该生成文件
+- Next 构建完成后会为每份 HTML 注入基于 hash 的脚本 CSP，再扫描 `out/` 并生成
+  `out/precache-manifest.js`；不要在构建后手工修改 HTML 或 manifest，否则脚本 hash 会失效
 - `npm run static:check` 校验现有导出；`npm run test:static` 重新构建并校验 `/calc` base-path 导出
 - 生产环境不使用 `next start`
 - 生产环境不假设服务端 API routes 或 Node runtime
@@ -189,6 +191,9 @@ npm run preview
 - base-path 宿主执行 clean URL 重定向时必须保留 `/calc`；如果把 `/calc/options/index.html` 等 precache 请求重定向到根路径，service worker 将无法安装
 - `public/_headers` 为支持 Netlify/Cloudflare Pages 格式的宿主提供安全头与缓存策略
 - 不读取 `_headers` 的静态宿主必须在自己的配置中映射同等的 CSP、Referrer、nosniff、frame、permissions 与缓存策略
+- 每份 HTML 还包含构建生成的 `script-src` meta 策略及精确 SHA-256 hash；它会与宿主 header 策略叠加，
+  即使宿主存在 `_headers` 匹配或单行长度限制也能约束脚本
+- React 图表和组件仍需要内联 style 属性，因此宿主 CSP 保留样式兼容例外；该例外不会放宽脚本执行
 - 使用 base path 部署时，需要给宿主配置中的 `/_next/static/*`、`/sw.js`、`/precache-manifest.js`、`/manifest.json` 规则增加对应前缀
 - HTML、`sw.js` 与 precache manifest 必须重新验证；带哈希的 `/_next/static/*` 资源应按 immutable 缓存一年
 
@@ -223,6 +228,7 @@ financial-calc/
 - `src/components/service-worker-registration.tsx`：浏览器端 service worker 注册
 - `public/sw.js`：静态导出场景下使用的 service worker
 - `scripts/generate-precache-manifest.mjs`：构建后静态资源与路由清单生成器
+- `scripts/generate-static-csp.mjs`：逐文档内联脚本 hash 策略生成与校验器
 - `scripts/check-static-export.mjs`：静态导出、precache、base path、manifest 与宿主头校验器
 - `public/_headers`：静态宿主安全头与缓存策略模板
 - 应用内帮助页以中英文说明计算期次、利率/统计假设、可复算示例与模型限制

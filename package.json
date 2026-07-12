@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "next build --webpack && node scripts/generate-precache-manifest.mjs",
+    "build": "next build --webpack && node scripts/generate-static-csp.mjs && node scripts/generate-precache-manifest.mjs",
     "bundle:check": "node scripts/check-bundle-budget.mjs",
     "static:check": "node scripts/check-static-export.mjs",
     "visuals:generate": "node scripts/generate-workspace-visuals.mjs",

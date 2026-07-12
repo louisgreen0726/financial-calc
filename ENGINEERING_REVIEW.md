@@ -184,6 +184,24 @@ browser-level checks beyond the existing suite.
 - Next.js compilation caches are isolated by deployment target and lockfile/source hashes. Playwright screenshots and
   traces are now uploaded on failure with seven-day retention instead of remaining inaccessible on an ephemeral runner.
 
+### CSP Follow-up: Static Per-Document Script Hashes
+
+- The exported site contained 48 globally unique inline script bodies. A single hash allowlist required about 2,615
+  characters, exceeding Cloudflare Pages' documented 2,000-character `_headers` line limit. Route-specific header
+  rules would not reliably protect an arbitrary request URL served with the static 404 document.
+- Every HTML document contains exactly six inline scripts, so the build now injects a roughly 370-character
+  `script-src` meta policy with exact SHA-256 hashes before any script. This document policy intersects with the host
+  header CSP and therefore removes the effective script `unsafe-inline` allowance without relying on route matching.
+- Blob permission is scoped to `worker-src`; the stricter document policy does not allow blob-backed scripts.
+- A fixed nonce would be public and reusable in a static export; a secure per-response nonce requires a runtime server
+  that this deployment model intentionally does not have. Build-time content hashes are the appropriate static model.
+- Static validation recomputes every hash and rejects missing, duplicate, late, stale, or `unsafe-inline` meta policies.
+  Browser coverage also injects an unlisted script and requires a CSP violation while normal hydration and PWA flows
+  continue working.
+- Inline style hardening remains separate: the current export has 121 style attributes and 19 style elements from
+  React components, charts, and UI primitives. The header retains `style-src 'unsafe-inline'`; no inline event-handler
+  attributes were found, and the stricter script policy does not inherit the style exception.
+
 ### Deployment Follow-up: Static Artifact Contract
 
 - A build succeeding did not previously prove that precache entries, route HTML, internal asset references, base-path
@@ -283,7 +301,10 @@ No unresolved P0 findings remain.
 ## Residual Constraints
 
 - The PDF libraries are intentionally lazy-loaded to keep the initial application payload smaller. A first-ever PDF export cannot start after the browser is already offline; once loaded, the runtime cache can retain those chunks.
-- `public/_headers` is a deployment template, not a cross-host standard. Hosts that do not support that file must reproduce the policies in their own configuration, including base-path-prefixed rules. The CSP retains `unsafe-inline` for compatibility with the current static Next.js output; hash-based CSP generation is a separate deployment hardening project.
+- `public/_headers` is a deployment template, not a cross-host standard. Hosts that do not support that file must
+  reproduce the response-header policies in their own configuration, including base-path-prefixed cache rules. The
+  generated HTML independently restricts inline scripts by hash, while inline styles remain a documented compatibility
+  boundary for component and chart rendering.
 - Financial formulas are unit- and property-tested but are not independently certified for regulated or fiduciary use.
   Production use still requires domain-expert validation against the institution's conventions, rounding rules, and
   approved reference systems.

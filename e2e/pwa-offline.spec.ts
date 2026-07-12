@@ -34,6 +34,47 @@ test.afterAll(async () => {
   await Promise.all([rm(updateWorkerPath, { force: true }), rm(offlineMarkerPath, { force: true })]);
 });
 
+test("enforces generated inline-script hashes", async ({ page }) => {
+  await page.goto(appPath("/"));
+
+  const result = await page.evaluate(async () => {
+    const probeWindow = window as typeof window & { __financialCalcCspProbe?: boolean };
+    probeWindow.__financialCalcCspProbe = false;
+    const violationPromise = new Promise<{ blockedURI: string; effectiveDirective: string } | null>((resolve) => {
+      const timeout = window.setTimeout(() => resolve(null), 2_000);
+      window.addEventListener(
+        "securitypolicyviolation",
+        (event) => {
+          window.clearTimeout(timeout);
+          resolve({ blockedURI: event.blockedURI, effectiveDirective: event.effectiveDirective });
+        },
+        { once: true }
+      );
+    });
+    const script = document.createElement("script");
+    script.textContent = "window.__financialCalcCspProbe = true;";
+    document.head.append(script);
+    const violation = await violationPromise;
+    const policy = document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.getAttribute("content") ?? "";
+
+    return {
+      executed: probeWindow.__financialCalcCspProbe,
+      hashSources: policy.match(/'sha256-[^']+'/g)?.length ?? 0,
+      policy,
+      violation,
+    };
+  });
+
+  expect(result.policy).toContain("script-src 'self' 'sha256-");
+  expect(result.policy).toContain("worker-src 'self' blob:");
+  expect(result.policy).not.toMatch(/script-src[^;]*blob:/);
+  expect(result.policy).not.toContain("unsafe-inline");
+  expect(result.hashSources).toBeGreaterThan(0);
+  expect(result.executed).toBe(false);
+  expect(result.violation).toMatchObject({ blockedURI: "inline" });
+  expect(result.violation?.effectiveDirective).toMatch(/^script-src/);
+});
+
 test("installs, serves uncached routes offline, falls back to 404, and activates updates on request", async ({
   page,
 }) => {
