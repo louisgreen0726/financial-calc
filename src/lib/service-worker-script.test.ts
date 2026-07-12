@@ -134,7 +134,7 @@ describe("service worker navigation strategy", () => {
   });
 
   it("returns the precached static 404 page for an unknown offline navigation", async () => {
-    const notFoundResponse = { source: "static-404" };
+    const notFoundResponse = new Response("static-404", { status: 200 });
     const staticCache = createCache();
     staticCache.match.mockImplementation((request: string | TestRequest) =>
       Promise.resolve(getRequestUrl(request) === "/404.html" ? notFoundResponse : undefined)
@@ -148,9 +148,29 @@ describe("service worker navigation strategy", () => {
       url: "https://example.test/unknown-route/",
     });
 
-    await expect(responsePromise).resolves.toBe(notFoundResponse);
+    const response = (await responsePromise) as Response;
+    expect(response.status).toBe(404);
+    await expect(response.text()).resolves.toBe("static-404");
     expect(staticCache.match).toHaveBeenCalledWith("/404.html");
     expect(staticCache.match).not.toHaveBeenCalledWith("/index.html");
+  });
+
+  it("falls back to cache when the network resolves with an error response", async () => {
+    const cachedResponse = { source: "runtime-cache" };
+    const runtimeCache = createCache(cachedResponse);
+    const fetchMock = vi.fn().mockResolvedValue(Response.error());
+    const { listeners } = await loadServiceWorker({ fetchMock, runtimeCache });
+
+    const { responsePromise } = await dispatchFetch(listeners.get("fetch"), {
+      method: "GET",
+      mode: "navigate",
+      url: "https://example.test/options/",
+    });
+
+    await expect(responsePromise).resolves.toBe(cachedResponse);
+    expect(runtimeCache.match).toHaveBeenCalledWith(
+      expect.objectContaining({ url: "https://example.test/options/", method: "GET" })
+    );
   });
 
   it("returns a network error instead of the home page when the static 404 page is unavailable", async () => {

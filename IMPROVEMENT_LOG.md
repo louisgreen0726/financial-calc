@@ -11,7 +11,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Complete the implied-volatility workflow: market-price validation, history/share/export, i18n, and E2E.
 - [ ] Add option-price and implied-volatility property coverage across a deterministic contract matrix.
 - [x] Audit production bundle sizes and reduce avoidable client-side JavaScript or eager imports.
-- [ ] Add automated PWA/offline navigation and update-flow browser coverage.
+- [x] Add automated PWA/offline navigation and update-flow browser coverage.
 - [ ] Add automated accessibility checks for calculator forms, dialogs, navigation, and result announcements.
 - [ ] Review all calculator pages for validation/schema drift and inconsistent supported domains.
 - [ ] Profile large loan schedules, portfolio simulations, history filtering, and report exports.
@@ -154,4 +154,48 @@ Verification:
   450,961 / 500,000 gzip bytes; Options was 418,482 / 470,000 gzip bytes.
 - Playwright: 2 desktop/mobile browser workflows passed using the installed system Chrome after the pinned Chromium
   download endpoint was unavailable locally.
+- `npm audit`: zero known vulnerabilities; `git diff --check`: passed.
+
+### Progress checkpoint: 03:50 +08:00
+
+- Continuous-session elapsed time: 44 minutes.
+- Completed improvement batches in this session: 4; latest commit: `c5c870c`.
+- Current work: production PWA Playwright coverage. Real-browser diagnostics confirmed service-worker installation,
+  route precaching, page control, and interception; an unhandled fallback failure after a real socket disconnect is
+  being isolated before the test is committed.
+- Queue status: 8 active items remain after bundle optimization; the queue is intentionally non-empty.
+
+### Improvement 5: Production PWA offline and update browser workflow
+
+Status: completed.
+
+Changes:
+
+- Added an isolated Playwright configuration that builds and serves the production static export before exercising
+  the real service worker. The normal development E2E suite explicitly excludes this production-only spec.
+- Added a controlled static test server that can simulate a genuine network disconnect after installation without
+  bypassing service-worker interception. Test-only worker and offline marker files are created in `out/` and removed
+  after the workflow.
+- Verified browser-level worker installation, page control, cache population, an unvisited Options route loading
+  offline, an unknown route returning the cached 404 page, a waiting update prompt, user-confirmed `SKIP_WAITING`,
+  controller replacement, and automatic page reload.
+- Fixed a real Chromium compatibility issue found by the new workflow: cached document responses are now converted
+  into fresh navigation responses before `respondWith`, rather than retaining the original `/route/index.html`
+  response URL. Error responses with status 0 also enter fallback, and offline unknown routes retain HTTP 404 status
+  instead of returning cached 404 content with status 200.
+- Added the production PWA workflow to CI and documented `npm run test:e2e:pwa` in both README files.
+
+Files and areas:
+
+- `public/sw.js` and `src/lib/service-worker-script.test.ts`
+- `e2e/pwa-offline.spec.ts`, `playwright.pwa.config.ts`, `playwright.config.ts`
+- `scripts/serve-pwa-e2e.mjs`, package metadata, CI, and README command references
+
+Verification:
+
+- Focused service-worker Vitest: 9 tests passed.
+- `npm run verify`: passed; 37 Vitest files and 286 tests passed.
+- `npm run test:e2e`: 2 desktop/mobile calculator workflows passed.
+- `npm run test:e2e:pwa`: 1 production PWA workflow passed in 38.2 seconds using system Chrome.
+- Static export: 15 routes and 197 precache assets; all bundle budgets passed.
 - `npm audit`: zero known vulnerabilities; `git diff --check`: passed.

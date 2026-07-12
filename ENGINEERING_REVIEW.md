@@ -43,6 +43,17 @@ browser-level checks beyond the existing suite.
 - The current largest initial payload is Portfolio at 450,961 / 500,000 gzip bytes. Options is 418,482 / 470,000;
   lighter informational and settings routes remain below 300,000 bytes.
 
+### PWA Follow-up: Real Offline Navigation and Updates
+
+- A production-only Playwright workflow now installs the emitted service worker, confirms that it controls the page
+  and populated its versioned static cache, disconnects the backing static server, and opens an unvisited calculator
+  entirely from precache. Unknown offline routes render the cached 404 document with HTTP 404 status.
+- Browser testing exposed that Chromium can reject a cached document response when it retains the asset URL used to
+  populate it. Offline navigation fallbacks now reconstruct a fresh document response with the same body, headers,
+  and status; network `Response.error()` values also take the cache path instead of becoming failed navigations.
+- The workflow installs a second worker, verifies that the localized update prompt waits for user action, sends
+  `SKIP_WAITING`, observes the new controller, and confirms the application-triggered reload.
+
 ### Prioritized Adjustment List
 
 #### P0
@@ -107,7 +118,7 @@ No unresolved P0 findings remain.
 ## Verification Evidence
 
 - Formatting, strict TypeScript, ESLint, Vitest, production build, `npm audit`, and `git diff --check` were run after the fixes.
-- The unit/integration suite covers 37 files and 285 tests, including the numeric parser, TVM negative-rate contract,
+- The unit/integration suite covers 37 files and 286 tests, including the numeric parser, TVM negative-rate contract,
   dividend-adjusted Black-Scholes-Merton pricing and Greeks, cross-tab settings, export naming, Markdown safety, and
   implied-volatility solver, mobile history-control regressions, and related workflows. Two additional Playwright
   tests cover desktop and mobile browser behavior.
@@ -118,6 +129,8 @@ No unresolved P0 findings remain.
   and rectangle-level checks confirmed zero overlap among the result, history control, and mobile navigation.
 - The committed Playwright suite verifies dividend-aware prices, legacy defaults, share-link round trips, Chinese
   localization, six-input mobile layout, horizontal overflow, console errors, and fixed-navigation overlap in CI.
+- A separate production Playwright workflow verifies PWA installation, precache contents, offline known/unknown
+  navigation, correct 404 status, user-controlled worker activation, controller replacement, and reload behavior.
 - Per-route gzip budgets cover all 15 static routes and are part of the default verification command.
 - `npm audit` reported zero known vulnerabilities across 767 installed production, development, optional, and peer
   dependencies.

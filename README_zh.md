@@ -109,6 +109,7 @@ npm run typecheck
 npm run lint
 npm run test
 npm run test:e2e
+npm run test:e2e:pwa
 npm run build
 npm run bundle:check
 npm audit

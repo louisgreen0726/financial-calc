@@ -45,6 +45,15 @@ function isCacheable(response) {
   return Boolean(response?.ok && response.type === "basic");
 }
 
+function toNavigationResponse(response, status = response.status, statusText = response.statusText) {
+  if (typeof Response !== "function" || !(response instanceof Response)) return response;
+  return new Response(response.body, {
+    status,
+    statusText,
+    headers: response.headers,
+  });
+}
+
 function canonicalNavigationPath(pathname) {
   if (pathname === BASE_PATH) return `${BASE_PATH || ""}/`;
   if (pathname.endsWith("/") || /\/[^/]+\.[^/]+$/.test(pathname)) return pathname;
@@ -171,6 +180,9 @@ async function navigationNetworkFirst(request) {
 
   try {
     const response = await fetchWithTimeout(request, NAVIGATION_TIMEOUT_MS);
+    if (response.type === "error" || response.status === 0) {
+      throw new TypeError("Navigation network request returned an error response.");
+    }
     const contentType = response.headers.get("content-type") ?? "";
     if (isCacheable(response) && contentType.includes("text/html")) {
       await runtimeCache.put(cacheKey, response.clone());
@@ -179,17 +191,20 @@ async function navigationNetworkFirst(request) {
     return response;
   } catch {
     const runtimeResponse = await runtimeCache.match(cacheKey);
-    if (runtimeResponse) return runtimeResponse;
+    if (runtimeResponse) return toNavigationResponse(runtimeResponse);
 
     const staticCache = await caches.open(STATIC_CACHE);
     const routeResponse = await staticCache.match(cacheKey);
-    if (routeResponse) return routeResponse;
+    if (routeResponse) return toNavigationResponse(routeResponse);
 
     const routeAssetResponse = await staticCache.match(routeAssetPath(url.pathname));
-    if (routeAssetResponse) return routeAssetResponse;
+    if (routeAssetResponse) return toNavigationResponse(routeAssetResponse);
 
     // An unknown offline navigation must not silently render the home page.
-    return (await staticCache.match(withBasePath("/404.html"))) ?? Response.error();
+    const notFoundResponse = (await staticCache.match(withBasePath("/404.html"))) ?? Response.error();
+    return notFoundResponse.type === "error"
+      ? notFoundResponse
+      : toNavigationResponse(notFoundResponse, 404, "Not Found");
   }
 }
 
