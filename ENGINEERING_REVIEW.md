@@ -32,6 +32,17 @@ browser-level checks beyond the existing suite.
 - Unit tests cover dividend-aware call/put round trips, zero-volatility boundaries, impossible prices, and schema
   independence. Playwright verifies the `q=2%`, market price `9.227` to `20.00%` browser workflow and share URL.
 
+### Performance Follow-up: Initial Route JavaScript
+
+- The shared History panel no longer pulls `framer-motion` into every calculator that renders it. Existing CSS
+  animation utilities preserve the panel entrance without a shared runtime dependency; the Options route's raw
+  initial JavaScript fell by 124,780 bytes (8.4%), with comparable reductions across six other calculators.
+- `npm run bundle:check` now measures the unique initial scripts referenced by every exported HTML route, including
+  flat and directory error-page exports and base-path-prefixed assets. Explicit gzip ceilings fail `npm run verify`
+  before route growth becomes an unnoticed regression.
+- The current largest initial payload is Portfolio at 450,961 / 500,000 gzip bytes. Options is 418,482 / 470,000;
+  lighter informational and settings routes remain below 300,000 bytes.
+
 ### Prioritized Adjustment List
 
 #### P0
@@ -96,7 +107,7 @@ No unresolved P0 findings remain.
 ## Verification Evidence
 
 - Formatting, strict TypeScript, ESLint, Vitest, production build, `npm audit`, and `git diff --check` were run after the fixes.
-- The unit/integration suite covers 36 files and 282 tests, including the numeric parser, TVM negative-rate contract,
+- The unit/integration suite covers 37 files and 285 tests, including the numeric parser, TVM negative-rate contract,
   dividend-adjusted Black-Scholes-Merton pricing and Greeks, cross-tab settings, export naming, Markdown safety, and
   implied-volatility solver, mobile history-control regressions, and related workflows. Two additional Playwright
   tests cover desktop and mobile browser behavior.
@@ -107,5 +118,6 @@ No unresolved P0 findings remain.
   and rectangle-level checks confirmed zero overlap among the result, history control, and mobile navigation.
 - The committed Playwright suite verifies dividend-aware prices, legacy defaults, share-link round trips, Chinese
   localization, six-input mobile layout, horizontal overflow, console errors, and fixed-navigation overlap in CI.
+- Per-route gzip budgets cover all 15 static routes and are part of the default verification command.
 - `npm audit` reported zero known vulnerabilities across 767 installed production, development, optional, and peer
   dependencies.

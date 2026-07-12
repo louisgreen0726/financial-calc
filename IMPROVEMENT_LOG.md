@@ -10,7 +10,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 
 - [x] Complete the implied-volatility workflow: market-price validation, history/share/export, i18n, and E2E.
 - [ ] Add option-price and implied-volatility property coverage across a deterministic contract matrix.
-- [ ] Audit production bundle sizes and reduce avoidable client-side JavaScript or eager imports.
+- [x] Audit production bundle sizes and reduce avoidable client-side JavaScript or eager imports.
 - [ ] Add automated PWA/offline navigation and update-flow browser coverage.
 - [ ] Add automated accessibility checks for calculator forms, dialogs, navigation, and result announcements.
 - [ ] Review all calculator pages for validation/schema drift and inconsistent supported domains.
@@ -121,3 +121,37 @@ Verification:
 - Playwright: 2 browser workflows passed.
 - Static export: 15 routes and 195 precache assets.
 - `npm audit`: zero known vulnerabilities across 767 installed dependencies.
+
+### Improvement 4: Shared history-panel bundle reduction and enforceable route budgets
+
+Status: completed.
+
+Changes:
+
+- Removed `framer-motion` from the shared History panel and replaced its panel entrance with the project's existing
+  CSS animation utilities. History behavior, focus handling, favorites, selection, restore, and persistence retry
+  paths remain unchanged.
+- Reduced the Options route's raw initial JavaScript from 1,476,906 to 1,352,126 bytes (124,780 bytes, 8.4%). The
+  Loans, Bonds, Risk, Cash Flow, Equity, and Macro routes received a similar reduction because they share the panel;
+  TVM and Portfolio retain route-specific animation usage.
+- Added a post-build route budget checker that measures each exported page's unique initial scripts using level-9
+  gzip, applies explicit per-route ceilings, handles `/calc`-style base paths, and deduplicates Next.js' two 404
+  exports conservatively.
+- Added the budget check to `npm run verify`, documented the standalone command, and added regression tests for root,
+  directory, flat error-page, and base-path exports.
+
+Files and areas:
+
+- `src/components/history-panel.tsx`
+- `scripts/check-bundle-budget.mjs`, `src/lib/bundle-budget.test.ts`, and `package.json`
+- README command references and `ENGINEERING_REVIEW.md`
+
+Verification:
+
+- Focused Vitest: 2 files, 14 tests passed.
+- `npm run verify`: passed; 37 Vitest files and 285 tests passed.
+- Production export: 15 routes and 197 precache assets; all route budgets passed. Largest route was Portfolio at
+  450,961 / 500,000 gzip bytes; Options was 418,482 / 470,000 gzip bytes.
+- Playwright: 2 desktop/mobile browser workflows passed using the installed system Chrome after the pinned Chromium
+  download endpoint was unavailable locally.
+- `npm audit`: zero known vulnerabilities; `git diff --check`: passed.

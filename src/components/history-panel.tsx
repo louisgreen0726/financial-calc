@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Clock, Trash2, RotateCcw, X, Star, Search, CheckSquare, Square } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
 import { PENDING_RESTORE_KEY } from "@/lib/constants";
 import { safeGetSessionJSON, safeRemoveSessionItem } from "@/lib/storage";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -263,242 +262,233 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
       </Button>
 
       {/* Panel */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            ref={panelRef}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            id={panelId}
-            role="dialog"
-            aria-modal="false"
-            aria-labelledby={panelTitleId}
-            tabIndex={-1}
-            className={cn(
-              "app-card fixed inset-x-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom)+1rem)] z-50 max-h-[min(72vh,34rem)] rounded-lg border bg-card sm:inset-x-auto sm:right-4 sm:bottom-36 sm:w-[calc(100vw-2rem)] sm:max-w-[420px] sm:max-h-[min(65vh,600px)] lg:bottom-20",
-              className
-            )}
-          >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 border-b">
-              <CardTitle id={panelTitleId} className="text-sm font-semibold">
-                {t("history.title")}
-              </CardTitle>
-              <div className="flex gap-1 items-center">
-                {batchMode ? (
-                  <>
-                    <span className="text-xs text-muted-foreground mr-2">
-                      {selectedIds.size} {t("history.itemsSelected")}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 text-destructive hover:text-destructive"
-                      disabled={selectedIds.size === 0}
-                      onClick={deleteSelected}
-                    >
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      {t("history.delete")}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-10 w-10 sm:h-8 sm:w-8"
-                      aria-label={t("history.cancelSelection")}
-                      onClick={() => {
-                        setBatchMode(false);
-                        setSelectedIds(new Set());
-                      }}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-10 w-10 sm:h-8 sm:w-8"
-                      onClick={() => setBatchMode(true)}
-                      title={t("history.select")}
-                      aria-label={t("history.select")}
-                    >
-                      <CheckSquare className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-10 w-10 sm:h-8 sm:w-8"
-                      onClick={() => setClearDialogOpen(true)}
-                      title={t("history.clearAll")}
-                      aria-label={t("history.clearAll")}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-10 w-10 sm:h-8 sm:w-8"
-                      onClick={() => setIsOpen(false)}
-                      aria-label={t("history.closePanel")}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </>
-                )}
-              </div>
-            </CardHeader>
-
-            <CardContent className="pt-3">
-              {(hasPendingPersistence || hasPendingFavoritePersistence) && (
-                <div
-                  className="mb-3 flex items-center justify-between gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-foreground"
-                  role="status"
-                >
-                  <span>{persistenceMessage}</span>
+      {isOpen && (
+        <div
+          ref={panelRef}
+          id={panelId}
+          role="dialog"
+          aria-modal="false"
+          aria-labelledby={panelTitleId}
+          tabIndex={-1}
+          className={cn(
+            "app-card fixed inset-x-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom)+1rem)] z-50 max-h-[min(72vh,34rem)] animate-in rounded-lg border bg-card fade-in slide-in-from-bottom-2 duration-200 sm:inset-x-auto sm:right-4 sm:bottom-36 sm:w-[calc(100vw-2rem)] sm:max-w-[420px] sm:max-h-[min(65vh,600px)] lg:bottom-20",
+            className
+          )}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 border-b">
+            <CardTitle id={panelTitleId} className="text-sm font-semibold">
+              {t("history.title")}
+            </CardTitle>
+            <div className="flex gap-1 items-center">
+              {batchMode ? (
+                <>
+                  <span className="text-xs text-muted-foreground mr-2">
+                    {selectedIds.size} {t("history.itemsSelected")}
+                  </span>
                   <Button
-                    type="button"
                     variant="ghost"
                     size="sm"
-                    className="h-8"
+                    className="h-8 text-destructive hover:text-destructive"
+                    disabled={selectedIds.size === 0}
+                    onClick={deleteSelected}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    {t("history.delete")}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 sm:h-8 sm:w-8"
+                    aria-label={t("history.cancelSelection")}
                     onClick={() => {
-                      void Promise.all([retryPersistence(), retryFavoritePersistence()]);
+                      setBatchMode(false);
+                      setSelectedIds(new Set());
                     }}
                   >
-                    {t("history.retrySave")}
+                    <X className="h-4 w-4" />
                   </Button>
-                </div>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 sm:h-8 sm:w-8"
+                    onClick={() => setBatchMode(true)}
+                    title={t("history.select")}
+                    aria-label={t("history.select")}
+                  >
+                    <CheckSquare className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 sm:h-8 sm:w-8"
+                    onClick={() => setClearDialogOpen(true)}
+                    title={t("history.clearAll")}
+                    aria-label={t("history.clearAll")}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 sm:h-8 sm:w-8"
+                    onClick={() => setIsOpen(false)}
+                    aria-label={t("history.closePanel")}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </>
               )}
-              {/* Search */}
-              <div className="relative mb-3">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input
-                  ref={searchInputRef}
-                  aria-label={t("history.searchPlaceholder")}
-                  placeholder={t("history.searchPlaceholder")}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 h-8 text-sm"
-                />
-              </div>
+            </div>
+          </CardHeader>
 
-              <ScrollArea className="h-80">
-                <div className="divide-y border-y">
-                  {sorted.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground text-sm">{t("history.noResults")}</div>
-                  )}
-                  {sorted.map((item) => (
-                    <motion.div
-                      key={item.id}
-                      layout
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className={cn(
-                        "group flex items-start justify-between p-3 transition-colors hover:bg-muted/25",
-                        visibleFavorites.has(item.id) && "bg-primary/5",
-                        selectedIds.has(item.id) && "ring-2 ring-primary"
-                      )}
-                    >
-                      <div className="flex items-start gap-2 flex-1 min-w-0">
-                        {batchMode && (
-                          <button
-                            type="button"
-                            className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-md sm:h-6 sm:w-6"
-                            aria-label={selectedIds.has(item.id) ? t("history.deselectItem") : t("history.selectItem")}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleSelect(item.id);
-                            }}
-                          >
-                            {selectedIds.has(item.id) ? (
-                              <CheckSquare className="h-4 w-4 text-primary" />
-                            ) : (
-                              <Square className="h-4 w-4 text-muted-foreground" />
-                            )}
-                          </button>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-sm">
-                              {formatHistoryResult(item, historyFormatOptions)}
-                            </span>
-                            <span className="text-xs text-muted-foreground">{formatDate(item.timestamp)}</span>
-                            {visibleFavorites.has(item.id) && (
-                              <Star className="h-3 w-3 fill-primary text-primary shrink-0" />
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground truncate mt-0.5">{formatInputs(item.inputs)}</p>
-                          {item.label && <span className="text-xs text-primary mt-1 block">{item.label}</span>}
-                        </div>
-                      </div>
-                      <div
-                        className={cn(
-                          "flex gap-1 ml-2",
-                          batchMode
-                            ? "opacity-100"
-                            : "opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity"
-                        )}
-                      >
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-10 w-10 sm:h-8 sm:w-8"
+          <CardContent className="pt-3">
+            {(hasPendingPersistence || hasPendingFavoritePersistence) && (
+              <div
+                className="mb-3 flex items-center justify-between gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-foreground"
+                role="status"
+              >
+                <span>{persistenceMessage}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => {
+                    void Promise.all([retryPersistence(), retryFavoritePersistence()]);
+                  }}
+                >
+                  {t("history.retrySave")}
+                </Button>
+              </div>
+            )}
+            {/* Search */}
+            <div className="relative mb-3">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                ref={searchInputRef}
+                aria-label={t("history.searchPlaceholder")}
+                placeholder={t("history.searchPlaceholder")}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 h-8 text-sm"
+              />
+            </div>
+
+            <ScrollArea className="h-80">
+              <div className="divide-y border-y">
+                {sorted.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground text-sm">{t("history.noResults")}</div>
+                )}
+                {sorted.map((item) => (
+                  <div
+                    key={item.id}
+                    className={cn(
+                      "group flex items-start justify-between p-3 transition-colors hover:bg-muted/25",
+                      visibleFavorites.has(item.id) && "bg-primary/5",
+                      selectedIds.has(item.id) && "ring-2 ring-primary"
+                    )}
+                  >
+                    <div className="flex items-start gap-2 flex-1 min-w-0">
+                      {batchMode && (
+                        <button
+                          type="button"
+                          className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-md sm:h-6 sm:w-6"
+                          aria-label={selectedIds.has(item.id) ? t("history.deselectItem") : t("history.selectItem")}
                           onClick={(e) => {
                             e.stopPropagation();
-                            toggleFavorite(item.id);
+                            toggleSelect(item.id);
                           }}
-                          title={t("history.favorites")}
-                          aria-label={t("history.favorites")}
-                          aria-pressed={visibleFavorites.has(item.id)}
                         >
-                          <Star
-                            className={cn("h-3 w-3", visibleFavorites.has(item.id) ? "fill-primary text-primary" : "")}
-                          />
-                        </Button>
-                        {!batchMode && (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-10 w-10 sm:h-8 sm:w-8"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRestore(item);
-                              }}
-                              title={t("history.restore")}
-                              aria-label={t("history.restore")}
-                            >
-                              <RotateCcw className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-10 w-10 text-destructive hover:text-destructive sm:h-8 sm:w-8"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const shouldMoveFocus = pageHistory.length === 1;
-                                handleDelete(item.id);
-                                if (shouldMoveFocus) {
-                                  window.requestAnimationFrame(() => document.getElementById("main-content")?.focus());
-                                }
-                              }}
-                              title={t("history.delete")}
-                              aria-label={t("history.delete")}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </>
-                        )}
+                          {selectedIds.has(item.id) ? (
+                            <CheckSquare className="h-4 w-4 text-primary" />
+                          ) : (
+                            <Square className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </button>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-sm">
+                            {formatHistoryResult(item, historyFormatOptions)}
+                          </span>
+                          <span className="text-xs text-muted-foreground">{formatDate(item.timestamp)}</span>
+                          {visibleFavorites.has(item.id) && (
+                            <Star className="h-3 w-3 fill-primary text-primary shrink-0" />
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate mt-0.5">{formatInputs(item.inputs)}</p>
+                        {item.label && <span className="text-xs text-primary mt-1 block">{item.label}</span>}
                       </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                    </div>
+                    <div
+                      className={cn(
+                        "flex gap-1 ml-2",
+                        batchMode
+                          ? "opacity-100"
+                          : "opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity"
+                      )}
+                    >
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-10 w-10 sm:h-8 sm:w-8"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite(item.id);
+                        }}
+                        title={t("history.favorites")}
+                        aria-label={t("history.favorites")}
+                        aria-pressed={visibleFavorites.has(item.id)}
+                      >
+                        <Star
+                          className={cn("h-3 w-3", visibleFavorites.has(item.id) ? "fill-primary text-primary" : "")}
+                        />
+                      </Button>
+                      {!batchMode && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-10 w-10 sm:h-8 sm:w-8"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRestore(item);
+                            }}
+                            title={t("history.restore")}
+                            aria-label={t("history.restore")}
+                          >
+                            <RotateCcw className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-10 w-10 text-destructive hover:text-destructive sm:h-8 sm:w-8"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const shouldMoveFocus = pageHistory.length === 1;
+                              handleDelete(item.id);
+                              if (shouldMoveFocus) {
+                                window.requestAnimationFrame(() => document.getElementById("main-content")?.focus());
+                              }
+                            }}
+                            title={t("history.delete")}
+                            aria-label={t("history.delete")}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </div>
+      )}
       <ConfirmDialog
         open={clearDialogOpen}
         onOpenChange={setClearDialogOpen}
