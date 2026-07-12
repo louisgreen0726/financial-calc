@@ -19,6 +19,22 @@ export interface ParametricNormalRiskMetrics {
   expectedShortfallFactor: number;
 }
 
+export const DETERMINISTIC_STRESS_SCENARIOS = [
+  { id: "moderate", shockFraction: -0.05 },
+  { id: "severe", shockFraction: -0.1 },
+  { id: "extreme", shockFraction: -0.2 },
+] as const;
+
+export type DeterministicStressScenarioId = (typeof DETERMINISTIC_STRESS_SCENARIOS)[number]["id"];
+
+export interface DeterministicStressResult {
+  id: DeterministicStressScenarioId;
+  shockFraction: number;
+  loss: number;
+  stressedValue: number;
+  lossToValueAtRisk: number | null;
+}
+
 export function calculateParametricNormalRisk({
   portfolioValue,
   annualVolatility,
@@ -59,4 +75,25 @@ export function calculateParametricNormalRisk({
   };
 
   return Object.values(metrics).every(Number.isFinite) ? metrics : null;
+}
+
+export function calculateDeterministicStressScenarios(
+  portfolioValue: number,
+  valueAtRisk: number
+): DeterministicStressResult[] | null {
+  if (!Number.isFinite(portfolioValue) || portfolioValue <= 0 || !Number.isFinite(valueAtRisk) || valueAtRisk < 0) {
+    return null;
+  }
+
+  return DETERMINISTIC_STRESS_SCENARIOS.map(({ id, shockFraction }) => {
+    const loss = -portfolioValue * shockFraction;
+    const lossToValueAtRisk = valueAtRisk > 0 ? loss / valueAtRisk : null;
+    return {
+      id,
+      shockFraction,
+      loss,
+      stressedValue: portfolioValue - loss,
+      lossToValueAtRisk: lossToValueAtRisk !== null && Number.isFinite(lossToValueAtRisk) ? lossToValueAtRisk : null,
+    };
+  });
 }

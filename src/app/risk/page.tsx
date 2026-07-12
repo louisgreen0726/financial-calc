@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/utils";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine } from "recharts";
 import { useLanguage } from "@/lib/i18n";
@@ -19,7 +20,11 @@ import { HistoryPanel } from "@/components/history-panel";
 import { ClientOnlyChart } from "@/components/client-only-chart";
 import { useShareableUrl } from "@/hooks/use-shareable-url";
 import { buildRiskDistributionData, getRiskTailGradientOffset } from "@/lib/chart-data";
-import { calculateParametricNormalRisk } from "@/lib/risk-math";
+import {
+  calculateDeterministicStressScenarios,
+  calculateParametricNormalRisk,
+  type DeterministicStressScenarioId,
+} from "@/lib/risk-math";
 
 export default function RiskPage() {
   const { t } = useLanguage();
@@ -95,6 +100,21 @@ export default function RiskPage() {
     });
   }, [hasValidationErrors, parsedInputs]);
   const resultReady = !hasValidationErrors && metrics !== null;
+  const stressScenarioLabels = useMemo<Record<DeterministicStressScenarioId, string>>(
+    () => ({
+      moderate: t("risk.stress.moderate"),
+      severe: t("risk.stress.severe"),
+      extreme: t("risk.stress.extreme"),
+    }),
+    [t]
+  );
+  const stressScenarios = useMemo(
+    () =>
+      metrics
+        ? (calculateDeterministicStressScenarios(parsedInputs.value ?? Number.NaN, metrics.valueAtRisk) ?? [])
+        : [],
+    [metrics, parsedInputs.value]
+  );
 
   // Generate Distribution Curve
   const chartData = useMemo(() => {
@@ -105,6 +125,21 @@ export default function RiskPage() {
     return buildRiskDistributionData(metrics?.horizonVolatility ?? 0, parsedInputs.value ?? 0, metrics?.zScore ?? 0);
   }, [metrics, parsedInputs, resultReady]);
   const tailGradientOffset = getRiskTailGradientOffset(metrics?.zScore ?? 0);
+  const exportData = useMemo<Record<string, unknown>[]>(
+    () => [
+      ...chartData.map((point) => ({ section: "normalDistribution", ...point })),
+      ...stressScenarios.map((scenario) => ({
+        section: "deterministicStress",
+        scenario: scenario.id,
+        label: stressScenarioLabels[scenario.id],
+        shockFraction: scenario.shockFraction,
+        loss: scenario.loss,
+        stressedValue: scenario.stressedValue,
+        lossToValueAtRisk: scenario.lossToValueAtRisk,
+      })),
+    ],
+    [chartData, stressScenarioLabels, stressScenarios]
+  );
 
   useHistoryRecorder({
     addToHistory,
@@ -134,7 +169,7 @@ export default function RiskPage() {
         />
       </div>
 
-      <div id="risk-report-content" className="grid gap-6 lg:grid-cols-12">
+      <div id="risk-report-content" className="grid min-w-0 gap-6 lg:grid-cols-12">
         <Card className="lg:col-span-4 h-fit">
           <CardHeader>
             <CardTitle>{t("risk.params")}</CardTitle>
@@ -198,7 +233,7 @@ export default function RiskPage() {
           </CardContent>
         </Card>
 
-        <div className="lg:col-span-8">
+        <div className="min-w-0 lg:col-span-8">
           <ResultShell
             title={t("common.result")}
             description={t("risk.subtitle")}
@@ -213,11 +248,20 @@ export default function RiskPage() {
                     [t("risk.var")]: metrics?.valueAtRisk ?? 0,
                     [t("risk.cvar")]: metrics?.conditionalValueAtRisk ?? 0,
                     [t("risk.vol")]: `${((metrics?.horizonVolatility ?? 0) * 100).toFixed(2)}%`,
+                    [t("risk.stress.extreme")]: stressScenarios.at(-1)?.loss ?? 0,
                   }}
                   inputs={{ value, volatility, confidence, days }}
                   shareUrl={shareUrl}
-                  exportData={chartData as unknown as Record<string, unknown>[]}
-                  exportJson={metrics ? { ...metrics } : {}}
+                  exportData={exportData}
+                  exportJson={
+                    metrics
+                      ? {
+                          model: "parametric-normal-with-deterministic-stress",
+                          parametricNormal: metrics,
+                          deterministicStress: stressScenarios,
+                        }
+                      : {}
+                  }
                   pdfElementId="risk-report-content"
                   pdfFilename="risk-analysis"
                   pdfTitle={t("risk.title")}
@@ -258,71 +302,126 @@ export default function RiskPage() {
               </div>
             }
             advanced={
-              <Card className="h-[260px] sm:h-[320px] md:h-[380px] flex flex-col">
-                <CardHeader>
-                  <CardTitle>{t("risk.dist")}</CardTitle>
-                  <CardDescription>{t("risk.distDesc")}</CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1 min-h-0">
-                  <ClientOnlyChart ariaLabel={`${t("risk.dist")}. ${t("risk.distDesc")}`}>
-                    {({ width, height }) => (
-                      <AreaChart width={width} height={height} data={chartData}>
-                        <defs>
-                          <linearGradient id="colorProb" x1="0" y1="0" x2="1" y2="0">
-                            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                            <stop offset={`${tailGradientOffset}%`} stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                            <stop
-                              offset={`${tailGradientOffset}%`}
-                              stopColor="hsl(var(--destructive))"
-                              stopOpacity={0.5}
-                            />
-                            <stop offset="100%" stopColor="hsl(var(--destructive))" stopOpacity={0.5} />
-                          </linearGradient>
-                          <linearGradient id="strokeProb" x1="0" y1="0" x2="1" y2="0">
-                            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={1} />
-                            <stop offset={`${tailGradientOffset}%`} stopColor="hsl(var(--primary))" stopOpacity={1} />
-                            <stop
-                              offset={`${tailGradientOffset}%`}
-                              stopColor="hsl(var(--destructive))"
-                              stopOpacity={1}
-                            />
-                            <stop offset="100%" stopColor="hsl(var(--destructive))" stopOpacity={1} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                        <XAxis
-                          type="number"
-                          dataKey="loss"
-                          domain={["dataMin", "dataMax"]}
-                          tickFormatter={(v) => formatCurrency(v)}
-                          stroke="hsl(var(--muted-foreground))"
-                          fontSize={10}
-                          minTickGap={22}
-                        />
-                        <YAxis hide />
-                        <Tooltip
-                          labelFormatter={(value) => formatCurrency(Number(value))}
-                          formatter={(value) => Number(value ?? 0).toFixed(4)}
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="prob"
-                          stroke="url(#strokeProb)"
-                          fillOpacity={1}
-                          fill="url(#colorProb)"
-                        />
-                        <ReferenceLine
-                          x={metrics?.valueAtRisk ?? 0}
-                          ifOverflow="extendDomain"
-                          stroke="hsl(var(--destructive))"
-                          strokeWidth={2}
-                          label={{ value: "VaR", fill: "hsl(var(--destructive))", fontSize: 11 }}
-                        />
-                      </AreaChart>
-                    )}
-                  </ClientOnlyChart>
-                </CardContent>
-              </Card>
+              <div className="space-y-6">
+                <Card data-pdf-block>
+                  <CardHeader>
+                    <CardTitle>{t("risk.stress.title")}</CardTitle>
+                    <CardDescription>{t("risk.stress.description")}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Table aria-label={t("risk.stress.title")}>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead scope="col">{t("risk.stress.scenario")}</TableHead>
+                          <TableHead scope="col" className="text-right">
+                            {t("risk.stress.shock")}
+                          </TableHead>
+                          <TableHead scope="col" className="text-right">
+                            {t("risk.stress.loss")}
+                          </TableHead>
+                          <TableHead scope="col" className="text-right">
+                            {t("risk.stress.stressedValue")}
+                          </TableHead>
+                          <TableHead scope="col" className="text-right">
+                            {t("risk.stress.versusVar")}
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {stressScenarios.map((scenario) => (
+                          <TableRow key={scenario.id}>
+                            <TableCell className="font-medium">{stressScenarioLabels[scenario.id]}</TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              {(scenario.shockFraction * 100).toFixed(2)}%
+                            </TableCell>
+                            <TableCell className="text-right font-medium tabular-nums text-destructive">
+                              {formatCurrency(scenario.loss)}
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              {formatCurrency(scenario.stressedValue)}
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              {scenario.lossToValueAtRisk === null
+                                ? t("risk.stress.notComparable")
+                                : `${scenario.lossToValueAtRisk.toFixed(2)}x`}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+
+                <Card className="h-[260px] sm:h-[320px] md:h-[380px] flex flex-col">
+                  <CardHeader>
+                    <CardTitle>{t("risk.dist")}</CardTitle>
+                    <CardDescription>{t("risk.distDesc")}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1 min-h-0">
+                    <ClientOnlyChart ariaLabel={`${t("risk.dist")}. ${t("risk.distDesc")}`}>
+                      {({ width, height }) => (
+                        <AreaChart width={width} height={height} data={chartData}>
+                          <defs>
+                            <linearGradient id="colorProb" x1="0" y1="0" x2="1" y2="0">
+                              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                              <stop
+                                offset={`${tailGradientOffset}%`}
+                                stopColor="hsl(var(--primary))"
+                                stopOpacity={0.3}
+                              />
+                              <stop
+                                offset={`${tailGradientOffset}%`}
+                                stopColor="hsl(var(--destructive))"
+                                stopOpacity={0.5}
+                              />
+                              <stop offset="100%" stopColor="hsl(var(--destructive))" stopOpacity={0.5} />
+                            </linearGradient>
+                            <linearGradient id="strokeProb" x1="0" y1="0" x2="1" y2="0">
+                              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={1} />
+                              <stop offset={`${tailGradientOffset}%`} stopColor="hsl(var(--primary))" stopOpacity={1} />
+                              <stop
+                                offset={`${tailGradientOffset}%`}
+                                stopColor="hsl(var(--destructive))"
+                                stopOpacity={1}
+                              />
+                              <stop offset="100%" stopColor="hsl(var(--destructive))" stopOpacity={1} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                          <XAxis
+                            type="number"
+                            dataKey="loss"
+                            domain={["dataMin", "dataMax"]}
+                            tickFormatter={(v) => formatCurrency(v)}
+                            stroke="hsl(var(--muted-foreground))"
+                            fontSize={10}
+                            minTickGap={22}
+                          />
+                          <YAxis hide />
+                          <Tooltip
+                            labelFormatter={(value) => formatCurrency(Number(value))}
+                            formatter={(value) => Number(value ?? 0).toFixed(4)}
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="prob"
+                            stroke="url(#strokeProb)"
+                            fillOpacity={1}
+                            fill="url(#colorProb)"
+                          />
+                          <ReferenceLine
+                            x={metrics?.valueAtRisk ?? 0}
+                            ifOverflow="extendDomain"
+                            stroke="hsl(var(--destructive))"
+                            strokeWidth={2}
+                            label={{ value: "VaR", fill: "hsl(var(--destructive))", fontSize: 11 }}
+                          />
+                        </AreaChart>
+                      )}
+                    </ClientOnlyChart>
+                  </CardContent>
+                </Card>
+              </div>
             }
           />
         </div>

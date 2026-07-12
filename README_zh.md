@@ -35,7 +35,7 @@ Financial Calc 是一个基于 Next.js 16、React 19、TypeScript、Tailwind CSS
 - **Bonds**：债券定价、久期、凸性、收益率曲线、敏感性热力图
 - **Portfolio**：可复现的蒙特卡洛风险收益抽样，支持 worker 与客户端回退
 - **Options**：支持连续股息收益率、Greeks 与隐含波动率反解的 Black-Scholes-Merton 定价
-- **Risk**：VaR、CVaR、分布视图
+- **Risk**：VaR、CVaR、分布视图，以及确定性的 5%/10%/20% 压力情景
 - **Loans**：等额本息 / 等额本金摊销表，完整表格支持辅助技术读取
 - **Macro**：通胀、购买力、实际利率、CPI 调整、PPP 汇率
 
@@ -143,6 +143,7 @@ GitHub Actions 会把同等覆盖拆分为并行的质量、浏览器以及 root
 metadata、静态宿主头、路由体积预算，以及 PWA 安装、离线与更新流程。浏览器任务失败时会保留 7 天的截图和
 trace 诊断产物。本地首次运行 `npm run test:e2e` 前，需要执行
 `npx playwright install chromium` 安装浏览器。
+本地 Playwright 最多使用 2 个 worker，避免并发 Axe 扫描争抢 CPU 与内存；CI 继续固定为单 worker，确保结果可复现。
 
 运行生产 PWA 工作流：
 

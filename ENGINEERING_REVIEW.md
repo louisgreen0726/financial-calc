@@ -202,6 +202,22 @@ browser-level checks beyond the existing suite.
   React components, charts, and UI primitives. The header retains `style-src 'unsafe-inline'`; no inline event-handler
   attributes were found, and the stricter script policy does not inherit the style exception.
 
+### Risk Follow-up: Deterministic Stress Scenarios
+
+- Normal VaR/CVaR previously stood alone even though the model guide warned that normal tails can materially understate
+  stress losses. The page now shows separate 5%, 10%, and 20% aggregate-value declines with deterministic loss,
+  remaining value, and loss-to-VaR comparisons.
+- Scenario math is independent of volatility, horizon, and confidence and assigns no occurrence probability. Labels and
+  bilingual disclosure avoid historical-event names or predictive framing that would imply asset-specific calibration.
+- Stress results are included in result sharing plus structured CSV/JSON/PDF output while the primary history record
+  remains VaR. The model guide states that scenarios do not reprice holdings or model nonlinear exposure, correlation
+  breakdown, margin, liquidity, market impact, or recovery.
+- A mobile visual review found that the table's min-content width expanded the parent grid beyond 390px. Explicit
+  `min-w-0` constraints now keep document overflow at zero while preserving a local table scroller, enforced in
+  Playwright.
+- Eight simultaneous local Axe workers exhausted the 30-second test budget without reporting violations. Local browser
+  tests now cap at two workers; all 23 workflows pass, while CI retains its existing deterministic single worker.
+
 ### Deployment Follow-up: Static Artifact Contract
 
 - A build succeeding did not previously prove that precache entries, route HTML, internal asset references, base-path

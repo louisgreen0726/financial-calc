@@ -82,12 +82,14 @@ const guides: Record<"en" | "zh", ModelGuide> = {
         assumptions: [
           "Portfolio samples are long-only and fully invested. Returns, volatility, and risk-free rate are annual percentages; every asset pair uses the same supplied correlation. Sharpe is (return - risk-free rate) / volatility.",
           "VaR and CVaR assume zero-mean normally distributed returns and scale annual volatility by the square root of days / 252. Reported amounts are positive loss magnitudes.",
+          "Stress scenarios apply fixed 5%, 10%, and 20% declines directly to total portfolio value. They carry no probability and do not use volatility, horizon, or confidence.",
         ],
         example:
-          "With 60% in an 8% return / 15% risk asset, 40% in a 4% return / 5% risk asset, correlation 0.20, and risk-free rate 2%, the portfolio has return 6.40%, risk 9.60%, and Sharpe 0.46.",
+          "With 60% in an 8% return / 15% risk asset, 40% in a 4% return / 5% risk asset, correlation 0.20, and risk-free rate 2%, the portfolio has return 6.40%, risk 9.60%, and Sharpe 0.46. A separate 10% stress on a 100,000 portfolio reports a deterministic 10,000 loss and 90,000 remaining value.",
         limitations: [
           "A single equal-correlation input is not a covariance matrix, and random sampling does not prove a global optimum or account for estimation error, turnover, costs, constraints, or rebalancing.",
           "Normal VaR can materially understate fat tails, serial dependence, volatility changes, liquidity gaps, and stress losses; it requires independent backtesting and scenario analysis.",
+          "Fixed stress shocks change aggregate value proportionally; they do not reprice holdings, model nonlinear exposure, correlation breakdown, margin calls, market impact, or recovery paths.",
         ],
       },
       {
@@ -171,12 +173,14 @@ const guides: Record<"en" | "zh", ModelGuide> = {
         assumptions: [
           "投资组合采样只允许做多且权重合计 100%。收益率、波动率和无风险利率均为年化百分比；所有资产对使用同一个相关系数。Sharpe =（收益率 - 无风险利率）/ 波动率。",
           "VaR 与 CVaR 假设收益率为零均值正态分布，并按天数 / 252 的平方根缩放年化波动率；显示金额是正数形式的损失规模。",
+          "压力情景直接对组合总值施加固定 5%、10% 与 20% 下跌，不附带发生概率，也不使用波动率、期限或置信度。",
         ],
         example:
-          "资产 A 的收益/风险为 8%/15%、权重 60%；资产 B 为 4%/5%、权重 40%；相关系数 0.20、无风险利率 2% 时，组合收益 6.40%、风险 9.60%、Sharpe 0.46。",
+          "资产 A 的收益/风险为 8%/15%、权重 60%；资产 B 为 4%/5%、权重 40%；相关系数 0.20、无风险利率 2% 时，组合收益 6.40%、风险 9.60%、Sharpe 0.46。另对 100,000 的组合施加 10% 压力冲击，会得到确定性的 10,000 损失与 90,000 剩余价值。",
         limitations: [
           "单一等相关系数并非完整协方差矩阵；随机采样也不能证明全局最优，且未考虑估计误差、换手、成本、约束或再平衡。",
           "正态 VaR 可能显著低估厚尾、序列相关、波动率变化、流动性缺口与压力损失，必须结合独立回测和情景分析。",
+          "固定压力冲击只按比例改变组合总值，不会逐项重估持仓，也不模拟非线性敞口、相关性失效、追加保证金、市场冲击或恢复路径。",
         ],
       },
       {

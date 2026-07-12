@@ -26,7 +26,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Extract VaR/CVaR calculations from the route component into a pure tested engine with external tail references.
 - [x] Assess and implement hash-based CSP generation for static export with host-independent enforcement.
 - [x] Add property/fuzz coverage for URL and history restoration across every calculator schema.
-- [ ] Add deterministic historical/stress scenarios alongside normal VaR without implying predictive certainty.
+- [x] Add deterministic stress scenarios alongside normal VaR without implying predictive certainty.
 - [ ] Audit input-unit labels and display/export rounding consistency across all calculators.
 - [ ] Plan and test remaining major dependency migrations as isolated compatibility batches.
 - [ ] Reduce `style-src 'unsafe-inline'` exposure by inventorying static versus runtime component/chart styles.
@@ -821,3 +821,51 @@ Verification:
 - Current work: Improvement 20 is fully verified and ready to commit; deterministic risk stress scenarios are next.
 - Queue status: 4 active items remain: deterministic risk stress scenarios, calculator-wide unit/rounding consistency,
   isolated major dependency migrations, and inline-style CSP reduction.
+
+### Improvement 21: Deterministic portfolio stress scenarios with bounded mobile presentation
+
+Status: completed.
+
+Changes:
+
+- Added pure deterministic stress calculations for fixed -5%, -10%, and -20% aggregate portfolio shocks. Each result
+  includes loss, stressed value, and an optional loss-to-VaR multiple.
+- Kept stress math independent from volatility, time horizon, and confidence. UI copy assigns no probability and calls
+  the scenarios mechanical shocks rather than forecasts or historical calibrations.
+- Guarded invalid domains and extreme floating-point ratios; zero or subnormal VaR produces a localized not-comparable
+  value instead of `Infinity`.
+- Added a bilingual semantic table beside the normal distribution view, with fixed scenario labels, numeric alignment,
+  currency formatting, and explicit model-boundary copy.
+- Included deterministic scenarios in result sharing and structured CSV/JSON/PDF output while preserving VaR as the
+  history record's primary indexed result and keeping share URLs unchanged because no input was added.
+- Expanded the bilingual model guide with exact scenario mechanics, a reproducible 100,000 / 10% example, and limits
+  covering asset repricing, nonlinear exposure, correlation breakdown, margin calls, liquidity, impact, and recovery.
+- Desktop/mobile screenshot review reproduced a 390px document-overflow regression from table min-content sizing.
+  Added `min-w-0` at the report grid boundary so only the table scrolls horizontally, plus a browser geometry contract.
+- Capped local Playwright execution at two workers after 8 simultaneous Axe scans consistently exceeded the 30-second
+  per-test budget without accessibility violations. CI remains at one worker; the stable local default passed all tests.
+
+Files and areas:
+
+- `src/lib/risk-math.ts`, its tests, and bilingual model-guide content
+- `src/app/risk/page.tsx` and `src/lib/i18n.tsx`
+- `e2e/risk-reference.spec.ts` and `playwright.config.ts`
+- English/Chinese README, engineering review, and improvement log
+
+Verification:
+
+- Focused risk/i18n suite passed; the complete `npm run verify` gate passed with 48 files and 411 Vitest tests.
+- Root build remained 15 routes and 197 precache assets with 96 inline-script hashes and 722 internal references.
+- `/risk` measured 420,663 / 470,000 gzip bytes, about 1.35 KB above the preceding build; every route budget passed.
+- Focused desktop/mobile risk workflows passed, including exact -20% values and document-versus-local overflow geometry.
+- Desktop 1440px and mobile 390px full-page screenshots were visually inspected after the overflow fix.
+- The final default Playwright suite passed all 23 tests with two local workers; the risk Axe scan passed in 22.7s.
+- Production dependency audit reported zero vulnerabilities; extended formatting and `git diff --check` passed.
+
+### Progress checkpoint: 07:15 +08:00
+
+- Continuous-session elapsed time: 4 hours 9 minutes.
+- Completed improvement batches: 21; deterministic stress results now complement normal VaR without probability claims.
+- Current work: Improvement 21 is fully verified and ready to commit; calculator-wide unit/rounding review is next.
+- Queue status: 3 active items remain: calculator-wide input-unit/rounding consistency, isolated major dependency
+  migrations, and inline-style CSP reduction.

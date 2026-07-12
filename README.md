@@ -34,7 +34,7 @@ The app is no longer just a calculator demo. It includes a full app shell, respo
 - **Bonds**: price, duration, convexity, yield curve, and sensitivity heatmap
 - **Portfolio**: reproducible Monte Carlo risk-return sampling with worker and client fallback
 - **Options**: Black-Scholes-Merton pricing with continuous dividend yield, Greeks, and implied volatility
-- **Risk**: VaR, CVaR, and distribution visualization
+- **Risk**: VaR, CVaR, distribution visualization, and deterministic 5%/10%/20% stress scenarios
 - **Loans**: CPM/CAM amortization schedules with a complete accessible table
 - **Macro**: inflation, purchasing power, real rate, CPI adjustment, and PPP exchange rate
 
@@ -144,6 +144,8 @@ precache manifest, internal HTML references, PWA metadata, static-host headers, 
 installation/offline/update lifecycle. Failed browser jobs upload their retained screenshots and traces for seven days.
 Locally, install Chromium once with
 `npx playwright install chromium` before running `npm run test:e2e`.
+The local Playwright configuration caps execution at two workers because concurrent Axe scans are CPU- and
+memory-intensive; CI keeps its single-worker setting for reproducibility.
 
 Run the production PWA workflows with:
 

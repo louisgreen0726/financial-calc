@@ -373,6 +373,19 @@ type Translations = {
     cvarDesc: string;
     dist: string;
     distDesc: string;
+    stress: {
+      title: string;
+      description: string;
+      scenario: string;
+      shock: string;
+      loss: string;
+      stressedValue: string;
+      versusVar: string;
+      moderate: string;
+      severe: string;
+      extreme: string;
+      notComparable: string;
+    };
     validation: {
       invalidInputs: string;
       valuePositive: string;
@@ -1019,6 +1032,20 @@ const en: Translations = {
     cvarDesc: "Expected loss beyond VaR cutoff",
     dist: "Return Distribution",
     distDesc: "Normal distribution of potential portfolio returns",
+    stress: {
+      title: "Deterministic Stress Scenarios",
+      description:
+        "Mechanical portfolio-value shocks with no assigned probability. They do not use volatility, horizon, or confidence and are not forecasts.",
+      scenario: "Scenario",
+      shock: "Shock",
+      loss: "Loss",
+      stressedValue: "Value After Shock",
+      versusVar: "Loss / VaR",
+      moderate: "Moderate decline",
+      severe: "Severe decline",
+      extreme: "Extreme decline",
+      notComparable: "N/A (VaR is zero)",
+    },
     validation: {
       invalidInputs: "Please correct the highlighted risk inputs.",
       valuePositive: "Portfolio value must be positive.",
@@ -1669,6 +1696,19 @@ const zh: Translations = {
     cvarDesc: "超过 VaR 阈值后的平均预期损失",
     dist: "回报分布模拟",
     distDesc: "基于正态分布假设的损益分布",
+    stress: {
+      title: "确定性压力情景",
+      description: "对组合价值施加不带发生概率的机械冲击；不使用波动率、期限或置信度，也不代表预测。",
+      scenario: "情景",
+      shock: "冲击",
+      loss: "损失",
+      stressedValue: "冲击后价值",
+      versusVar: "损失 / VaR",
+      moderate: "中度下跌",
+      severe: "严重下跌",
+      extreme: "极端下跌",
+      notComparable: "不适用（VaR 为零）",
+    },
     validation: {
       invalidInputs: "请先修正高亮风险输入项。",
       valuePositive: "投资组合总值必须为正数。",

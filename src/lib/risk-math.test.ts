@@ -1,4 +1,4 @@
-import { calculateParametricNormalRisk } from "@/lib/risk-math";
+import { calculateDeterministicStressScenarios, calculateParametricNormalRisk } from "@/lib/risk-math";
 
 // NIST standard normal critical values:
 // https://www.itl.nist.gov/div898/handbook/eda/section3/eda3671.htm
@@ -78,5 +78,53 @@ describe("parametric normal VaR and expected shortfall", () => {
     { portfolioValue: 100, annualVolatility: 0.2, confidence: 0.95, horizonDays: 1, tradingDaysPerYear: 0 },
   ])("rejects an invalid model domain: $input", (input) => {
     expect(calculateParametricNormalRisk(input)).toBeNull();
+  });
+});
+
+describe("deterministic portfolio stress scenarios", () => {
+  it("applies fixed proportional shocks and compares their losses with VaR", () => {
+    expect(calculateDeterministicStressScenarios(100_000, 2_500)).toEqual([
+      {
+        id: "moderate",
+        shockFraction: -0.05,
+        loss: 5_000,
+        stressedValue: 95_000,
+        lossToValueAtRisk: 2,
+      },
+      {
+        id: "severe",
+        shockFraction: -0.1,
+        loss: 10_000,
+        stressedValue: 90_000,
+        lossToValueAtRisk: 4,
+      },
+      {
+        id: "extreme",
+        shockFraction: -0.2,
+        loss: 20_000,
+        stressedValue: 80_000,
+        lossToValueAtRisk: 8,
+      },
+    ]);
+  });
+
+  it("keeps zero-VaR comparisons undefined while preserving scenario losses", () => {
+    const scenarios = calculateDeterministicStressScenarios(40_000, 0);
+
+    expect(scenarios?.map((scenario) => scenario.lossToValueAtRisk)).toEqual([null, null, null]);
+    expect(scenarios?.map((scenario) => scenario.loss)).toEqual([2_000, 4_000, 8_000]);
+  });
+
+  it("does not expose an infinite multiple for a subnormal positive VaR", () => {
+    expect(calculateDeterministicStressScenarios(40_000, Number.MIN_VALUE)?.[0].lossToValueAtRisk).toBeNull();
+  });
+
+  it.each([
+    { portfolioValue: 0, valueAtRisk: 10 },
+    { portfolioValue: Number.NaN, valueAtRisk: 10 },
+    { portfolioValue: 1_000, valueAtRisk: -1 },
+    { portfolioValue: 1_000, valueAtRisk: Number.POSITIVE_INFINITY },
+  ])("rejects an invalid stress domain: $portfolioValue / $valueAtRisk", ({ portfolioValue, valueAtRisk }) => {
+    expect(calculateDeterministicStressScenarios(portfolioValue, valueAtRisk)).toBeNull();
   });
 });
