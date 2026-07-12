@@ -174,7 +174,9 @@ export default function CashFlowPage() {
                         key={i}
                         className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-xl border border-white/10 bg-background/30 p-3 animate-in fade-in slide-in-from-left-2 duration-300 sm:grid-cols-[72px_minmax(0,1fr)_auto] sm:items-center sm:gap-3"
                       >
-                        <div className="text-sm text-muted-foreground font-mono">{periodLabel}</div>
+                        <div className="col-span-2 text-sm text-muted-foreground font-mono sm:col-span-1">
+                          {periodLabel}
+                        </div>
                         <Input
                           type="number"
                           aria-label={`${periodLabel} ${t("cashFlow.flow")}`}

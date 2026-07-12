@@ -16,6 +16,7 @@ function createCache(matchValue?: unknown) {
   return {
     match: vi.fn().mockResolvedValue(matchValue),
     put: vi.fn().mockResolvedValue(undefined),
+    add: vi.fn().mockResolvedValue(undefined),
     addAll: vi.fn().mockResolvedValue(undefined),
     keys: vi.fn<() => Promise<unknown[]>>().mockResolvedValue([]),
     delete: vi.fn().mockResolvedValue(true),
@@ -290,5 +291,49 @@ describe("service worker navigation strategy", () => {
     expect(caches.delete).not.toHaveBeenCalledWith(otherScope);
     expect(caches.delete).not.toHaveBeenCalledWith(unrelated);
     expect(workerGlobal.clients.claim).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps installing when an optional precache asset fails", async () => {
+    const staticCache = createCache();
+    staticCache.add.mockImplementation((asset: string) =>
+      asset.endsWith("optional.js") ? Promise.reject(new TypeError("weak connection")) : Promise.resolve()
+    );
+    const { listeners } = await loadServiceWorker({
+      assets: ["/index.html", "/404.html", "/optional.js"],
+      routes: ["/"],
+      fetchMock: vi.fn(),
+      staticCache,
+    });
+    let installationPromise: Promise<unknown> | undefined;
+
+    listeners.get("install")?.({
+      waitUntil: (promise: Promise<unknown>) => {
+        installationPromise = promise;
+      },
+    });
+
+    await expect(installationPromise).resolves.toBeUndefined();
+    expect(staticCache.add).toHaveBeenCalledTimes(3);
+  });
+
+  it("rejects installation when an essential offline fallback cannot be cached", async () => {
+    const staticCache = createCache();
+    staticCache.add.mockImplementation((asset: string) =>
+      asset.endsWith("404.html") ? Promise.reject(new TypeError("offline")) : Promise.resolve()
+    );
+    const { listeners } = await loadServiceWorker({
+      assets: ["/index.html", "/404.html"],
+      fetchMock: vi.fn(),
+      staticCache,
+    });
+    let installationPromise: Promise<unknown> | undefined;
+
+    listeners.get("install")?.({
+      waitUntil: (promise: Promise<unknown>) => {
+        installationPromise = promise;
+      },
+    });
+
+    await expect(installationPromise).rejects.toThrow("Unable to cache essential offline assets");
   });
 });

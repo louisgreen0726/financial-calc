@@ -65,8 +65,8 @@ export default function RootLayout({
               <AppLayout>{children}</AppLayout>
             </ErrorBoundary>
             <Toaster position="bottom-right" />
+            <ServiceWorkerRegistration />
           </LanguageProvider>
-          <ServiceWorkerRegistration />
         </ThemeProvider>
       </body>
     </html>

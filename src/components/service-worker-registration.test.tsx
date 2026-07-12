@@ -3,6 +3,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import { logger } from "@/lib/logger";
+import { toast } from "sonner";
+
+vi.mock("@/lib/i18n", () => ({
+  useLanguage: () => ({ t: (key: string) => key }),
+}));
+
+vi.mock("sonner", () => ({
+  toast: {
+    info: vi.fn(),
+    dismiss: vi.fn(),
+  },
+}));
 
 vi.mock("@/lib/logger", () => ({
   logger: {
@@ -15,6 +27,7 @@ vi.mock("@/lib/logger", () => ({
 describe("ServiceWorkerRegistration", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.clearAllMocks();
     delete process.env.NEXT_PUBLIC_BASE_PATH;
     vi.stubEnv("NODE_ENV", "production");
   });
@@ -132,5 +145,39 @@ describe("ServiceWorkerRegistration", () => {
     await waitFor(() => {
       expect(register).toHaveBeenCalledWith("/calc/sw.js", { scope: "/calc/", updateViaCache: "none" });
     });
+  });
+
+  it("offers to activate a waiting update only after user confirmation", async () => {
+    const postMessage = vi.fn();
+    const containerListeners = new Map<string, EventListener>();
+    const registration = {
+      scope: "/",
+      waiting: { postMessage },
+      update: vi.fn().mockResolvedValue(undefined),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
+    const register = vi.fn().mockResolvedValue(registration);
+    Object.defineProperty(window.navigator, "serviceWorker", {
+      configurable: true,
+      value: {
+        register,
+        controller: {},
+        addEventListener: vi.fn((type: string, listener: EventListener) => containerListeners.set(type, listener)),
+        removeEventListener: vi.fn(),
+      },
+    });
+
+    render(<ServiceWorkerRegistration />);
+
+    await waitFor(() => expect(toast.info).toHaveBeenCalled());
+    const toastOptions = vi.mocked(toast.info).mock.calls[0][1];
+    expect(toastOptions).toMatchObject({ id: "pwa-update-available", duration: Infinity });
+    expect(postMessage).not.toHaveBeenCalled();
+
+    const action = toastOptions?.action as unknown as { onClick: (event: unknown) => void };
+    action.onClick({});
+    expect(postMessage).toHaveBeenCalledWith({ type: "SKIP_WAITING" });
+    expect(containerListeners.has("controllerchange")).toBe(true);
   });
 });

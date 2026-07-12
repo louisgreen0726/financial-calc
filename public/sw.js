@@ -14,6 +14,7 @@ const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${BUILD_ID}`;
 const OWNED_CACHES = new Set([STATIC_CACHE, RUNTIME_CACHE]);
 const MAX_RUNTIME_ENTRIES = 40;
 const NAVIGATION_TIMEOUT_MS = 5000;
+const PRECACHE_BATCH_SIZE = 12;
 
 const withBasePath = (assetPath) => {
   if (assetPath === "/") return `${BASE_PATH || ""}/`;
@@ -79,11 +80,35 @@ function respondWithLifetime(event, responsePromise) {
   );
 }
 
+async function populatePrecache(cache) {
+  const failedAssets = [];
+
+  for (let index = 0; index < precacheAssets.length; index += PRECACHE_BATCH_SIZE) {
+    const batch = precacheAssets.slice(index, index + PRECACHE_BATCH_SIZE);
+    const results = await Promise.allSettled(batch.map((asset) => cache.add(asset)));
+    results.forEach((result, resultIndex) => {
+      if (result.status === "rejected") {
+        failedAssets.push(batch[resultIndex]);
+      }
+    });
+  }
+
+  const essentialAssets = [withBasePath("/index.html"), withBasePath("/404.html")];
+  const missingEssentialAssets = essentialAssets.filter((asset) => failedAssets.includes(asset));
+  if (missingEssentialAssets.length > 0) {
+    throw new Error(`Unable to cache essential offline assets: ${missingEssentialAssets.join(", ")}`);
+  }
+
+  if (failedAssets.length > 0) {
+    console.warn(`[PWA] ${failedAssets.length} optional assets were not precached and will be retried on demand.`);
+  }
+}
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(STATIC_CACHE);
-      await cache.addAll(precacheAssets);
+      await populatePrecache(cache);
 
       for (const routePath of routePaths) {
         const routeUrl = new URL(routePath, self.location.origin);

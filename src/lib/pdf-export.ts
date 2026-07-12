@@ -20,6 +20,9 @@ const BOTTOM_MARGIN_MM = 10;
 const BLOCK_GAP_MM = 5;
 const DEFAULT_CAPTURE_TIMEOUT_MS = 12000;
 const CHART_CAPTURE_TIMEOUT_MS = 18000;
+const PDF_IMAGE_TYPE = "JPEG";
+const PDF_IMAGE_MIME_TYPE = "image/jpeg";
+const PDF_IMAGE_QUALITY = 0.9;
 
 const CSS_COLOR_PROPERTIES = [
   "color",
@@ -249,7 +252,7 @@ async function captureElement(
   const label = options.label ?? "PDF capture";
 
   const colorCanvas = document.createElement("canvas");
-  const colorContext = colorCanvas.getContext("2d");
+  const colorContext = colorCanvas.getContext("2d", { willReadFrequently: true });
 
   return withTimeout(
     html2canvas(element, {
@@ -316,7 +319,7 @@ function drawCanvasSlice(source: HTMLCanvasElement, sourceY: number, sliceHeight
   return pageCanvas;
 }
 
-function addCanvasToDocument({
+export function addCanvasToDocument({
   doc,
   canvas,
   y,
@@ -343,31 +346,49 @@ function addCanvasToDocument({
       cursorY = TOP_MARGIN_MM;
     }
 
-    doc.addImage(canvas.toDataURL("image/png"), "PNG", MARGIN_X_MM, cursorY, contentWidth, imageHeight);
+    doc.addImage(
+      canvas.toDataURL(PDF_IMAGE_MIME_TYPE, PDF_IMAGE_QUALITY),
+      PDF_IMAGE_TYPE,
+      MARGIN_X_MM,
+      cursorY,
+      contentWidth,
+      imageHeight
+    );
     return cursorY + imageHeight + BLOCK_GAP_MM;
   }
 
   let sourceY = 0;
-  let isFirstSlice = true;
   while (sourceY < canvas.height) {
-    const availableHeight = pageHeight - cursorY - BOTTOM_MARGIN_MM;
-    const availableHeightForSlice = Math.max(availableHeight, maxPageContentHeight);
+    let availableHeightForSlice = pageHeight - cursorY - BOTTOM_MARGIN_MM;
+    if (availableHeightForSlice <= 0) {
+      doc.addPage();
+      cursorY = TOP_MARGIN_MM;
+      availableHeightForSlice = maxPageContentHeight;
+    }
+
     const sliceHeightPx = Math.min(
       canvas.height - sourceY,
       Math.floor((availableHeightForSlice * canvas.width) / contentWidth)
     );
 
-    if (!isFirstSlice || cursorY + (sliceHeightPx * contentWidth) / canvas.width > pageHeight - BOTTOM_MARGIN_MM) {
+    if (sliceHeightPx <= 0) {
       doc.addPage();
       cursorY = TOP_MARGIN_MM;
+      continue;
     }
 
     const pageCanvas = drawCanvasSlice(canvas, sourceY, sliceHeightPx);
     const sliceHeight = (sliceHeightPx * contentWidth) / canvas.width;
-    doc.addImage(pageCanvas.toDataURL("image/png"), "PNG", MARGIN_X_MM, cursorY, contentWidth, sliceHeight);
+    doc.addImage(
+      pageCanvas.toDataURL(PDF_IMAGE_MIME_TYPE, PDF_IMAGE_QUALITY),
+      PDF_IMAGE_TYPE,
+      MARGIN_X_MM,
+      cursorY,
+      contentWidth,
+      sliceHeight
+    );
     sourceY += sliceHeightPx;
     cursorY += sliceHeight + BLOCK_GAP_MM;
-    isFirstSlice = false;
   }
 
   return cursorY;

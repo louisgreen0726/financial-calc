@@ -25,20 +25,19 @@ No unresolved P0 findings remain.
 
 - Accessibility and responsive behavior: semantic form/error associations, focus restoration, chart descriptions, non-duplicated responsive content, sidebar landmarks, and accessible amortization tables were improved.
 - Data/export presentation: locale-aware history formatting, result type metadata, CSV/JSON safety, PDF long-content pagination, and print styles were added.
+- PDF pagination and file size: oversized report blocks now use the remainder of the current page instead of leaving a header-only first page, and high-quality JPEG page slices reduce large amortization export sizes while preserving a white capture background.
+- Cash Flow mobile layout: period labels occupy a dedicated row below 640px, leaving a stable second row for the value input and delete action without horizontal overflow.
+- PWA installation and updates: precache downloads are bounded and failure-isolated, while the home and 404 offline fallbacks remain mandatory. Waiting workers now surface a localized, user-controlled refresh prompt instead of updating silently.
 
-## Remaining P2 Work
+## Residual Constraints
 
-- PDF export captures its header as a bitmap block; this can leave a mostly empty first page. Rendering the header directly through jsPDF, or capturing only its content height, would remove it.
-- On approximately 390px-wide screens, Cash Flow period labels are visually cramped beside their inputs. A dedicated mobile row layout or wider label column would improve readability.
-- Large amortization exports are raster PNG pages and can produce large PDFs. JPEG compression or vector/table output would reduce file size.
-- The service worker uses `cache.addAll` for roughly 195 precache entries, so first offline installation is all-or-nothing on a weak connection. It intentionally waits for existing tabs to close and has no update prompt.
-- The PDF libraries are lazy-loaded. A first-time PDF export while already offline is unavailable by design.
-- `public/_headers` works only on hosts that support that format. Other static hosts must reproduce those policies, including base-path-prefixed rules. Its CSP retains `unsafe-inline` for current static Next output compatibility; moving to generated hashes/nonces is a separate hardening project.
+- The PDF libraries are intentionally lazy-loaded to keep the initial application payload smaller. A first-ever PDF export cannot start after the browser is already offline; once loaded, the runtime cache can retain those chunks.
+- `public/_headers` is a deployment template, not a cross-host standard. Hosts that do not support that file must reproduce the policies in their own configuration, including base-path-prefixed rules. The CSP retains `unsafe-inline` for compatibility with the current static Next.js output; hash-based CSP generation is a separate deployment hardening project.
 
 ## Verification Evidence
 
 - Formatting, strict TypeScript, ESLint, Vitest, production build, `npm audit`, and `git diff --check` were run after the fixes.
-- The test suite covers 36 files and 253 tests after the final TVM/history additions.
+- The test suite covers 36 files and 257 tests after the PDF pagination, resilient precache, and controlled-update regressions were added.
 - Default static build exported 15 application routes and generated a precache manifest with 195 assets; route assets and precache entries were checked for missing files.
 - A `NEXT_PUBLIC_BASE_PATH=/calc` build completed successfully and all exported HTML asset references used the `/calc` prefix.
-- Browser checks covered desktop and 390px layouts, history restore, language/currency persistence, TVM validation, Monte Carlo Worker execution, Cash Flow/Loans PDF download, and printed amortization content.
+- Browser checks covered desktop and 390px layouts, history restore, language/currency persistence, TVM validation, Monte Carlo Worker execution, Cash Flow/Loans PDF download, and printed amortization content. The final 390px pass confirmed zero horizontal overflow, dedicated Cash Flow label rows, and a successful compressed PDF export.

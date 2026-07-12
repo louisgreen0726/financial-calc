@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("html2canvas", () => ({ default: vi.fn() }));
 vi.mock("jspdf", () => ({ default: vi.fn() }));
 
-import { preparePdfClone } from "@/lib/pdf-export";
+import { addCanvasToDocument, preparePdfClone } from "@/lib/pdf-export";
 
 describe("PDF clone preparation", () => {
   afterEach(() => {
@@ -66,5 +66,39 @@ describe("PDF clone preparation", () => {
 
     expect(report.style.getPropertyValue("color")).toBe("rgba(12, 34, 56, 0.502)");
     expect(clonedDocument.documentElement.style.getPropertyValue("--color-blue-500")).toBe("rgba(12, 34, 56, 0.502)");
+  });
+
+  it("uses the current page remainder for the first slice and compresses raster output", () => {
+    const getContext = vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({
+      fillStyle: "#ffffff",
+      fillRect: vi.fn(),
+      drawImage: vi.fn(),
+    } as unknown as CanvasRenderingContext2D);
+    const toDataUrl = vi
+      .spyOn(HTMLCanvasElement.prototype, "toDataURL")
+      .mockReturnValue("data:image/jpeg;base64,compressed");
+    const source = document.createElement("canvas");
+    source.width = 1000;
+    source.height = 2000;
+    const addPage = vi.fn();
+    const addImage = vi.fn();
+    const doc = {
+      addPage,
+      addImage,
+    } as unknown as Parameters<typeof addCanvasToDocument>[0]["doc"];
+
+    addCanvasToDocument({
+      doc,
+      canvas: source,
+      y: 35,
+      pageHeight: 297,
+      contentWidth: 190,
+    });
+
+    expect(addImage.mock.calls[0].slice(0, 5)).toEqual(["data:image/jpeg;base64,compressed", "JPEG", 10, 35, 190]);
+    expect(addImage.mock.calls[0][5]).toBeCloseTo(251.94, 5);
+    expect(addImage.mock.invocationCallOrder[0]).toBeLessThan(addPage.mock.invocationCallOrder[0]);
+    expect(toDataUrl).toHaveBeenCalledWith("image/jpeg", 0.9);
+    expect(getContext).toHaveBeenCalled();
   });
 });

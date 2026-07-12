@@ -38,6 +38,7 @@ type Translations = {
     unexpectedError: string;
     tryAgain: string;
     refreshPage: string;
+    updateAvailable: string;
     light: string;
     dark: string;
     system: string;
@@ -647,6 +648,7 @@ const en: Translations = {
     unexpectedError: "An unexpected error occurred.",
     tryAgain: "Try again",
     refreshPage: "Refresh page",
+    updateAvailable: "A new version is ready.",
     light: "Light",
     dark: "Dark",
     system: "System",
@@ -1271,6 +1273,7 @@ const zh: Translations = {
     unexpectedError: "发生了意外错误。",
     tryAgain: "重试",
     refreshPage: "刷新页面",
+    updateAvailable: "新版本已准备就绪。",
     light: "浅色",
     dark: "深色",
     system: "跟随系统",
