@@ -564,6 +564,20 @@ type Translations = {
     dataManagement: string;
     dataManagementDesc: string;
     exportHistoryJson: string;
+    importHistoryJson: string;
+    importHistoryFile: string;
+    importHistoryConfirmTitle: string;
+    importHistoryConfirm: string;
+    historyItemsAdded: string;
+    historyItemsUpdated: string;
+    historyItemsDuplicate: string;
+    historyItemsSkipped: string;
+    historyItemsTotal: string;
+    importHistorySuccess: string;
+    importHistoryNoChanges: string;
+    importHistoryInvalid: string;
+    importHistoryTooLarge: string;
+    importHistoryUnsupported: string;
     clearAllHistory: string;
     about: string;
     aboutDesc: string;
@@ -1196,6 +1210,20 @@ const en: Translations = {
     dataManagement: "Data Management",
     dataManagementDesc: "Manage your calculation history and data",
     exportHistoryJson: "Export History (JSON)",
+    importHistoryJson: "Import History (JSON)",
+    importHistoryFile: "Choose a calculation history JSON file",
+    importHistoryConfirmTitle: "Review history import",
+    importHistoryConfirm: "Import history",
+    historyItemsAdded: "new",
+    historyItemsUpdated: "updated",
+    historyItemsDuplicate: "duplicates",
+    historyItemsSkipped: "skipped",
+    historyItemsTotal: "total after import",
+    importHistorySuccess: "Calculation history imported",
+    importHistoryNoChanges: "This file contains no newer history records",
+    importHistoryInvalid: "The selected file is not a valid calculation history export",
+    importHistoryTooLarge: "The selected history file exceeds the import limit",
+    importHistoryUnsupported: "This history uses an unsupported schema version",
     clearAllHistory: "Clear All History",
     about: "About",
     aboutDesc: "About FinCalc Pro",
@@ -1832,6 +1860,20 @@ const zh: Translations = {
     dataManagement: "数据管理",
     dataManagementDesc: "管理您的计算历史和数据",
     exportHistoryJson: "导出历史记录 (JSON)",
+    importHistoryJson: "导入历史记录 (JSON)",
+    importHistoryFile: "选择计算历史 JSON 文件",
+    importHistoryConfirmTitle: "确认历史记录导入",
+    importHistoryConfirm: "导入历史记录",
+    historyItemsAdded: "条新增",
+    historyItemsUpdated: "条更新",
+    historyItemsDuplicate: "条重复",
+    historyItemsSkipped: "条跳过",
+    historyItemsTotal: "条导入后总数",
+    importHistorySuccess: "计算历史已导入",
+    importHistoryNoChanges: "此文件不包含更新的历史记录",
+    importHistoryInvalid: "所选文件不是有效的计算历史导出",
+    importHistoryTooLarge: "所选历史文件超过导入限制",
+    importHistoryUnsupported: "此历史记录使用了不受支持的 schema 版本",
     clearAllHistory: "清除所有历史",
     about: "关于",
     aboutDesc: "关于 FinCalc Pro",

@@ -15,7 +15,7 @@ The app is no longer just a calculator demo. It includes a full app shell, respo
 - Static-export Next.js app with `output: "export"`
 - Bilingual UI: English and Chinese
 - Desktop and mobile layouts, including bottom mobile navigation and accessible mobile drawer navigation
-- Calculation history, favorite records, cross-page restore, and home-page "continue" restore
+- Calculation history, favorite records, cross-page restore, home-page "continue" restore, and bounded JSON backup import/export
 - Shareable URLs with absolute links, JSON-safe array encoding, legacy URL compatibility, and long-URL protection
 - Self-describing, versioned CSV/JSON reports plus print-optimized, searchable PDF output; CSV includes a BOM
 - Manual PWA/service worker integration with base-path-aware registration
@@ -39,7 +39,7 @@ The app is no longer just a calculator demo. It includes a full app shell, respo
 ### Supporting pages
 
 - **History**: saved calculation browsing, search, favorites, restore, batch delete, and CSV export
-- **Settings**: language, theme, display currency, data-management, and reset controls
+- **Settings**: language, theme, display currency, schema-validated history backup/restore, and reset controls
 - **Help**: usage guide and app support information
 
 ## Reliability Work Included

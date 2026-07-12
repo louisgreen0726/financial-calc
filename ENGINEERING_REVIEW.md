@@ -129,6 +129,21 @@ browser-level checks beyond the existing suite.
 - Available direct upgrades are all major migrations (`@types/node` 26, ESLint 10, Lucide 1.x, TypeScript 7). With no
   audit findings, they should be handled as compatibility projects rather than mixed into low-risk cleanup.
 
+### Persistence Follow-up: History Backup Restore
+
+- Settings could download raw history storage but offered no restore path, and legacy/malformed storage could be
+  exported without normalization. Export now emits a repaired v1 envelope; import accepts that envelope and legacy
+  arrays under a 2 MB / 5,000-candidate boundary.
+- The import planner applies the same field, finite-number, page, expiry, clock-skew, and per-page caps as runtime
+  storage. It reports added, updated, duplicate, skipped, and final counts, keeps the newest record per ID, and is
+  idempotent when a backup is selected repeatedly.
+- Preview does not become a stale write: confirmation takes the original source back into the cross-tab storage lock,
+  re-reads current history, recomputes the merge, and only then writes a versioned envelope. Unknown future versions
+  are preserved rather than overwritten.
+- Browser coverage verifies the file API, preview, persistence, repeat deduplication, malformed-file rejection, and
+  accessible dialog state. This is a local backup/merge workflow; it intentionally does not import favorites or other
+  settings and does not provide cloud synchronization.
+
 ### Deployment Follow-up: Static Artifact Contract
 
 - A build succeeding did not previously prove that precache entries, route HTML, internal asset references, base-path

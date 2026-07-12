@@ -15,7 +15,7 @@ Financial Calc 是一个基于 Next.js 16、React 19、TypeScript、Tailwind CSS
 - Next.js 静态导出应用，`next.config.ts` 使用 `output: "export"`
 - 中英文双语界面
 - 桌面端与移动端布局完整，包含底部移动导航与无障碍移动抽屉导航
-- 支持计算历史、收藏、跨页面恢复，以及首页 Continue 恢复
+- 支持计算历史、收藏、跨页面恢复、首页 Continue 恢复，以及有边界校验的 JSON 备份导入/导出
 - 分享链接为绝对 URL，数组参数采用 JSON 安全编码，并兼容旧版 `|` 分隔格式
 - 分享 URL 有长度保护，避免资产组合等复杂状态生成过长链接
 - 支持自描述、带版本的 CSV / JSON 报告及打印优化的可搜索 PDF 输出；CSV 带 BOM
@@ -40,7 +40,7 @@ Financial Calc 是一个基于 Next.js 16、React 19、TypeScript、Tailwind CSS
 ### 辅助页面
 
 - **History**：历史记录浏览、搜索、收藏、恢复、批量删除、CSV 导出
-- **Settings**：语言、主题、显示币种、数据管理与重置
+- **Settings**：语言、主题、显示币种、带 schema 校验的历史备份/恢复与重置
 - **Help**：使用说明与补充信息
 
 ## 已完成的可靠性增强

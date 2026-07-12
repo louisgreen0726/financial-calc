@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   createCalculationHistoryEnvelope,
+  MAX_HISTORY_IMPORT_ITEMS,
+  prepareCalculationHistoryImport,
   parseStoredCalculationHistory,
   type CalculationHistoryItem,
 } from "@/lib/calculation-history";
@@ -92,5 +94,78 @@ describe("calculation history storage schema", () => {
     expect(parsed.items).toContainEqual(riskItem);
     expect(parsed.items).toHaveLength(51);
     expect(parsed.needsWriteBack).toBe(true);
+  });
+
+  it("merges legacy imports and reports added, updated, duplicate, and invalid records", () => {
+    const current = [makeItem(), makeItem({ id: "keep", timestamp: NOW - 900, page: "risk" })];
+    const imported = [
+      makeItem(),
+      makeItem({ timestamp: NOW - 100, result: 2000 }),
+      makeItem({ id: "new", timestamp: NOW - 200, page: "loans" }),
+      makeItem({ id: "expired", timestamp: NOW - HISTORY_EXPIRY_DAYS * 24 * 60 * 60 * 1000 }),
+      { ...makeItem({ id: "invalid" }), result: "not-a-number" },
+    ];
+
+    const prepared = prepareCalculationHistoryImport(imported, current, NOW);
+
+    expect(prepared).toMatchObject({
+      ok: true,
+      summary: { added: 1, updated: 1, duplicates: 1, skipped: 2, total: 3 },
+    });
+    if (prepared.ok) {
+      expect(prepared.items.find(({ id }) => id === "history-1")?.result).toBe(2000);
+      expect(prepared.items.map(({ id }) => id)).toEqual(["history-1", "new", "keep"]);
+    }
+  });
+
+  it("is idempotent when the same envelope is imported repeatedly", () => {
+    const envelope = createCalculationHistoryEnvelope([makeItem()]);
+    const first = prepareCalculationHistoryImport(envelope, [], NOW);
+    expect(first).toMatchObject({ ok: true, summary: { added: 1, updated: 0, duplicates: 0 } });
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+
+    const second = prepareCalculationHistoryImport(envelope, first.items, NOW);
+    expect(second).toMatchObject({
+      ok: true,
+      items: first.items,
+      summary: { added: 0, updated: 0, duplicates: 1, skipped: 0, total: 1 },
+    });
+  });
+
+  it("rejects malformed, unsupported, and excessively large imports", () => {
+    expect(prepareCalculationHistoryImport({ items: [] }, [], NOW)).toEqual({ ok: false, error: "invalid" });
+    expect(prepareCalculationHistoryImport({ version: 2, items: [] }, [], NOW)).toEqual({
+      ok: false,
+      error: "unsupported-version",
+    });
+    expect(
+      prepareCalculationHistoryImport(
+        createCalculationHistoryEnvelope(Array.from({ length: MAX_HISTORY_IMPORT_ITEMS + 1 }, () => makeItem())),
+        [],
+        NOW
+      )
+    ).toEqual({ ok: false, error: "too-many-items" });
+  });
+
+  it("reapplies per-page caps after merging an import", () => {
+    const current = Array.from({ length: 50 }, (_, index) =>
+      makeItem({ id: `current-${index}`, timestamp: NOW - index - 100 })
+    );
+    const imported = createCalculationHistoryEnvelope([
+      makeItem({ id: "newest", timestamp: NOW - 1 }),
+      makeItem({ id: "too-old", timestamp: NOW - 10_000 }),
+    ]);
+
+    const prepared = prepareCalculationHistoryImport(imported, current, NOW);
+
+    expect(prepared).toMatchObject({
+      ok: true,
+      summary: { added: 1, updated: 0, duplicates: 0, skipped: 1, total: 50 },
+    });
+    if (prepared.ok) {
+      expect(prepared.items[0].id).toBe("newest");
+      expect(prepared.items.some(({ id }) => id === "too-old")).toBe(false);
+    }
   });
 });

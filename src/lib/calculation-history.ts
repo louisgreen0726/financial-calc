@@ -24,6 +24,21 @@ export interface ParsedCalculationHistory {
   unsupportedVersion: boolean;
 }
 
+export const MAX_HISTORY_IMPORT_BYTES = 2_000_000;
+export const MAX_HISTORY_IMPORT_ITEMS = 5_000;
+
+export interface HistoryImportSummary {
+  added: number;
+  updated: number;
+  duplicates: number;
+  skipped: number;
+  total: number;
+}
+
+export type PreparedHistoryImport =
+  | { ok: true; items: CalculationHistoryItem[]; summary: HistoryImportSummary }
+  | { ok: false; error: "invalid" | "unsupported-version" | "too-many-items" };
+
 const HISTORY_SCHEMA_VERSION = 1 as const;
 const MAX_INPUT_KEYS = 100;
 const MAX_INPUT_STRING_LENGTH = 20_000;
@@ -131,6 +146,11 @@ function parseHistoryItem(value: unknown): CalculationHistoryItem | null {
   };
 }
 
+function isTimestampInHistoryWindow(timestamp: number, now: number): boolean {
+  const expiryMs = HISTORY_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+  return timestamp <= now + MAX_FUTURE_CLOCK_SKEW_MS && now - timestamp < expiryMs;
+}
+
 export function createCalculationHistoryEnvelope(items: CalculationHistoryItem[]): CalculationHistoryEnvelope {
   return { version: HISTORY_SCHEMA_VERSION, items };
 }
@@ -153,12 +173,11 @@ export function parseStoredCalculationHistory(value: unknown, now = Date.now()):
   } else if (isRecord(value) && value.version === HISTORY_SCHEMA_VERSION && Array.isArray(value.items)) {
     source = value.items;
   }
-  const expiryMs = HISTORY_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
   const itemsById = new Map<string, CalculationHistoryItem>();
 
   for (const candidate of source) {
     const item = parseHistoryItem(candidate);
-    if (!item || item.timestamp > now + MAX_FUTURE_CLOCK_SKEW_MS || now - item.timestamp >= expiryMs) {
+    if (!item || !isTimestampInHistoryWindow(item.timestamp, now)) {
       continue;
     }
 
@@ -193,5 +212,85 @@ export function parseStoredCalculationHistory(value: unknown, now = Date.now()):
     items,
     needsWriteBack: !isCurrentEnvelope || !sourceMatchesItems,
     unsupportedVersion: false,
+  };
+}
+
+export function prepareCalculationHistoryImport(
+  value: unknown,
+  currentItems: CalculationHistoryItem[],
+  now = Date.now()
+): PreparedHistoryImport {
+  if (
+    isRecord(value) &&
+    typeof value.version === "number" &&
+    Number.isInteger(value.version) &&
+    value.version !== HISTORY_SCHEMA_VERSION
+  ) {
+    return { ok: false, error: "unsupported-version" };
+  }
+
+  const source = Array.isArray(value)
+    ? value
+    : isRecord(value) && value.version === HISTORY_SCHEMA_VERSION && Array.isArray(value.items)
+      ? value.items
+      : null;
+  if (!source) {
+    return { ok: false, error: "invalid" };
+  }
+  if (source.length > MAX_HISTORY_IMPORT_ITEMS) {
+    return { ok: false, error: "too-many-items" };
+  }
+
+  const importedById = new Map<string, CalculationHistoryItem>();
+  let duplicates = 0;
+  let skipped = 0;
+  for (const candidate of source) {
+    const item = parseHistoryItem(candidate);
+    if (!item || !isTimestampInHistoryWindow(item.timestamp, now)) {
+      skipped += 1;
+      continue;
+    }
+
+    const existing = importedById.get(item.id);
+    if (existing) {
+      duplicates += 1;
+      if (item.timestamp > existing.timestamp) {
+        importedById.set(item.id, item);
+      }
+    } else {
+      importedById.set(item.id, item);
+    }
+  }
+
+  const normalizedCurrent = parseStoredCalculationHistory(createCalculationHistoryEnvelope(currentItems), now).items;
+  const currentById = new Map(normalizedCurrent.map((item) => [item.id, item]));
+  const items = parseStoredCalculationHistory(
+    createCalculationHistoryEnvelope([...normalizedCurrent, ...importedById.values()]),
+    now
+  ).items;
+  const finalById = new Map(items.map((item) => [item.id, item]));
+  let added = 0;
+  let updated = 0;
+
+  for (const imported of importedById.values()) {
+    const current = currentById.get(imported.id);
+    const finalItem = finalById.get(imported.id);
+    if (!current) {
+      if (finalItem?.timestamp === imported.timestamp) {
+        added += 1;
+      } else {
+        skipped += 1;
+      }
+    } else if (imported.timestamp > current.timestamp && finalItem?.timestamp === imported.timestamp) {
+      updated += 1;
+    } else {
+      duplicates += 1;
+    }
+  }
+
+  return {
+    ok: true,
+    items,
+    summary: { added, updated, duplicates, skipped, total: items.length },
   };
 }

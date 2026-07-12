@@ -21,7 +21,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Exercise service-worker installation and offline navigation from a real `/calc` base-path deployment.
 - [x] Add automated English/Chinese translation-key and route-copy coverage checks.
 - [x] Add independently sourced reference fixtures for the highest-impact financial formulas.
-- [ ] Design bounded, schema-versioned history import/export with duplicate handling and validation.
+- [x] Design bounded, schema-versioned history import/export with duplicate handling and validation.
 - [ ] Profile CI jobs and split/cache independent gates where it reduces feedback time without weakening coverage.
 - [ ] Extract VaR/CVaR calculations from the route component into a pure tested engine with external tail references.
 - [ ] Assess hash/nonce-based CSP generation for static export and document host-specific deployment feasibility.
@@ -597,3 +597,44 @@ Verification:
 - Current work: independent formula fixtures and the normal-CDF precision improvement are complete.
 - Queue status: 5 active items remain; history import/export and pure VaR/CVaR extraction are the next highest-value
   implementation candidates.
+
+### Improvement 16: Bounded, versioned, idempotent history backup restore
+
+Status: completed.
+
+Changes:
+
+- Added a pure history-import planner that accepts legacy history arrays and the current v1 envelope while rejecting
+  malformed top-level data, unknown schema versions, and imports above 5,000 candidates.
+- Reuses the storage schema's field, page, finite-number, clock-skew, 30-day expiry, and per-page 50-record limits.
+  Invalid/expired/future records are skipped; duplicate IDs keep the newest record; existing records are updated only
+  by a newer timestamp; importing the same backup repeatedly is idempotent.
+- Added a 2 MB browser file limit before JSON parsing. Import summaries separately report added, updated, duplicate,
+  skipped, and final total counts.
+- Settings now exports a repaired v1 envelope instead of blindly downloading raw localStorage. The new JSON import
+  control parses and previews changes in a confirmation dialog, then re-reads and recomputes the merge inside the
+  existing cross-tab storage lock before writing, so changes made after preview are not overwritten.
+- Import preserves unknown future local storage versions instead of downgrading them, reports blocked storage, emits
+  the existing same-tab history change event on success, and surfaces localized success/no-change/invalid/oversize/
+  unsupported feedback.
+- Added English/Chinese UI copy under the compile-time translation-key contract and updated user-facing feature docs.
+
+Files and areas:
+
+- `src/lib/calculation-history.ts` and its tests
+- `src/app/settings/page.tsx` and its tests
+- `src/lib/i18n.tsx`
+- `e2e/history-import.spec.ts` and `e2e/accessibility.spec.ts`
+- README and review/log documentation
+
+Verification:
+
+- Focused schema/settings/i18n suite: 3 files and 20 tests passed.
+- Browser workflow: valid preview/write, repeated-import deduplication, malformed-file rejection, and storage
+  preservation passed.
+- Axe interaction scan for the history import preview dialog passed.
+- `npm run verify`: passed; 44 Vitest files and 384 tests passed.
+- Full standard Playwright suite: 20 tests passed.
+- Static export remained 15 routes and 197 precache assets; all route budgets passed. Shared localized copy added about
+  0.7 KB gzip, while Settings added about 2.0 KB and remains 262,792 / 300,000.
+- `npm audit`: zero known vulnerabilities; `git diff --check`: passed.

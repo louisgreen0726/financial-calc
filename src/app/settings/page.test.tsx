@@ -1,6 +1,12 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import SettingsPage from "@/app/settings/page";
+import { createCalculationHistoryEnvelope } from "@/lib/calculation-history";
+
+const mocks = vi.hoisted(() => ({
+  exportToJSON: vi.fn(),
+  toast: { error: vi.fn(), info: vi.fn(), success: vi.fn() },
+}));
 
 vi.mock("@/lib/i18n", () => ({
   useLanguage: () => ({
@@ -14,9 +20,16 @@ vi.mock("@/components/theme-provider", () => ({
   useTheme: () => ({ theme: "light", setTheme: vi.fn() }),
 }));
 
+vi.mock("@/hooks/use-export", () => ({
+  useExport: () => ({ exportToJSON: mocks.exportToJSON }),
+}));
+
+vi.mock("sonner", () => ({ toast: mocks.toast }));
+
 describe("SettingsPage", () => {
   beforeEach(() => {
     window.localStorage.clear();
+    vi.clearAllMocks();
   });
 
   it("keeps the previous currency selected when persistence is blocked", () => {
@@ -32,5 +45,59 @@ describe("SettingsPage", () => {
     } finally {
       setItem.mockRestore();
     }
+  });
+
+  it("exports a normalized versioned history envelope", () => {
+    const item = {
+      id: "legacy",
+      page: "tvm" as const,
+      inputs: { rate: "5" },
+      result: 100,
+      timestamp: Date.now(),
+    };
+    window.localStorage.setItem("financial-calc-history", JSON.stringify([item]));
+    render(<SettingsPage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "settings.exportHistoryJson" }));
+
+    expect(mocks.exportToJSON).toHaveBeenCalledWith(createCalculationHistoryEnvelope([item]));
+  });
+
+  it("previews and atomically imports a valid history file", async () => {
+    const item = {
+      id: "imported",
+      page: "loans" as const,
+      inputs: { principal: "10000" },
+      result: 500,
+      timestamp: Date.now(),
+      resultFormat: "currency" as const,
+    };
+    const file = {
+      size: 500,
+      text: async () => JSON.stringify(createCalculationHistoryEnvelope([item])),
+    };
+    render(<SettingsPage />);
+
+    fireEvent.change(screen.getByLabelText("settings.importHistoryFile"), { target: { files: [file] } });
+    expect(await screen.findByText(/1 settings\.historyItemsAdded/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "settings.importHistoryConfirm" }));
+
+    await waitFor(() => {
+      expect(JSON.parse(window.localStorage.getItem("financial-calc-history") ?? "null")).toEqual(
+        createCalculationHistoryEnvelope([item])
+      );
+    });
+    expect(mocks.toast.success).toHaveBeenCalledWith(expect.stringContaining("settings.importHistorySuccess"));
+  });
+
+  it("rejects malformed imports without changing storage", async () => {
+    const file = { size: 20, text: async () => "not-json" };
+    render(<SettingsPage />);
+
+    fireEvent.change(screen.getByLabelText("settings.importHistoryFile"), { target: { files: [file] } });
+
+    await waitFor(() => expect(mocks.toast.error).toHaveBeenCalledWith("settings.importHistoryInvalid"));
+    expect(window.localStorage.getItem("financial-calc-history")).toBeNull();
   });
 });
