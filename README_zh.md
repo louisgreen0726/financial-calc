@@ -212,6 +212,7 @@ financial-calc/
 ## 重要源码文件
 
 - `src/lib/finance-math.ts`：共享金融计算引擎
+- `src/lib/risk-math.ts`：纯参数化正态 VaR 与预期损失计算引擎
 - `src/test/fixtures/financial-reference-cases.json`：固定版本的 NumPy Financial 与 OpenGamma Strata 参考向量
 - `src/lib/validation.ts`：共享 Zod 校验 schema 与输入上限
 - `src/lib/history-format.ts`：按单位/类型格式化历史结果

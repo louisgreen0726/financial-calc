@@ -213,6 +213,7 @@ financial-calc/
 ## Important Source Files
 
 - `src/lib/finance-math.ts`: shared financial calculation engine
+- `src/lib/risk-math.ts`: pure parametric-normal VaR and expected-shortfall engine
 - `src/test/fixtures/financial-reference-cases.json`: pinned NumPy Financial and OpenGamma Strata reference vectors
 - `src/lib/validation.ts`: shared Zod validation schemas and input limits
 - `src/lib/history-format.ts`: history result formatting by unit/type

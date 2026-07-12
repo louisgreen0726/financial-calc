@@ -95,6 +95,19 @@ browser-level checks beyond the existing suite.
 - These references still do not constitute regulated-model certification. They add an independent regression layer;
   institution-specific conventions, rounding, and approved-system comparison remain required for production use.
 
+### Risk Follow-up: Pure VaR and Expected Shortfall Contract
+
+- Parametric-normal VaR/CVaR previously lived inside the Risk page's React `useMemo`, mixing domain calculations with
+  parsing and presentation. The pure engine now owns annual-to-horizon scaling, inverse-normal quantiles, VaR, and
+  closed-form normal Expected Shortfall with explicit amount/fraction fields.
+- Domain checks reject non-finite inputs, invalid confidence, negative volatility, non-integer/non-positive horizons,
+  and invalid trading-year conventions before any metric is returned. Zero volatility is a supported zero-loss case.
+- NIST standard-normal critical values anchor one-day 95% and 99% references; tests additionally enforce
+  `sqrt(days/252)` scaling and `CVaR > VaR` for positive volatility. A browser case locks the page's 99% dollar and
+  percentage output, protecting the UI's percent-to-decimal conversion.
+- This remains a zero-drift, normally distributed, constant-volatility model. The Help disclosure correctly requires
+  backtesting and stress/scenario analysis for fat tails, serial dependence, volatility shifts, and liquidity gaps.
+
 ### Validation Follow-up: Restored Portfolio and Loan Domains
 
 - The Portfolio risk-free rate previously had three contracts: the engine accepted any finite value, the schema

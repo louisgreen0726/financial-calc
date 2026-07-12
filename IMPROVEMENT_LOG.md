@@ -23,7 +23,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Add independently sourced reference fixtures for the highest-impact financial formulas.
 - [x] Design bounded, schema-versioned history import/export with duplicate handling and validation.
 - [ ] Profile CI jobs and split/cache independent gates where it reduces feedback time without weakening coverage.
-- [ ] Extract VaR/CVaR calculations from the route component into a pure tested engine with external tail references.
+- [x] Extract VaR/CVaR calculations from the route component into a pure tested engine with external tail references.
 - [ ] Assess hash/nonce-based CSP generation for static export and document host-specific deployment feasibility.
 - [ ] Add property/fuzz coverage for URL and history restoration across every calculator schema.
 
@@ -637,4 +637,38 @@ Verification:
 - Full standard Playwright suite: 20 tests passed.
 - Static export remained 15 routes and 197 precache assets; all route budgets passed. Shared localized copy added about
   0.7 KB gzip, while Settings added about 2.0 KB and remains 262,792 / 300,000.
+- `npm audit`: zero known vulnerabilities; `git diff --check`: passed.
+
+### Improvement 17: Pure parametric-normal VaR/CVaR engine and tail references
+
+Status: completed.
+
+Changes:
+
+- Moved the Risk page's annual-volatility scaling, inverse-normal quantile, VaR, and normal Expected Shortfall/CVaR
+  calculations into a reusable pure `calculateParametricNormalRisk` engine.
+- Replaced page-specific abbreviated fields with explicit value/fraction, horizon volatility, z-score, and expected-
+  shortfall-factor outputs. The route now owns only parsing, Zod validation, rendering, history, export, and chart data.
+- The engine rejects non-finite values, non-positive portfolio/horizon/trading-year domains, negative volatility,
+  non-integer horizons, and confidence outside `(0.5, 1)`, and returns `null` rather than partial non-finite metrics.
+- Added NIST-standard-normal-backed one-day 95% and 99% reference cases for a 100,000 portfolio at 20% annual
+  volatility. The tests also verify closed-form normal Expected Shortfall `phi(z)/(1-confidence)`, positive loss
+  amounts, square-root-of-time scaling, amount/fraction identities, zero volatility, and six invalid domains.
+- Added a real browser reference workflow for 100,000 / 20% / 1 day / 99%, requiring `$2,930.92` VaR,
+  `$3,357.85` CVaR, and a `2.93%` portfolio-loss fraction with no browser errors.
+
+Files and areas:
+
+- `src/lib/risk-math.ts` and `src/lib/risk-math.test.ts`
+- `src/app/risk/page.tsx`
+- `e2e/risk-reference.spec.ts`
+- README and review/log documentation
+
+Verification:
+
+- Focused risk/finance/chart suite: 3 files and 72 tests passed.
+- `npm run verify`: passed; 45 Vitest files and 394 tests passed.
+- Full standard Playwright suite: 21 tests passed, including the new browser reference.
+- Static export remained 15 routes and 197 precache assets. Risk added about 165 gzip bytes and remains
+  419,244 / 470,000; all route budgets passed.
 - `npm audit`: zero known vulnerabilities; `git diff --check`: passed.

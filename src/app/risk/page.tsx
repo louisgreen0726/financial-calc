@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Finance } from "@/lib/finance-math"; // Assuming normPDF/CDF are here
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,8 +18,8 @@ import { useHistoryRecorder } from "@/hooks/use-history-recorder";
 import { HistoryPanel } from "@/components/history-panel";
 import { ClientOnlyChart } from "@/components/client-only-chart";
 import { useShareableUrl } from "@/hooks/use-shareable-url";
-import { TRADING_DAYS_PER_YEAR } from "@/lib/constants";
 import { buildRiskDistributionData, getRiskTailGradientOffset } from "@/lib/chart-data";
+import { calculateParametricNormalRisk } from "@/lib/risk-math";
 
 export default function RiskPage() {
   const { t } = useLanguage();
@@ -85,39 +84,17 @@ export default function RiskPage() {
 
   const metrics = useMemo(() => {
     if (hasValidationErrors) {
-      return {
-        VaR_val: Number.NaN,
-        VaR_pct: Number.NaN,
-        CVaR_val: Number.NaN,
-        CVaR_pct: Number.NaN,
-        sigmaHorizon: 0,
-        z: 0,
-      };
+      return null;
     }
 
-    const P = parsedInputs.value ?? 0;
-    const sigmaAnnual = (parsedInputs.volatility ?? 0) / 100;
-    const conf = parsedInputs.confidence ?? 0.95;
-    const d = parsedInputs.days ?? 1;
-
-    // Scale volatility to horizon
-    const sigmaHorizon = sigmaAnnual * Math.sqrt(d / TRADING_DAYS_PER_YEAR);
-
-    // Precise z-score via Acklam's inverse normal CDF approximation.
-    const z = Finance.normCDFInverse(conf);
-
-    const VaR_pct = z * sigmaHorizon;
-    const VaR_val = P * VaR_pct;
-
-    const alpha = 1 - conf;
-    const es_factor = Finance.normPDF(z) / alpha;
-    const CVaR_pct = es_factor * sigmaHorizon;
-    const CVaR_val = P * CVaR_pct;
-
-    return { VaR_val, VaR_pct, CVaR_val, CVaR_pct, sigmaHorizon, z };
+    return calculateParametricNormalRisk({
+      portfolioValue: parsedInputs.value ?? Number.NaN,
+      annualVolatility: (parsedInputs.volatility ?? Number.NaN) / 100,
+      confidence: parsedInputs.confidence ?? Number.NaN,
+      horizonDays: parsedInputs.days ?? Number.NaN,
+    });
   }, [hasValidationErrors, parsedInputs]);
-  const metricsAreFinite = Object.values(metrics).every(Number.isFinite);
-  const resultReady = !hasValidationErrors && metricsAreFinite;
+  const resultReady = !hasValidationErrors && metrics !== null;
 
   // Generate Distribution Curve
   const chartData = useMemo(() => {
@@ -125,14 +102,14 @@ export default function RiskPage() {
       return [];
     }
 
-    return buildRiskDistributionData(metrics.sigmaHorizon, parsedInputs.value ?? 0, metrics.z);
+    return buildRiskDistributionData(metrics?.horizonVolatility ?? 0, parsedInputs.value ?? 0, metrics?.zScore ?? 0);
   }, [metrics, parsedInputs, resultReady]);
-  const tailGradientOffset = getRiskTailGradientOffset(metrics.z);
+  const tailGradientOffset = getRiskTailGradientOffset(metrics?.zScore ?? 0);
 
   useHistoryRecorder({
     addToHistory,
     inputs: { value, volatility, confidence, days },
-    result: metrics.VaR_val,
+    result: metrics?.valueAtRisk ?? Number.NaN,
     label: t("risk.var"),
     resultFormat: "currency",
     enabled: hasInteracted && resultReady,
@@ -233,14 +210,14 @@ export default function RiskPage() {
                 <ResultActions
                   title={t("risk.title")}
                   results={{
-                    [t("risk.var")]: metrics.VaR_val,
-                    [t("risk.cvar")]: metrics.CVaR_val,
-                    [t("risk.vol")]: `${(metrics.sigmaHorizon * 100).toFixed(2)}%`,
+                    [t("risk.var")]: metrics?.valueAtRisk ?? 0,
+                    [t("risk.cvar")]: metrics?.conditionalValueAtRisk ?? 0,
+                    [t("risk.vol")]: `${((metrics?.horizonVolatility ?? 0) * 100).toFixed(2)}%`,
                   }}
                   inputs={{ value, volatility, confidence, days }}
                   shareUrl={shareUrl}
                   exportData={chartData as unknown as Record<string, unknown>[]}
-                  exportJson={metrics}
+                  exportJson={metrics ? { ...metrics } : {}}
                   pdfElementId="risk-report-content"
                   pdfFilename="risk-analysis"
                   pdfTitle={t("risk.title")}
@@ -257,10 +234,11 @@ export default function RiskPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl sm:text-3xl font-bold text-destructive break-all">
-                      {formatCurrency(metrics.VaR_val)}
+                      {formatCurrency(metrics?.valueAtRisk ?? 0)}
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {formatCurrency(metrics.VaR_val)} ({(metrics.VaR_pct * 100).toFixed(2)}% {t("risk.varDesc")})
+                      {formatCurrency(metrics?.valueAtRisk ?? 0)} (
+                      {((metrics?.valueAtRiskFraction ?? 0) * 100).toFixed(2)}% {t("risk.varDesc")})
                     </p>
                   </CardContent>
                 </Card>
@@ -272,7 +250,7 @@ export default function RiskPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl sm:text-3xl font-bold text-destructive break-all">
-                      {formatCurrency(metrics.CVaR_val)}
+                      {formatCurrency(metrics?.conditionalValueAtRisk ?? 0)}
                     </div>
                     <p className="text-sm text-muted-foreground">{t("risk.cvarDesc")}</p>
                   </CardContent>
@@ -334,7 +312,7 @@ export default function RiskPage() {
                           fill="url(#colorProb)"
                         />
                         <ReferenceLine
-                          x={metrics.VaR_val}
+                          x={metrics?.valueAtRisk ?? 0}
                           ifOverflow="extendDomain"
                           stroke="hsl(var(--destructive))"
                           strokeWidth={2}
