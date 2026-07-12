@@ -87,6 +87,17 @@ browser-level checks beyond the existing suite.
   now exposes one-month increments and the exact one-month to 50-year engine range; the rate control exposes its
   schema's 100% maximum.
 
+### Performance Follow-up: Portfolio Variance Hot Path
+
+- The equal-correlation portfolio model previously evaluated every asset pair for every sampled point. The exact
+  variance identity now accumulates weighted risk and squared weighted risk in one pass, reducing the shared worker
+  and fallback path from O(n^2) to O(n).
+- A 20-asset, 5,000-point, 31-round alternating benchmark improved from 4.7835 ms to 0.5344 ms median (8.95x). A
+  quadratic reference matrix covers 426 weight/correlation combinations to protect numerical equivalence.
+- Other bounded paths did not justify riskier changes: a maximum 600-period loan schedule averaged 0.016 ms in the
+  engine, History is capped at 50 records per page, and report printing uses bounded DOM preparation plus native
+  browser pagination.
+
 ### Prioritized Adjustment List
 
 #### P0
@@ -151,7 +162,7 @@ No unresolved P0 findings remain.
 ## Verification Evidence
 
 - Formatting, strict TypeScript, ESLint, Vitest, production build, `npm audit`, and `git diff --check` were run after the fixes.
-- The unit/integration suite covers 40 files and 346 tests, including the numeric parser, TVM negative-rate contract,
+- The unit/integration suite covers 40 files and 347 tests, including the numeric parser, TVM negative-rate contract,
   dividend-adjusted Black-Scholes-Merton pricing and Greeks, cross-tab settings, export naming, Markdown safety, and
   implied-volatility solver, mobile history-control regressions, and related workflows. Two additional Playwright
   tests cover desktop and mobile browser behavior.

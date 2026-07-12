@@ -92,14 +92,30 @@ export function calculatePortfolioPoint(
     throw new Error("Risk-free rate must be finite.");
   }
 
-  if (
-    assets.some((asset) => !Number.isFinite(asset.return) || !Number.isFinite(asset.risk) || asset.risk < 0) ||
-    weights.some((weight) => !Number.isFinite(weight) || weight < 0)
-  ) {
-    throw new Error("Portfolio assets and weights must contain finite non-negative risk and weight values.");
+  let weightSum = 0;
+  let ret = 0;
+  let weightedRiskSum = 0;
+  let weightedRiskSquareSum = 0;
+  for (let index = 0; index < assets.length; index++) {
+    const asset = assets[index];
+    const weight = weights[index];
+    if (
+      !Number.isFinite(asset.return) ||
+      !Number.isFinite(asset.risk) ||
+      asset.risk < 0 ||
+      !Number.isFinite(weight) ||
+      weight < 0
+    ) {
+      throw new Error("Portfolio assets and weights must contain finite non-negative risk and weight values.");
+    }
+
+    const weightedRisk = weight * asset.risk;
+    weightSum += weight;
+    ret += weight * asset.return;
+    weightedRiskSum += weightedRisk;
+    weightedRiskSquareSum += weightedRisk * weightedRisk;
   }
 
-  const weightSum = weights.reduce((sum, weight) => sum + weight, 0);
   if (Math.abs(weightSum - 1) > 1e-10) {
     throw new Error("Portfolio weights must sum to one.");
   }
@@ -108,18 +124,10 @@ export function calculatePortfolioPoint(
     throw new Error("Correlation is outside the valid range for this asset count.");
   }
 
-  const ret = weights.reduce((acc, weight, index) => acc + weight * assets[index].return, 0);
   if (!Number.isFinite(ret)) {
     throw new Error("Portfolio expected return overflowed the supported numeric range.");
   }
-  let variance = 0;
-
-  for (let a = 0; a < assets.length; a++) {
-    for (let b = 0; b < assets.length; b++) {
-      const covariance = a === b ? assets[a].risk * assets[a].risk : correlation * assets[a].risk * assets[b].risk;
-      variance += weights[a] * weights[b] * covariance;
-    }
-  }
+  const variance = (1 - correlation) * weightedRiskSquareSum + correlation * weightedRiskSum * weightedRiskSum;
 
   if (!Number.isFinite(variance) || variance < -1e-8) {
     throw new Error("Portfolio covariance matrix produced negative variance.");

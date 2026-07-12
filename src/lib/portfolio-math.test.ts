@@ -83,6 +83,38 @@ describe("portfolio-math", () => {
     expect(Number.isFinite(boundaryPoint.sharpe)).toBe(true);
   });
 
+  it("matches the quadratic covariance reference across deterministic portfolios", () => {
+    const assets = Array.from({ length: 20 }, (_, index) => ({
+      name: `Asset ${index + 1}`,
+      return: 2 + index * 0.75,
+      risk: 4 + index * 1.25,
+    }));
+    const random = createSeededRandom("quadratic-reference");
+    const weightMatrix = [
+      ...makeDeterministicBaselineWeights(assets.length),
+      ...Array.from({ length: 50 }, () => makeRandomWeights(assets.length, random)),
+    ];
+    const correlations = [getMinimumEqualCorrelation(assets.length), -0.02, 0, 0.2, 0.75, 1];
+
+    for (const correlation of correlations) {
+      for (const weights of weightMatrix) {
+        let referenceVariance = 0;
+        for (let row = 0; row < assets.length; row++) {
+          for (let column = 0; column < assets.length; column++) {
+            const covariance =
+              row === column
+                ? assets[row].risk * assets[row].risk
+                : correlation * assets[row].risk * assets[column].risk;
+            referenceVariance += weights[row] * weights[column] * covariance;
+          }
+        }
+
+        const point = calculatePortfolioPoint(assets, weights, correlation, 1.5);
+        expect(point.risk).toBeCloseTo(Math.sqrt(Math.max(0, referenceVariance)), 10);
+      }
+    }
+  });
+
   it("rejects malformed assets and weights", () => {
     expect(() => calculatePortfolioPoint([{ name: "A", return: 8, risk: 10 }], [], 0, 2)).toThrow(/matching/);
     expect(() => calculatePortfolioPoint([{ name: "A", return: 8, risk: -1 }], [1], 0, 2)).toThrow(/finite/);

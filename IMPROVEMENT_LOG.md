@@ -14,7 +14,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Add automated PWA/offline navigation and update-flow browser coverage.
 - [x] Add automated accessibility checks for calculator forms, dialogs, navigation, and result announcements.
 - [x] Review all calculator pages for validation/schema drift and inconsistent supported domains.
-- [ ] Profile large loan schedules, portfolio simulations, history filtering, and report exports.
+- [x] Profile large loan schedules, portfolio simulations, history filtering, and report exports.
 - [ ] Review dependency upgrades and remove confirmed dead code without destabilizing generated UI primitives.
 - [ ] Validate static deployment headers, base-path output, precache completeness, and cache invalidation in automation.
 - [ ] Expand user-facing documentation with model assumptions, limitations, and worked examples.
@@ -303,5 +303,41 @@ Verification:
   in favor of defaults with no browser errors.
 - `npm run verify`: passed; 40 Vitest files and 346 tests passed.
 - `npm run test:e2e`: 18 tests passed, including 15 Axe checks and the new Portfolio workflow.
+- Static export: 15 routes and 197 precache assets; all bundle budgets passed.
+- `npm audit`: zero known vulnerabilities; `git diff --check`: passed.
+
+### Improvement 9: Linear-time equal-correlation portfolio variance
+
+Status: completed.
+
+Changes:
+
+- Confirmed the Web Worker and chunked main-thread fallback both use the shared `calculatePortfolioPoint` hot path.
+- Replaced the O(n^2) pairwise covariance loop with the equal-correlation identity
+  `(1-rho) * sum((w*sigma)^2) + rho * sum(w*sigma)^2`, reducing variance work to O(n).
+- Combined asset/weight validation, weight normalization, expected return, and risk exposure accumulation into one
+  pass without changing error contracts or zero-risk Sharpe semantics.
+- Added a quadratic reference test covering 20 assets, 71 deterministic weight vectors, and six correlations (426
+  comparisons), including the positive-semidefinite lower boundary and perfect correlation.
+- Reviewed the remaining profiling targets. Loan schedules are capped at 600 rows and the 600-period engine path
+  averaged 0.016 ms over 2,000 runs; History is capped at 50 items per page; report printing performs bounded DOM
+  isolation/chart measurement and delegates pagination to the browser without eager rasterization.
+
+Performance evidence:
+
+- Harness: 20 assets, 5,000 fixed seeded weight vectors, correlation 0.2, 31 alternating post-warmup rounds.
+- Before: 4.7835 ms median, 4.8506 ms mean.
+- After: 0.5344 ms median, 0.5412 ms mean.
+- Median speedup: 8.95x; covariance terms per 5,000-point run fall from 2,000,000 pair terms to 100,000 linear asset
+  terms.
+
+Files and areas:
+
+- `src/lib/portfolio-math.ts` and `src/lib/portfolio-math.test.ts`
+
+Verification:
+
+- Focused Portfolio math/worker fallback: 2 files and 17 tests passed.
+- `npm run verify`: passed; 40 Vitest files and 347 tests passed.
 - Static export: 15 routes and 197 precache assets; all bundle budgets passed.
 - `npm audit`: zero known vulnerabilities; `git diff --check`: passed.
