@@ -12,6 +12,7 @@ function normalizeBasePath(value: string): string {
 
 export function createPwaConfig(configuredBasePath = "") {
   const basePath = normalizeBasePath(configuredBasePath);
+  const skipBuild = process.env.PWA_SKIP_BUILD === "1";
   process.env.PWA_BASE_PATH = basePath;
 
   return defineConfig({
@@ -31,7 +32,7 @@ export function createPwaConfig(configuredBasePath = "") {
       ...(executablePath ? { launchOptions: { executablePath } } : {}),
     },
     webServer: {
-      command: "npm run build && node scripts/serve-pwa-e2e.mjs",
+      command: `${skipBuild ? "" : "npm run build && "}node scripts/serve-pwa-e2e.mjs`,
       env: {
         NEXT_PUBLIC_BASE_PATH: basePath,
         PWA_BASE_PATH: basePath,

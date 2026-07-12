@@ -171,6 +171,19 @@ browser-level checks beyond the existing suite.
   arrays, while browser coverage proves malformed and oversized Cash Flow links remain bounded. Versioned history
   tests also cover every calculator page ID.
 
+### CI Follow-up: Parallel Gates and Artifact Reuse
+
+- The original workflow serialized formatting, type checking, linting, unit tests, four production builds, three browser
+  suites, and audit in one job. A local warm-dependency profile measured about 70 seconds before browser work, with
+  builds accounting for 28.4 seconds each and unit/lint gates accounting for another 34.4 seconds.
+- Quality checks, development-server browser workflows, and root/base-path production verification now run as
+  independent jobs. The production matrix builds each topology once and verifies static references, PWA metadata,
+  security headers, route budgets, installation, offline navigation, and update activation against that exact output.
+- Explicit `PWA_SKIP_BUILD=1` artifact reuse is covered by a config test; local PWA commands still build by default.
+  Root-path PWA verification against a prebuilt artifact fell from the previously recorded 38.2 seconds to 9.8 seconds.
+- Next.js compilation caches are isolated by deployment target and lockfile/source hashes. Playwright screenshots and
+  traces are now uploaded on failure with seven-day retention instead of remaining inaccessible on an ephemeral runner.
+
 ### Deployment Follow-up: Static Artifact Contract
 
 - A build succeeding did not previously prove that precache entries, route HTML, internal asset references, base-path

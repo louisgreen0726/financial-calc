@@ -137,10 +137,10 @@ npm audit
 npm run verify
 ```
 
-GitHub Actions 会在推送和拉取请求中运行同一套门禁，并额外审计生产依赖中的高危漏洞。
-门禁会校验生成的 precache manifest、HTML 内部引用、PWA metadata 与静态宿主头模板。CI 还会使用
-`NEXT_PUBLIC_BASE_PATH=/calc` 重新构建、安装 Chromium，并分别在 `/` 与 `/calc/` 执行 PWA 安装、离线与
-更新流程。本地首次运行 `npm run test:e2e` 前，需要执行
+GitHub Actions 会把同等覆盖拆分为并行的质量、浏览器以及 root/base-path 生产矩阵，并额外审计生产依赖中的
+高危漏洞。每个生产矩阵只构建一次，然后针对同一份产物校验 precache manifest、HTML 内部引用、PWA
+metadata、静态宿主头、路由体积预算，以及 PWA 安装、离线与更新流程。浏览器任务失败时会保留 7 天的截图和
+trace 诊断产物。本地首次运行 `npm run test:e2e` 前，需要执行
 `npx playwright install chromium` 安装浏览器。
 
 运行生产 PWA 工作流：

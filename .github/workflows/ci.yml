@@ -12,9 +12,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  verify:
+  quality:
+    name: Quality
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
 
     steps:
       - name: Check out repository
@@ -29,11 +30,29 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Verify application
-        run: npm run verify
+      - name: Check source quality
+        run: npm run verify:quality
 
-      - name: Verify base-path static export
-        run: npm run test:static
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+  browser:
+    name: Browser workflows
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
@@ -41,11 +60,75 @@ jobs:
       - name: Run browser workflows
         run: npm run test:e2e
 
-      - name: Run production PWA workflow
-        run: npm run test:e2e:pwa
+      - name: Upload browser diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-browser-${{ github.run_attempt }}
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
 
-      - name: Run base-path production PWA workflow
-        run: npm run test:e2e:pwa:base-path
+  production:
+    name: Production (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: root
+            base_path: ""
+            pwa_script: test:e2e:pwa
+          - target: base-path
+            base_path: /calc
+            pwa_script: test:e2e:pwa:base-path
+    env:
+      NEXT_PUBLIC_BASE_PATH: ${{ matrix.base_path }}
 
-      - name: Audit production dependencies
-        run: npm audit --omit=dev --audit-level=high
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Restore Next.js build cache
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: next-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**', 'public/**', 'scripts/**', '*.config.*') }}
+          restore-keys: |
+            next-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('package-lock.json') }}-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production artifact
+        run: npm run build
+
+      - name: Verify static export
+        run: npm run static:check
+
+      - name: Enforce route bundle budgets
+        run: npm run bundle:check
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify production PWA lifecycle
+        run: npm run ${{ matrix.pwa_script }}
+        env:
+          PWA_SKIP_BUILD: "1"
+
+      - name: Upload PWA diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-pwa-${{ matrix.target }}-${{ github.run_attempt }}
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7

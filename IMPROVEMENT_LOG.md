@@ -22,7 +22,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Add automated English/Chinese translation-key and route-copy coverage checks.
 - [x] Add independently sourced reference fixtures for the highest-impact financial formulas.
 - [x] Design bounded, schema-versioned history import/export with duplicate handling and validation.
-- [ ] Profile CI jobs and split/cache independent gates where it reduces feedback time without weakening coverage.
+- [x] Profile CI jobs and split/cache independent gates where it reduces feedback time without weakening coverage.
 - [x] Extract VaR/CVaR calculations from the route component into a pure tested engine with external tail references.
 - [ ] Assess hash/nonce-based CSP generation for static export and document host-specific deployment feasibility.
 - [x] Add property/fuzz coverage for URL and history restoration across every calculator schema.
@@ -722,3 +722,50 @@ Verification:
 - Current work: bounded restoration and the cross-calculator URL/history property matrix are complete.
 - Queue status: 5 active items remain; CI feedback-time profiling and static CSP feasibility are next, followed by
   risk stress scenarios, unit/rounding consistency, and isolated dependency migrations.
+
+### Improvement 19: Parallel CI gates with single-build production verification
+
+Status: completed.
+
+Changes:
+
+- Profiled the warm local verification path by phase: formatting 2.48s, type checking 3.05s, lint 12.79s, unit tests
+  21.58s, production build 28.40s, static validation 0.65s, and bundle validation 0.95s. The prior CI then performed
+  another base-path build and two PWA commands that each rebuilt again, all in one sequential job.
+- Added `verify:quality` as the shared format/type/lint/unit gate while retaining `verify` as the complete local gate.
+- Split GitHub Actions into independent quality, standard browser, and root/base-path production jobs. Both production
+  topologies run in a fail-independent matrix so one deployment failure does not hide evidence from the other.
+- Reused each matrix build for static-export validation, per-route gzip budgets, and production PWA tests through an
+  explicit `PWA_SKIP_BUILD=1` CI path. Normal local PWA commands continue to build first, protecting developers from
+  stale output.
+- Added deployment-target-specific Next.js build caches keyed by the lockfile and source/config inputs.
+- Uploaded Playwright screenshots and traces for seven days when standard or production browser jobs fail.
+- Added configuration tests proving the default build-first behavior, explicit prebuilt-artifact behavior, and
+  base-path environment propagation without leaking modified environment state between tests.
+
+Files and areas:
+
+- `.github/workflows/ci.yml`, `package.json`, and `playwright.pwa.config.ts`
+- `src/lib/playwright-pwa-config.test.ts`
+- English/Chinese operational documentation and engineering review/log records
+
+Verification:
+
+- Focused PWA configuration test: 2 tests passed; strict TypeScript and workflow/source Prettier checks passed.
+- Prebuilt root PWA workflow: passed in 9.8s versus the previously recorded 38.2s build-plus-test path.
+- `/calc` single-build matrix simulation passed: 15 routes, 197 precache assets, 706 internal references, every route
+  bundle budget, and the full PWA install/offline/404/update workflow.
+- `npm run verify`: passed; 47 Vitest files and 401 tests passed, followed by a root static export with 15 routes and
+  197 precache assets and all route bundle budgets within limits.
+- Standard Playwright suite: all 22 tests passed. Production dependency audit reported zero vulnerabilities.
+- Workflow YAML parsed successfully with the quality/browser jobs and both production matrix entries; extended
+  Prettier and `git diff --check` passed.
+
+### Progress checkpoint: 06:32 +08:00
+
+- Continuous-session elapsed time: 3 hours 26 minutes.
+- Completed improvement batches: 19; CI feedback stages now run independently and production artifacts are built once
+  per deployment topology.
+- Current work: Improvement 19 is fully verified and ready to commit; static CSP feasibility is next.
+- Queue status: 4 active items remain: static CSP feasibility, deterministic risk stress scenarios, calculator-wide
+  unit/rounding consistency, and isolated major dependency migrations.

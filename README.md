@@ -137,11 +137,11 @@ Run the complete local quality gate with:
 npm run verify
 ```
 
-The same gate runs in GitHub Actions for pushes and pull requests, followed by a high-severity production dependency audit.
-The gate validates the generated precache manifest, internal HTML references, PWA metadata, and static-host header
-template. GitHub Actions also rebuilds with `NEXT_PUBLIC_BASE_PATH=/calc`, installs Chromium, and runs the Playwright
-browser workflows, including production PWA installation/offline/update checks at both `/` and `/calc/`. Locally,
-install Chromium once with
+GitHub Actions runs the same coverage as parallel quality, browser, and root/base-path production jobs, followed by a
+high-severity production dependency audit. Each production matrix entry builds once, then checks that exact artifact's
+precache manifest, internal HTML references, PWA metadata, static-host headers, route bundle budgets, and PWA
+installation/offline/update lifecycle. Failed browser jobs upload their retained screenshots and traces for seven days.
+Locally, install Chromium once with
 `npx playwright install chromium` before running `npm run test:e2e`.
 
 Run the production PWA workflows with:
