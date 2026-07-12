@@ -632,6 +632,8 @@ type Translations = {
   };
 };
 
+export type TranslationKey = NestedKeyOf<Translations>;
+
 // --- Dictionaries ---
 const en: Translations = {
   common: {
@@ -1906,14 +1908,14 @@ const zh: Translations = {
   },
 };
 
-const dictionaries = { en, zh };
+export const translationCatalogs = { en, zh } as const;
 
 // --- Context ---
 
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: (key: string) => string;
+  t: (key: TranslationKey) => string;
   translations: Translations;
 }
 
@@ -1959,7 +1961,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     safeSetItem(LANGUAGE_KEY, lang);
   };
 
-  const currentDictionary = dictionaries[language];
+  const currentDictionary = translationCatalogs[language];
 
   // Client-side: reflect language on the root HTML element for accessibility and i18n tooling
   useEffect(() => {
@@ -1969,7 +1971,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, [language]);
 
   // Helper to get nested values like "nav.core.title"
-  const t = (path: string): string => {
+  const t = (path: TranslationKey): string => {
     const keys = path.split(".");
     let current: unknown = currentDictionary;
     for (const key of keys) {
@@ -1998,5 +2000,3 @@ export function useLanguage() {
   }
   return context;
 }
-
-export type TranslationKey = NestedKeyOf<Translations>;

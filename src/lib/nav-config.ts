@@ -12,16 +12,17 @@ import {
   HelpCircle,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import type { TranslationKey } from "@/lib/i18n";
 
 export interface NavItem {
-  titleKey: string;
-  descKey: string;
+  titleKey: TranslationKey;
+  descKey: TranslationKey;
   href: string;
   icon: LucideIcon;
 }
 
 export interface NavSection {
-  titleKey: string;
+  titleKey: TranslationKey;
   items: NavItem[];
   tone: "teal" | "blue" | "rose" | "amber" | "neutral";
 }

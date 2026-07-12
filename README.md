@@ -151,6 +151,8 @@ npm run test:e2e:pwa:base-path
 ```
 
 The project also has a Husky pre-commit hook that runs `lint-staged` for staged source files.
+Translation keys are type-checked, and the Vitest catalog gate verifies English/Chinese key parity, non-empty copy,
+literal lookup resolution, and navigation coverage for every user route.
 
 ## Build and Deployment
 

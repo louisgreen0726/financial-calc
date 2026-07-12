@@ -150,6 +150,8 @@ npm run test:e2e:pwa:base-path
 ```
 
 项目同时配置了 Husky pre-commit hook，会通过 `lint-staged` 处理 staged 的源码文件。
+翻译键受 TypeScript 约束；Vitest 目录门禁会检查中英文键一致、文案非空、字面量查询可解析，并确保每个用户
+路由都有完整导航文案。
 
 ## 构建与部署
 

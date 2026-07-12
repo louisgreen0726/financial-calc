@@ -147,6 +147,18 @@ browser-level checks beyond the existing suite.
 - Guide data lives in a Help-only typed module. Moving it out of the shared i18n dictionary eliminated an observed
   approximately 4.7 KB gzip increase from every route; only `/help` carries the roughly 6.3 KB documentation cost.
 
+### Internationalization Follow-up: Key and Route Integrity
+
+- English and Chinese objects already shared a structural TypeScript type, but translation lookup still accepted any
+  string. A misspelled `t("...")` call therefore compiled and rendered its internal key to users. `t`, navigation
+  configuration, and dynamic Help FAQ keys now use the generated 537-member `TranslationKey` union.
+- Runtime-oriented tests flatten both catalogs, require identical non-empty leaf sets, and use the TypeScript parser
+  to resolve more than 250 distinct literal lookup calls with source locations. This complements compiler checks for
+  dynamic typed containers and catches JavaScript/source-scanning gaps.
+- Route coverage now derives checked-in `src/app/*/page.tsx` routes and compares them with root plus `NAV_ITEMS`.
+  Every user route must be represented exactly once and every desktop/mobile label and description must resolve in
+  both languages.
+
 ### Prioritized Adjustment List
 
 #### P0

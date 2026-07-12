@@ -19,7 +19,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Validate static deployment headers, base-path output, precache completeness, and cache invalidation in automation.
 - [x] Expand user-facing documentation with model assumptions, limitations, and worked examples.
 - [x] Exercise service-worker installation and offline navigation from a real `/calc` base-path deployment.
-- [ ] Add automated English/Chinese translation-key and route-copy coverage checks.
+- [x] Add automated English/Chinese translation-key and route-copy coverage checks.
 - [ ] Add independently sourced reference fixtures for the highest-impact financial formulas.
 - [ ] Design bounded, schema-versioned history import/export with duplicate handling and validation.
 - [ ] Profile CI jobs and split/cache independent gates where it reduces feedback time without weakening coverage.
@@ -510,4 +510,37 @@ Verification:
 - Focused TypeScript and ESLint checks passed.
 - `npm run verify`: passed; 42 Vitest files and 354 tests passed, static artifact checks passed, and all route bundle
   budgets passed.
+- `npm audit`: zero known vulnerabilities; expanded Prettier check and `git diff --check`: passed.
+
+### Improvement 14: Compile-time and catalog-level bilingual copy integrity
+
+Status: completed.
+
+Changes:
+
+- Promoted the existing nested translation-key union into the `useLanguage().t` contract. Literal translation typos
+  now fail TypeScript instead of rendering the raw key at runtime.
+- Applied the same `TranslationKey` type to navigation section titles, item titles/descriptions, and the Help FAQ key
+  registry. Dynamic key containers must now state their bilingual-copy contract explicitly.
+- Exported the read-only English/Chinese catalogs for integrity tests without changing the runtime dictionary selected
+  by `LanguageProvider`.
+- Added catalog traversal that requires identical English and Chinese leaf-key sets and non-empty values for every
+  entry. The current catalogs contain 537 typed leaf keys.
+- Added TypeScript-AST scanning for literal `t()` calls across all `src` TypeScript/JavaScript files. More than 250
+  distinct literal calls are resolved against both catalogs with file/line diagnostics for a missing key.
+- Added route-to-copy coverage: every checked-in `src/app/*/page.tsx` user route must appear exactly once in root or
+  `NAV_ITEMS`, and every desktop/mobile navigation label and description must resolve in both languages.
+
+Files and areas:
+
+- `src/lib/i18n.tsx`, `src/lib/nav-config.ts`, and `src/lib/i18n-catalog.test.ts`
+- `src/app/help/page.tsx`
+- README and review/log documentation
+
+Verification:
+
+- Focused catalog suite: 3 tests passed.
+- Strict TypeScript and focused ESLint passed after the key contract was tightened.
+- `npm run verify`: passed; 43 Vitest files and 357 tests passed.
+- Static export remained 15 routes and 197 precache assets; every route bundle size was unchanged and within budget.
 - `npm audit`: zero known vulnerabilities; expanded Prettier check and `git diff --check`: passed.

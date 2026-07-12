@@ -3,6 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { HelpCircle, Calculator, BookOpen, Mail, ExternalLink, ChevronRight, BookOpenCheck } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
+import type { TranslationKey } from "@/lib/i18n";
 import { getModelGuide } from "@/lib/model-guide";
 
 const FAQ_KEYS = [
@@ -12,7 +13,7 @@ const FAQ_KEYS = [
   { q: "help.faqLanguage", a: "help.faqLanguageAns" },
   { q: "help.faqMobile", a: "help.faqMobileAns" },
   { q: "help.faqPrivacy", a: "help.faqPrivacyAns" },
-];
+] satisfies ReadonlyArray<{ q: TranslationKey; a: TranslationKey }>;
 
 export default function HelpPage() {
   const { t, language } = useLanguage();
