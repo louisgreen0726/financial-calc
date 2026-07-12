@@ -212,6 +212,7 @@ financial-calc/
 - `scripts/generate-precache-manifest.mjs`：构建后静态资源与路由清单生成器
 - `scripts/check-static-export.mjs`：静态导出、precache、base path、manifest 与宿主头校验器
 - `public/_headers`：静态宿主安全头与缓存策略模板
+- 应用内帮助页以中英文说明计算期次、利率/统计假设、可复算示例与模型限制
 
 ## 依赖说明
 

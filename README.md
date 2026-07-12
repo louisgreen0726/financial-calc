@@ -212,6 +212,7 @@ financial-calc/
 - `scripts/generate-precache-manifest.mjs`: post-build static asset and route manifest generator
 - `scripts/check-static-export.mjs`: static export, precache, base-path, manifest, and host-header validator
 - `public/_headers`: static-host security and cache policy template
+- the in-app Help page documents calculation timing, rate/statistical assumptions, worked examples, and model limitations in English and Chinese
 
 ## Dependency Notes
 

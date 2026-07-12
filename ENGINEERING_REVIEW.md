@@ -124,6 +124,22 @@ browser-level checks beyond the existing suite.
   permissions protections plus revalidation of HTML/service-worker metadata and immutable caching of hashed assets.
   Host-specific base-path prefixing remains an explicit deployment responsibility.
 
+### Documentation Follow-up: Model Boundaries
+
+- The Help page previously described what each calculator did but not the rate/timing conventions, statistical
+  assumptions, sensitivity, or excluded effects needed to interpret an output. Users could easily compare a periodic
+  TVM rate with an annual quote, treat a sampled equal-correlation portfolio as a full optimizer, or read normal VaR
+  as a stress-loss bound.
+- A bilingual guide now documents six model families with separate assumptions, reproducible numeric examples, and
+  limitations. It covers cash-flow signs and period zero, IRR root ambiguity, lender rounding, flat-YTM bond cash
+  flows, perpetual-growth DDM, BSM exercise/dynamics and Greek units, long-only equal-correlation sampling, normal
+  zero-drift VaR/CVaR, exact Fisher rates, and PPP quote direction.
+- The decision notice makes the operational boundary explicit: outputs are deterministic estimates from user inputs,
+  not quotes, forecasts, accounting/tax conclusions, or advice. Material decisions still need independent financial
+  and domain review.
+- Guide data lives in a Help-only typed module. Moving it out of the shared i18n dictionary eliminated an observed
+  approximately 4.7 KB gzip increase from every route; only `/help` carries the roughly 6.3 KB documentation cost.
+
 ### Prioritized Adjustment List
 
 #### P0

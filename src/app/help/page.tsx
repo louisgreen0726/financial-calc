@@ -1,8 +1,9 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { HelpCircle, Calculator, BookOpen, Mail, ExternalLink, ChevronRight } from "lucide-react";
+import { HelpCircle, Calculator, BookOpen, Mail, ExternalLink, ChevronRight, BookOpenCheck } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
+import { getModelGuide } from "@/lib/model-guide";
 
 const FAQ_KEYS = [
   { q: "help.faqHistory", a: "help.faqHistoryAns" },
@@ -14,7 +15,8 @@ const FAQ_KEYS = [
 ];
 
 export default function HelpPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const modelGuide = getModelGuide(language);
 
   return (
     <div className="page-stack max-w-4xl" data-tone="neutral">
@@ -107,6 +109,53 @@ export default function HelpPage() {
               <h3 className="font-semibold">{t("help.loanCalc")}</h3>
               <p className="mt-1 text-sm text-muted-foreground">{t("help.loanCalcDesc")}</p>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Model guide */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BookOpenCheck className="h-5 w-5" />
+            {modelGuide.title}
+          </CardTitle>
+          <CardDescription>{modelGuide.description}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <aside className="border-primary/25 bg-primary/5 border-l-4 px-4 py-3">
+            <h3 className="font-semibold">{modelGuide.decisionNoticeTitle}</h3>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">{modelGuide.decisionNotice}</p>
+          </aside>
+
+          <div className="divide-y border-y">
+            {modelGuide.sections.map((section) => (
+              <article key={section.title} className="py-5 first:pt-4 last:pb-4">
+                <h3 className="text-base font-semibold">{section.title}</h3>
+                <div className="mt-4 grid gap-5 md:grid-cols-2">
+                  <section aria-label={`${section.title}: ${modelGuide.assumptions}`}>
+                    <h4 className="text-sm font-semibold">{modelGuide.assumptions}</h4>
+                    <ul className="mt-2 list-disc space-y-2 pl-5 text-sm leading-6 text-muted-foreground">
+                      {section.assumptions.map((assumption) => (
+                        <li key={assumption}>{assumption}</li>
+                      ))}
+                    </ul>
+                  </section>
+                  <section aria-label={`${section.title}: ${modelGuide.limitations}`}>
+                    <h4 className="text-sm font-semibold">{modelGuide.limitations}</h4>
+                    <ul className="mt-2 list-disc space-y-2 pl-5 text-sm leading-6 text-muted-foreground">
+                      {section.limitations.map((limitation) => (
+                        <li key={limitation}>{limitation}</li>
+                      ))}
+                    </ul>
+                  </section>
+                </div>
+                <div className="mt-4 border-l-2 border-border bg-muted/35 px-4 py-3">
+                  <h4 className="text-sm font-semibold">{modelGuide.workedExample}</h4>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">{section.example}</p>
+                </div>
+              </article>
+            ))}
           </div>
         </CardContent>
       </Card>

@@ -17,7 +17,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Profile large loan schedules, portfolio simulations, history filtering, and report exports.
 - [x] Review dependency upgrades and remove confirmed dead code without destabilizing generated UI primitives.
 - [x] Validate static deployment headers, base-path output, precache completeness, and cache invalidation in automation.
-- [ ] Expand user-facing documentation with model assumptions, limitations, and worked examples.
+- [x] Expand user-facing documentation with model assumptions, limitations, and worked examples.
 - [ ] Exercise service-worker installation and offline navigation from a real `/calc` base-path deployment.
 - [ ] Add automated English/Chinese translation-key and route-copy coverage checks.
 - [ ] Add independently sourced reference fixtures for the highest-impact financial formulas.
@@ -426,3 +426,51 @@ Verification:
 - `npm run verify`: passed; 41 Vitest files and 352 tests passed, followed by the default static artifact check and
   all 15 per-route bundle budgets.
 - `npm audit`: zero known vulnerabilities; expanded Prettier check and `git diff --check`: passed.
+
+### Improvement 12: Bilingual model assumptions, limitations, and worked examples
+
+Status: completed.
+
+Changes:
+
+- Audited the implemented formulas and page-level conventions before documenting them, including TVM cash-flow
+  signs/timing, NPV period zero, IRR root ambiguity, monthly loan conversion, flat-YTM bonds, Gordon growth, BSM Greek
+  units, equal-correlation portfolios, zero-drift normal VaR, exact Fisher rates, and PPP quote direction.
+- Added a full in-app English/Chinese model guide covering six families: TVM/cash flow/loans, bonds, equity, options,
+  portfolio/risk, and macroeconomic scenarios. Each family explicitly separates assumptions, a numerically
+  reproducible example, and limitations/excluded effects.
+- Added a prominent decision boundary explaining that deterministic calculator outputs are not quotes, forecasts,
+  accounting/tax conclusions, or investment advice, and that material decisions require independent validation.
+- Kept the guide in a Help-only typed module rather than the shared i18n dictionary. An initial shared implementation
+  increased every route by about 4.7 KB gzip; the final build restores all 14 non-Help routes exactly to their prior
+  sizes and charges the documentation only to `/help`.
+- Added English and persisted-Chinese rendering tests that require all six model families and all six worked-example
+  headings. Updated both READMEs to point users to the in-app guide.
+
+Files and areas:
+
+- `src/lib/model-guide.ts`
+- `src/app/help/page.tsx` and `src/app/help/page.test.tsx`
+- `README.md`, `README_zh.md`, `IMPROVEMENT_LOG.md`, and `ENGINEERING_REVIEW.md`
+
+Verification:
+
+- Focused Help guide suite: 2 tests passed in English and Chinese; TypeScript and focused ESLint passed.
+- Help route Axe WCAG/best-practice baseline: passed.
+- Browser review at 1440px and 390px: 6 model sections rendered, document width equaled viewport width, and no heading,
+  paragraph, or list text overflow was detected.
+- Bundle isolation: all non-Help routes returned exactly to their pre-guide gzip sizes; Help is 262,196 / 300,000
+  gzip bytes, approximately 6.3 KB above its previous 255,911-byte baseline.
+- `npm run verify`: passed; 42 Vitest files and 354 tests passed, static artifact checks passed, and all route bundle
+  budgets passed.
+- Full standard Playwright suite: 18 tests passed, including all route Axe scans and mobile/interacted states.
+- `npm audit`: zero known vulnerabilities; expanded Prettier check and `git diff --check`: passed.
+
+### Progress checkpoint: 05:19 +08:00
+
+- Continuous-session elapsed time: 2 hours 13 minutes.
+- Completed and committed improvement batches: 11; Improvement 12 is implemented and undergoing final verification.
+- Current work: model-guide correctness, accessibility, responsive layout, and route-local bundle isolation are
+  verified.
+- Queue status: 4 active items remain; the next priority is real base-path PWA coverage, followed by automated i18n
+  parity and formula reference fixtures.
