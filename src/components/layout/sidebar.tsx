@@ -11,30 +11,30 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { NAV_CONFIG } from "@/lib/nav-config";
 import { useLanguage } from "@/lib/i18n";
 import { Calculator, ChevronDown, ChevronRight, Search } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
 
 type SidebarProps = React.HTMLAttributes<HTMLDivElement> & {
   onNavigate?: () => void;
   searchId?: string;
+  collapsed?: boolean;
 };
 
 export const Sidebar = React.memo(function Sidebar({
   className,
   onNavigate,
   searchId = "calculator-search",
+  collapsed = false,
 }: SidebarProps) {
   const pathname = usePathname();
   const { t } = useLanguage();
   const normalizedPathname = pathname.replace(/\/$/, "") || "/";
 
-  // Search query state
   const [query, setQuery] = useState("");
 
   // Per-section collapse state (default: expanded)
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
     const acc: Record<string, boolean> = {};
     NAV_CONFIG.forEach((sec) => {
-      acc[sec.titleKey] = true; // start expanded
+      acc[sec.titleKey] = true;
     });
     return acc;
   });
@@ -43,11 +43,9 @@ export const Sidebar = React.memo(function Sidebar({
     setExpanded((p) => ({ ...p, [titleKey]: !p[titleKey] }));
   };
 
-  // Derived sections respecting search query
   const sections = useMemo(() => {
     const q = query.toLowerCase().trim();
     if (!q) return NAV_CONFIG;
-    // filter items by translated title text
     return NAV_CONFIG.map((sec) => {
       const items = sec.items.filter((it) => {
         const name = t(it.titleKey) ?? it.titleKey;
@@ -61,32 +59,42 @@ export const Sidebar = React.memo(function Sidebar({
   return (
     <div
       data-pdf-exclude="true"
-      className={cn(
-        "no-print h-full min-h-0 flex flex-col overflow-hidden bg-card/60 backdrop-blur-2xl border border-white/10 shadow-2xl relative",
-        className
-      )}
+      data-collapsed={collapsed}
+      className={cn("no-print flex h-full min-h-0 flex-col overflow-hidden bg-transparent", className)}
     >
-      <div className="space-y-4 py-4 h-full flex flex-col relative z-10 min-h-0">
-        {/* Logo area with floating glassmorphism */}
-        <div className="mx-4 mt-2 relative group">
-          <div className="absolute -inset-1 bg-gradient-to-r from-primary to-blue-600 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-500"></div>
-          <div className="relative p-3 rounded-2xl bg-background/80 backdrop-blur-sm border border-white/10 shadow-sm flex items-center justify-between">
-            <Link href="/" prefetch={false} className="flex items-center gap-3 w-full" onClick={onNavigate}>
-              <div className="p-2 bg-gradient-to-br from-primary to-blue-600 rounded-xl shadow-inner group-hover:scale-105 transition-transform duration-300">
-                <Calculator className="h-5 w-5 text-white" />
-              </div>
-              <div className="flex flex-col leading-none">
-                <span className="text-lg font-bold box-decoration-clone font-display">FinCalc</span>
-                <span className="text-[10px] mt-1 font-semibold uppercase tracking-widest text-primary">Pro</span>
-              </div>
-            </Link>
-          </div>
+      <div className="flex h-full min-h-0 flex-col">
+        <div
+          className={cn(
+            "brand-header flex h-16 shrink-0 items-center border-b",
+            collapsed ? "justify-center px-0" : "px-4"
+          )}
+        >
+          <Link
+            href="/"
+            prefetch={false}
+            className={cn("flex min-w-0 items-center gap-3", collapsed && "flex-1 justify-center")}
+            onClick={onNavigate}
+            aria-label={collapsed ? "FinCalc Pro" : undefined}
+            title={collapsed ? "FinCalc Pro" : undefined}
+          >
+            <span
+              className={cn(
+                "brand-mark flex shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground",
+                collapsed ? "size-8" : "size-9"
+              )}
+            >
+              <Calculator className="h-5 w-5" />
+            </span>
+            <span className={cn("min-w-0 flex-1", collapsed && "hidden")}>
+              <span className="block truncate text-base font-semibold leading-5">FinCalc Pro</span>
+              <span className="block text-xs text-muted-foreground">Financial workspace</span>
+            </span>
+          </Link>
         </div>
 
-        {/* Search / Filter input */}
-        <div className="px-4 pb-1 pt-2">
-          <div className="relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
+        <div className={cn("shrink-0 px-3 pb-3 pt-4", collapsed && "hidden")}>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               id={searchId}
               name={searchId}
@@ -94,127 +102,104 @@ export const Sidebar = React.memo(function Sidebar({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t("sidebar.search")}
-              className="w-full bg-background/50 backdrop-blur-md border-white/10 pl-9 pr-4 rounded-xl focus-visible:ring-1 focus-visible:ring-primary/50 focus:border-primary/50 transition-all h-9 text-sm"
+              className="sidebar-search h-9 w-full bg-background pl-9 pr-3 text-sm"
             />
           </div>
         </div>
 
-        <nav aria-label={t("common.primaryNavigation")} className="min-h-0 flex-1">
-          <ScrollArea className="h-full px-2">
-            <div className="mt-2 space-y-6 px-2 pb-6">
-              <AnimatePresence initial={false}>
-                {sections.map((section) => {
-                  const isSearching = query.trim().length > 0;
-                  const isExpanded = isSearching || (expanded[section.titleKey] ?? true);
-                  const sectionId = `${searchId}-section-${section.titleKey.replace(/\W+/g, "-")}`;
+        <nav
+          aria-label={t("common.primaryNavigation")}
+          className={cn("min-h-0 flex-1", collapsed ? "px-2 pt-3" : "px-2")}
+        >
+          <ScrollArea className="h-full">
+            <div className={cn("pb-5", collapsed ? "space-y-2" : "space-y-4")}>
+              {sections.map((section) => {
+                const isSearching = query.trim().length > 0;
+                const isExpanded = isSearching || (expanded[section.titleKey] ?? true);
+                const sectionId = `${searchId}-section-${section.titleKey.replace(/\W+/g, "-")}`;
 
-                  return (
-                    <section key={section.titleKey} className="space-y-2">
+                return (
+                  <section
+                    key={section.titleKey}
+                    className={cn(
+                      "space-y-1",
+                      collapsed && "border-t border-border/60 pt-2 first:border-t-0 first:pt-0"
+                    )}
+                    data-tone={section.tone}
+                  >
+                    {!collapsed ? (
                       <button
                         type="button"
-                        className="group flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                        className="sidebar-section-trigger flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                         aria-expanded={isExpanded}
                         aria-controls={sectionId}
                         onClick={() => toggleSection(section.titleKey)}
                       >
-                        <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">
-                          {t(section.titleKey)}
-                        </h3>
-                        <span
-                          className="ml-2 text-muted-foreground/40 group-hover:text-foreground transition-colors"
-                          aria-hidden="true"
-                        >
+                        <span>{t(section.titleKey)}</span>
+                        <span aria-hidden="true">
                           {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                         </span>
                       </button>
-                      <AnimatePresence>
-                        {isExpanded && (
-                          <motion.div
-                            id={sectionId}
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.2, ease: "easeInOut" }}
-                            style={{ overflow: "hidden" }}
-                          >
-                            <div className="space-y-1">
-                              {section.items.map((item) => {
-                                const isActive = (item.href.replace(/\/$/, "") || "/") === normalizedPathname;
-                                return (
-                                  <Button
-                                    key={item.href}
-                                    asChild
-                                    variant="ghost"
-                                    className={cn(
-                                      "w-full justify-start px-3 py-2.5 h-10 rounded-xl font-medium transition-all duration-300 relative overflow-hidden group",
-                                      isActive
-                                        ? "text-foreground shadow-sm bg-background/50 border border-white/5"
-                                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground border border-transparent"
-                                    )}
-                                  >
-                                    <Link
-                                      href={item.href}
-                                      prefetch={false}
-                                      className="flex items-center w-full relative z-10"
-                                      onClick={onNavigate}
-                                      aria-current={isActive ? "page" : undefined}
-                                    >
-                                      <item.icon
-                                        className={cn(
-                                          "mr-3 h-4 w-4 transition-transform duration-300 group-hover:scale-110",
-                                          isActive ? "text-primary" : "text-muted-foreground/70"
-                                        )}
-                                      />
-                                      <span className={cn(isActive ? "text-foreground font-semibold" : "font-medium")}>
-                                        {t(item.titleKey)}
-                                      </span>
-
-                                      {/* Active State Background Gradient Indicator */}
-                                      {isActive && (
-                                        <motion.div
-                                          layoutId="sidebar-active"
-                                          className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-100 pointer-events-none -z-10"
-                                          initial={false}
-                                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                                        />
-                                      )}
-
-                                      {/* Active State Left Bar */}
-                                      {isActive && (
-                                        <motion.div
-                                          layoutId="sidebar-active-bar"
-                                          className="absolute left-0 top-1/4 bottom-1/4 w-1 bg-primary rounded-r-full"
-                                          initial={false}
-                                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                                        />
-                                      )}
-                                    </Link>
-                                  </Button>
-                                );
-                              })}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </section>
-                  );
-                })}
-                {sections.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-white/10 px-3 py-6 text-center text-sm text-muted-foreground">
-                    {t("history.noResults")}
-                  </div>
-                ) : null}
-              </AnimatePresence>
+                    ) : null}
+                    {collapsed || isExpanded ? (
+                      <div id={sectionId} className={cn("space-y-0.5", collapsed && "flex flex-col items-center")}>
+                        {section.items.map((item) => {
+                          const isActive = (item.href.replace(/\/$/, "") || "/") === normalizedPathname;
+                          const itemLabel = t(item.titleKey);
+                          return (
+                            <Button
+                              key={item.href}
+                              asChild
+                              variant="ghost"
+                              className={cn(
+                                "h-9 rounded-md text-sm",
+                                collapsed ? "w-10 justify-center px-0" : "w-full justify-start px-2.5",
+                                isActive
+                                  ? "sidebar-link-active font-semibold text-foreground"
+                                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                              )}
+                            >
+                              <Link
+                                href={item.href}
+                                prefetch={false}
+                                className="flex min-w-0 items-center"
+                                onClick={onNavigate}
+                                aria-current={isActive ? "page" : undefined}
+                                aria-label={collapsed ? itemLabel : undefined}
+                                title={collapsed ? itemLabel : undefined}
+                              >
+                                <span
+                                  className={cn(
+                                    "sidebar-item-icon",
+                                    collapsed && "mr-0",
+                                    isActive && "sidebar-item-icon-active"
+                                  )}
+                                >
+                                  <item.icon className="h-4 w-4" />
+                                </span>
+                                <span className={cn("truncate", collapsed && "sr-only")}>{itemLabel}</span>
+                              </Link>
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </section>
+                );
+              })}
+              {sections.length === 0 ? (
+                <div className="rounded-md border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
+                  {t("history.noResults")}
+                </div>
+              ) : null}
             </div>
           </ScrollArea>
         </nav>
 
-        <div className="shrink-0 px-6 py-4">
-          <div className="p-3 rounded-xl bg-background/30 backdrop-blur-md border border-white/5 flex flex-col items-center justify-center gap-1">
-            <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-              {t("sidebar.edition")}
-            </p>
-            <p className="text-xs font-mono text-muted-foreground">{t("sidebar.version")}</p>
+        <div className={cn("sidebar-footer shrink-0 border-t px-4 py-3", collapsed && "hidden")}>
+          <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+            <span className="truncate">{t("sidebar.edition")}</span>
+            <span className="shrink-0 font-mono">{t("sidebar.version")}</span>
           </div>
         </div>
       </div>

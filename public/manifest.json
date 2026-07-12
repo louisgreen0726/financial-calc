@@ -2,7 +2,7 @@
   "name": "Financial Calculator",
   "short_name": "FinCalc",
   "description": "Professional-grade financial calculator for TVM, bonds, options, and more",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "id": "./",
   "start_url": ".",
   "display": "standalone",

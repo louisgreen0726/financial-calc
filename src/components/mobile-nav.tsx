@@ -16,7 +16,7 @@ export function MobileNav() {
     <nav
       aria-label={t("common.primaryNavigation")}
       data-pdf-exclude="true"
-      className="no-print fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-card/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_rgba(15,23,42,0.12)] backdrop-blur-xl supports-[backdrop-filter]:bg-card/80 lg:hidden"
+      className="mobile-nav-bar no-print fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-50 rounded-xl border bg-card/95 supports-[backdrop-filter]:backdrop-blur-md lg:hidden"
     >
       <div className="grid h-16 grid-cols-4 gap-1 px-2 py-2">
         {MOBILE_PRIMARY_NAV.map(({ href, icon: Icon, labelKey }) => {
@@ -27,19 +27,16 @@ export function MobileNav() {
               href={href}
               prefetch={false}
               className={cn(
-                "flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-1 text-[11px] font-semibold transition-all sm:text-xs",
+                "relative flex min-w-0 flex-col items-center justify-center gap-1 rounded-md px-1 py-1 text-[11px] font-medium sm:text-xs",
                 isActive
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                  ? "bg-accent text-accent-foreground after:absolute after:inset-x-3 after:top-0 after:h-0.5 after:bg-primary"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
               aria-current={isActive ? "page" : undefined}
               aria-label={t(labelKey) || labelKey}
             >
               <span
-                className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-xl transition-all",
-                  isActive ? "bg-primary/12 shadow-[0_0_0_1px_hsl(var(--primary)_/_18%)]" : "bg-transparent"
-                )}
+                className={cn("flex h-7 w-8 items-center justify-center", isActive ? "text-primary" : "bg-transparent")}
               >
                 <Icon className="h-4 w-4" />
               </span>

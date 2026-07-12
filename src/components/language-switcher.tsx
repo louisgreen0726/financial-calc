@@ -17,8 +17,8 @@ export const LanguageSwitcher = React.memo(function LanguageSwitcher() {
       size="sm"
       onClick={() => setLanguage(language === "en" ? "zh" : "en")}
       className={cn(
-        "h-9 gap-2 rounded-full px-3 text-xs font-medium transition-all hover:bg-primary/10",
-        language === "zh" && "bg-primary/10 text-primary"
+        "h-9 gap-2 rounded-md px-2.5 text-xs font-medium hover:bg-muted",
+        language === "zh" && "bg-accent text-accent-foreground"
       )}
       aria-label={nextLanguageLabel}
     >

@@ -5,6 +5,7 @@ import { ChevronDown, ChevronRight, Calculator } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/lib/i18n";
+import { Card } from "@/components/ui/card";
 
 interface CalcStep {
   label: string;
@@ -73,7 +74,7 @@ export function CalculationSteps({
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className={cn("rounded-xl border bg-card", className)}>
+    <Card variant="interactive" className={cn("gap-0 overflow-hidden py-0", className)}>
       <button
         type="button"
         className="flex w-full items-center justify-between p-4 text-sm font-medium transition-colors hover:bg-accent/50"
@@ -104,7 +105,7 @@ export function CalculationSteps({
           >
             <div className="px-4 pb-4 space-y-4">
               {/* Formula */}
-              <div className="p-3 bg-muted rounded-lg border-l-4 border-primary">
+              <div className="rounded-lg bg-muted/50 p-3 ring-1 ring-border/60">
                 <div className="text-xs text-muted-foreground mb-1">{t("tvm.formula")}</div>
                 <div className="overflow-x-auto text-sm font-medium font-mono">
                   <FormattedFormula text={formula} />
@@ -146,7 +147,7 @@ export function CalculationSteps({
               </div>
 
               {/* Final Result */}
-              <div className="p-4 bg-gradient-to-r from-primary/10 to-blue-50/30 dark:from-primary/10 dark:to-blue-950/20 rounded-xl border border-primary/20">
+              <div className="rounded-lg bg-primary/[0.06] p-4 ring-1 ring-primary/15">
                 <div className="text-xs text-muted-foreground mb-1">{t("tvm.finalResult")}</div>
                 <div className="break-words text-2xl font-bold">{formattedResult ?? result.toLocaleString()}</div>
               </div>
@@ -154,6 +155,6 @@ export function CalculationSteps({
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </Card>
   );
 }

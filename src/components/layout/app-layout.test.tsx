@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AppLayout } from "@/components/layout/app-layout";
 
@@ -8,7 +8,11 @@ vi.mock("@/lib/i18n", () => ({
 }));
 
 vi.mock("@/components/layout/sidebar", () => ({
-  Sidebar: () => <aside data-testid="sidebar">Sidebar</aside>,
+  Sidebar: ({ collapsed }: { collapsed: boolean }) => (
+    <aside data-testid="sidebar" data-collapsed={collapsed}>
+      Sidebar
+    </aside>
+  ),
 }));
 
 vi.mock("@/components/layout/header", () => ({
@@ -20,6 +24,10 @@ vi.mock("@/components/mobile-nav", () => ({
 }));
 
 describe("AppLayout print contract", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
   it("marks fixed application chrome for exclusion and isolates printable content", () => {
     render(
       <AppLayout>
@@ -41,5 +49,41 @@ describe("AppLayout print contract", () => {
     expect(main).toHaveAttribute("data-print-content", "true");
     expect(main.parentElement).toHaveAttribute("data-app-content", "true");
     expect(main).toHaveTextContent("Printable report");
+  });
+
+  it("collapses the desktop sidebar, updates content spacing, and persists the preference", async () => {
+    render(
+      <AppLayout>
+        <article>Printable report</article>
+      </AppLayout>
+    );
+
+    const sidebar = screen.getByTestId("sidebar");
+    const sidebarFrame = sidebar.parentElement;
+    const content = screen.getByRole("main").parentElement;
+
+    expect(sidebar).toHaveAttribute("data-collapsed", "false");
+    expect(sidebarFrame).toHaveClass("w-[17rem]");
+    expect(content).toHaveClass("lg:pl-[17rem]");
+
+    fireEvent.click(screen.getByRole("button", { name: "common.collapseSidebar" }));
+
+    expect(sidebar).toHaveAttribute("data-collapsed", "true");
+    expect(sidebarFrame).toHaveClass("w-[4.5rem]");
+    expect(content).toHaveClass("lg:pl-[4.5rem]");
+    await waitFor(() => expect(window.localStorage.getItem("financial-calc-sidebar-collapsed")).toBe("true"));
+  });
+
+  it("restores a persisted collapsed preference", () => {
+    window.localStorage.setItem("financial-calc-sidebar-collapsed", "true");
+
+    render(
+      <AppLayout>
+        <article>Printable report</article>
+      </AppLayout>
+    );
+
+    expect(screen.getByTestId("sidebar")).toHaveAttribute("data-collapsed", "true");
+    expect(screen.getByRole("main").parentElement).toHaveClass("lg:pl-[4.5rem]");
   });
 });

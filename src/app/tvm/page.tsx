@@ -397,11 +397,11 @@ function TVMPageContent() {
 
   return (
     <>
-      <div className="min-w-0 space-y-6">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div className="page-stack" data-tone="teal">
+        <div className="page-header">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold">{t("tvm.title")}</h1>
-            <p className="text-muted-foreground mt-2">{t("tvm.subtitle")}</p>
+            <h1 className="page-title">{t("tvm.title")}</h1>
+            <p className="page-description">{t("tvm.subtitle")}</p>
           </div>
         </div>
 
@@ -589,11 +589,11 @@ function TVMPageContent() {
                     className="grid gap-3 sm:grid-cols-2"
                     aria-labelledby="tvm-payment-mode-label"
                   >
-                    <div className="flex min-h-11 items-center space-x-2 rounded-xl border border-white/10 px-3 py-2">
+                    <div className="flex min-h-11 items-center space-x-2 rounded-lg border px-3 py-2">
                       <RadioGroupItem value="0" id="end" />
                       <Label htmlFor="end">{t("tvm.end")}</Label>
                     </div>
-                    <div className="flex min-h-11 items-center space-x-2 rounded-xl border border-white/10 px-3 py-2">
+                    <div className="flex min-h-11 items-center space-x-2 rounded-lg border px-3 py-2">
                       <RadioGroupItem value="1" id="begin" />
                       <Label htmlFor="begin">{t("tvm.begin")}</Label>
                     </div>
@@ -658,9 +658,9 @@ function TVMPageContent() {
               ) : null
             }
             summary={
-              <Card className="bg-muted/30 border-dashed">
+              <Card variant="subtle" className="border-dashed">
                 <CardContent className="flex flex-col items-center justify-center p-6 sm:p-8 text-center">
-                  <p className="max-w-full overflow-hidden text-balance break-words text-3xl font-bold text-primary sm:text-5xl">
+                  <p className="max-w-full overflow-hidden text-balance break-words text-3xl font-semibold text-primary sm:text-4xl">
                     {result === null
                       ? ""
                       : target === "nper"
@@ -677,7 +677,7 @@ function TVMPageContent() {
 
         {calcSteps && (
           <ResponsiveDisclosure title={t("tvm.stepsTitle")} description={t("tvm.stepsDesc")} defaultOpen={false}>
-            <div className="rounded-3xl border border-white/10 bg-card/70 p-1">
+            <div className="rounded-lg border bg-card p-1">
               <CalculationSteps {...calcSteps} />
             </div>
           </ResponsiveDisclosure>

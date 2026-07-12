@@ -119,11 +119,11 @@ export default function CashFlowPage() {
 
   return (
     <>
-      <div className="space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="page-stack" data-tone="teal">
+        <div className="page-header">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold">{t("cashFlow.title")}</h1>
-            <p className="text-muted-foreground mt-2">{t("cashFlow.subtitle")}</p>
+            <h1 className="page-title">{t("cashFlow.title")}</h1>
+            <p className="page-description">{t("cashFlow.subtitle")}</p>
           </div>
         </div>
 
@@ -172,7 +172,7 @@ export default function CashFlowPage() {
                     return (
                       <div
                         key={i}
-                        className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-xl border border-white/10 bg-background/30 p-3 animate-in fade-in slide-in-from-left-2 duration-300 sm:grid-cols-[72px_minmax(0,1fr)_auto] sm:items-center sm:gap-3"
+                        className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-lg border bg-muted/30 p-3 sm:grid-cols-[72px_minmax(0,1fr)_auto] sm:items-center sm:gap-3"
                       >
                         <div className="col-span-2 text-sm text-muted-foreground font-mono sm:col-span-1">
                           {periodLabel}
@@ -245,7 +245,7 @@ export default function CashFlowPage() {
               }
               summary={
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                  <Card>
+                  <Card variant="result">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium text-muted-foreground">{t("cashFlow.npv")}</CardTitle>
                     </CardHeader>
@@ -257,7 +257,7 @@ export default function CashFlowPage() {
                       </div>
                     </CardContent>
                   </Card>
-                  <Card>
+                  <Card variant="result">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium text-muted-foreground">{t("cashFlow.irr")}</CardTitle>
                     </CardHeader>
@@ -271,7 +271,7 @@ export default function CashFlowPage() {
                       </div>
                     </CardContent>
                   </Card>
-                  <Card>
+                  <Card variant="result">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium text-muted-foreground">
                         {t("cashFlow.payback")}
@@ -353,7 +353,7 @@ export default function CashFlowPage() {
                     description={t("cashFlow.infoDisclosure")}
                     defaultOpen={false}
                   >
-                    <Card className="bg-muted/30">
+                    <Card variant="subtle">
                       <CardContent className="pt-6 flex gap-4 text-sm text-muted-foreground">
                         <AlertCircle className="h-5 w-5 shrink-0" />
                         <p>{t("cashFlow.info")}</p>

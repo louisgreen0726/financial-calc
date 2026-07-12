@@ -291,17 +291,17 @@ export default function PortfolioPage() {
   });
 
   return (
-    <div className="min-w-0 space-y-6">
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+    <div className="page-stack" data-tone="blue">
+      <div className="page-header">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold">{t("portfolio.title")}</h1>
-          <p className="text-muted-foreground mt-2">{t("portfolio.subtitle")}</p>
+          <h1 className="page-title">{t("portfolio.title")}</h1>
+          <p className="page-description">{t("portfolio.subtitle")}</p>
         </div>
         <HistoryPanel page="portfolio" onRestore={restorePortfolio} />
       </div>
 
       <div className="grid min-w-0 gap-6 xl:grid-cols-12">
-        <Card className="xl:col-span-4 h-fit">
+        <Card className="xl:col-span-5 h-fit">
           <form
             id="portfolio-simulation-form"
             className="flex flex-col gap-6"
@@ -372,7 +372,7 @@ export default function PortfolioPage() {
                 description={t("portfolio.validation.universeDisclosure")}
                 defaultOpen={true}
               >
-                <div className="hidden overflow-x-auto rounded-2xl border border-white/10 bg-background/30 p-2 sm:block sm:p-3">
+                <div className="hidden overflow-x-auto rounded-lg border bg-muted/30 p-2 sm:block sm:p-3">
                   <Table>
                     <TableCaption className="sr-only">{t("portfolio.workflow.assets")}</TableCaption>
                     <TableHeader>
@@ -453,7 +453,7 @@ export default function PortfolioPage() {
                 </div>
                 <div className="space-y-3 sm:hidden">
                   {assets.map((asset, index) => (
-                    <div key={asset.id} className="rounded-2xl border border-white/10 bg-background/40 p-4 space-y-3">
+                    <div key={asset.id} className="space-y-3 rounded-lg border bg-muted/30 p-4">
                       <div className="flex items-center justify-between gap-3">
                         <p className="text-sm font-semibold">{t("portfolio.validation.assetCardTitle")}</p>
                         <Button
@@ -528,7 +528,7 @@ export default function PortfolioPage() {
                 <Plus className="mr-2 h-4 w-4" /> {t("portfolio.add")}
               </Button>
 
-              <div className="rounded-2xl border border-dashed border-white/10 bg-background/20 p-4 space-y-3 xl:hidden">
+              <div className="space-y-3 rounded-lg border border-dashed bg-muted/30 p-4 xl:hidden">
                 <p className="text-sm font-semibold">{t("portfolio.workflow.results")}</p>
                 <p className="text-sm text-muted-foreground">{t("portfolio.workflow.resultsHint")}</p>
                 <Button type="submit" className="w-full gap-2" disabled={isRunning}>
@@ -544,7 +544,7 @@ export default function PortfolioPage() {
           </form>
         </Card>
 
-        <div id="portfolio-report-content" className="min-w-0 space-y-6 xl:col-span-8">
+        <div id="portfolio-report-content" className="min-w-0 space-y-6 xl:col-span-7">
           {isRunning && (
             <ProgressBar
               progress={progress}
@@ -611,7 +611,7 @@ export default function PortfolioPage() {
           />
 
           {visibleSimulations.length === 0 && !isRunning ? (
-            <Card className="border-dashed">
+            <Card variant="subtle" className="border-dashed">
               <CardContent className="pt-6">
                 <EmptyState
                   icon={RefreshCw}
@@ -624,7 +624,7 @@ export default function PortfolioPage() {
 
           {visibleOptimal && (
             <div className="grid grid-cols-1 gap-6 2xl:grid-cols-2">
-              <Card>
+              <Card variant="result">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-chart-4">
                     <PieIcon className="h-5 w-5" /> {t("portfolio.maxSharpe")}
@@ -651,7 +651,7 @@ export default function PortfolioPage() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card variant="result">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-chart-2">
                     <PieIcon className="h-5 w-5" /> {t("portfolio.minVol")}

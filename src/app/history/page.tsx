@@ -190,11 +190,11 @@ export default function HistoryPage() {
 
   if (!isInitialized) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="page-stack" data-tone="neutral">
+        <div className="page-header">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold">{t("history.title")}</h1>
-            <p className="text-muted-foreground mt-2">{t("history.loading")}</p>
+            <h1 className="page-title">{t("history.title")}</h1>
+            <p className="page-description">{t("history.loading")}</p>
           </div>
         </div>
       </div>
@@ -202,7 +202,7 @@ export default function HistoryPage() {
   }
 
   const renderEmptyState = () => (
-    <Card className="rounded-xl">
+    <Card variant="subtle">
       <CardContent className="flex flex-col items-center justify-center py-16">
         <Clock className="h-16 w-16 text-muted-foreground/30 mb-4" />
         <h2 className="text-lg font-semibold mb-2">{t("history.noHistory")}</h2>
@@ -212,7 +212,7 @@ export default function HistoryPage() {
   );
 
   const renderHistoryList = () => (
-    <Card className="rounded-xl">
+    <Card>
       <CardHeader className="pb-3">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div className="relative flex-1 xl:max-w-md">
@@ -267,7 +267,7 @@ export default function HistoryPage() {
       </CardHeader>
       <CardContent>
         <ScrollArea className="max-h-[min(62vh,42rem)] pr-1">
-          <div className="space-y-2">
+          <div className="divide-y border-y">
             {sortedHistory.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">{t("history.noResults")}</div>
             )}
@@ -280,8 +280,8 @@ export default function HistoryPage() {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0, height: 0 }}
                   className={cn(
-                    "flex items-start justify-between p-4 rounded-xl border bg-card group transition-colors",
-                    visibleFavorites.has(item.id) && "border-primary/30 bg-primary/5",
+                    "group flex items-start justify-between p-4 transition-colors hover:bg-muted/25",
+                    visibleFavorites.has(item.id) && "bg-primary/5",
                     selectedIds.has(item.id) && "ring-2 ring-primary"
                   )}
                 >
@@ -387,15 +387,15 @@ export default function HistoryPage() {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="page-stack" data-tone="neutral">
+      <div className="page-header">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold">{t("history.title")}</h1>
-          <p className="text-muted-foreground mt-2">
+          <h1 className="page-title">{t("history.title")}</h1>
+          <p className="page-description">
             {history.length} {t("history.recorded")}
           </p>
         </div>
-        <div className="grid w-full gap-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-end">
+        <div className="page-actions grid sm:flex">
           <Button variant="outline" size="sm" onClick={exportAllHistory} className="gap-2">
             <FileSpreadsheet className="h-4 w-4" />
             {t("export.csv")}

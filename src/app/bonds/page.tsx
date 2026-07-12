@@ -168,13 +168,13 @@ export default function BondsPage() {
   const formatCell = (v: number) => (Number.isFinite(v) ? formatCurrency(v) : t("common.notAvailable"));
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="page-stack" data-tone="blue">
+      <div className="page-header">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold">{t("bonds.title")}</h1>
-          <p className="text-muted-foreground mt-2">{t("bonds.subtitle")}</p>
+          <h1 className="page-title">{t("bonds.title")}</h1>
+          <p className="page-description">{t("bonds.subtitle")}</p>
         </div>
-        <div className="flex flex-wrap gap-2 items-center">
+        <div className="page-actions">
           <HistoryPanel
             page="bonds"
             onRestore={(inputs) => {
@@ -360,45 +360,45 @@ export default function BondsPage() {
               <section aria-label={t("bonds.metrics")}>
                 <h2 className="text-xl font-semibold mb-2">{t("bonds.metrics")}</h2>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                  <Card>
-                    <CardHeader className="p-4 pb-2">
+                  <Card variant="result">
+                    <CardHeader className="pb-2">
                       <CardTitle className="text-xs font-medium text-muted-foreground uppercase">
                         {t("bonds.fairPrice")}
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4 pt-0">
+                    <CardContent>
                       <div className="break-words text-2xl font-bold">{formatCurrency(metrics.price)}</div>
                       <p className="text-xs text-muted-foreground">{priceStatus}</p>
                     </CardContent>
                   </Card>
-                  <Card>
-                    <CardHeader className="p-4 pb-2">
+                  <Card variant="result">
+                    <CardHeader className="pb-2">
                       <CardTitle className="text-xs font-medium text-muted-foreground uppercase">
                         {t("bonds.macDur")}
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4 pt-0">
+                    <CardContent>
                       <div className="break-words text-2xl font-bold">{`${metrics.macDuration.toFixed(2)} ${t("common.year")}`}</div>
                     </CardContent>
                   </Card>
-                  <Card>
-                    <CardHeader className="p-4 pb-2">
+                  <Card variant="result">
+                    <CardHeader className="pb-2">
                       <CardTitle className="text-xs font-medium text-muted-foreground uppercase">
                         {t("bonds.modDur")}
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4 pt-0">
+                    <CardContent>
                       <div className="break-words text-2xl font-bold">{metrics.modDuration.toFixed(2)}</div>
                       <p className="text-xs text-muted-foreground">{`${metrics.modDuration.toFixed(2)}% / 1% ${"\u0394"} ${t("bonds.ytm")}`}</p>
                     </CardContent>
                   </Card>
-                  <Card>
-                    <CardHeader className="p-4 pb-2">
+                  <Card variant="result">
+                    <CardHeader className="pb-2">
                       <CardTitle className="text-xs font-medium text-muted-foreground uppercase">
                         {t("bonds.convexity")}
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4 pt-0">
+                    <CardContent>
                       <div className="break-words text-2xl font-bold">{metrics.convexity.toFixed(2)}</div>
                     </CardContent>
                   </Card>
@@ -482,19 +482,16 @@ export default function BondsPage() {
                         caption={t("bonds.priceSensitivity")}
                         cornerLabel={`${t("bonds.ytm")} / ${t("bonds.years")}`}
                       />
-                      <div className="grid gap-3 border-t border-white/10 p-4 sm:hidden">
+                      <div className="grid gap-3 border-t p-4 sm:hidden">
                         <p className="text-sm font-semibold text-muted-foreground">
                           {t("bonds.validation.mobileHeatmapTitle")}
                         </p>
                         {rowLabels.map((rowLabel, rowIndex) => (
-                          <div
-                            key={rowLabel}
-                            className="rounded-2xl border border-white/10 bg-background/30 p-3 space-y-2"
-                          >
+                          <div key={rowLabel} className="space-y-2 rounded-lg border bg-muted/30 p-3">
                             <p className="text-sm font-semibold">{rowLabel}</p>
                             <div className="grid grid-cols-2 gap-2 text-sm">
                               {colLabels.map((colLabel, colIndex) => (
-                                <div key={`${rowLabel}-${colLabel}`} className="rounded-xl bg-muted/40 px-3 py-2">
+                                <div key={`${rowLabel}-${colLabel}`} className="rounded-lg bg-muted/40 px-3 py-2">
                                   <p className="text-xs text-muted-foreground">{colLabel}</p>
                                   <p className="font-mono font-medium">
                                     {formatCell(sensitivityData[rowIndex]?.[colIndex] ?? Number.NaN)}

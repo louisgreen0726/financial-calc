@@ -3,99 +3,39 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-/** Card that lifts on hover with scale + shadow transition */
-export function MotionCard({ className, children, ...props }: React.ComponentProps<typeof motion.div>) {
+export function MotionCard({ className, ...props }: React.ComponentProps<typeof motion.div>) {
   const shouldReduceMotion = useReducedMotion();
   return (
     <motion.div
-      whileHover={shouldReduceMotion ? undefined : { scale: 1.01, y: -2 }}
-      whileTap={shouldReduceMotion ? undefined : { scale: 0.99 }}
-      transition={{ type: "spring", stiffness: 300, damping: 25 }}
-      className={cn("", className)}
+      whileHover={shouldReduceMotion ? undefined : { y: -2 }}
+      whileTap={shouldReduceMotion ? undefined : { scale: 0.995 }}
+      transition={{ duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }}
+      className={cn(className)}
       {...props}
-    >
-      {children}
-    </motion.div>
+    />
   );
 }
 
-/** Button with press scale feedback */
-export function MotionButton({ className, children, ...props }: React.ComponentProps<typeof motion.button>) {
+export function MotionButton({ className, ...props }: React.ComponentProps<typeof motion.button>) {
   const shouldReduceMotion = useReducedMotion();
   return (
     <motion.button
-      whileHover={shouldReduceMotion ? undefined : { scale: 1.02 }}
-      whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
-      transition={{ type: "spring", stiffness: 400, damping: 25 }}
-      className={cn("", className)}
+      whileTap={shouldReduceMotion ? undefined : { scale: 0.985 }}
+      transition={{ duration: 0.14, ease: [0.2, 0.8, 0.2, 1] }}
+      className={cn(className)}
       {...props}
-    >
-      {children}
-    </motion.button>
+    />
   );
 }
 
-/** List item with staggered fade-in */
-export function MotionListItem({
-  className,
-  children,
-  index = 0,
-  ...props
-}: React.ComponentProps<typeof motion.li> & { index?: number }) {
-  const shouldReduceMotion = useReducedMotion();
-  return (
-    <motion.li
-      initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={shouldReduceMotion ? { duration: 0 } : { delay: index * 0.05, duration: 0.25, ease: "easeOut" }}
-      className={cn("", className)}
-      {...props}
-    >
-      {children}
-    </motion.li>
-  );
+export function MotionListItem({ className, ...props }: React.ComponentProps<"li">) {
+  return <li className={cn(className)} {...props} />;
 }
 
-/** Page container with fade + slide-up entrance */
-export function MotionPage({ className, children, ...props }: React.ComponentProps<typeof motion.div>) {
-  const shouldReduceMotion = useReducedMotion();
-  return (
-    <motion.div
-      initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.4, ease: "easeOut" }}
-      className={cn("", className)}
-      {...props}
-    >
-      {children}
-    </motion.div>
-  );
+export function MotionPage({ className, ...props }: React.ComponentProps<"div">) {
+  return <div className={cn(className)} {...props} />;
 }
 
-/** Staggered list wrapper */
-export function StaggeredList({
-  className,
-  children,
-  staggerDelay = 0.05,
-}: {
-  className?: string;
-  children: React.ReactNode;
-  staggerDelay?: number;
-}) {
-  const shouldReduceMotion = useReducedMotion();
-  return (
-    <motion.div
-      initial="hidden"
-      animate="visible"
-      variants={{
-        hidden: {},
-        visible: {
-          transition: shouldReduceMotion ? { duration: 0 } : { staggerChildren: staggerDelay },
-        },
-      }}
-      className={cn("", className)}
-    >
-      {children}
-    </motion.div>
-  );
+export function StaggeredList({ className, children }: { className?: string; children: React.ReactNode }) {
+  return <div className={cn(className)}>{children}</div>;
 }

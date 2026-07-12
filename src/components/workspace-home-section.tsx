@@ -1,4 +1,3 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 interface WorkspaceHomeSectionProps {
@@ -10,12 +9,14 @@ interface WorkspaceHomeSectionProps {
 
 export function WorkspaceHomeSection({ title, description, children, className }: WorkspaceHomeSectionProps) {
   return (
-    <Card className={cn("rounded-2xl", className)}>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        {description ? <CardDescription>{description}</CardDescription> : null}
-      </CardHeader>
-      <CardContent>{children}</CardContent>
-    </Card>
+    <section className={cn("space-y-4", className)}>
+      <div className="workspace-section-heading">
+        <div>
+          <h2>{title}</h2>
+          {description ? <p>{description}</p> : null}
+        </div>
+      </div>
+      {children}
+    </section>
   );
 }

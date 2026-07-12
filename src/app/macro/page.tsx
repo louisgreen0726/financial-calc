@@ -488,11 +488,11 @@ export default function MacroPage() {
   const pppForeignError = pppErrors.find((error) => error.field === "foreign")?.message ?? null;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+    <div className="page-stack" data-tone="amber">
+      <div className="page-header">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold">{t("macro.title")}</h1>
-          <p className="text-muted-foreground mt-2">{t("macro.subtitle")}</p>
+          <h1 className="page-title">{t("macro.title")}</h1>
+          <p className="page-description">{t("macro.subtitle")}</p>
         </div>
         <HistoryPanel page="macro" onRestore={restoreMacroInputs} />
       </div>
@@ -620,10 +620,10 @@ export default function MacroPage() {
               </CardContent>
             </Card>
 
-            <Card className="flex min-w-0 flex-col items-center justify-center bg-muted/30 p-4">
+            <Card variant="result" className="flex min-w-0 flex-col items-center justify-center p-4">
               <div className="min-w-0 max-w-full space-y-2 text-center">
                 <h3 className="text-lg font-medium text-muted-foreground">{t("macro.inflation.rate")}</h3>
-                <div className="max-w-full break-words text-4xl font-bold text-primary sm:text-5xl">
+                <div className="max-w-full break-words text-3xl font-semibold text-primary sm:text-4xl">
                   {isFiniteNumber(infResult) ? `${(infResult * 100).toFixed(4)}%` : EMPTY_RESULT}
                 </div>
               </div>
@@ -693,13 +693,13 @@ export default function MacroPage() {
               </CardContent>
             </Card>
 
-            <Card className="flex min-w-0 flex-col items-center justify-center bg-muted/30 p-4">
+            <Card variant="result" className="flex min-w-0 flex-col items-center justify-center p-4">
               <div className="min-w-0 max-w-full space-y-6 text-center">
                 <div className="min-w-0">
                   <h3 className="text-lg font-medium text-muted-foreground">
                     {t("macro.purchasingPower.futureValue")}
                   </h3>
-                  <div className="mt-2 max-w-full break-words text-3xl font-bold text-primary sm:text-4xl">
+                  <div className="mt-2 max-w-full break-words text-3xl font-semibold text-primary sm:text-4xl">
                     {isFiniteNumber(ppResult) ? formatCurrency(ppResult) : EMPTY_RESULT}
                   </div>
                 </div>
@@ -763,10 +763,10 @@ export default function MacroPage() {
               </CardContent>
             </Card>
 
-            <Card className="flex min-w-0 flex-col items-center justify-center bg-muted/30 p-4">
+            <Card variant="result" className="flex min-w-0 flex-col items-center justify-center p-4">
               <div className="min-w-0 max-w-full space-y-2 text-center">
                 <h3 className="text-lg font-medium text-muted-foreground">{t("macro.realRate.real")}</h3>
-                <div className="max-w-full break-words text-4xl font-bold text-primary sm:text-5xl">
+                <div className="max-w-full break-words text-3xl font-semibold text-primary sm:text-4xl">
                   {isFiniteNumber(realResult) ? `${(realResult * 100).toFixed(4)}%` : EMPTY_RESULT}
                 </div>
               </div>
@@ -837,10 +837,10 @@ export default function MacroPage() {
               </CardContent>
             </Card>
 
-            <Card className="flex min-w-0 flex-col items-center justify-center bg-muted/30 p-4">
+            <Card variant="result" className="flex min-w-0 flex-col items-center justify-center p-4">
               <div className="min-w-0 max-w-full space-y-2 text-center">
                 <h3 className="text-lg font-medium text-muted-foreground">{t("macro.cpiAdjust.adjusted")}</h3>
-                <div className="max-w-full break-words text-4xl font-bold text-primary sm:text-5xl">
+                <div className="max-w-full break-words text-3xl font-semibold text-primary sm:text-4xl">
                   {isFiniteNumber(cpiResult) ? formatCurrency(cpiResult) : EMPTY_RESULT}
                 </div>
               </div>
@@ -897,10 +897,10 @@ export default function MacroPage() {
               </CardContent>
             </Card>
 
-            <Card className="flex min-w-0 flex-col items-center justify-center bg-muted/30 p-4">
+            <Card variant="result" className="flex min-w-0 flex-col items-center justify-center p-4">
               <div className="min-w-0 max-w-full space-y-2 text-center">
                 <h3 className="text-lg font-medium text-muted-foreground">{t("macro.ppp.rate")}</h3>
-                <div className="max-w-full break-words text-4xl font-bold text-primary sm:text-5xl">
+                <div className="max-w-full break-words text-3xl font-semibold text-primary sm:text-4xl">
                   {isFiniteNumber(pppResult) ? pppResult.toFixed(4) : EMPTY_RESULT}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">{t("macro.ppp.rateDesc")}</p>

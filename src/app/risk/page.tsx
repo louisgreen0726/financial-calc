@@ -139,11 +139,11 @@ export default function RiskPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="page-stack" data-tone="rose">
+      <div className="page-header">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold">{t("risk.title")}</h1>
-          <p className="text-muted-foreground mt-2">{t("risk.subtitle")}</p>
+          <h1 className="page-title">{t("risk.title")}</h1>
+          <p className="page-description">{t("risk.subtitle")}</p>
         </div>
         <HistoryPanel
           page="risk"
@@ -249,7 +249,7 @@ export default function RiskPage() {
             }
             summary={
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <Card>
+                <Card variant="result" className="!border-destructive/20">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-muted-foreground text-sm font-medium uppercase">
                       {t("risk.var")}
@@ -264,7 +264,7 @@ export default function RiskPage() {
                     </p>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card variant="result" className="!border-destructive/20">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-muted-foreground text-sm font-medium uppercase">
                       {t("risk.cvar")}

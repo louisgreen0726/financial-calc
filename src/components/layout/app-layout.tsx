@@ -1,19 +1,61 @@
 "use client";
 
+import { useCallback, useSyncExternalStore } from "react";
+
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
 import { MobileNav } from "@/components/mobile-nav";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useLanguage } from "@/lib/i18n";
+import { SIDEBAR_COLLAPSED_KEY, SIDEBAR_PREFERENCE_CHANGED_EVENT } from "@/lib/constants";
+import { safeGetJSON, safeSetJSON } from "@/lib/storage";
+import { cn } from "@/lib/utils";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface AppLayoutProps {
   children: React.ReactNode;
 }
 
+function subscribeToSidebarPreference(onStoreChange: () => void) {
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key === SIDEBAR_COLLAPSED_KEY) {
+      onStoreChange();
+    }
+  };
+
+  window.addEventListener("storage", handleStorage);
+  window.addEventListener(SIDEBAR_PREFERENCE_CHANGED_EVENT, onStoreChange);
+
+  return () => {
+    window.removeEventListener("storage", handleStorage);
+    window.removeEventListener(SIDEBAR_PREFERENCE_CHANGED_EVENT, onStoreChange);
+  };
+}
+
+function getSidebarPreference() {
+  return safeGetJSON<unknown>(SIDEBAR_COLLAPSED_KEY, false) === true;
+}
+
+function getServerSidebarPreference() {
+  return false;
+}
+
 export function AppLayout({ children }: AppLayoutProps) {
   const { t } = useLanguage();
+  const sidebarCollapsed = useSyncExternalStore(
+    subscribeToSidebarPreference,
+    getSidebarPreference,
+    getServerSidebarPreference
+  );
+  const setSidebarCollapsed = useCallback((collapsed: boolean) => {
+    if (safeSetJSON(SIDEBAR_COLLAPSED_KEY, collapsed)) {
+      window.dispatchEvent(new Event(SIDEBAR_PREFERENCE_CHANGED_EVENT));
+    }
+  }, []);
 
   return (
-    <div className="app-shell relative flex min-h-screen overflow-x-clip selection:bg-primary/30">
+    <div className="app-shell relative flex min-h-dvh overflow-x-clip selection:bg-primary/20">
       {/* Skip to Content Link */}
       <a
         href="#main-content"
@@ -23,26 +65,50 @@ export function AppLayout({ children }: AppLayoutProps) {
         {t("common.skipToContent")}
       </a>
 
-      {/* Desktop Sidebar Container (gives padding for floating effect) */}
       <div
         data-pdf-exclude="true"
-        className="no-print fixed inset-y-0 left-0 z-[80] hidden w-72 flex-col p-4 lg:flex xl:w-80"
+        data-collapsed={sidebarCollapsed}
+        className={cn(
+          "app-sidebar-frame no-print fixed inset-y-0 left-0 z-[80] hidden flex-col overflow-visible border-r bg-card transition-[width] duration-200 ease-out lg:flex",
+          sidebarCollapsed ? "w-[4.5rem]" : "w-[17rem]"
+        )}
       >
-        <Sidebar className="rounded-2xl shadow-2xl border-white/10" />
+        <Sidebar collapsed={sidebarCollapsed} />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              className="sidebar-boundary-toggle absolute right-[-16px] top-4 z-20 size-8 rounded-md"
+              aria-label={t(sidebarCollapsed ? "common.expandSidebar" : "common.collapseSidebar")}
+              aria-pressed={sidebarCollapsed}
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            >
+              {sidebarCollapsed ? <ChevronRight /> : <ChevronLeft />}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={10}>
+            {t(sidebarCollapsed ? "common.expandSidebar" : "common.collapseSidebar")}
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       {/* Main Content Area */}
       <div
         data-app-content="true"
-        className="relative z-10 flex min-h-screen min-w-0 flex-1 flex-col lg:pl-72 xl:pl-80"
+        className={cn(
+          "relative z-10 flex min-h-dvh min-w-0 flex-1 flex-col transition-[padding-left] duration-200 ease-out",
+          sidebarCollapsed ? "lg:pl-[4.5rem]" : "lg:pl-[17rem]"
+        )}
       >
-        <div data-pdf-exclude="true" className="no-print px-3 pt-3 sm:px-4 md:px-6 md:pt-4 xl:px-8">
-          <Header className="rounded-2xl shadow-sm border border-white/10 backdrop-blur-3xl bg-card/60" />
+        <div data-pdf-exclude="true" className="no-print sticky top-0 z-50">
+          <Header className="static" />
         </div>
         <main
           id="main-content"
           data-print-content="true"
-          className="mx-auto flex-1 w-full max-w-7xl min-w-0 overflow-y-auto px-3 pb-28 pt-4 sm:px-4 md:px-6 md:pb-24 xl:px-8 xl:pb-8"
+          className="workspace-content mx-auto w-full max-w-[1440px] min-w-0 flex-1 px-4 pb-24 pt-6 sm:px-5 md:px-6 md:pb-20 lg:px-8 lg:pb-10 lg:pt-8"
           tabIndex={-1}
         >
           {children}

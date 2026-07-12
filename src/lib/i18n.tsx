@@ -46,6 +46,8 @@ type Translations = {
     toggleTheme: string;
     skipToContent: string;
     primaryNavigation: string;
+    collapseSidebar: string;
+    expandSidebar: string;
     errorLabel: string;
     warningLabel: string;
     infoLabel: string;
@@ -656,6 +658,8 @@ const en: Translations = {
     toggleTheme: "Toggle Theme",
     skipToContent: "Skip to content",
     primaryNavigation: "Primary navigation",
+    collapseSidebar: "Collapse sidebar",
+    expandSidebar: "Expand sidebar",
     errorLabel: "Error",
     warningLabel: "Warning",
     infoLabel: "Information",
@@ -688,7 +692,7 @@ const en: Translations = {
   },
   sidebar: {
     edition: "Professional Edition",
-    version: "v0.4.0",
+    version: "v0.5.0",
     search: "Search calculators...",
     featured: "Featured",
   },
@@ -1176,7 +1180,7 @@ const en: Translations = {
     clearAllHistory: "Clear All History",
     about: "About",
     aboutDesc: "About FinCalc Pro",
-    version: "v0.4.0",
+    version: "v0.5.0",
     description:
       "A comprehensive suite of financial calculators including TVM, cash flow analysis, stock valuation, portfolio optimization, bonds, options, risk metrics, loans, and macroeconomics.",
   },
@@ -1281,6 +1285,8 @@ const zh: Translations = {
     toggleTheme: "切换主题",
     skipToContent: "跳转到主要内容",
     primaryNavigation: "主导航",
+    collapseSidebar: "收起侧边栏",
+    expandSidebar: "展开侧边栏",
     errorLabel: "错误",
     warningLabel: "警告",
     infoLabel: "提示",
@@ -1313,7 +1319,7 @@ const zh: Translations = {
   },
   sidebar: {
     edition: "专业版",
-    version: "v0.4.0",
+    version: "v0.5.0",
     search: "搜索计算器...",
     featured: "推荐",
   },
@@ -1801,7 +1807,7 @@ const zh: Translations = {
     clearAllHistory: "清除所有历史",
     about: "关于",
     aboutDesc: "关于 FinCalc Pro",
-    version: "v0.4.0",
+    version: "v0.5.0",
     description:
       "全面的金融计算器套件，包括货币时间价值、现金流分析、股票估值、投资组合优化、债券、期权、风险指标、贷款和宏观经济计算工具。",
   },

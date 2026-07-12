@@ -25,10 +25,10 @@ export const SPACING = {
 
 // ─── Typography Scale ───────────────────────────────────────────
 export const TYPOGRAPHY = {
-  display: { fontSize: "2.25rem", lineHeight: "2.5rem", fontWeight: "800", letterSpacing: "-0.025em" }, // 36px
-  h1: { fontSize: "1.875rem", lineHeight: "2.25rem", fontWeight: "700", letterSpacing: "-0.025em" }, // 30px
-  h2: { fontSize: "1.5rem", lineHeight: "2rem", fontWeight: "600", letterSpacing: "-0.015em" }, // 24px
-  h3: { fontSize: "1.25rem", lineHeight: "1.75rem", fontWeight: "600", letterSpacing: "-0.01em" }, // 20px
+  display: { fontSize: "2.25rem", lineHeight: "2.5rem", fontWeight: "800", letterSpacing: "0" }, // 36px
+  h1: { fontSize: "1.875rem", lineHeight: "2.25rem", fontWeight: "700", letterSpacing: "0" }, // 30px
+  h2: { fontSize: "1.5rem", lineHeight: "2rem", fontWeight: "600", letterSpacing: "0" }, // 24px
+  h3: { fontSize: "1.25rem", lineHeight: "1.75rem", fontWeight: "600", letterSpacing: "0" }, // 20px
   h4: { fontSize: "1.125rem", lineHeight: "1.75rem", fontWeight: "600" }, // 18px
   body: { fontSize: "1rem", lineHeight: "1.5rem", fontWeight: "400" }, // 16px
   sm: { fontSize: "0.875rem", lineHeight: "1.25rem", fontWeight: "400" }, // 14px
@@ -88,12 +88,11 @@ export const CHART_COLORS_DARK = {
 export const TOUCH_TARGET_MIN = "44px";
 
 // ─── Utility: Tailwind class helpers ────────────────────────────
-export const CARD_BASE = "rounded-xl border bg-card/80 backdrop-blur-sm";
-export const CARD_HOVER = "hover:shadow-lg hover:border-primary/20 hover:bg-card transition-all duration-200";
-export const CARD_RESULT =
-  "rounded-2xl border bg-gradient-to-br from-primary/5 via-card to-blue-50/30 dark:from-primary/10 dark:via-card dark:to-blue-950/20 shadow-md";
+export const CARD_BASE = "rounded-lg border bg-card/75 backdrop-blur-xl shadow-sm";
+export const CARD_HOVER = "hover:border-primary/20 hover:shadow-md transition-[border-color,box-shadow] duration-200";
+export const CARD_RESULT = "rounded-lg border border-primary/20 bg-card/75 backdrop-blur-xl shadow-md";
 export const INPUT_BASE =
-  "h-10 rounded-lg border border-input bg-transparent px-3 py-2 text-sm transition-all focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 outline-none";
+  "h-10 rounded-md border border-input bg-card/90 px-3 py-2 text-sm transition-[border-color,box-shadow] focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 outline-none";
 export const BUTTON_PRIMARY =
-  "inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 hover:shadow-md active:scale-[0.98] transition-all";
+  "inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 hover:shadow-md transition-[background-color,box-shadow]";
 export const SKELETON = "animate-pulse rounded-md bg-muted";

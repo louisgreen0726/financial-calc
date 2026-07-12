@@ -16,15 +16,15 @@ export const MobileSidebar = React.memo(function MobileSidebar() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" className="lg:hidden pr-3 hover:bg-transparent" aria-label={t("common.toggleMenu")}>
-          <Menu className="w-6 h-6" />
+        <Button variant="ghost" size="icon" className="lg:hidden" aria-label={t("common.toggleMenu")}>
+          <Menu className="h-5 w-5" />
         </Button>
       </SheetTrigger>
       <SheetContent
         side="left"
         closeLabel={t("common.close")}
         data-pdf-exclude="true"
-        className="no-print p-0 w-[82vw] max-w-[300px] bg-background border-r flex flex-col"
+        className="no-print flex w-[86vw] max-w-72 flex-col border-r bg-card p-0"
       >
         <SheetTitle className="sr-only">{t("common.toggleMenu")}</SheetTitle>
         <SheetDescription className="sr-only">{t("sidebar.search")}</SheetDescription>

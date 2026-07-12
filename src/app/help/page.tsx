@@ -17,17 +17,19 @@ export default function HelpPage() {
   const { t } = useLanguage();
 
   return (
-    <div className="space-y-6 max-w-3xl">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
-          <HelpCircle className="h-8 w-8" />
-          {t("help.title")}
-        </h1>
-        <p className="text-muted-foreground mt-2">{t("help.learnMore")}</p>
+    <div className="page-stack max-w-4xl" data-tone="neutral">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title flex items-center gap-3">
+            <HelpCircle className="h-7 w-7 text-primary" />
+            {t("help.title")}
+          </h1>
+          <p className="page-description">{t("help.learnMore")}</p>
+        </div>
       </div>
 
       {/* Quick Start */}
-      <Card className="rounded-xl">
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BookOpen className="h-5 w-5" />
@@ -63,7 +65,7 @@ export default function HelpPage() {
       </Card>
 
       {/* Calculators Overview */}
-      <Card className="rounded-xl">
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calculator className="h-5 w-5" />
@@ -72,57 +74,57 @@ export default function HelpPage() {
           <CardDescription>{t("help.calculatorsDesc")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="p-4 rounded-lg border bg-card">
+          <div className="grid border-y md:grid-cols-2 md:[&>*:nth-child(odd)]:border-r">
+            <div className="border-b p-4">
               <h4 className="font-semibold">{t("help.tvmCalc")}</h4>
-              <p className="text-sm text-muted-foreground mt-1">{t("help.tvmCalcDesc")}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{t("help.tvmCalcDesc")}</p>
             </div>
-            <div className="p-4 rounded-lg border bg-card">
+            <div className="border-b p-4">
               <h4 className="font-semibold">{t("help.cashFlowCalc")}</h4>
-              <p className="text-sm text-muted-foreground mt-1">{t("help.cashFlowCalcDesc")}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{t("help.cashFlowCalcDesc")}</p>
             </div>
-            <div className="p-4 rounded-lg border bg-card">
+            <div className="border-b p-4">
               <h4 className="font-semibold">{t("help.stockVal")}</h4>
-              <p className="text-sm text-muted-foreground mt-1">{t("help.stockValDesc")}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{t("help.stockValDesc")}</p>
             </div>
-            <div className="p-4 rounded-lg border bg-card">
+            <div className="border-b p-4">
               <h4 className="font-semibold">{t("help.portfolioOpt")}</h4>
-              <p className="text-sm text-muted-foreground mt-1">{t("help.portfolioOptDesc")}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{t("help.portfolioOptDesc")}</p>
             </div>
-            <div className="p-4 rounded-lg border bg-card">
+            <div className="border-b p-4">
               <h4 className="font-semibold">{t("help.bondsCalc")}</h4>
-              <p className="text-sm text-muted-foreground mt-1">{t("help.bondsCalcDesc")}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{t("help.bondsCalcDesc")}</p>
             </div>
-            <div className="p-4 rounded-lg border bg-card">
+            <div className="border-b p-4">
               <h4 className="font-semibold">{t("help.optionsCalc")}</h4>
-              <p className="text-sm text-muted-foreground mt-1">{t("help.optionsCalcDesc")}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{t("help.optionsCalcDesc")}</p>
             </div>
-            <div className="p-4 rounded-lg border bg-card">
+            <div className="p-4 max-md:border-b">
               <h4 className="font-semibold">{t("help.riskMetrics")}</h4>
-              <p className="text-sm text-muted-foreground mt-1">{t("help.riskMetricsDesc")}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{t("help.riskMetricsDesc")}</p>
             </div>
-            <div className="p-4 rounded-lg border bg-card">
+            <div className="p-4">
               <h4 className="font-semibold">{t("help.loanCalc")}</h4>
-              <p className="text-sm text-muted-foreground mt-1">{t("help.loanCalcDesc")}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{t("help.loanCalcDesc")}</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* FAQ */}
-      <Card className="rounded-xl">
+      <Card>
         <CardHeader>
           <CardTitle>{t("help.faq")}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="divide-y border-y">
             {FAQ_KEYS.map((faq, i) => (
-              <div key={i} className="p-4 rounded-lg border bg-card">
-                <h4 className="font-semibold flex items-center gap-2">
+              <div key={i} className="py-4">
+                <h4 className="flex items-center gap-2 font-semibold">
                   <ChevronRight className="h-4 w-4 text-primary" />
                   {t(faq.q)}
                 </h4>
-                <p className="text-sm text-muted-foreground mt-2 ml-6">{t(faq.a)}</p>
+                <p className="ml-6 mt-2 text-sm leading-6 text-muted-foreground">{t(faq.a)}</p>
               </div>
             ))}
           </div>
@@ -130,7 +132,7 @@ export default function HelpPage() {
       </Card>
 
       {/* Contact */}
-      <Card className="rounded-xl">
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5" />

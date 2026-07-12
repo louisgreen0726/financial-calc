@@ -215,13 +215,13 @@ export default function EquityPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="page-stack" data-tone="blue">
+      <div className="page-header">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold">{t("equity.title")}</h1>
-          <p className="text-muted-foreground mt-2">{t("equity.subtitle")}</p>
+          <h1 className="page-title">{t("equity.title")}</h1>
+          <p className="page-description">{t("equity.subtitle")}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="page-actions">
           <HistoryPanel
             page="equity"
             onRestore={(inputs) => {
@@ -379,9 +379,9 @@ export default function EquityPage() {
                 ) : null
               }
               summary={
-                <Card className="flex flex-col justify-center items-center bg-muted/30">
+                <Card variant="result" className="flex flex-col items-center justify-center">
                   <CardContent className="text-center space-y-2 pt-6">
-                    <div className="text-4xl sm:text-5xl font-bold text-primary break-all">{`${(capmResult * 100).toFixed(2)}%`}</div>
+                    <div className="break-words text-3xl font-semibold text-primary sm:text-4xl">{`${(capmResult * 100).toFixed(2)}%`}</div>
                     <p className="text-sm text-muted-foreground max-w-xs mx-auto pt-4">
                       {t("equity.capm.prem")}: {(parseRequiredNumber(rm) - parseRequiredNumber(rf)).toFixed(2)}%.
                     </p>
@@ -531,9 +531,9 @@ export default function EquityPage() {
                 ) : null
               }
               summary={
-                <Card className="flex flex-col justify-center items-center bg-muted/30">
+                <Card variant="result" className="flex flex-col items-center justify-center">
                   <CardContent className="text-center space-y-2 pt-6">
-                    <div className="text-4xl sm:text-5xl font-bold text-primary break-all">{`${(waccResult * 100).toFixed(2)}%`}</div>
+                    <div className="break-words text-3xl font-semibold text-primary sm:text-4xl">{`${(waccResult * 100).toFixed(2)}%`}</div>
                     <p className="text-sm text-muted-foreground max-w-xs mx-auto pt-4">{t("equity.wacc.desc")}</p>
                   </CardContent>
                 </Card>
@@ -653,10 +653,10 @@ export default function EquityPage() {
                 ) : null
               }
               summary={
-                <Card className="flex flex-col justify-center items-center bg-muted/30">
+                <Card variant="result" className="flex flex-col items-center justify-center">
                   <CardContent className="text-center space-y-2 pt-6">
                     <div
-                      className={`text-4xl sm:text-5xl font-bold break-all ${ddmResult <= 0 ? "text-muted-foreground" : "text-primary"}`}
+                      className={`break-words text-3xl font-semibold sm:text-4xl ${ddmResult <= 0 ? "text-muted-foreground" : "text-primary"}`}
                     >
                       {formatCurrency(ddmResult)}
                     </div>

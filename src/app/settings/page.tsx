@@ -98,14 +98,16 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6 w-full md:max-w-3xl">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold">{t("settings.title")}</h1>
-        <p className="text-muted-foreground mt-2">{t("settings.customizeExperience")}</p>
+    <div className="page-stack w-full max-w-4xl" data-tone="neutral">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">{t("settings.title")}</h1>
+          <p className="page-description">{t("settings.customizeExperience")}</p>
+        </div>
       </div>
 
       {/* Appearance */}
-      <Card className="rounded-xl">
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             {theme === "dark" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
@@ -226,7 +228,7 @@ export default function SettingsPage() {
       </Card>
 
       {/* Data Management */}
-      <Card className="rounded-xl">
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Download className="h-5 w-5" />
@@ -254,7 +256,7 @@ export default function SettingsPage() {
       </Card>
 
       {/* About */}
-      <Card className="rounded-xl">
+      <Card variant="subtle">
         <CardHeader>
           <CardTitle>{t("settings.about")}</CardTitle>
           <CardDescription>{t("settings.aboutDesc")}</CardDescription>

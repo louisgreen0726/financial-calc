@@ -148,11 +148,11 @@ export default function OptionsPage() {
 
   return (
     <>
-      <div className="space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="page-stack" data-tone="rose">
+        <div className="page-header">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold">{t("options.title")}</h1>
-            <p className="text-muted-foreground mt-2">{t("options.subtitle")}</p>
+            <h1 className="page-title">{t("options.title")}</h1>
+            <p className="page-description">{t("options.subtitle")}</p>
           </div>
         </div>
 
@@ -276,7 +276,7 @@ export default function OptionsPage() {
               summary={
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {/* Call Option */}
-                  <Card className="border-l-4 border-l-primary">
+                  <Card variant="result">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-primary">{t("options.call")}</CardTitle>
                       <CardDescription>{t("options.buy")}</CardDescription>
@@ -309,7 +309,7 @@ export default function OptionsPage() {
                   </Card>
 
                   {/* Put Option */}
-                  <Card className="border-l-4 border-l-destructive">
+                  <Card variant="result" className="!border-destructive/20">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-destructive">{t("options.put")}</CardTitle>
                       <CardDescription>{t("options.sell")}</CardDescription>

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Outfit } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { AppLayout } from "@/components/layout/app-layout";
 import { LanguageProvider } from "@/lib/i18n";
@@ -13,13 +13,12 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-const outfit = Outfit({
-  variable: "--font-display",
-  subsets: ["latin"],
-});
-
 const basePath = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(/\/$/, "");
 const withBasePath = (path: string) => `${basePath}${path}`;
+const workspaceVisuals = {
+  "--workspace-visual-light": `url("${withBasePath("/visuals/workspace-light.webp")}")`,
+  "--workspace-visual-dark": `url("${withBasePath("/visuals/workspace-dark.webp")}")`,
+} as React.CSSProperties;
 
 export const metadata: Metadata = {
   title: {
@@ -58,7 +57,7 @@ export default function RootLayout({
     // - LanguageProvider updates document.documentElement.lang on the client after hydration.
     // - Any browser-only behavior (theme, local/session storage, service worker) must stay behind client boundaries.
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} ${outfit.variable} font-sans antialiased`} suppressHydrationWarning>
+      <body className={`${inter.variable} font-sans antialiased`} style={workspaceVisuals} suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <LanguageProvider>
             <ErrorBoundary>

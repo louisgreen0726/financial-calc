@@ -27,13 +27,13 @@ export const ModeToggle = React.memo(function ModeToggle() {
           variant="ghost"
           size="sm"
           className={cn(
-            "h-9 px-3 gap-2 rounded-full transition-all hover:bg-primary/10",
-            theme === "dark" && "bg-primary/10 text-primary"
+            "h-9 gap-2 rounded-md px-2.5 hover:bg-muted",
+            theme === "dark" && "bg-accent text-accent-foreground"
           )}
           aria-label={`${t("common.toggleTheme")}: ${themeLabel}`}
         >
-          <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+          <Sun className="h-4 w-4 dark:hidden" />
+          <Moon className="hidden h-4 w-4 dark:block" />
           <span className="text-xs font-medium hidden sm:inline">{themeLabel}</span>
         </Button>
       </DropdownMenuTrigger>

@@ -273,7 +273,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
             aria-labelledby={panelTitleId}
             tabIndex={-1}
             className={cn(
-              "fixed inset-x-3 bottom-[calc(4rem+env(safe-area-inset-bottom)+1rem)] z-50 max-h-[min(72vh,34rem)] rounded-3xl border bg-card shadow-xl sm:inset-x-auto sm:right-4 sm:bottom-36 sm:w-[calc(100vw-2rem)] sm:max-w-[420px] sm:max-h-[min(65vh,600px)] sm:rounded-xl lg:bottom-20",
+              "app-card fixed inset-x-3 bottom-[calc(4rem+env(safe-area-inset-bottom)+1rem)] z-50 max-h-[min(72vh,34rem)] rounded-lg border bg-card sm:inset-x-auto sm:right-4 sm:bottom-36 sm:w-[calc(100vw-2rem)] sm:max-w-[420px] sm:max-h-[min(65vh,600px)] lg:bottom-20",
               className
             )}
           >
@@ -380,7 +380,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
               </div>
 
               <ScrollArea className="h-80">
-                <div className="space-y-2">
+                <div className="divide-y border-y">
                   {sorted.length === 0 && (
                     <div className="text-center py-8 text-muted-foreground text-sm">{t("history.noResults")}</div>
                   )}
@@ -392,8 +392,8 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0, height: 0 }}
                       className={cn(
-                        "flex items-start justify-between p-3 rounded-lg border bg-card group transition-colors",
-                        visibleFavorites.has(item.id) && "border-primary/30 bg-primary/5",
+                        "group flex items-start justify-between p-3 transition-colors hover:bg-muted/25",
+                        visibleFavorites.has(item.id) && "bg-primary/5",
                         selectedIds.has(item.id) && "ring-2 ring-primary"
                       )}
                     >

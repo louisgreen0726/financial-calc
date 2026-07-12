@@ -1,7 +1,7 @@
 import { EmptyState } from "@/components/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import type { LucideIcon } from "lucide-react";
+import { ChartNoAxesCombined, type LucideIcon } from "lucide-react";
 
 interface ResultShellProps {
   title: string;
@@ -31,34 +31,32 @@ export function ResultShell({
   className,
 }: ResultShellProps) {
   return (
-    <section className={cn("space-y-6", className)}>
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between" data-pdf-block>
+    <section className={cn("result-shell space-y-5", className)}>
+      <div
+        className="result-shell-heading flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-end sm:justify-between"
+        data-pdf-block
+      >
         <div className="space-y-1">
-          <h2 className="text-xl font-semibold">{title}</h2>
-          {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
+          <h2 className="text-lg font-semibold">{title}</h2>
+          {description ? <p className="max-w-2xl text-sm leading-6 text-muted-foreground">{description}</p> : null}
         </div>
         {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
       </div>
 
       {!isReady ? (
-        <Card className="border-dashed">
+        <Card variant="subtle" className="border-dashed">
           <CardContent className="pt-6">
-            {emptyIcon ? (
-              <EmptyState icon={emptyIcon} title={emptyTitle ?? title} description={emptyDescription ?? description} />
-            ) : (
-              <div className="flex flex-col items-center justify-center text-center py-8">
-                <h3 className="text-sm font-medium text-muted-foreground">{emptyTitle ?? title}</h3>
-                {emptyDescription ? (
-                  <p className="mt-2 text-sm text-muted-foreground max-w-sm">{emptyDescription}</p>
-                ) : null}
-              </div>
-            )}
+            <EmptyState
+              icon={emptyIcon ?? ChartNoAxesCombined}
+              title={emptyTitle ?? title}
+              description={emptyDescription ?? description}
+            />
           </CardContent>
         </Card>
       ) : (
         <>
           {summary ? (
-            <div role="status" aria-live="polite" aria-atomic="true" data-result-status>
+            <div className="result-summary" role="status" aria-live="polite" aria-atomic="true" data-result-status>
               {summary}
             </div>
           ) : null}

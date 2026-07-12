@@ -185,11 +185,11 @@ function LoansPageContent() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="page-stack" data-tone="amber">
+      <div className="page-header">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold">{t("loans.title")}</h1>
-          <p className="text-muted-foreground mt-2">{t("loans.subtitle")}</p>
+          <h1 className="page-title">{t("loans.title")}</h1>
+          <p className="page-description">{t("loans.subtitle")}</p>
         </div>
         <HistoryPanel
           page="loans"
@@ -355,7 +355,7 @@ function LoansPageContent() {
               ) : null
             }
             summary={
-              <Card className="bg-muted/30">
+              <Card variant="result">
                 <CardContent className="pt-6">
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <div>

@@ -10,16 +10,13 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({ icon: Icon, title, description, action, className }: EmptyStateProps) {
-  const hasIcon = typeof Icon === "function";
   return (
-    <div className={cn("flex flex-col items-center justify-center text-center py-8", className)}>
-      {hasIcon ? (
-        <div className="mb-4 rounded-full bg-muted p-4">
-          <Icon className="h-8 w-8 text-muted-foreground/50" />
-        </div>
-      ) : null}
-      <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
-      {description && <p className="text-xs text-muted-foreground mt-1 max-w-xs">{description}</p>}
+    <div className={cn("empty-state flex flex-col items-center justify-center py-8 text-center", className)}>
+      <div className="empty-state-visual mb-4 flex size-12 items-center justify-center rounded-lg bg-muted">
+        <Icon className="h-6 w-6 text-muted-foreground" />
+      </div>
+      <h3 className="text-sm font-medium text-foreground">{title}</h3>
+      {description && <p className="mt-1 max-w-sm text-sm leading-6 text-muted-foreground">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
   );
