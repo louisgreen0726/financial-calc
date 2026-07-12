@@ -18,13 +18,25 @@ interface ShareDialogProps {
   results: Record<string, number | string>;
   inputs?: Record<string, number | string>;
   shareUrl?: string;
+  printElementId?: string;
+  printFilename?: string;
   className?: string;
 }
 
 /**
- * Share calculation results as link, markdown, or image.
+ * Share calculation results as a link or text, or print the formatted report.
  */
-export function ShareDialog({ open, onOpenChange, title, results, inputs, shareUrl, className }: ShareDialogProps) {
+export function ShareDialog({
+  open,
+  onOpenChange,
+  title,
+  results,
+  inputs,
+  shareUrl,
+  printElementId,
+  printFilename,
+  className,
+}: ShareDialogProps) {
   const { t } = useLanguage();
   const [copied, setCopied] = useState<string | null>(null);
   const canNativeShare = typeof navigator !== "undefined" && "share" in navigator;
@@ -110,6 +122,26 @@ export function ShareDialog({ open, onOpenChange, title, results, inputs, shareU
     }
   };
 
+  const handlePrint = async () => {
+    if (!printElementId) {
+      return;
+    }
+
+    onOpenChange(false);
+    try {
+      const { printReport } = await import("@/lib/print-report");
+      await printReport({
+        elementId: printElementId,
+        title,
+        filename: printFilename,
+        generatedLabel: t("export.generatedAt"),
+      });
+    } catch (error) {
+      logger.error("Report print error:", error);
+      toast.error(t("export.pdfError"));
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -148,14 +180,12 @@ export function ShareDialog({ open, onOpenChange, title, results, inputs, shareU
             <span className="min-w-0 truncate">{t("share.copyText")}</span>
           </Button>
 
-          <Button
-            variant="outline"
-            className="min-h-11 w-full min-w-0 justify-start gap-3"
-            onClick={() => window.print()}
-          >
-            <Download className="h-4 w-4 shrink-0" />
-            <span className="min-w-0 truncate">{t("share.print")}</span>
-          </Button>
+          {printElementId ? (
+            <Button variant="outline" className="min-h-11 w-full min-w-0 justify-start gap-3" onClick={handlePrint}>
+              <Download className="h-4 w-4 shrink-0" />
+              <span className="min-w-0 truncate">{t("share.print")}</span>
+            </Button>
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>

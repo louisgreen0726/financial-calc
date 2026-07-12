@@ -17,7 +17,7 @@ The app is no longer just a calculator demo. It includes a full app shell, respo
 - Desktop and mobile layouts, including bottom mobile navigation and accessible mobile drawer navigation
 - Calculation history, favorite records, cross-page restore, and home-page "continue" restore
 - Shareable URLs with absolute links, JSON-safe array encoding, legacy URL compatibility, and long-URL protection
-- CSV, JSON, and PDF export; CSV output includes a BOM for better spreadsheet compatibility
+- Self-describing, versioned CSV/JSON reports plus print-optimized, searchable PDF output; CSV includes a BOM
 - Manual PWA/service worker integration with base-path-aware registration
 - Finite-result guards across calculator pages to avoid displaying `NaN` or `Infinity`
 - Updated dependency lockfile with current semver-compatible minor/patch releases
@@ -55,7 +55,7 @@ Recent hardening work is reflected in the current source:
 - mobile sidebar content now satisfies Radix Dialog title/description requirements and closes after navigation
 - PWA metadata, install icons, generated precache assets, and service worker caches respect `NEXT_PUBLIC_BASE_PATH`
 - Monte Carlo simulations run in a Webpack-built worker and always include equal-weight and single-asset baselines
-- PDF libraries load only when a user starts a PDF export
+- Print / Save as PDF isolates the active report and uses native browser pagination for sharp, searchable output
 - Recharts tooltip formatters and auto-calculation hooks are compatible with the current stricter dependency/lint versions
 
 ## Tech Stack
@@ -66,7 +66,7 @@ Recent hardening work is reflected in the current source:
 - **Styling**: Tailwind CSS 4, shadcn/ui, Radix UI
 - **Charts and animation**: Recharts, Framer Motion
 - **Forms and validation**: Zod, React Hook Form utilities
-- **Export**: html2canvas, jsPDF, CSV/JSON helpers
+- **Export**: native print layout, versioned JSON reports, spreadsheet-safe CSV helpers
 - **Testing**: Vitest, Testing Library, jsdom
 
 ## Requirements

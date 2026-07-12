@@ -18,7 +18,7 @@ Financial Calc 是一个基于 Next.js 16、React 19、TypeScript、Tailwind CSS
 - 支持计算历史、收藏、跨页面恢复，以及首页 Continue 恢复
 - 分享链接为绝对 URL，数组参数采用 JSON 安全编码，并兼容旧版 `|` 分隔格式
 - 分享 URL 有长度保护，避免资产组合等复杂状态生成过长链接
-- 支持 CSV / JSON / PDF 导出，CSV 带 BOM，便于表格软件识别中文
+- 支持自描述、带版本的 CSV / JSON 报告及打印优化的可搜索 PDF 输出；CSV 带 BOM
 - 手动 PWA / service worker 接入，注册逻辑支持 base path
 - 各计算页面加入有限数结果守卫，避免向用户展示 `NaN` 或 `Infinity`
 - 依赖 lockfile 已更新到 package.json semver 范围内较新的 minor/patch 版本
@@ -56,7 +56,7 @@ Financial Calc 是一个基于 Next.js 16、React 19、TypeScript、Tailwind CSS
 - 移动端 sidebar 满足 Radix Dialog 的 title/description 要求，点击导航后自动关闭
 - PWA metadata、安装图标、构建生成的 precache 资源与 service worker 缓存支持 `NEXT_PUBLIC_BASE_PATH`
 - Monte Carlo 使用 Webpack 正确构建的 Worker，并固定加入等权组合与所有单资产角点基线
-- PDF 依赖只在用户实际发起 PDF 导出时加载
+- “打印 / 另存为 PDF”会隔离当前报告，并使用浏览器原生分页生成清晰、可搜索的输出
 - Recharts tooltip formatter 与自动计算 hook 已适配当前更严格的依赖类型与 lint 规则
 
 ## 技术栈
@@ -67,7 +67,7 @@ Financial Calc 是一个基于 Next.js 16、React 19、TypeScript、Tailwind CSS
 - **样式**：Tailwind CSS 4、shadcn/ui、Radix UI
 - **图表与动效**：Recharts、Framer Motion
 - **表单与校验**：Zod、React Hook Form 相关工具
-- **导出**：html2canvas、jsPDF、CSV/JSON helpers
+- **导出**：原生打印布局、带版本的 JSON 报告、电子表格安全的 CSV helpers
 - **测试**：Vitest、Testing Library、jsdom
 
 ## 环境要求

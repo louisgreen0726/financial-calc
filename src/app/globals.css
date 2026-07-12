@@ -693,12 +693,18 @@ textarea,
   }
 }
 
-/* Print styles */
+[data-print-report-header="true"] {
+  display: none;
+}
+
+/* A4 report output: the coordinator marks one live report as the print target. */
 @media print {
   @page {
-    margin: 12mm;
+    size: A4 portrait;
+    margin: 14mm 12mm 16mm;
   }
 
+  [data-print-hidden-by-export="true"],
   nav,
   header,
   footer,
@@ -717,20 +723,31 @@ textarea,
   body,
   html body[data-scroll-locked] {
     width: 100% !important;
+    min-width: 0 !important;
     min-height: 0 !important;
     overflow: visible !important;
   }
 
-  body,
-  * {
-    background: white !important;
-    color: black !important;
-    font-size: 12pt;
+  html,
+  body {
+    background: #ffffff !important;
+  }
+
+  body[data-print-mode="report"] {
+    color: #111827 !important;
+    font-size: 10pt;
+    line-height: 1.45;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  body[data-print-mode="report"] * {
     transition: none !important;
     animation: none !important;
     filter: none !important;
     backdrop-filter: none !important;
     box-shadow: none !important;
+    text-shadow: none !important;
   }
 
   .app-shell {
@@ -762,16 +779,89 @@ textarea,
     overflow: visible !important;
   }
 
-  [data-pdf-expand="true"] {
+  [data-print-target="true"] {
+    --background: 0 0% 100%;
+    --foreground: 220 20% 14%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 14%;
+    --muted: 214 20% 95%;
+    --muted-foreground: 216 10% 36%;
+    --border: 216 13% 78%;
+    --input: 216 13% 62%;
+    --primary: 166 72% 27%;
+    --primary-foreground: 0 0% 100%;
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: hsl(var(--foreground)) !important;
+    background: #ffffff !important;
+  }
+
+  [data-print-report-header="true"] {
+    display: block !important;
+    margin: 0 0 7mm !important;
+    padding: 0 0 4mm !important;
+    border-bottom: 1.5pt solid hsl(var(--primary)) !important;
+    background: #ffffff !important;
+    break-after: avoid-page;
+  }
+
+  [data-print-report-header="true"] h1 {
+    margin: 0 !important;
+    color: hsl(var(--foreground)) !important;
+    font-size: 20pt !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+    overflow-wrap: anywhere;
+  }
+
+  [data-print-report-header="true"] p {
+    margin: 2mm 0 0 !important;
+    color: #4b5563 !important;
+    font-size: 8.5pt !important;
+  }
+
+  [data-print-target="true"] > * + * {
+    margin-top: 6mm !important;
+  }
+
+  [data-print-target="true"] [data-slot="card"] {
+    margin-bottom: 5mm !important;
+    border: 0.75pt solid #cbd5e1 !important;
+    border-radius: 2mm !important;
+    background: #ffffff !important;
+    color: hsl(var(--card-foreground)) !important;
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  [data-print-target="true"] [data-slot="card-header"],
+  [data-print-target="true"] [data-slot="card-content"],
+  [data-print-target="true"] [data-slot="card-footer"] {
+    background: transparent !important;
+  }
+
+  [data-print-target="true"] [data-slot="card-title"] {
+    font-size: 12pt !important;
+  }
+
+  [data-print-target="true"] .text-muted-foreground {
+    color: #4b5563 !important;
+  }
+
+  [data-print-target="true"] .text-primary {
+    color: hsl(var(--primary)) !important;
+  }
+
+  [data-pdf-expand="true"],
+  [data-slot="scroll-area"],
+  [data-slot="scroll-area-viewport"],
+  [data-slot="table-container"] {
     height: auto !important;
     max-height: none !important;
     overflow: visible !important;
-  }
-
-  [class*="card"],
-  [class*="Card"] {
-    border: 1px solid #ccc !important;
-    break-inside: avoid;
   }
 
   [data-slot="card"][data-pdf-expand="true"] {
@@ -783,14 +873,64 @@ textarea,
     position: static !important;
   }
 
+  [data-print-target="true"] button[data-slot="select-trigger"],
+  [data-print-target="true"] button[role="combobox"],
+  [data-print-target="true"] button[role="radio"] {
+    display: flex !important;
+  }
+
+  [data-print-target="true"] input,
+  [data-print-target="true"] textarea,
+  [data-print-target="true"] button[data-slot="select-trigger"] {
+    border-color: #94a3b8 !important;
+    background: #ffffff !important;
+    color: #111827 !important;
+  }
+
+  [data-print-target="true"] table {
+    width: 100% !important;
+    min-width: 0 !important;
+    table-layout: fixed;
+    font-size: 8.5pt !important;
+  }
+
+  [data-print-target="true"] thead {
+    display: table-header-group;
+  }
+
+  [data-print-target="true"] tr,
+  [data-print-target="true"] img,
+  [data-print-target="true"] svg,
+  [data-print-target="true"] canvas,
+  [data-print-target="true"] .recharts-wrapper {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  [data-print-target="true"] th,
+  [data-print-target="true"] td {
+    overflow-wrap: anywhere;
+  }
+
+  [data-print-target="true"] .recharts-responsive-container,
   svg,
   canvas {
     max-width: 100% !important;
   }
 
-  a[href]::after {
-    content: " (" attr(href) ")";
-    font-size: 0.8em;
-    color: #666;
+  [data-print-chart="true"] {
+    width: var(--print-chart-width) !important;
+    height: var(--print-chart-height) !important;
+  }
+
+  [data-print-chart="true"] > svg.recharts-surface {
+    width: var(--print-chart-width) !important;
+    height: var(--print-chart-height) !important;
+    max-width: 100% !important;
+  }
+
+  [data-print-target="true"] [data-slot="scroll-area-scrollbar"],
+  [data-print-target="true"] .recharts-tooltip-wrapper {
+    display: none !important;
   }
 }

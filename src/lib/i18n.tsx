@@ -614,12 +614,12 @@ type Translations = {
     csv: string;
     json: string;
     pdf: string;
+    generatedAt: string;
     noData: string;
     csvSuccess: string;
     jsonSuccess: string;
     csvError: string;
     jsonError: string;
-    pdfSuccess: string;
     pdfError: string;
   };
 };
@@ -1195,7 +1195,7 @@ const en: Translations = {
     step2Title: "Enter Your Parameters",
     step2Desc: "Fill in the required financial parameters like interest rate, periods, cash flows, etc.",
     step3Title: "Calculate & View Results",
-    step3Desc: "Click Calculate to see results. Export in CSV, JSON, or PDF formats.",
+    step3Desc: "Click Calculate to see results. Export structured CSV or JSON, or print and save as PDF.",
     availableCalculators: "Available Calculators",
     calculatorsDesc: "Overview of each financial tool",
     faq: "Frequently Asked Questions",
@@ -1223,7 +1223,7 @@ const en: Translations = {
       "Calculation history is stored locally in your browser. Each time you perform a calculation, it is saved with a timestamp and inputs. You can access history from the bottom navigation on mobile or from the dedicated History page.",
     faqExport: "How do I export my calculations?",
     faqExportAns:
-      "Click the Export menu button to export in CSV, JSON, or PDF format. The CSV and JSON options will download your data immediately. PDF export captures the calculation results as a formatted document.",
+      "Click the Export menu button to export CSV or JSON, or open the print dialog for a formatted report. Choose Save as PDF in the print dialog to create a PDF.",
     faqTheme: "How do I change between light and dark mode?",
     faqThemeAns:
       "Click the theme toggle button in the header. You can choose Light, Dark, or follow your system preference.",
@@ -1241,14 +1241,14 @@ const en: Translations = {
     reportTitle: "Financial Calculation Report",
     csv: "Export CSV",
     json: "Export JSON",
-    pdf: "Export PDF",
+    pdf: "Print / Save as PDF",
+    generatedAt: "Generated",
     noData: "No data to export",
     csvSuccess: "CSV exported successfully",
     jsonSuccess: "JSON exported successfully",
     csvError: "Failed to export CSV",
     jsonError: "Failed to export JSON",
-    pdfSuccess: "PDF exported successfully",
-    pdfError: "Failed to export PDF",
+    pdfError: "Failed to open the print dialog",
   },
 };
 
@@ -1822,7 +1822,7 @@ const zh: Translations = {
     step2Title: "输入您的参数",
     step2Desc: "填写所需的金融参数，如利率、期数、现金流等。",
     step3Title: "计算并查看结果",
-    step3Desc: "点击计算查看结果。以 CSV、JSON 或 PDF 格式导出。",
+    step3Desc: "点击计算查看结果。导出结构化 CSV 或 JSON，或打印并另存为 PDF。",
     availableCalculators: "可用计算器",
     calculatorsDesc: "各金融工具概述",
     faq: "常见问题",
@@ -1850,7 +1850,7 @@ const zh: Translations = {
       "\u8ba1\u7b97\u5386\u53f2\u5b58\u50a8\u5728\u6d4f\u89c8\u5668\u672c\u5730\u3002\u6bcf\u6b21\u6267\u884c\u8ba1\u7b97\u65f6\uff0c\u90fd\u4f1a\u4fdd\u5b58\u65f6\u95f4\u6233\u548c\u8f93\u5165\u53c2\u6570\u3002\u79fb\u52a8\u7aef\u53ef\u901a\u8fc7\u5e95\u90e8\u5bfc\u822a\u8fdb\u5165\u5386\u53f2\u8bb0\u5f55\uff0c\u4e5f\u53ef\u4ee5\u8bbf\u95ee\u4e13\u7528\u7684\u5386\u53f2\u8bb0\u5f55\u9875\u9762\u3002",
     faqExport: "\u5982\u4f55\u5bfc\u51fa\u6211\u7684\u8ba1\u7b97\u7ed3\u679c\uff1f",
     faqExportAns:
-      "\u70b9\u51fb\u5bfc\u51fa\u83dc\u5355\u6309\u94ae\u53ef\u4ee5 CSV\u3001JSON \u6216 PDF \u683c\u5f0f\u5bfc\u51fa\u3002CSV \u548c JSON \u9009\u9879\u4f1a\u7acb\u5373\u4e0b\u8f7d\u60a8\u7684\u6570\u636e\u3002PDF \u5bfc\u51fa\u4f1a\u5c06\u8ba1\u7b97\u7ed3\u679c\u6355\u83b7\u4e3a\u683c\u5f0f\u5316\u6587\u6863\u3002",
+      "\u70b9\u51fb\u5bfc\u51fa\u83dc\u5355\u53ef\u5bfc\u51fa CSV \u6216 JSON\uff0c\u4e5f\u53ef\u6253\u5f00\u683c\u5f0f\u5316\u62a5\u544a\u7684\u6253\u5370\u5bf9\u8bdd\u6846\u3002\u5728\u6253\u5370\u5bf9\u8bdd\u6846\u4e2d\u9009\u62e9\u201c\u53e6\u5b58\u4e3a PDF\u201d\u5373\u53ef\u751f\u6210 PDF\u3002",
     faqTheme: "\u5982\u4f55\u5728\u6d45\u8272\u548c\u6df1\u8272\u6a21\u5f0f\u4e4b\u95f4\u5207\u6362\uff1f",
     faqThemeAns:
       "\u70b9\u51fb\u9876\u90e8\u7684\u4e3b\u9898\u5207\u6362\u6309\u94ae\u3002\u60a8\u53ef\u4ee5\u9009\u62e9\u6d45\u8272\u3001\u6df1\u8272\u6216\u8ddf\u968f\u7cfb\u7edf\u8bbe\u7f6e\u3002",
@@ -1869,14 +1869,14 @@ const zh: Translations = {
     reportTitle: "财务计算报告",
     csv: "导出 CSV",
     json: "导出 JSON",
-    pdf: "导出 PDF",
+    pdf: "打印 / 另存为 PDF",
+    generatedAt: "生成时间",
     noData: "没有可导出的数据",
     csvSuccess: "CSV 导出成功",
     jsonSuccess: "JSON 导出成功",
     csvError: "CSV 导出失败",
     jsonError: "JSON 导出失败",
-    pdfSuccess: "PDF 导出成功",
-    pdfError: "PDF 导出失败",
+    pdfError: "无法打开打印对话框",
   },
 };
 

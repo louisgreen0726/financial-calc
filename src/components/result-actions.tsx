@@ -46,6 +46,8 @@ export function ResultActions({
           pdfElementId={pdfElementId}
           pdfFilename={pdfFilename}
           pdfTitle={pdfTitle}
+          reportInputs={inputs}
+          reportResults={results}
           className="min-h-10 gap-2"
         />
         {onShowHistory ? (
@@ -63,6 +65,8 @@ export function ResultActions({
         results={results}
         inputs={inputs}
         shareUrl={shareUrl}
+        printElementId={pdfElementId}
+        printFilename={pdfFilename}
       />
     </>
   );

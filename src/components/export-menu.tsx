@@ -15,6 +15,7 @@ import { useExport } from "@/hooks/use-export";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
 import { cn } from "@/lib/utils";
+import { createReportCsvRows, createReportExportEnvelope } from "@/lib/data-export";
 
 interface ExportMenuProps {
   data?: Record<string, unknown>[];
@@ -22,6 +23,8 @@ interface ExportMenuProps {
   pdfElementId?: string;
   pdfTitle?: string;
   pdfFilename?: string;
+  reportInputs?: Record<string, number | string>;
+  reportResults?: Record<string, number | string>;
   className?: string;
 }
 
@@ -31,26 +34,65 @@ export function ExportMenu({
   pdfElementId,
   pdfTitle,
   pdfFilename = "export",
+  reportInputs,
+  reportResults,
   className,
 }: ExportMenuProps) {
   const { t } = useLanguage();
   const { exportToCSV, exportToJSON } = useExport({ filename: pdfFilename });
   const [isExporting, setIsExporting] = useState(false);
-  const resolvedPdfTitle = pdfTitle ?? t("export.reportTitle");
+  const resolvedReportTitle = pdfTitle ?? t("export.reportTitle");
+  const hasReportData = reportResults !== undefined;
 
-  const handleExportPDF = async () => {
+  const handleExportCSV = () => {
+    if (hasReportData) {
+      exportToCSV(
+        createReportCsvRows({
+          title: resolvedReportTitle,
+          inputs: reportInputs,
+          results: reportResults,
+          tabularData: data,
+        })
+      );
+      return;
+    }
+
+    exportToCSV(data ?? []);
+  };
+
+  const handleExportJSON = () => {
+    if (hasReportData) {
+      exportToJSON(
+        createReportExportEnvelope({
+          title: resolvedReportTitle,
+          inputs: reportInputs,
+          results: reportResults,
+          data: jsonData,
+        })
+      );
+      return;
+    }
+
+    exportToJSON(jsonData);
+  };
+
+  const handlePrintReport = async () => {
+    if (!pdfElementId) {
+      return;
+    }
+
     setIsExporting(true);
     try {
-      const { exportToPDF } = await import("@/lib/pdf-export");
-      await exportToPDF({
+      const { printReport } = await import("@/lib/print-report");
+      await printReport({
         filename: pdfFilename,
         elementId: pdfElementId,
-        title: resolvedPdfTitle,
+        title: resolvedReportTitle,
+        generatedLabel: t("export.generatedAt"),
       });
-      toast.success(t("export.pdfSuccess"));
     } catch (error) {
       toast.error(t("export.pdfError"));
-      logger.error("PDF export error:", error);
+      logger.error("Report print error:", error);
     } finally {
       setIsExporting(false);
     }
@@ -58,8 +100,9 @@ export function ExportMenu({
 
   // Determine what export options to show
   const hasData = data && data.length > 0;
-  const hasJsonData = jsonData !== undefined;
-  const canExport = hasData || hasJsonData || pdfElementId;
+  const hasCsvData = hasData || hasReportData;
+  const hasJsonData = jsonData !== undefined || hasReportData;
+  const canExport = hasCsvData || hasJsonData || pdfElementId;
 
   if (!canExport) {
     return null;
@@ -74,21 +117,21 @@ export function ExportMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[12rem]">
-        {hasData && (
-          <DropdownMenuItem onClick={() => exportToCSV(data)} className="min-h-10 cursor-pointer">
+        {hasCsvData && (
+          <DropdownMenuItem onClick={handleExportCSV} className="min-h-10 cursor-pointer">
             <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
             {t("export.csv")}
           </DropdownMenuItem>
         )}
         {hasJsonData && (
-          <DropdownMenuItem onClick={() => exportToJSON(jsonData)} className="min-h-10 cursor-pointer">
+          <DropdownMenuItem onClick={handleExportJSON} className="min-h-10 cursor-pointer">
             <FileJson className="h-4 w-4 text-blue-600" />
             {t("export.json")}
           </DropdownMenuItem>
         )}
-        {(hasData || hasJsonData) && pdfElementId && <DropdownMenuSeparator />}
+        {(hasCsvData || hasJsonData) && pdfElementId && <DropdownMenuSeparator />}
         {pdfElementId && (
-          <DropdownMenuItem onClick={handleExportPDF} className="min-h-10 cursor-pointer">
+          <DropdownMenuItem onClick={handlePrintReport} className="min-h-10 cursor-pointer">
             <FileText className="h-4 w-4 text-red-600" />
             {t("export.pdf")}
           </DropdownMenuItem>

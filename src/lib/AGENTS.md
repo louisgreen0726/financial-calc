@@ -12,7 +12,7 @@
 | Navigation model | `nav-config.ts` | Landing page + shell structure |
 | Persistence helpers | `storage.ts`, `storage.test.ts` | Client-safe local/session storage |
 | Shared class/format helpers | `utils.ts`, `constants.ts` | `cn`, locale-aware formatting, shared constants |
-| Export/sanitization | `pdf-export.ts`, `sanitize.ts` | Output and safety helpers |
+| Export/sanitization | `print-report.ts`, `data-export.ts`, `sanitize.ts` | Print/data output and safety helpers |
 | Input validation | `validation.ts`, `input-utils.ts` | Shared parsing/validation rules |
 
 ## CONVENTIONS

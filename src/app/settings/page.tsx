@@ -21,10 +21,11 @@ import {
   SUPPORTED_CURRENCIES,
   type SupportedCurrency,
 } from "@/lib/constants";
-import { safeGetItem, safeRemoveItem, safeSetItem } from "@/lib/storage";
+import { safeGetItem, safeGetJSON, safeRemoveItem, safeSetItem } from "@/lib/storage";
 import { nextStorageGeneration, withStorageKeyLock } from "@/lib/storage-coordinator";
 import { useTheme } from "@/components/theme-provider";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { useExport } from "@/hooks/use-export";
 
 function isSupportedCurrency(value: string | null): value is SupportedCurrency {
   return SUPPORTED_CURRENCIES.includes(value as SupportedCurrency);
@@ -33,6 +34,7 @@ function isSupportedCurrency(value: string | null): value is SupportedCurrency {
 export default function SettingsPage() {
   const { t, language, setLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
+  const { exportToJSON } = useExport({ filename: "calculation-history" });
   const [currency, setCurrency] = useState<SupportedCurrency>(DEFAULT_CURRENCY);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
 
@@ -79,22 +81,12 @@ export default function SettingsPage() {
   };
 
   const handleExportHistory = () => {
-    const history = safeGetItem(HISTORY_KEY);
-    if (!history) {
+    const history = safeGetJSON<unknown>(HISTORY_KEY, null);
+    if (history === null) {
       toast.error(t("export.noData"));
       return;
     }
-    const blob = new Blob([history], { type: "application/json" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", "calculation-history.json");
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    toast.success(t("export.jsonSuccess"));
+    exportToJSON(history);
   };
 
   return (
