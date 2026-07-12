@@ -6,7 +6,7 @@ import {
   parseStoredCalculationHistory,
   type CalculationHistoryItem,
 } from "@/lib/calculation-history";
-import { HISTORY_EXPIRY_DAYS } from "@/lib/constants";
+import { CALCULATOR_PAGE_IDS, HISTORY_EXPIRY_DAYS } from "@/lib/constants";
 
 const NOW = 1_800_000_000_000;
 
@@ -94,6 +94,23 @@ describe("calculation history storage schema", () => {
     expect(parsed.items).toContainEqual(riskItem);
     expect(parsed.items).toHaveLength(51);
     expect(parsed.needsWriteBack).toBe(true);
+  });
+
+  it("round-trips valid records for every calculator page contract", () => {
+    const items = CALCULATOR_PAGE_IDS.map((page, index) =>
+      makeItem({
+        id: `${page}-reference`,
+        page,
+        inputs: { scalar: index, text: `${page}-input` },
+        result: index + 0.5,
+        timestamp: NOW - index - 1,
+      })
+    );
+
+    const parsed = parseStoredCalculationHistory(createCalculationHistoryEnvelope(items), NOW);
+
+    expect(parsed.items).toEqual(items);
+    expect(parsed.needsWriteBack).toBe(false);
   });
 
   it("merges legacy imports and reports added, updated, duplicate, and invalid records", () => {

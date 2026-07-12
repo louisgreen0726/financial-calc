@@ -18,6 +18,7 @@ Financial Calc 是一个基于 Next.js 16、React 19、TypeScript、Tailwind CSS
 - 支持计算历史、收藏、跨页面恢复、首页 Continue 恢复，以及有边界校验的 JSON 备份导入/导出
 - 分享链接为绝对 URL，数组参数采用 JSON 安全编码，并兼容旧版 `|` 分隔格式
 - 分享 URL 有长度保护，避免资产组合等复杂状态生成过长链接
+- 外部分享状态会在解析前限制长度与数组数量，畸形 `json:` 数组会按失败关闭处理
 - 支持自描述、带版本的 CSV / JSON 报告及打印优化的可搜索 PDF 输出；CSV 带 BOM
 - 手动 PWA / service worker 接入，注册逻辑支持 base path
 - 各计算页面加入有限数结果守卫，避免向用户展示 `NaN` 或 `Infinity`

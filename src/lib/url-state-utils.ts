@@ -1,8 +1,10 @@
-import { MAX_SHARE_URL_LENGTH } from "@/lib/constants";
+import { MAX_CASH_FLOWS, MAX_SHARE_URL_LENGTH } from "@/lib/constants";
 
 export type UrlStateValue = string | number | string[];
 
 const ARRAY_VALUE_PREFIX = "json:";
+export const MAX_URL_STATE_ARRAY_ITEMS = MAX_CASH_FLOWS;
+export const MAX_URL_STATE_VALUE_LENGTH = MAX_SHARE_URL_LENGTH;
 
 export function normalizePathname(pathname: string) {
   if (pathname === "/") {
@@ -17,18 +19,24 @@ export function serializeUrlValue(value: UrlStateValue) {
 }
 
 export function parseUrlArrayValue(paramValue: string) {
+  if (paramValue.length > MAX_URL_STATE_VALUE_LENGTH) {
+    return [];
+  }
+
   if (paramValue.startsWith(ARRAY_VALUE_PREFIX)) {
     try {
       const parsed = JSON.parse(paramValue.slice(ARRAY_VALUE_PREFIX.length));
       if (Array.isArray(parsed) && parsed.every((item) => typeof item === "string")) {
-        return parsed;
+        return parsed.slice(0, MAX_URL_STATE_ARRAY_ITEMS);
       }
     } catch {
       return [];
     }
+
+    return [];
   }
 
-  return paramValue === "" ? [] : paramValue.split("|");
+  return paramValue === "" ? [] : paramValue.split("|").slice(0, MAX_URL_STATE_ARRAY_ITEMS);
 }
 
 export function toAbsoluteAppUrl(relativeUrl: string) {

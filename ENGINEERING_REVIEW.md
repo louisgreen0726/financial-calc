@@ -157,6 +157,20 @@ browser-level checks beyond the existing suite.
   accessible dialog state. This is a local backup/merge workflow; it intentionally does not import favorites or other
   settings and does not provide cloud synchronization.
 
+### Restore Follow-up: URL Cardinality and Format Boundaries
+
+- Generated share links were capped at 4,000 characters, but inbound parameters had no equivalent pre-parse bound.
+  JSON string arrays could also contain arbitrary cardinality. Shared restore now rejects oversized values before
+  numeric/string assignment or `JSON.parse` and caps JSON/legacy arrays at the 120-flow application limit.
+- A `json:` value with valid JSON of the wrong shape previously fell through to the legacy pipe parser and became a
+  string array. The explicit format prefix now fails closed for malformed JSON, objects, mixed arrays, and null.
+- Restore assignment uses own data properties, so special keys do not invoke `Object.prototype` setters. Internal
+  defaults do not currently contain attacker-controlled keys, but the shared helper now preserves that invariant for
+  future consumers.
+- Property coverage round-trips representative state for all nine calculators and 500 seeded delimiter/escaping
+  arrays, while browser coverage proves malformed and oversized Cash Flow links remain bounded. Versioned history
+  tests also cover every calculator page ID.
+
 ### Deployment Follow-up: Static Artifact Contract
 
 - A build succeeding did not previously prove that precache entries, route HTML, internal asset references, base-path

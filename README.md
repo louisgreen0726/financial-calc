@@ -17,6 +17,7 @@ The app is no longer just a calculator demo. It includes a full app shell, respo
 - Desktop and mobile layouts, including bottom mobile navigation and accessible mobile drawer navigation
 - Calculation history, favorite records, cross-page restore, home-page "continue" restore, and bounded JSON backup import/export
 - Shareable URLs with absolute links, JSON-safe array encoding, legacy URL compatibility, and long-URL protection
+- Inbound shared state is length/cardinality bounded before parsing and malformed `json:` arrays fail closed
 - Self-describing, versioned CSV/JSON reports plus print-optimized, searchable PDF output; CSV includes a BOM
 - Manual PWA/service worker integration with base-path-aware registration
 - Finite-result guards across calculator pages to avoid displaying `NaN` or `Infinity`

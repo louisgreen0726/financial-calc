@@ -25,7 +25,10 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [ ] Profile CI jobs and split/cache independent gates where it reduces feedback time without weakening coverage.
 - [x] Extract VaR/CVaR calculations from the route component into a pure tested engine with external tail references.
 - [ ] Assess hash/nonce-based CSP generation for static export and document host-specific deployment feasibility.
-- [ ] Add property/fuzz coverage for URL and history restoration across every calculator schema.
+- [x] Add property/fuzz coverage for URL and history restoration across every calculator schema.
+- [ ] Add deterministic historical/stress scenarios alongside normal VaR without implying predictive certainty.
+- [ ] Audit input-unit labels and display/export rounding consistency across all calculators.
+- [ ] Plan and test remaining major dependency migrations as isolated compatibility batches.
 
 ## 2026-07-13
 
@@ -672,3 +675,50 @@ Verification:
 - Static export remained 15 routes and 197 precache assets. Risk added about 165 gzip bytes and remains
   419,244 / 470,000; all route budgets passed.
 - `npm audit`: zero known vulnerabilities; `git diff --check`: passed.
+
+### Improvement 18: Bounded URL restoration and deterministic cross-calculator properties
+
+Status: completed.
+
+Changes:
+
+- Audited both URL hooks, shared scalar/array serialization, legacy pipe arrays, all page-level restore handlers,
+  portfolio-specific normalization, and generic versioned history restoration.
+- Added a 4,000-character inbound value gate before numeric/string assignment or JSON parsing, aligning hostile inbound
+  state with the existing maximum generated share URL. Oversized scalar values are ignored in favor of defaults.
+- Bounded shared array restoration to 120 items, matching the application's maximum cash-flow domain. Both JSON arrays
+  and legacy pipe-delimited arrays are truncated before reaching page state.
+- Fixed a newly reproduced format-confusion bug: values with a `json:` prefix but an invalid JSON array shape (for
+  example `json:{}` or `json:[1,2]`) previously fell through and became a one-element legacy string array. A declared
+  JSON format now fails closed; only values without the prefix use the legacy parser.
+- Replaced direct dynamic property assignment during restore with `Object.defineProperty`, preserving special own keys
+  such as `__proto__` without mutating the result object's prototype.
+- Added representative round trips for all nine calculators, 500 seeded JSON-array cases containing pipes, quotes,
+  slashes and URL punctuation, hostile size/cardinality cases, malformed JSON types, special keys, and valid history
+  envelope round trips for every `CalculatorPageId`.
+- Added a browser workflow proving malformed JSON retains the five default cash flows and a 170-item URL is capped at
+  120 flows with Add Period disabled and no browser errors.
+
+Files and areas:
+
+- `src/lib/url-state-utils.ts` and `src/hooks/use-shareable-url.ts`
+- `src/lib/url-state-properties.test.ts` and `src/lib/calculation-history.test.ts`
+- `e2e/url-restore-bounds.spec.ts`
+- Review/log documentation
+
+Verification:
+
+- Focused URL/history suite: 4 files and 28 tests passed, including 500 seeded property iterations.
+- `npm run verify`: passed; 46 Vitest files and 399 tests passed.
+- Full standard Playwright suite: 22 tests passed.
+- Static export remained 15 routes and 197 precache assets. Shared parsing added at most about 89 gzip bytes to affected
+  routes; every route stayed within budget.
+- `npm audit`: zero known vulnerabilities; `git diff --check`: passed.
+
+### Progress checkpoint: 06:24 +08:00
+
+- Continuous-session elapsed time: 3 hours 18 minutes.
+- Completed and committed improvement batches: 17; Improvement 18 is fully verified and ready to commit.
+- Current work: bounded restoration and the cross-calculator URL/history property matrix are complete.
+- Queue status: 5 active items remain; CI feedback-time profiling and static CSP feasibility are next, followed by
+  risk stress scenarios, unit/rounding consistency, and isolated dependency migrations.

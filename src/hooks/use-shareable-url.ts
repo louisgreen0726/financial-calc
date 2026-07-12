@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "reac
 import { parseOptionalNumber } from "@/lib/input-utils";
 import {
   normalizePathname,
+  MAX_URL_STATE_VALUE_LENGTH,
   isShareUrlWithinLimit,
   parseUrlArrayValue,
   serializeUrlValue,
@@ -77,21 +78,33 @@ export function readShareableState<T extends ShareState>(search: string, prefix:
   const params = new URLSearchParams(search);
   const restored: Partial<T> = {};
 
+  const setRestoredValue = (key: string, value: unknown) => {
+    Object.defineProperty(restored, key, {
+      configurable: true,
+      enumerable: true,
+      value,
+      writable: true,
+    });
+  };
+
   for (const [key, defaultValue] of Object.entries(defaults)) {
     const paramValue = params.get(`${prefix}_${key}`);
     if (paramValue === null) {
+      continue;
+    }
+    if (paramValue.length > MAX_URL_STATE_VALUE_LENGTH) {
       continue;
     }
 
     if (typeof defaultValue === "number") {
       const parsed = parseOptionalNumber(paramValue);
       if (parsed !== null) {
-        (restored as Record<string, unknown>)[key] = parsed;
+        setRestoredValue(key, parsed);
       }
     } else if (Array.isArray(defaultValue)) {
-      (restored as Record<string, unknown>)[key] = parseUrlArrayValue(paramValue);
+      setRestoredValue(key, parseUrlArrayValue(paramValue));
     } else {
-      (restored as Record<string, unknown>)[key] = paramValue;
+      setRestoredValue(key, paramValue);
     }
   }
 
