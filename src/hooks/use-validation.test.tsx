@@ -27,6 +27,16 @@ describe("useValidation", () => {
     expect(result.current.error).toBe("Value must be at least 10");
   });
 
+  it("validates an exclusive minimum constraint", () => {
+    const { result } = renderHook(() => useValidation({ allowNegative: true, exclusiveMin: -100 }));
+
+    act(() => {
+      result.current.validate("-100");
+    });
+
+    expect(result.current.error).toBe("Value must be greater than -100");
+  });
+
   it("validates max constraint", () => {
     const { result } = renderHook(() => useValidation({ max: 50 }));
 
@@ -107,15 +117,17 @@ describe("useFormValidation", () => {
       useFormValidation({
         required: "必填",
         min: (value) => `不得小于 ${value}`,
+        greaterThan: (value) => `必须大于 ${value}`,
       })
     );
 
     act(() => {
       result.current.validateField("required", "");
       result.current.validateField("minimum", "1", { min: 2 });
+      result.current.validateField("exclusive", "-100", { allowNegative: true, exclusiveMin: -100 });
     });
 
-    expect(result.current.errors).toEqual({ required: "必填", minimum: "不得小于 2" });
+    expect(result.current.errors).toEqual({ required: "必填", minimum: "不得小于 2", exclusive: "必须大于 -100" });
   });
 
   it("reformats existing issues when localized messages change", () => {

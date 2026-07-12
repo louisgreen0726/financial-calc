@@ -6,6 +6,7 @@ import { useLanguage } from "@/lib/i18n";
 
 interface InputRangeHintProps {
   min?: number;
+  minExclusive?: boolean;
   max?: number;
   unit?: string;
   example?: string;
@@ -17,15 +18,24 @@ interface InputRangeHintProps {
  * Displays input range hints with validation feedback.
  * Shows warning icon if current value is out of range.
  */
-export function InputRangeHint({ min, max, unit, example, currentValue, className }: InputRangeHintProps) {
+export function InputRangeHint({
+  min,
+  minExclusive = false,
+  max,
+  unit,
+  example,
+  currentValue,
+  className,
+}: InputRangeHintProps) {
   const { t } = useLanguage();
   const isOutOfRange =
     currentValue !== undefined &&
-    ((min !== undefined && currentValue < min) || (max !== undefined && currentValue > max));
+    ((min !== undefined && (minExclusive ? currentValue <= min : currentValue < min)) ||
+      (max !== undefined && currentValue > max));
 
   const isInValidRange =
     currentValue !== undefined &&
-    (min === undefined || currentValue >= min) &&
+    (min === undefined || (minExclusive ? currentValue > min : currentValue >= min)) &&
     (max === undefined || currentValue <= max);
 
   return (
@@ -45,7 +55,8 @@ export function InputRangeHint({ min, max, unit, example, currentValue, classNam
       <span>
         {min !== undefined && max !== undefined && (
           <>
-            {t("common.range")}: {min}
+            {t("common.range")}: {minExclusive ? "> " : ""}
+            {min}
             {unit ? ` ${unit}` : ""} {"\u2013"} {max}
             {unit ? ` ${unit}` : ""}
           </>

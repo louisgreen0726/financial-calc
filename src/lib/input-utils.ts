@@ -1,15 +1,23 @@
+const GROUPED_INTEGER_PATTERN = String.raw`(?:\d{1,3}(?:,\d{3})+|\d{1,3}(?: \d{3})+|\d{1,3}(?:_\d{3})+|\d{1,3}(?:[\u00a0\u202f]\d{3})+|\d+)`;
+const NUMERIC_INPUT_PATTERN = new RegExp(
+  String.raw`^[+-]?(?:(?:${GROUPED_INTEGER_PATTERN})(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$`,
+  "i"
+);
+
 export function parseOptionalNumber(value: string): number | null {
-  const normalized = value.trim().replace(/[,\s_]/g, "");
+  const trimmed = value.trim();
 
-  if (normalized === "") {
+  if (trimmed === "") {
     return null;
   }
 
-  const numericPattern = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i;
-  if (!numericPattern.test(normalized)) {
+  // Separators are accepted only as consistent three-digit groups. Silently
+  // removing arbitrary punctuation can turn a typo such as "1,2,3" into 123.
+  if (!NUMERIC_INPUT_PATTERN.test(trimmed)) {
     return null;
   }
 
+  const normalized = trimmed.replace(/[, _\u00a0\u202f]/g, "");
   const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : null;
 }

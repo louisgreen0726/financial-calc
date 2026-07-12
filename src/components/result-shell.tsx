@@ -56,7 +56,13 @@ export function ResultShell({
       ) : (
         <>
           {summary ? (
-            <div className="result-summary" role="status" aria-live="polite" aria-atomic="true" data-result-status>
+            <div
+              className="result-summary scroll-mb-32"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+              data-result-status
+            >
               {summary}
             </div>
           ) : null}

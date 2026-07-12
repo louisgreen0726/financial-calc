@@ -250,13 +250,16 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
         ref={toggleButtonRef}
         variant="outline"
         size="sm"
-        className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom)+0.75rem)] right-4 z-50 gap-2 shadow-lg lg:bottom-4"
+        className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom)+0.75rem)] right-4 z-50 size-9 gap-0 p-0 shadow-lg lg:bottom-4 lg:h-8 lg:w-auto lg:gap-2 lg:px-3"
         aria-controls={panelId}
         aria-expanded={isOpen}
+        aria-label={`${t("history.title")} (${pageHistory.length})`}
         onClick={() => setIsOpen(!isOpen)}
       >
         <Clock className="h-4 w-4" />
-        {t("history.title")} ({pageHistory.length})
+        <span className="hidden lg:inline">
+          {t("history.title")} ({pageHistory.length})
+        </span>
       </Button>
 
       {/* Panel */}
@@ -273,7 +276,7 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
             aria-labelledby={panelTitleId}
             tabIndex={-1}
             className={cn(
-              "app-card fixed inset-x-3 bottom-[calc(4rem+env(safe-area-inset-bottom)+1rem)] z-50 max-h-[min(72vh,34rem)] rounded-lg border bg-card sm:inset-x-auto sm:right-4 sm:bottom-36 sm:w-[calc(100vw-2rem)] sm:max-w-[420px] sm:max-h-[min(65vh,600px)] lg:bottom-20",
+              "app-card fixed inset-x-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom)+1rem)] z-50 max-h-[min(72vh,34rem)] rounded-lg border bg-card sm:inset-x-auto sm:right-4 sm:bottom-36 sm:w-[calc(100vw-2rem)] sm:max-w-[420px] sm:max-h-[min(65vh,600px)] lg:bottom-20",
               className
             )}
           >

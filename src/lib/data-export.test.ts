@@ -90,6 +90,7 @@ describe("structured data export", () => {
     expect(normalizeExportFilename(" loan:summary/30?.CSV ", "csv")).toBe("loan-summary-30-.csv");
     expect(normalizeExportFilename("CON", ".json")).toBe("_CON.json");
     expect(normalizeExportFilename("...", "json")).toBe("export.json");
+    expect(normalizeExportFilename("a".repeat(119) + ".truncated", "csv")).toBe("a".repeat(119) + ".csv");
   });
 
   it("removes the temporary link and revokes its URL after the click completes", () => {

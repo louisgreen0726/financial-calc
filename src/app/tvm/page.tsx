@@ -27,7 +27,7 @@ import { ResultActions } from "@/components/result-actions";
 import { parseRequiredNumber } from "@/lib/input-utils";
 import { logger } from "@/lib/logger";
 import { normalizeTVMTarget, type TVMTarget } from "@/lib/route-state";
-import { MAX_INTEREST_RATE, MAX_PERIODS } from "@/lib/constants";
+import { MAX_INTEREST_RATE, MAX_PERIODS, MIN_INTEREST_RATE } from "@/lib/constants";
 
 const SYMBOLS = {
   arrowRight: "\u2192",
@@ -103,6 +103,7 @@ function TVMPageContent() {
     negative: t("common.validation.negative"),
     zero: t("common.validation.zero"),
     min: (value) => t("common.validation.min").replace("{value}", String(value)),
+    greaterThan: (value) => t("common.validation.greaterThan").replace("{value}", String(value)),
     max: (value) => t("common.validation.max").replace("{value}", String(value)),
   });
 
@@ -122,12 +123,20 @@ function TVMPageContent() {
     setCalcSteps(null);
 
     // Validate based on field type
-    const options: { required?: boolean; allowNegative?: boolean; allowZero?: boolean; min?: number; max?: number } = {
+    const options: {
+      required?: boolean;
+      allowNegative?: boolean;
+      allowZero?: boolean;
+      min?: number;
+      exclusiveMin?: number;
+      max?: number;
+    } = {
       required: true,
     };
 
     if (field === "rate") {
-      options.allowNegative = false;
+      options.allowNegative = true;
+      options.exclusiveMin = MIN_INTEREST_RATE;
       options.max = MAX_INTEREST_RATE;
     } else if (field === "nper") {
       options.allowNegative = false;
@@ -157,14 +166,26 @@ function TVMPageContent() {
       string,
       {
         value: string;
-        options?: { required?: boolean; allowNegative?: boolean; allowZero?: boolean; min?: number; max?: number };
+        options?: {
+          required?: boolean;
+          allowNegative?: boolean;
+          allowZero?: boolean;
+          min?: number;
+          exclusiveMin?: number;
+          max?: number;
+        };
       }
     > = {};
 
     if (target !== "rate") {
       fieldsToValidate.rate = {
         value: rate,
-        options: { required: true, allowNegative: false, max: MAX_INTEREST_RATE },
+        options: {
+          required: true,
+          allowNegative: true,
+          exclusiveMin: MIN_INTEREST_RATE,
+          max: MAX_INTEREST_RATE,
+        },
       };
     }
     if (target !== "nper") {
@@ -494,7 +515,8 @@ function TVMPageContent() {
                     />
                     <ValidationError id="tvm-rate-error" error={rateError} />
                     <InputRangeHint
-                      min={0}
+                      min={MIN_INTEREST_RATE}
+                      minExclusive
                       max={100}
                       unit="%"
                       example="5"

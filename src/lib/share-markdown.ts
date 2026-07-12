@@ -20,7 +20,9 @@ export interface ShareMarkdownPayload {
 
 /** Escape user-controlled text before emitting it into Markdown or Markdown table cells. */
 export function escapeMarkdownText(value: ShareValue): string {
-  return escapeHtml(String(value)).replace(/\r?\n/g, "<br>");
+  return escapeHtml(String(value))
+    .replace(/([\\`*_[\]])/g, "\\$1")
+    .replace(/\r?\n/g, "<br>");
 }
 
 export function escapeMarkdownTableCell(value: ShareValue): string {

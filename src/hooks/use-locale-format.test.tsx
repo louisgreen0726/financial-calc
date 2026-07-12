@@ -2,7 +2,7 @@ import { act, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { useLocaleFormat } from "@/hooks/use-locale-format";
 import { LanguageProvider, useLanguage } from "@/lib/i18n";
-import { CURRENCY_CHANGED_EVENT, CURRENCY_KEY } from "@/lib/constants";
+import { CURRENCY_CHANGED_EVENT, CURRENCY_KEY, LANGUAGE_KEY } from "@/lib/constants";
 import { formatCurrency } from "@/lib/utils";
 
 function CurrencyProbe() {
@@ -13,6 +13,11 @@ function CurrencyProbe() {
 function GenericCurrencyProbe() {
   useLanguage();
   return <output>{formatCurrency(1234.5)}</output>;
+}
+
+function LanguageProbe() {
+  const { language } = useLanguage();
+  return <output>{language}</output>;
 }
 
 describe("useLocaleFormat", () => {
@@ -68,5 +73,21 @@ describe("useLocaleFormat", () => {
       currencyDisplay: "narrowSymbol",
     }).format(1234.5);
     expect(await screen.findByText(updated)).toBeInTheDocument();
+  });
+
+  it("follows language changes made in another tab", async () => {
+    render(
+      <LanguageProvider>
+        <LanguageProbe />
+      </LanguageProvider>
+    );
+
+    expect(await screen.findByText("en")).toBeInTheDocument();
+    act(() => {
+      window.dispatchEvent(new StorageEvent("storage", { key: LANGUAGE_KEY, newValue: "zh" }));
+    });
+
+    expect(screen.getByText("zh")).toBeInTheDocument();
+    expect(document.documentElement.lang).toBe("zh");
   });
 });

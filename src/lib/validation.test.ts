@@ -7,18 +7,35 @@ import {
   LoanInputSchema,
   OptionsInputSchema,
   RiskInputSchema,
+  TVMInputSchema,
 } from "@/lib/validation";
 
 describe("shared validation schemas", () => {
+  it("accepts supported negative TVM rates and rejects the -100 percent singularity", () => {
+    const base = { nper: 10, pmt: 0, pv: 1000, fv: 0, type: 0 as const };
+
+    expect(TVMInputSchema.safeParse({ ...base, rate: -2 }).success).toBe(true);
+    expect(TVMInputSchema.safeParse({ ...base, rate: -100 }).success).toBe(false);
+    expect(TVMInputSchema.safeParse({ ...base, rate: 100.01 }).success).toBe(false);
+  });
   it("allows option maturity and volatility at zero because the pricing engine supports them", () => {
     const parsed = OptionsInputSchema.safeParse({ S: 100, K: 100, t: 0, r: 0.05, sigma: 0 });
 
     expect(parsed.success).toBe(true);
+    expect(parsed.data?.q).toBe(0);
   });
 
   it("rejects negative option maturity and volatility", () => {
     expect(OptionsInputSchema.safeParse({ S: 100, K: 100, t: -1, r: 0.05, sigma: 0.2 }).success).toBe(false);
     expect(OptionsInputSchema.safeParse({ S: 100, K: 100, t: 1, r: 0.05, sigma: -0.2 }).success).toBe(false);
+  });
+
+  it("bounds continuous dividend yields while preserving legacy option inputs", () => {
+    const base = { S: 100, K: 100, t: 1, r: 0.05, sigma: 0.2 };
+
+    expect(OptionsInputSchema.safeParse({ ...base, q: 0.02 }).success).toBe(true);
+    expect(OptionsInputSchema.safeParse({ ...base, q: -1 }).success).toBe(false);
+    expect(OptionsInputSchema.safeParse({ ...base, q: 1.01 }).success).toBe(false);
   });
 
   it("rejects WACC inputs with no invested capital", () => {

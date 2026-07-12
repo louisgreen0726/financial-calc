@@ -12,6 +12,7 @@ interface ValidationResult {
 interface UseValidationOptions {
   required?: boolean;
   min?: number;
+  exclusiveMin?: number;
   max?: number;
   allowNegative?: boolean;
   allowZero?: boolean;
@@ -23,6 +24,7 @@ interface FormValidationMessages {
   negative: string;
   zero: string;
   min: (value: number) => string;
+  greaterThan: (value: number) => string;
   max: (value: number) => string;
 }
 
@@ -32,6 +34,7 @@ const DEFAULT_FORM_VALIDATION_MESSAGES: FormValidationMessages = {
   negative: "Value cannot be negative",
   zero: "Value cannot be zero",
   min: (value) => `Value must be at least ${value}`,
+  greaterThan: (value) => `Value must be greater than ${value}`,
   max: (value) => `Value must be no more than ${value}`,
 };
 
@@ -41,10 +44,11 @@ type FormValidationIssue =
   | { type: "negative" }
   | { type: "zero" }
   | { type: "min"; value: number }
+  | { type: "exclusiveMin"; value: number }
   | { type: "max"; value: number };
 
 function getFormValidationIssue(value: string, options: UseValidationOptions = {}): FormValidationIssue | null {
-  const { required = true, min, max, allowNegative = false, allowZero = true } = options;
+  const { required = true, min, exclusiveMin, max, allowNegative = false, allowZero = true } = options;
 
   if (!value || value.trim() === "") return required ? { type: "required" } : null;
 
@@ -52,13 +56,14 @@ function getFormValidationIssue(value: string, options: UseValidationOptions = {
   if (num === null) return { type: "invalidNumber" };
   if (!allowNegative && num < 0) return { type: "negative" };
   if (!allowZero && num === 0) return { type: "zero" };
+  if (exclusiveMin !== undefined && num <= exclusiveMin) return { type: "exclusiveMin", value: exclusiveMin };
   if (min !== undefined && num < min) return { type: "min", value: min };
   if (max !== undefined && num > max) return { type: "max", value: max };
   return null;
 }
 
 export function useValidation(options: UseValidationOptions = {}) {
-  const { required = true, min, max, allowNegative = false, allowZero = true } = options;
+  const { required = true, min, exclusiveMin, max, allowNegative = false, allowZero = true } = options;
   const [error, setError] = useState<string | null>(null);
 
   const validate = useCallback(
@@ -92,6 +97,12 @@ export function useValidation(options: UseValidationOptions = {}) {
         return { valid: false, error: "Value cannot be zero" };
       }
 
+      if (exclusiveMin !== undefined && num <= exclusiveMin) {
+        const message = `Value must be greater than ${exclusiveMin}`;
+        setError(message);
+        return { valid: false, error: message };
+      }
+
       // Check min/max
       if (min !== undefined && num < min) {
         setError(`Value must be at least ${min}`);
@@ -106,7 +117,7 @@ export function useValidation(options: UseValidationOptions = {}) {
       setError(null);
       return { valid: true, value: num };
     },
-    [required, min, max, allowNegative, allowZero]
+    [required, min, exclusiveMin, max, allowNegative, allowZero]
   );
 
   const clearError = useCallback(() => {
@@ -124,6 +135,7 @@ export function useFormValidation(messages: Partial<FormValidationMessages> = {}
   const negativeMessage = messages.negative ?? DEFAULT_FORM_VALIDATION_MESSAGES.negative;
   const zeroMessage = messages.zero ?? DEFAULT_FORM_VALIDATION_MESSAGES.zero;
   const minMessage = messages.min ?? DEFAULT_FORM_VALIDATION_MESSAGES.min;
+  const greaterThanMessage = messages.greaterThan ?? DEFAULT_FORM_VALIDATION_MESSAGES.greaterThan;
   const maxMessage = messages.max ?? DEFAULT_FORM_VALIDATION_MESSAGES.max;
 
   const errors = useMemo(
@@ -141,12 +153,23 @@ export function useFormValidation(messages: Partial<FormValidationMessages> = {}
               return [name, zeroMessage];
             case "min":
               return [name, minMessage(issue.value)];
+            case "exclusiveMin":
+              return [name, greaterThanMessage(issue.value)];
             case "max":
               return [name, maxMessage(issue.value)];
           }
         })
       ),
-    [invalidNumberMessage, issues, maxMessage, minMessage, negativeMessage, requiredMessage, zeroMessage]
+    [
+      greaterThanMessage,
+      invalidNumberMessage,
+      issues,
+      maxMessage,
+      minMessage,
+      negativeMessage,
+      requiredMessage,
+      zeroMessage,
+    ]
   );
 
   const validateField = useCallback((name: string, value: string, options: UseValidationOptions = {}) => {

@@ -52,4 +52,23 @@ describe("ThemeProvider", () => {
       expect(screen.getByRole("button", { name: "dark" })).toBeInTheDocument();
     });
   });
+
+  it("follows theme changes made in another tab", async () => {
+    render(
+      <ThemeProvider defaultTheme="system" enableSystem>
+        <ThemeHarness />
+      </ThemeProvider>
+    );
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "system" })).toBeInTheDocument());
+    fireEvent(
+      window,
+      new StorageEvent("storage", {
+        key: "theme",
+        newValue: "dark",
+      })
+    );
+
+    expect(screen.getByRole("button", { name: "dark" })).toBeInTheDocument();
+  });
 });

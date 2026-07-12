@@ -6,6 +6,7 @@
 import {
   ANNUAL_FREQUENCY,
   MAX_PERIODS,
+  MAX_VOLATILITY,
   MONTHLY_FREQUENCY,
   QUARTERLY_FREQUENCY,
   SEMIANNUAL_FREQUENCY,
@@ -652,77 +653,172 @@ export const Finance = {
    * @param t Time to Maturity (Years)
    * @param r Risk-Free Rate
    * @param sigma Volatility
+   * @param dividendYield Continuously compounded dividend yield
    */
-  blackScholes: (type: OptionType, S: number, K: number, t: number, r: number, sigma: number): number => {
-    if (!isValid(S) || !isValid(K) || !isValid(t) || !isValid(r) || !isValid(sigma)) return NaN;
+  blackScholes: (
+    type: OptionType,
+    S: number,
+    K: number,
+    t: number,
+    r: number,
+    sigma: number,
+    dividendYield: number = 0
+  ): number => {
+    if (!isValid(S) || !isValid(K) || !isValid(t) || !isValid(r) || !isValid(sigma) || !isValid(dividendYield))
+      return NaN;
     if (!isSupportedOptionType(type)) return NaN;
     if (S <= 0 || K <= 0 || t < 0 || sigma < 0) return NaN;
     if (t <= 0) {
       return type === "call" ? Math.max(S - K, 0) : Math.max(K - S, 0);
     }
+    const spotDiscountFactor = Math.exp(-dividendYield * t);
+    const strikeDiscountFactor = Math.exp(-r * t);
+    const discountedSpot = S * spotDiscountFactor;
+    const discountedStrike = K * strikeDiscountFactor;
+    if (![spotDiscountFactor, strikeDiscountFactor, discountedSpot, discountedStrike].every(isValid)) return NaN;
+
     if (sigma === 0) {
-      const discountedStrike = K * Math.exp(-r * t);
-      if (!isValid(discountedStrike)) return NaN;
       const deterministicPrice =
-        type === "call" ? Math.max(S - discountedStrike, 0) : Math.max(discountedStrike - S, 0);
+        type === "call"
+          ? Math.max(discountedSpot - discountedStrike, 0)
+          : Math.max(discountedStrike - discountedSpot, 0);
       return isValid(deterministicPrice) ? deterministicPrice : NaN;
     }
-    const d1 = (Math.log(S / K) + (r + 0.5 * sigma * sigma) * t) / (sigma * Math.sqrt(t));
+    const d1 = (Math.log(S / K) + (r - dividendYield + 0.5 * sigma * sigma) * t) / (sigma * Math.sqrt(t));
     const d2 = d1 - sigma * Math.sqrt(t);
 
-    const price =
+    const rawPrice =
       type === "call"
-        ? S * Finance.normCDF(d1) - K * Math.exp(-r * t) * Finance.normCDF(d2)
-        : K * Math.exp(-r * t) * Finance.normCDF(-d2) - S * Finance.normCDF(-d1);
+        ? discountedSpot * Finance.normCDF(d1) - discountedStrike * Finance.normCDF(d2)
+        : discountedStrike * Finance.normCDF(-d2) - discountedSpot * Finance.normCDF(-d1);
+    const lowerBound =
+      type === "call" ? Math.max(0, discountedSpot - discountedStrike) : Math.max(0, discountedStrike - discountedSpot);
+    const upperBound = type === "call" ? discountedSpot : discountedStrike;
+    const price = Math.min(upperBound, Math.max(lowerBound, rawPrice));
     return isValid(price) ? price : NaN;
+  },
+
+  impliedVolatility: (
+    type: OptionType,
+    S: number,
+    K: number,
+    t: number,
+    r: number,
+    marketPrice: number,
+    dividendYield: number = 0
+  ): number => {
+    if (
+      !isSupportedOptionType(type) ||
+      ![S, K, t, r, marketPrice, dividendYield].every(isValid) ||
+      S <= 0 ||
+      K <= 0 ||
+      t <= 0 ||
+      marketPrice < 0
+    ) {
+      return NaN;
+    }
+
+    const discountedSpot = S * Math.exp(-dividendYield * t);
+    const discountedStrike = K * Math.exp(-r * t);
+    if (![discountedSpot, discountedStrike].every(isValid)) return NaN;
+
+    const lowerBound =
+      type === "call" ? Math.max(0, discountedSpot - discountedStrike) : Math.max(0, discountedStrike - discountedSpot);
+    const upperBound = type === "call" ? discountedSpot : discountedStrike;
+    const priceTolerance = 1e-10 * Math.max(1, Math.abs(marketPrice), Math.abs(upperBound));
+    if (marketPrice < lowerBound - priceTolerance || marketPrice > upperBound + priceTolerance) return NaN;
+    if (Math.abs(marketPrice - lowerBound) <= priceTolerance) return 0;
+
+    const maxVolatility = MAX_VOLATILITY / 100;
+    const maxPrice = Finance.blackScholes(type, S, K, t, r, maxVolatility, dividendYield);
+    if (!isValid(maxPrice) || marketPrice > maxPrice + priceTolerance) return NaN;
+    if (Math.abs(marketPrice - maxPrice) <= priceTolerance) return maxVolatility;
+
+    let lowerVolatility = 0;
+    let upperVolatility = maxVolatility;
+    for (let iteration = 0; iteration < 200; iteration++) {
+      const midpoint = (lowerVolatility + upperVolatility) / 2;
+      const midpointPrice = Finance.blackScholes(type, S, K, t, r, midpoint, dividendYield);
+      if (!isValid(midpointPrice)) return NaN;
+
+      if (Math.abs(midpointPrice - marketPrice) <= priceTolerance || upperVolatility - lowerVolatility <= 1e-12) {
+        return midpoint;
+      }
+
+      if (midpointPrice < marketPrice) {
+        lowerVolatility = midpoint;
+      } else {
+        upperVolatility = midpoint;
+      }
+    }
+
+    return (lowerVolatility + upperVolatility) / 2;
   },
 
   /**
    * Option Greeks
    */
-  greeks: (type: OptionType, S: number, K: number, t: number, r: number, sigma: number): GreeksResult => {
+  greeks: (
+    type: OptionType,
+    S: number,
+    K: number,
+    t: number,
+    r: number,
+    sigma: number,
+    dividendYield: number = 0
+  ): GreeksResult => {
     const undefinedGreeks: GreeksResult = { delta: NaN, gamma: NaN, theta: NaN, vega: NaN, rho: NaN };
-    if (!isValid(S) || !isValid(K) || !isValid(t) || !isValid(r) || !isValid(sigma)) return undefinedGreeks;
+    if (!isValid(S) || !isValid(K) || !isValid(t) || !isValid(r) || !isValid(sigma) || !isValid(dividendYield))
+      return undefinedGreeks;
     if (!isSupportedOptionType(type)) return undefinedGreeks;
     if (t <= 0 || S <= 0 || K <= 0 || sigma < 0) return undefinedGreeks;
 
-    if (sigma === 0) {
-      const discountedStrike = K * Math.exp(-r * t);
-      if (!isValid(discountedStrike) || S === discountedStrike) return undefinedGreeks;
+    const spotDiscountFactor = Math.exp(-dividendYield * t);
+    const strikeDiscountFactor = Math.exp(-r * t);
+    const discountedSpot = S * spotDiscountFactor;
+    const discountedStrike = K * strikeDiscountFactor;
+    if (![spotDiscountFactor, strikeDiscountFactor, discountedSpot, discountedStrike].every(isValid)) {
+      return undefinedGreeks;
+    }
 
-      const deterministicTheta = (r * discountedStrike) / 365;
+    if (sigma === 0) {
+      if (discountedSpot === discountedStrike) return undefinedGreeks;
+
+      const callTheta = (dividendYield * discountedSpot - r * discountedStrike) / 365;
       const deterministicRho = (t * discountedStrike) / 100;
-      if (!isValid(deterministicTheta) || !isValid(deterministicRho)) return undefinedGreeks;
+      if (!isValid(callTheta) || !isValid(deterministicRho)) return undefinedGreeks;
       if (type === "call") {
-        return S > discountedStrike
-          ? { delta: 1, gamma: 0, theta: -deterministicTheta, vega: 0, rho: deterministicRho }
+        return discountedSpot > discountedStrike
+          ? { delta: spotDiscountFactor, gamma: 0, theta: callTheta, vega: 0, rho: deterministicRho }
           : { delta: 0, gamma: 0, theta: 0, vega: 0, rho: 0 };
       }
 
-      return S < discountedStrike
-        ? { delta: -1, gamma: 0, theta: deterministicTheta, vega: 0, rho: -deterministicRho }
+      return discountedSpot < discountedStrike
+        ? { delta: -spotDiscountFactor, gamma: 0, theta: -callTheta, vega: 0, rho: -deterministicRho }
         : { delta: 0, gamma: 0, theta: 0, vega: 0, rho: 0 };
     }
 
-    const d1 = (Math.log(S / K) + (r + 0.5 * sigma * sigma) * t) / (sigma * Math.sqrt(t));
+    const d1 = (Math.log(S / K) + (r - dividendYield + 0.5 * sigma * sigma) * t) / (sigma * Math.sqrt(t));
     const d2 = d1 - sigma * Math.sqrt(t);
     const nd1 = Finance.normPDF(d1);
     const Nd1 = Finance.normCDF(d1);
     const Nd2 = Finance.normCDF(d2);
+    const N_d1 = Finance.normCDF(-d1);
     const N_d2 = Finance.normCDF(-d2);
 
     let delta: number, theta: number, rho: number;
-    const gamma = nd1 / (S * sigma * Math.sqrt(t));
-    const vega = (S * Math.sqrt(t) * nd1) / 100;
+    const gamma = (spotDiscountFactor * nd1) / (S * sigma * Math.sqrt(t));
+    const vega = (discountedSpot * Math.sqrt(t) * nd1) / 100;
+    const diffusionTheta = -(discountedSpot * nd1 * sigma) / (2 * Math.sqrt(t));
 
     if (type === "call") {
-      delta = Nd1;
-      theta = (-(S * nd1 * sigma) / (2 * Math.sqrt(t)) - r * K * Math.exp(-r * t) * Nd2) / 365;
-      rho = (K * t * Math.exp(-r * t) * Nd2) / 100;
+      delta = spotDiscountFactor * Nd1;
+      theta = (diffusionTheta + dividendYield * discountedSpot * Nd1 - r * discountedStrike * Nd2) / 365;
+      rho = (t * discountedStrike * Nd2) / 100;
     } else {
-      delta = Nd1 - 1;
-      theta = (-(S * nd1 * sigma) / (2 * Math.sqrt(t)) + r * K * Math.exp(-r * t) * N_d2) / 365;
-      rho = (-K * t * Math.exp(-r * t) * N_d2) / 100;
+      delta = -spotDiscountFactor * N_d1;
+      theta = (diffusionTheta - dividendYield * discountedSpot * N_d1 + r * discountedStrike * N_d2) / 365;
+      rho = (-t * discountedStrike * N_d2) / 100;
     }
 
     const result = { delta, gamma, theta, vega, rho };

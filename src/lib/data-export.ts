@@ -152,7 +152,8 @@ export function normalizeExportFilename(filename: string, extension: string) {
     .replace(/\s+/g, " ")
     .replace(/^\.+|\.+$/g, "")
     .trim()
-    .slice(0, 120);
+    .slice(0, 120)
+    .replace(/[. ]+$/g, "");
 
   if (!basename) {
     basename = "export";

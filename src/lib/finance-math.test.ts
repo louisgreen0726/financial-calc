@@ -129,6 +129,96 @@ test("black scholes matches a standard benchmark at one year", () => {
   expect(Finance.blackScholes("put", 100, 100, 1, 0.05, 0.2)).toBeCloseTo(5.5735, 4);
 });
 
+test("black scholes prices continuous dividends and preserves put-call parity", () => {
+  const spot = 100;
+  const strike = 100;
+  const time = 1;
+  const rate = 0.05;
+  const volatility = 0.2;
+  const dividendYield = 0.02;
+  const call = Finance.blackScholes("call", spot, strike, time, rate, volatility, dividendYield);
+  const put = Finance.blackScholes("put", spot, strike, time, rate, volatility, dividendYield);
+
+  expect(call).toBeCloseTo(9.227, 3);
+  expect(put).toBeCloseTo(6.3301, 3);
+  expect(call - put).toBeCloseTo(spot * Math.exp(-dividendYield * time) - strike * Math.exp(-rate * time), 10);
+  expect(call).toBeLessThan(Finance.blackScholes("call", spot, strike, time, rate, volatility));
+  expect(put).toBeGreaterThan(Finance.blackScholes("put", spot, strike, time, rate, volatility));
+});
+
+test("dividend-aware Greeks match standard benchmarks", () => {
+  const call = Finance.greeks("call", 100, 100, 1, 0.05, 0.2, 0.02);
+  const put = Finance.greeks("put", 100, 100, 1, 0.05, 0.2, 0.02);
+
+  expect(call.delta).toBeCloseTo(0.58685, 4);
+  expect(put.delta).toBeCloseTo(-0.39335, 4);
+  expect(call.gamma).toBeCloseTo(0.01895, 4);
+  expect(put.gamma).toBeCloseTo(call.gamma, 12);
+  expect(call.vega).toBeCloseTo(0.37901, 4);
+  expect(put.vega).toBeCloseTo(call.vega, 12);
+  expect(call.theta).toBeCloseTo(-0.01394, 4);
+  expect(put.theta).toBeCloseTo(-0.00628, 4);
+  expect(call.rho).toBeCloseTo(0.49458, 4);
+  expect(put.rho).toBeCloseTo(-0.45665, 4);
+});
+
+test("implied volatility round-trips call and put prices with continuous dividends", () => {
+  const contracts = [
+    { type: "call" as const, S: 100, K: 100, t: 1, r: 0.05, sigma: 0.2, q: 0 },
+    { type: "put" as const, S: 85, K: 100, t: 2, r: 0.03, sigma: 0.35, q: 0.02 },
+    { type: "call" as const, S: 150, K: 90, t: 0.25, r: -0.01, sigma: 0.6, q: 0.04 },
+  ];
+
+  for (const contract of contracts) {
+    const marketPrice = Finance.blackScholes(
+      contract.type,
+      contract.S,
+      contract.K,
+      contract.t,
+      contract.r,
+      contract.sigma,
+      contract.q
+    );
+    expect(
+      Finance.impliedVolatility(contract.type, contract.S, contract.K, contract.t, contract.r, marketPrice, contract.q)
+    ).toBeCloseTo(contract.sigma, 8);
+  }
+});
+
+test("implied volatility handles its zero-volatility boundary", () => {
+  const discountedSpot = 120 * Math.exp(-0.02);
+  const discountedStrike = 100 * Math.exp(-0.05);
+  const lowerCallBound = discountedSpot - discountedStrike;
+
+  expect(Finance.impliedVolatility("call", 120, 100, 1, 0.05, lowerCallBound, 0.02)).toBe(0);
+});
+
+test("implied volatility rejects impossible prices and unsupported inputs", () => {
+  expect(Number.isNaN(Finance.impliedVolatility("call", 100, 100, 1, 0.05, 101))).toBe(true);
+  expect(Number.isNaN(Finance.impliedVolatility("put", 100, 100, 1, 0.05, 100))).toBe(true);
+  expect(Number.isNaN(Finance.impliedVolatility("call", 100, 100, 0, 0.05, 10))).toBe(true);
+  expect(Number.isNaN(Finance.impliedVolatility("straddle" as never, 100, 100, 1, 0.05, 10))).toBe(true);
+
+  const priceAboveSupportedVolatility = Finance.blackScholes("call", 100, 100, 1, 0.05, 5) + 0.01;
+  expect(Number.isNaN(Finance.impliedVolatility("call", 100, 100, 1, 0.05, priceAboveSupportedVolatility))).toBe(true);
+});
+
+test("black scholes respects no-arbitrage bounds for numerically extreme contracts", () => {
+  const spot = 10;
+  const strike = 1_000_000;
+  const time = 10;
+  const rate = -0.99;
+  const volatility = 1;
+  const discountedStrike = strike * Math.exp(-rate * time);
+  const call = Finance.blackScholes("call", spot, strike, time, rate, volatility);
+  const put = Finance.blackScholes("put", spot, strike, time, rate, volatility);
+
+  expect(call).toBeGreaterThanOrEqual(0);
+  expect(call).toBeLessThanOrEqual(spot);
+  expect(put).toBeGreaterThanOrEqual(discountedStrike - spot);
+  expect(put).toBeLessThanOrEqual(discountedStrike);
+});
+
 test("option helpers return unavailable values when finite inputs overflow", () => {
   expect(Number.isNaN(Finance.blackScholes("put", 1, Number.MAX_VALUE, 100, -0.99, 0))).toBe(true);
   expect(Object.values(Finance.greeks("put", 1, Number.MAX_VALUE, 100, -0.99, 0)).every(Number.isNaN)).toBe(true);
@@ -181,9 +271,28 @@ test("black scholes supports discounted deterministic zero-volatility pricing", 
   expect(Finance.blackScholes("put", 95, 100, 1, 0.05, 0)).toBeCloseTo(0.1229, 4);
 });
 
+test("zero-volatility option pricing and Greeks include continuous dividends", () => {
+  const discountedSpot = 105 * Math.exp(-0.02);
+  const discountedStrike = 100 * Math.exp(-0.05);
+  const call = Finance.blackScholes("call", 105, 100, 1, 0.05, 0, 0.02);
+  const greeks = Finance.greeks("call", 105, 100, 1, 0.05, 0, 0.02);
+
+  expect(call).toBeCloseTo(discountedSpot - discountedStrike, 12);
+  expect(greeks.delta).toBeCloseTo(Math.exp(-0.02), 12);
+  expect(greeks.theta).toBeCloseTo((0.02 * discountedSpot - 0.05 * discountedStrike) / 365, 12);
+  expect(greeks.rho).toBeCloseTo(discountedStrike / 100, 12);
+});
+
 test("option helpers reject unsupported runtime option types", () => {
   expect(Number.isNaN(Finance.blackScholes("straddle" as never, 100, 100, 1, 0.05, 0.2))).toBe(true);
   expect(Object.values(Finance.greeks("straddle" as never, 100, 100, 1, 0.05, 0.2)).every(Number.isNaN)).toBe(true);
+});
+
+test("option helpers reject non-finite dividend yields", () => {
+  expect(Number.isNaN(Finance.blackScholes("call", 100, 100, 1, 0.05, 0.2, Number.NaN))).toBe(true);
+  expect(
+    Object.values(Finance.greeks("call", 100, 100, 1, 0.05, 0.2, Number.POSITIVE_INFINITY)).every(Number.isNaN)
+  ).toBe(true);
 });
 
 test("greeks expose undefined expiry sensitivities as NaN", () => {

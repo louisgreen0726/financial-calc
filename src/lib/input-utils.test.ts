@@ -13,6 +13,17 @@ describe("input-utils", () => {
     expect(parseOptionalNumber("1,234.56")).toBe(1234.56);
     expect(parseOptionalNumber("1 234.56")).toBe(1234.56);
     expect(parseOptionalNumber("1_234.56")).toBe(1234.56);
+    expect(parseOptionalNumber("1\u202f234.56")).toBe(1234.56);
+    expect(parseOptionalNumber("1,234,567e-2")).toBe(12345.67);
+  });
+
+  it("rejects malformed or ambiguous numeric separators instead of changing the amount", () => {
+    expect(parseOptionalNumber("1,2,3")).toBeNull();
+    expect(parseOptionalNumber("12,34")).toBeNull();
+    expect(parseOptionalNumber("1 2")).toBeNull();
+    expect(parseOptionalNumber("1_23")).toBeNull();
+    expect(parseOptionalNumber("1,234_567")).toBeNull();
+    expect(parseOptionalNumber("1.2_3")).toBeNull();
   });
 
   it("rejects incomplete or non-finite numeric strings", () => {

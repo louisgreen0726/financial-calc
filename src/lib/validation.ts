@@ -15,7 +15,7 @@ import {
 } from "@/lib/constants";
 
 export const TVMInputSchema = z.object({
-  rate: z.number().finite(),
+  rate: z.number().finite().gt(MIN_INTEREST_RATE).max(MAX_INTEREST_RATE),
   nper: z.number().finite().positive("Periods must be positive"),
   pmt: z.number().finite(),
   pv: z.number().finite(),
@@ -104,6 +104,12 @@ export const OptionsInputSchema = z.object({
     .finite()
     .gt(MIN_INTEREST_RATE / 100)
     .max(MAX_INTEREST_RATE / 100),
+  q: z
+    .number()
+    .finite()
+    .gt(MIN_INTEREST_RATE / 100)
+    .max(MAX_INTEREST_RATE / 100)
+    .default(0),
   sigma: z
     .number()
     .finite()

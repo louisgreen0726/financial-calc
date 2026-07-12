@@ -31,4 +31,10 @@ describe("share Markdown generation", () => {
   it("escapes table separators after HTML escaping", () => {
     expect(escapeMarkdownTableCell("A < B | C")).toBe("A &lt; B \\| C");
   });
+
+  it("neutralizes Markdown links and inline formatting in user-controlled text", () => {
+    expect(escapeMarkdownTableCell("[click](javascript:alert(1)) *bold* `code`")).toBe(
+      "\\[click\\](javascript:alert(1)) \\*bold\\* \\`code\\`"
+    );
+  });
 });

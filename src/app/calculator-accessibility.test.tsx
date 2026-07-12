@@ -73,6 +73,13 @@ vi.mock("@/components/history-panel", () => ({
       <button type="button" onClick={() => onRestore?.({ amount: "250000", rate: "3.75", years: "15", method: "CAM" })}>
         restore loan fixture
       </button>
+    ) : page === "options" ? (
+      <button
+        type="button"
+        onClick={() => onRestore?.({ spot: "100", strike: "100", time: "1", rate: "5", volatility: "20" })}
+      >
+        restore legacy option fixture
+      </button>
     ) : null,
 }));
 vi.mock("@/components/result-actions", () => ({ ResultActions: () => null }));
@@ -130,6 +137,26 @@ describe("calculator page accessibility", () => {
     expect(spotInput).toHaveAttribute("aria-invalid", "true");
     expect(spotInput).toHaveAttribute("aria-describedby", "opt-spot-error");
     expect(document.getElementById("opt-spot-error")).toHaveTextContent("options.validation.spotPositive");
+
+    const dividendYieldInput = screen.getByLabelText("options.dividendYield");
+    fireEvent.change(dividendYieldInput, { target: { value: "-100" } });
+
+    expect(dividendYieldInput).toHaveAttribute("aria-invalid", "true");
+    expect(dividendYieldInput).toHaveAttribute("aria-describedby", "opt-dividend-yield-error");
+    expect(document.getElementById("opt-dividend-yield-error")).toHaveTextContent(
+      "options.validation.dividendYieldRange"
+    );
+  });
+
+  it("defaults legacy option history records to zero dividend yield", () => {
+    render(<OptionsPage />);
+
+    const dividendYieldInput = screen.getByLabelText("options.dividendYield");
+    fireEvent.change(dividendYieldInput, { target: { value: "3" } });
+    expect(dividendYieldInput).toHaveValue(3);
+
+    fireEvent.click(screen.getByRole("button", { name: "restore legacy option fixture" }));
+    expect(dividendYieldInput).toHaveValue(0);
   });
 
   it("submits TVM through a form and keeps clear non-submitting", () => {
@@ -179,6 +206,24 @@ describe("calculator page accessibility", () => {
 
     expect(mocks.addToHistory).toHaveBeenCalledTimes(2);
     expect(screen.queryByText("tvm.fixValidation")).not.toBeInTheDocument();
+  });
+
+  it("accepts negative TVM rates above the -100 percent singularity", () => {
+    mocks.urlStateOverrides.tvm = {
+      target: "fv",
+      rate: "-2",
+      nper: "10",
+      pmt: "0",
+      pv: "1000",
+      fv: "0",
+      type: "0",
+    };
+
+    render(<TVMPage />);
+    fireEvent.click(screen.getByRole("button", { name: /common\.calculate/ }));
+
+    expect(screen.queryByText("tvm.fixValidation")).not.toBeInTheDocument();
+    expect(screen.getByText("tvm.resultDesc.fv")).toBeInTheDocument();
   });
 
   it("submits portfolio simulation through either responsive submit control", () => {

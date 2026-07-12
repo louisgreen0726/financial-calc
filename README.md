@@ -31,7 +31,7 @@ The app is no longer just a calculator demo. It includes a full app shell, respo
 - **Equity**: CAPM, WACC, and DDM
 - **Bonds**: price, duration, convexity, yield curve, and sensitivity heatmap
 - **Portfolio**: reproducible Monte Carlo risk-return sampling with worker and client fallback
-- **Options**: Black-Scholes pricing and Greeks
+- **Options**: Black-Scholes-Merton pricing with continuous dividend yield and Greeks
 - **Risk**: VaR, CVaR, and distribution visualization
 - **Loans**: CPM/CAM amortization schedules with a complete accessible table
 - **Macro**: inflation, purchasing power, real rate, CPI adjustment, and PPP exchange rate
@@ -104,9 +104,10 @@ http://localhost:3000
 
 ```bash
 npm run format:check
-npx tsc --noEmit
+npm run typecheck
 npm run lint
 npm run test
+npm run test:e2e
 npm run build
 npm audit
 ```
@@ -120,12 +121,22 @@ Before committing or pushing, run:
 
 ```bash
 npm run format:check
-npx tsc --noEmit
+npm run typecheck
 npm run lint
 npm run test
 npm run build
 npm audit
 ```
+
+Run the complete local quality gate with:
+
+```bash
+npm run verify
+```
+
+The same gate runs in GitHub Actions for pushes and pull requests, followed by a high-severity production dependency audit.
+GitHub Actions also installs Chromium and runs the Playwright browser workflows. Locally, install it once with
+`npx playwright install chromium` before running `npm run test:e2e`.
 
 The project also has a Husky pre-commit hook that runs `lint-staged` for staged source files.
 

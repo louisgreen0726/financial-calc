@@ -52,10 +52,17 @@ export function ThemeProvider({ children, defaultTheme = "system", enableSystem 
     const loadStoredTheme = () => {
       setThemeState(normalizeTheme(safeGetItem(THEME_STORAGE_KEY), defaultTheme));
     };
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === THEME_STORAGE_KEY) {
+        setThemeState(normalizeTheme(event.newValue, defaultTheme));
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
 
     if (typeof window.matchMedia !== "function") {
       queueMicrotask(loadStoredTheme);
-      return;
+      return () => window.removeEventListener("storage", handleStorage);
     }
 
     const mediaQuery = window.matchMedia(MEDIA_QUERY);
@@ -67,7 +74,10 @@ export function ThemeProvider({ children, defaultTheme = "system", enableSystem 
     });
 
     mediaQuery.addEventListener("change", updateSystemTheme);
-    return () => mediaQuery.removeEventListener("change", updateSystemTheme);
+    return () => {
+      mediaQuery.removeEventListener("change", updateSystemTheme);
+      window.removeEventListener("storage", handleStorage);
+    };
   }, [defaultTheme]);
 
   useEffect(() => {

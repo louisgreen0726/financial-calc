@@ -32,7 +32,7 @@ Financial Calc 是一个基于 Next.js 16、React 19、TypeScript、Tailwind CSS
 - **Equity**：CAPM、WACC、DDM
 - **Bonds**：债券定价、久期、凸性、收益率曲线、敏感性热力图
 - **Portfolio**：可复现的蒙特卡洛风险收益抽样，支持 worker 与客户端回退
-- **Options**：Black-Scholes 定价与 Greeks
+- **Options**：支持连续股息收益率的 Black-Scholes-Merton 定价与 Greeks
 - **Risk**：VaR、CVaR、分布视图
 - **Loans**：等额本息 / 等额本金摊销表，完整表格支持辅助技术读取
 - **Macro**：通胀、购买力、实际利率、CPI 调整、PPP 汇率
@@ -105,9 +105,10 @@ http://localhost:3000
 
 ```bash
 npm run format:check
-npx tsc --noEmit
+npm run typecheck
 npm run lint
 npm run test
+npm run test:e2e
 npm run build
 npm audit
 ```
@@ -120,12 +121,22 @@ npm audit
 
 ```bash
 npm run format:check
-npx tsc --noEmit
+npm run typecheck
 npm run lint
 npm run test
 npm run build
 npm audit
 ```
+
+可以用一条命令执行完整的本地质量门禁：
+
+```bash
+npm run verify
+```
+
+GitHub Actions 会在推送和拉取请求中运行同一套门禁，并额外审计生产依赖中的高危漏洞。
+CI 还会安装 Chromium 并执行 Playwright 浏览器工作流。本地首次运行 `npm run test:e2e` 前，需要执行
+`npx playwright install chromium` 安装浏览器。
 
 项目同时配置了 Husky pre-commit hook，会通过 `lint-staged` 处理 staged 的源码文件。
 

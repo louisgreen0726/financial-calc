@@ -26,16 +26,18 @@ export default function OptionsPage() {
   const [strike, setStrike] = useState("100");
   const [time, setTime] = useState("1"); // Years
   const [rate, setRate] = useState("5"); // %
+  const [dividendYield, setDividendYield] = useState("0"); // %
   const [volatility, setVolatility] = useState("20"); // %
   const [hasInteracted, setHasInteracted] = useState(false);
   const shareUrl = useShareableUrl({
     prefix: "options",
-    state: { spot, strike, time, rate, volatility },
+    state: { spot, strike, time, rate, dividendYield, volatility },
     onRestore: (inputs) => {
       if (inputs.spot !== undefined) setSpot(String(inputs.spot));
       if (inputs.strike !== undefined) setStrike(String(inputs.strike));
       if (inputs.time !== undefined) setTime(String(inputs.time));
       if (inputs.rate !== undefined) setRate(String(inputs.rate));
+      setDividendYield(inputs.dividendYield !== undefined ? String(inputs.dividendYield) : "0");
       if (inputs.volatility !== undefined) setVolatility(String(inputs.volatility));
       setHasInteracted(false);
     },
@@ -47,9 +49,10 @@ export default function OptionsPage() {
       K: parseOptionalNumber(strike),
       t: parseOptionalNumber(time),
       r: parseOptionalNumber(rate),
+      q: parseOptionalNumber(dividendYield),
       sigma: parseOptionalNumber(volatility),
     }),
-    [rate, spot, strike, time, volatility]
+    [dividendYield, rate, spot, strike, time, volatility]
   );
 
   const validation = useMemo(() => {
@@ -58,6 +61,7 @@ export default function OptionsPage() {
       K: t("options.validation.strikePositive"),
       t: t("options.validation.timeRange"),
       r: t("options.validation.rateRange"),
+      q: t("options.validation.dividendYieldRange"),
       sigma: t("options.validation.volatilityRange"),
     } as const;
     const result = OptionsInputSchema.safeParse({
@@ -65,6 +69,7 @@ export default function OptionsPage() {
       K: parsedInputs.K ?? Number.NaN,
       t: parsedInputs.t ?? Number.NaN,
       r: (parsedInputs.r ?? Number.NaN) / 100,
+      q: (parsedInputs.q ?? Number.NaN) / 100,
       sigma: (parsedInputs.sigma ?? Number.NaN) / 100,
     });
 
@@ -96,13 +101,14 @@ export default function OptionsPage() {
     const K = parsedInputs.K ?? 0;
     const tm = parsedInputs.t ?? 0;
     const r = (parsedInputs.r ?? 0) / 100;
+    const q = (parsedInputs.q ?? 0) / 100;
     const sigma = (parsedInputs.sigma ?? 0) / 100;
 
-    const callPrice = Finance.blackScholes("call", S, K, tm, r, sigma);
-    const putPrice = Finance.blackScholes("put", S, K, tm, r, sigma);
+    const callPrice = Finance.blackScholes("call", S, K, tm, r, sigma, q);
+    const putPrice = Finance.blackScholes("put", S, K, tm, r, sigma, q);
 
-    const callGreeks = Finance.greeks("call", S, K, tm, r, sigma);
-    const putGreeks = Finance.greeks("put", S, K, tm, r, sigma);
+    const callGreeks = Finance.greeks("call", S, K, tm, r, sigma, q);
+    const putGreeks = Finance.greeks("put", S, K, tm, r, sigma, q);
 
     return { callPrice, putPrice, callGreeks, putGreeks };
   }, [hasValidationErrors, parsedInputs]);
@@ -126,7 +132,7 @@ export default function OptionsPage() {
 
   useHistoryRecorder({
     addToHistory,
-    inputs: { spot, strike, time, rate, volatility },
+    inputs: { spot, strike, time, rate, dividendYield, volatility },
     result: hasValidationErrors ? Number.NaN : results.callPrice,
     label: t("options.callPrice"),
     resultFormat: "currency",
@@ -232,6 +238,22 @@ export default function OptionsPage() {
                 <ValidationError id="opt-rate-error" error={validation.r as string | null} />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="opt-dividend-yield">{t("options.dividendYield")}</Label>
+                <Input
+                  id="opt-dividend-yield"
+                  value={dividendYield}
+                  onChange={(e) => {
+                    setHasInteracted(true);
+                    setDividendYield(e.target.value);
+                  }}
+                  type="number"
+                  step="0.1"
+                  aria-invalid={Boolean(validation.q)}
+                  aria-describedby={validation.q ? "opt-dividend-yield-error" : undefined}
+                />
+                <ValidationError id="opt-dividend-yield-error" error={validation.q as string | null} />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="opt-vol">{t("options.vol")}</Label>
                 <Input
                   id="opt-vol"
@@ -263,7 +285,7 @@ export default function OptionsPage() {
                   <ResultActions
                     title={t("options.title")}
                     results={{ [t("options.call")]: results.callPrice, [t("options.put")]: results.putPrice }}
-                    inputs={{ spot, strike, time, rate, volatility }}
+                    inputs={{ spot, strike, time, rate, dividendYield, volatility }}
                     shareUrl={shareUrl}
                     exportData={chartData as unknown as Record<string, unknown>[]}
                     exportJson={exportResults}
@@ -412,6 +434,7 @@ export default function OptionsPage() {
           if (inputs.strike !== undefined) setStrike(String(inputs.strike));
           if (inputs.time !== undefined) setTime(String(inputs.time));
           if (inputs.rate !== undefined) setRate(String(inputs.rate));
+          setDividendYield(inputs.dividendYield !== undefined ? String(inputs.dividendYield) : "0");
           if (inputs.volatility !== undefined) setVolatility(String(inputs.volatility));
           setHasInteracted(false);
         }}

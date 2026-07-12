@@ -75,6 +75,7 @@ type Translations = {
       negative: string;
       zero: string;
       min: string;
+      greaterThan: string;
       max: string;
     };
   };
@@ -327,6 +328,7 @@ type Translations = {
     strike: string;
     time: string;
     rate: string;
+    dividendYield: string;
     vol: string;
     call: string;
     callPrice: string;
@@ -348,6 +350,7 @@ type Translations = {
       strikePositive: string;
       timeRange: string;
       rateRange: string;
+      dividendYieldRange: string;
       volatilityRange: string;
     };
   };
@@ -687,6 +690,7 @@ const en: Translations = {
       negative: "Value cannot be negative.",
       zero: "Value cannot be zero.",
       min: "Value must be at least {value}.",
+      greaterThan: "Value must be greater than {value}.",
       max: "Value must be no more than {value}.",
     },
   },
@@ -710,7 +714,7 @@ const en: Translations = {
     },
     derivatives: {
       title: "Derivatives & Risk",
-      options: { title: "Options Pricing", desc: "Black-Scholes pricing and Greeks" },
+      options: { title: "Options Pricing", desc: "Black-Scholes-Merton pricing with dividends and Greeks" },
       risk: { title: "Risk Management", desc: "VaR and CVaR distribution view" },
     },
     banking: {
@@ -942,12 +946,13 @@ const en: Translations = {
   },
   options: {
     title: "Options Pricing",
-    subtitle: "Black-Scholes-Merton model for European options. Includes Greeks analysis.",
+    subtitle: "Black-Scholes-Merton model for European options with continuous dividends and Greeks analysis.",
     params: "Option Parameters",
     spot: "Spot Price (S)",
     strike: "Strike Price (K)",
     time: "Time to Maturity (Years)",
     rate: "Risk-Free Rate (%)",
+    dividendYield: "Continuous Dividend Yield (%)",
     vol: "Volatility (σ %)",
     call: "Call Option",
     callPrice: "Call Price",
@@ -969,6 +974,7 @@ const en: Translations = {
       strikePositive: "Strike price must be positive.",
       timeRange: "Time to maturity must be within the supported range.",
       rateRange: "Risk-free rate is outside the supported range.",
+      dividendYieldRange: "Dividend yield is outside the supported range.",
       volatilityRange: "Volatility must be within the supported range.",
     },
   },
@@ -1213,7 +1219,8 @@ const en: Translations = {
     bondsCalc: "Bonds & Fixed Income",
     bondsCalcDesc: "Bond price, duration, and convexity calculations using a supplied YTM.",
     optionsCalc: "Options Pricing",
-    optionsCalcDesc: "Black-Scholes option pricing with Greeks (Delta, Gamma, Theta, Vega, Rho).",
+    optionsCalcDesc:
+      "Black-Scholes-Merton option pricing with continuous dividend yield and Greeks (Delta, Gamma, Theta, Vega, Rho).",
     riskMetrics: "Risk Metrics",
     riskMetricsDesc: "VaR (Value at Risk) and CVaR (Conditional VaR) calculations.",
     loanCalc: "Loan Calculator",
@@ -1314,6 +1321,7 @@ const zh: Translations = {
       negative: "数值不能为负数。",
       zero: "数值不能为零。",
       min: "数值不得小于 {value}。",
+      greaterThan: "数值必须大于 {value}。",
       max: "数值不得大于 {value}。",
     },
   },
@@ -1337,7 +1345,7 @@ const zh: Translations = {
     },
     derivatives: {
       title: "衍生品与风险",
-      options: { title: "期权定价", desc: "Black-Scholes 定价与希腊字母" },
+      options: { title: "期权定价", desc: "含连续股息与希腊字母的 BSM 定价" },
       risk: { title: "风险管理", desc: "VaR 与 CVaR 分布视图" },
     },
     banking: {
@@ -1569,12 +1577,13 @@ const zh: Translations = {
   },
   options: {
     title: "期权定价",
-    subtitle: "Black-Scholes-Merton (BSM) 模型定价及希腊字母 (Greeks) 分析。",
+    subtitle: "支持连续股息收益率的 Black-Scholes-Merton (BSM) 定价及希腊字母分析。",
     params: "期权合约参数",
     spot: "标的现价 (S)",
     strike: "行权价格 (K)",
     time: "剩余期限 (年)",
     rate: "无风险利率 (%)",
+    dividendYield: "连续股息收益率 (%)",
     vol: "波动率 (σ %)",
     call: "看涨期权 (Call)",
     callPrice: "看涨期权价格",
@@ -1596,6 +1605,7 @@ const zh: Translations = {
       strikePositive: "行权价格必须为正数。",
       timeRange: "剩余期限必须处于支持范围内。",
       rateRange: "无风险利率超出支持范围。",
+      dividendYieldRange: "股息收益率超出支持范围。",
       volatilityRange: "波动率必须处于支持范围内。",
     },
   },
@@ -1840,7 +1850,7 @@ const zh: Translations = {
     bondsCalc: "债券与固定收益",
     bondsCalcDesc: "根据给定 YTM 计算债券价格、久期与凸性。",
     optionsCalc: "期权定价",
-    optionsCalcDesc: "Black-Scholes 期权定价及希腊字母分析（Delta、Gamma、Theta、Vega、Rho）。",
+    optionsCalcDesc: "支持连续股息收益率的 BSM 期权定价及希腊字母分析（Delta、Gamma、Theta、Vega、Rho）。",
     riskMetrics: "风险指标",
     riskMetricsDesc: "在险价值 (VaR) 和条件风险价值 (CVaR) 计算。",
     loanCalc: "贷款计算器",
@@ -1905,6 +1915,13 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     if (saved === "en" || saved === "zh") {
       queueMicrotask(() => setLanguage(saved));
     }
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== LANGUAGE_KEY) return;
+      setLanguage(event.newValue === "zh" ? "zh" : "en");
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
   useEffect(() => {
