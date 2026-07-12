@@ -137,7 +137,9 @@ npm run verify
 ```
 
 GitHub Actions 会在推送和拉取请求中运行同一套门禁，并额外审计生产依赖中的高危漏洞。
-CI 还会安装 Chromium 并执行 Playwright 浏览器工作流。本地首次运行 `npm run test:e2e` 前，需要执行
+门禁会校验生成的 precache manifest、HTML 内部引用、PWA metadata 与静态宿主头模板。CI 还会使用
+`NEXT_PUBLIC_BASE_PATH=/calc` 重新构建、安装 Chromium 并执行 Playwright 浏览器工作流。本地首次运行
+`npm run test:e2e` 前，需要执行
 `npx playwright install chromium` 安装浏览器。
 
 项目同时配置了 Husky pre-commit hook，会通过 `lint-staged` 处理 staged 的源码文件。
@@ -165,6 +167,7 @@ npm run preview
 - `next.config.ts` 使用 `output: "export"`
 - 开发与生产构建固定使用 Webpack，确保 TypeScript Monte Carlo Worker 被输出为浏览器可执行 JavaScript
 - Next 构建完成后会扫描 `out/` 并生成 `out/precache-manifest.js`，不要手动编辑该生成文件
+- `npm run static:check` 校验现有导出；`npm run test:static` 重新构建并校验 `/calc` base-path 导出
 - 生产环境不使用 `next start`
 - 生产环境不假设服务端 API routes 或 Node runtime
 - 静态路由使用 trailing slash
@@ -207,6 +210,7 @@ financial-calc/
 - `src/components/service-worker-registration.tsx`：浏览器端 service worker 注册
 - `public/sw.js`：静态导出场景下使用的 service worker
 - `scripts/generate-precache-manifest.mjs`：构建后静态资源与路由清单生成器
+- `scripts/check-static-export.mjs`：静态导出、precache、base path、manifest 与宿主头校验器
 - `public/_headers`：静态宿主安全头与缓存策略模板
 
 ## 依赖说明

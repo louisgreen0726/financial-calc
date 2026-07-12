@@ -16,8 +16,13 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Review all calculator pages for validation/schema drift and inconsistent supported domains.
 - [x] Profile large loan schedules, portfolio simulations, history filtering, and report exports.
 - [x] Review dependency upgrades and remove confirmed dead code without destabilizing generated UI primitives.
-- [ ] Validate static deployment headers, base-path output, precache completeness, and cache invalidation in automation.
+- [x] Validate static deployment headers, base-path output, precache completeness, and cache invalidation in automation.
 - [ ] Expand user-facing documentation with model assumptions, limitations, and worked examples.
+- [ ] Exercise service-worker installation and offline navigation from a real `/calc` base-path deployment.
+- [ ] Add automated English/Chinese translation-key and route-copy coverage checks.
+- [ ] Add independently sourced reference fixtures for the highest-impact financial formulas.
+- [ ] Design bounded, schema-versioned history import/export with duplicate handling and validation.
+- [ ] Profile CI jobs and split/cache independent gates where it reduces feedback time without weakening coverage.
 
 ## 2026-07-13
 
@@ -383,3 +388,41 @@ Verification:
 - Current work: dependency and dead-code cleanup is fully verified and ready to commit.
 - Queue status: 2 active items remain; additional findings will be added as review continues so the queue stays
   non-empty.
+
+### Improvement 11: Automated static-deployment artifact validation
+
+Status: completed.
+
+Changes:
+
+- Added a cross-platform static-export checker that can validate an existing `out/` tree or trigger a clean build for
+  a specified base path. Nested npm execution uses npm's own CLI entry point when available, avoiding Windows
+  `npm.cmd` spawn incompatibilities.
+- Parse the generated JavaScript precache manifest in an isolated, time-bounded VM context and verify its build ID
+  against `.next/BUILD_ID`, reject duplicate or mutable metadata entries, and confirm every declared asset and route
+  exists in the export.
+- Added reverse route-completeness checks: every exported route `index.html` must appear in the precache route set,
+  and the manifest cannot name routes that are absent from the export.
+- Validate every internal HTML `href` and `src` across all exported documents. References must resolve to real files
+  or routes, and absolute references from a base-path build must remain under that base path.
+- Validate relative PWA `id`, `start_url`, and `scope`, required service-worker/deployment files, security headers,
+  HTML revalidation, mutable worker/manifest revalidation, and one-year immutable caching for hashed Next assets.
+- Added `static:check` to the default `verify` gate, a `test:static` command that rebuilds with `/calc`, and a dedicated
+  CI step for that deployment topology. Updated both READMEs with the commands and enforced artifact contract.
+- Added five focused tests covering CLI/environment normalization, VM parsing and timeout, case-insensitive header
+  parsing, root/base-path success, stale build IDs, and escaped base-path references.
+
+Files and areas:
+
+- `scripts/check-static-export.mjs` and `src/lib/static-export-check.test.ts`
+- `package.json` and `.github/workflows/ci.yml`
+- `README.md`, `README_zh.md`, and `ENGINEERING_REVIEW.md`
+
+Verification:
+
+- Focused static-export checker: 5 tests passed.
+- Existing default export: 15 routes, 197 precache assets, 16 HTML files, and 722 internal references passed.
+- Fresh `/calc` production export: 15 routes, 197 precache assets, 16 HTML files, and 706 internal references passed.
+- `npm run verify`: passed; 41 Vitest files and 352 tests passed, followed by the default static artifact check and
+  all 15 per-route bundle budgets.
+- `npm audit`: zero known vulnerabilities; expanded Prettier check and `git diff --check`: passed.

@@ -109,6 +109,21 @@ browser-level checks beyond the existing suite.
 - Available direct upgrades are all major migrations (`@types/node` 26, ESLint 10, Lucide 1.x, TypeScript 7). With no
   audit findings, they should be handled as compatibility projects rather than mixed into low-risk cleanup.
 
+### Deployment Follow-up: Static Artifact Contract
+
+- A build succeeding did not previously prove that precache entries, route HTML, internal asset references, base-path
+  prefixes, PWA metadata, and host cache policies still agreed. `npm run static:check` now validates that complete
+  emitted contract rather than relying on manual inspection.
+- Precache metadata is evaluated in an isolated, time-bounded VM and tied to `.next/BUILD_ID`. Declared assets and
+  routes must exist, exported route indexes and precache routes must match in both directions, mutable worker metadata
+  must stay out of precache, and duplicate entries fail the gate.
+- Every exported document's internal `href` and `src` must resolve to an emitted file or route. A dedicated CI build
+  with `NEXT_PUBLIC_BASE_PATH=/calc` additionally ensures absolute references remain under `/calc` while the PWA
+  manifest keeps its install identity, start URL, and scope relative.
+- The emitted `_headers` deployment template is checked for the required CSP, referrer, MIME sniffing, framing, and
+  permissions protections plus revalidation of HTML/service-worker metadata and immutable caching of hashed assets.
+  Host-specific base-path prefixing remains an explicit deployment responsibility.
+
 ### Prioritized Adjustment List
 
 #### P0

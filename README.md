@@ -137,7 +137,9 @@ npm run verify
 ```
 
 The same gate runs in GitHub Actions for pushes and pull requests, followed by a high-severity production dependency audit.
-GitHub Actions also installs Chromium and runs the Playwright browser workflows. Locally, install it once with
+The gate validates the generated precache manifest, internal HTML references, PWA metadata, and static-host header
+template. GitHub Actions also rebuilds with `NEXT_PUBLIC_BASE_PATH=/calc`, installs Chromium, and runs the Playwright
+browser workflows. Locally, install Chromium once with
 `npx playwright install chromium` before running `npm run test:e2e`.
 
 The project also has a Husky pre-commit hook that runs `lint-staged` for staged source files.
@@ -165,6 +167,7 @@ Deployment notes:
 - `next.config.ts` uses `output: "export"`
 - development and production builds intentionally use Webpack so the TypeScript Monte Carlo worker is emitted as executable JavaScript
 - the build scans `out/` after Next finishes and writes `out/precache-manifest.js`; do not edit that generated file
+- `npm run static:check` validates the existing export, while `npm run test:static` rebuilds and validates a `/calc` base-path export
 - production does not require `next start`
 - production does not assume server-side API routes or a Node runtime
 - static routes use trailing slashes
@@ -207,6 +210,7 @@ financial-calc/
 - `src/components/service-worker-registration.tsx`: browser-side service worker registration
 - `public/sw.js`: static-export service worker
 - `scripts/generate-precache-manifest.mjs`: post-build static asset and route manifest generator
+- `scripts/check-static-export.mjs`: static export, precache, base-path, manifest, and host-header validator
 - `public/_headers`: static-host security and cache policy template
 
 ## Dependency Notes
