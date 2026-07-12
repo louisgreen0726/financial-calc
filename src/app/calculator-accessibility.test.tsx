@@ -287,6 +287,10 @@ describe("calculator page accessibility", () => {
     const scheduleRegion = screen.getByRole("region", { name: /loans.schedule/ });
     expect(scheduleRegion).toHaveAttribute("tabindex", "0");
     expect(scheduleRegion).toContainElement(schedule);
+    const termInput = screen.getByLabelText("loans.term");
+    expect(termInput).toHaveAttribute("min", String(1 / 12));
+    expect(termInput).toHaveAttribute("max", "50");
+    expect(termInput).toHaveAttribute("step", String(1 / 12));
     expect(screen.getAllByRole("columnheader")).toHaveLength(5);
     expect(screen.getAllByRole("row")).toHaveLength(13);
   });
@@ -333,5 +337,14 @@ describe("calculator page accessibility", () => {
   it("uses a labelled navigation landmark in the calculator sidebar", () => {
     render(<Sidebar />);
     expect(screen.getByRole("navigation", { name: "common.primaryNavigation" })).toBeInTheDocument();
+  });
+
+  it("exposes the supported negative portfolio risk-free rate range", () => {
+    render(<PortfolioPage />);
+    const riskFreeRate = screen.getByRole("slider", { name: /^portfolio\.rf:/ });
+
+    expect(riskFreeRate).toHaveAttribute("aria-valuemin", "-10");
+    expect(riskFreeRate).toHaveAttribute("aria-valuemax", "10");
+    expect(riskFreeRate).toHaveAttribute("aria-valuenow", "3");
   });
 });

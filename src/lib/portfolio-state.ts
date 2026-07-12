@@ -1,4 +1,11 @@
-import { MAX_INTEREST_RATE, MAX_PORTFOLIO_ASSETS, MAX_VOLATILITY, MIN_INTEREST_RATE } from "@/lib/constants";
+import {
+  MAX_INTEREST_RATE,
+  MAX_PORTFOLIO_ASSETS,
+  MAX_PORTFOLIO_RISK_FREE_RATE,
+  MAX_VOLATILITY,
+  MIN_INTEREST_RATE,
+  MIN_PORTFOLIO_RISK_FREE_RATE,
+} from "@/lib/constants";
 import { parseOptionalNumber } from "@/lib/input-utils";
 import { sanitizeInput } from "@/lib/sanitize";
 
@@ -7,6 +14,20 @@ export interface RestoredPortfolioAsset {
   name: string;
   return: string;
   risk: string;
+}
+
+function normalizeRestoredNumber(value: unknown, min: number, max: number): number | null {
+  const parsed =
+    typeof value === "number" ? value : typeof value === "string" ? parseOptionalNumber(sanitizeInput(value)) : null;
+  return parsed !== null && Number.isFinite(parsed) && parsed >= min && parsed <= max ? parsed : null;
+}
+
+export function normalizeRestoredPortfolioRiskFreeRate(value: unknown): number | null {
+  return normalizeRestoredNumber(value, MIN_PORTFOLIO_RISK_FREE_RATE, MAX_PORTFOLIO_RISK_FREE_RATE);
+}
+
+export function normalizeRestoredPortfolioCorrelation(value: unknown): number | null {
+  return normalizeRestoredNumber(value, -1, 1);
 }
 
 export function normalizeRestoredPortfolioAssets(value: unknown): RestoredPortfolioAsset[] {

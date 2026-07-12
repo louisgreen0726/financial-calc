@@ -34,6 +34,7 @@ import { useHistoryRecorder } from "@/hooks/use-history-recorder";
 import { HistoryPanel } from "@/components/history-panel";
 import { LoanInputSchema } from "@/lib/validation";
 import { normalizeLoanMethod, type LoanMethodState } from "@/lib/route-state";
+import { MAX_INTEREST_RATE, MAX_PERIODS, MONTHS_PER_YEAR } from "@/lib/constants";
 
 function LoansPageContent() {
   const { t } = useLanguage();
@@ -243,6 +244,7 @@ function LoansPageContent() {
                 id="loan-amount"
                 type="number"
                 min="0"
+                max={MAX_INTEREST_RATE}
                 step="0.01"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
@@ -277,8 +279,9 @@ function LoansPageContent() {
               <Input
                 id="loan-term"
                 type="number"
-                min="0"
-                step="1"
+                min={1 / MONTHS_PER_YEAR}
+                max={MAX_PERIODS / MONTHS_PER_YEAR}
+                step={1 / MONTHS_PER_YEAR}
                 value={years}
                 onChange={(e) => setYears(e.target.value)}
                 aria-invalid={Boolean(loanValidation.years)}

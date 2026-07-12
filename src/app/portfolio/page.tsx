@@ -22,7 +22,11 @@ import { ErrorDisplay } from "@/components/ui/error-display";
 import { SectionActionBar } from "@/components/section-action-bar";
 import { ResultActions } from "@/components/result-actions";
 import { clampEqualCorrelation, getMinimumEqualCorrelation, type PortfolioPoint } from "@/lib/portfolio-math";
-import { normalizeRestoredPortfolioAssets } from "@/lib/portfolio-state";
+import {
+  normalizeRestoredPortfolioAssets,
+  normalizeRestoredPortfolioCorrelation,
+  normalizeRestoredPortfolioRiskFreeRate,
+} from "@/lib/portfolio-state";
 import { useCalculationHistory } from "@/hooks/use-calculation-history";
 import { HistoryPanel } from "@/components/history-panel";
 import { useShareableUrl } from "@/hooks/use-shareable-url";
@@ -30,8 +34,10 @@ import {
   MAX_INTEREST_RATE,
   MAX_MONTE_CARLO_SIMULATIONS,
   MAX_PORTFOLIO_ASSETS,
+  MAX_PORTFOLIO_RISK_FREE_RATE,
   MAX_VOLATILITY,
   MIN_INTEREST_RATE,
+  MIN_PORTFOLIO_RISK_FREE_RATE,
 } from "@/lib/constants";
 
 interface Asset {
@@ -250,16 +256,10 @@ export default function PortfolioPage() {
         // Ignore malformed old history entries.
       }
     }
-    if (typeof inputs.rf === "number") setRf(inputs.rf);
-    if (typeof inputs.rf === "string") {
-      const parsed = parseOptionalNumber(inputs.rf);
-      if (parsed !== null) setRf(parsed);
-    }
-    if (typeof inputs.correlation === "number") setCorrelation(inputs.correlation);
-    if (typeof inputs.correlation === "string") {
-      const parsed = parseOptionalNumber(inputs.correlation);
-      if (parsed !== null) setCorrelation(parsed);
-    }
+    const restoredRiskFreeRate = normalizeRestoredPortfolioRiskFreeRate(inputs.rf);
+    if (restoredRiskFreeRate !== null) setRf(restoredRiskFreeRate);
+    const restoredCorrelation = normalizeRestoredPortfolioCorrelation(inputs.correlation);
+    if (restoredCorrelation !== null) setCorrelation(restoredCorrelation);
     if (typeof inputs.seed === "string") setSeed(sanitizeInput(inputs.seed) || DEFAULT_PORTFOLIO_SEED);
     if (typeof inputs.seed === "number") setSeed(String(inputs.seed));
     setResultSignature("");
@@ -330,7 +330,8 @@ export default function PortfolioPage() {
                   name="portfolio-risk-free-rate"
                   value={[rf]}
                   onValueChange={(v) => setRf(v[0])}
-                  max={10}
+                  min={MIN_PORTFOLIO_RISK_FREE_RATE}
+                  max={MAX_PORTFOLIO_RISK_FREE_RATE}
                   step={0.1}
                   className="pb-4"
                 />

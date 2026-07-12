@@ -34,6 +34,8 @@ export const MAX_INTEREST_RATE = 100; // 100%
 export const MIN_INTEREST_RATE = -100; // -100%
 export const MAX_YEARS = 100;
 export const MAX_VOLATILITY = 500; // 500%
+export const MIN_PORTFOLIO_RISK_FREE_RATE = -10;
+export const MAX_PORTFOLIO_RISK_FREE_RATE = 10;
 
 // Display formats
 export const CURRENCY_LOCALE = "en-US";

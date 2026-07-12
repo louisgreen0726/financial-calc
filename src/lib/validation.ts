@@ -5,9 +5,12 @@ import {
   MAX_INTEREST_RATE,
   MAX_PERIODS,
   MAX_PORTFOLIO_ASSETS,
+  MAX_PORTFOLIO_RISK_FREE_RATE,
   MAX_VOLATILITY,
   MAX_YEARS,
   MIN_INTEREST_RATE,
+  MIN_PORTFOLIO_RISK_FREE_RATE,
+  MONTHS_PER_YEAR,
   MONTHLY_FREQUENCY,
   QUARTERLY_FREQUENCY,
   SEMIANNUAL_FREQUENCY,
@@ -143,10 +146,10 @@ export const LoanInputSchema = z
       .number()
       .finite()
       .positive("Term must be positive")
-      .max(MAX_PERIODS / 12),
+      .max(MAX_PERIODS / MONTHS_PER_YEAR),
     method: z.enum(["CPM", "CAM"]),
   })
-  .refine((data) => Number.isInteger(data.years * 12), {
+  .refine((data) => Number.isInteger(data.years * MONTHS_PER_YEAR), {
     message: "Term must resolve to a whole number of months",
     path: ["years"],
   });
@@ -170,7 +173,7 @@ export const PortfolioAssetSchema = z.object({
 });
 
 export const PortfolioInputSchema = z.object({
-  rf: z.number().finite().min(0).max(100),
+  rf: z.number().finite().min(MIN_PORTFOLIO_RISK_FREE_RATE).max(MAX_PORTFOLIO_RISK_FREE_RATE),
   correlation: z.number().finite().min(-1).max(1),
   assets: z
     .array(PortfolioAssetSchema)

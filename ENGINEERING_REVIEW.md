@@ -75,6 +75,18 @@ browser-level checks beyond the existing suite.
 - These 55 properties complement point benchmarks: they are fixed and reproducible, but broad enough to catch
   sign, discount-factor, scaling, and solver-bracketing regressions that isolated examples can miss.
 
+### Validation Follow-up: Restored Portfolio and Loan Domains
+
+- The Portfolio risk-free rate previously had three contracts: the engine accepted any finite value, the schema
+  allowed 0% to 100%, and the slider exposed only 0% to 10%. Shared -10% to 10% bounds now support negative-rate
+  scenarios while keeping the schema, slider, and restore logic identical.
+- Portfolio URL/history restoration now rejects malformed, non-finite, and out-of-range risk-free rates and
+  correlations instead of assigning them to controlled sliders. Browser coverage verifies accepted negative values
+  and rejection of oversized values.
+- Loan terms are validated in whole months, but the browser previously advertised one-year steps. The term control
+  now exposes one-month increments and the exact one-month to 50-year engine range; the rate control exposes its
+  schema's 100% maximum.
+
 ### Prioritized Adjustment List
 
 #### P0
@@ -139,7 +151,7 @@ No unresolved P0 findings remain.
 ## Verification Evidence
 
 - Formatting, strict TypeScript, ESLint, Vitest, production build, `npm audit`, and `git diff --check` were run after the fixes.
-- The unit/integration suite covers 39 files and 342 tests, including the numeric parser, TVM negative-rate contract,
+- The unit/integration suite covers 40 files and 346 tests, including the numeric parser, TVM negative-rate contract,
   dividend-adjusted Black-Scholes-Merton pricing and Greeks, cross-tab settings, export naming, Markdown safety, and
   implied-volatility solver, mobile history-control regressions, and related workflows. Two additional Playwright
   tests cover desktop and mobile browser behavior.
@@ -153,7 +165,7 @@ No unresolved P0 findings remain.
 - A separate production Playwright workflow verifies PWA installation, precache contents, offline known/unknown
   navigation, correct 404 status, user-controlled worker activation, controller replacement, and reload behavior.
 - Fifteen Axe Playwright checks enforce the route and interaction accessibility baseline in the standard browser
-  workflow, bringing that suite to 17 tests before the separate PWA test runs.
+  workflow, which now includes 18 tests with the option and Portfolio workflows before the separate PWA test runs.
 - Per-route gzip budgets cover all 15 static routes and are part of the default verification command.
 - `npm audit` reported zero known vulnerabilities across 767 installed production, development, optional, and peer
   dependencies.

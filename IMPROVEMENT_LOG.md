@@ -13,7 +13,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Audit production bundle sizes and reduce avoidable client-side JavaScript or eager imports.
 - [x] Add automated PWA/offline navigation and update-flow browser coverage.
 - [x] Add automated accessibility checks for calculator forms, dialogs, navigation, and result announcements.
-- [ ] Review all calculator pages for validation/schema drift and inconsistent supported domains.
+- [x] Review all calculator pages for validation/schema drift and inconsistent supported domains.
 - [ ] Profile large loan schedules, portfolio simulations, history filtering, and report exports.
 - [ ] Review dependency upgrades and remove confirmed dead code without destabilizing generated UI primitives.
 - [ ] Validate static deployment headers, base-path output, precache completeness, and cache invalidation in automation.
@@ -269,3 +269,39 @@ Verification:
 - `npm run verify`: passed; 39 Vitest files and 342 tests passed.
 - Static export: 15 routes and 197 precache assets; all bundle budgets passed.
 - `git diff --check`: passed.
+
+### Improvement 8: Portfolio and Loan input-contract alignment
+
+Status: completed.
+
+Changes:
+
+- Reviewed calculator schemas, hand-written validation, HTML numeric constraints, restore paths, and Finance engine
+  domains. Macro's five hand-written validators and the TVM, Bond, Equity, Options, Cash Flow, Risk, and asset-level
+  Portfolio constraints were consistent with their engines.
+- Replaced Portfolio's contradictory 0-to-10 slider / 0-to-100 schema contract with shared -10% to 10% constants.
+  This adds realistic negative risk-free-rate support while making the schema and control range identical.
+- Added strict Portfolio restoration normalizers. Finite numeric or numeric-string risk-free rates and correlations
+  are accepted only inside their control domains; malformed, non-finite, and out-of-range URL/history values are
+  ignored instead of creating an invalid controlled slider.
+- Aligned Loan browser constraints with its shared schema: annual rate now exposes the 100% maximum, while term uses
+  a one-month step, one-month minimum, and 50-year schedule maximum instead of implying whole-year-only input.
+- Replaced Loan validation's literal `12` with the shared `MONTHS_PER_YEAR` constant for term bounds and whole-month
+  checks.
+
+Files and areas:
+
+- `src/lib/constants.ts`, `src/lib/validation.ts`, and validation tests
+- `src/lib/portfolio-state.ts` and its new tests
+- `src/app/portfolio/page.tsx`, `src/app/loans/page.tsx`, and calculator accessibility tests
+- `e2e/portfolio-validation.spec.ts`
+
+Verification:
+
+- Focused validation/restore/page suite: 3 files and 31 tests passed.
+- Portfolio browser restore: supported `rf=-2` / `correlation=-0.25` restored; `rf=50` / `correlation=5` were rejected
+  in favor of defaults with no browser errors.
+- `npm run verify`: passed; 40 Vitest files and 346 tests passed.
+- `npm run test:e2e`: 18 tests passed, including 15 Axe checks and the new Portfolio workflow.
+- Static export: 15 routes and 197 precache assets; all bundle budgets passed.
+- `npm audit`: zero known vulnerabilities; `git diff --check`: passed.

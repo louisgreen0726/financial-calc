@@ -7,6 +7,7 @@ import {
   ImpliedVolatilityInputSchema,
   LoanInputSchema,
   OptionsInputSchema,
+  PortfolioInputSchema,
   RiskInputSchema,
   TVMInputSchema,
 } from "@/lib/validation";
@@ -122,6 +123,21 @@ describe("shared validation schemas", () => {
   it("requires loan terms to resolve to a whole number of months", () => {
     expect(LoanInputSchema.safeParse({ amount: 1000, rate: 5, years: 1.1, method: "CPM" }).success).toBe(false);
     expect(LoanInputSchema.safeParse({ amount: 1000, rate: 5, years: 1.25, method: "CPM" }).success).toBe(true);
+  });
+
+  it("aligns portfolio risk-free rates with the negative-capable slider range", () => {
+    const base = {
+      correlation: 0.2,
+      assets: [
+        { name: "Equity", return: 8, risk: 15 },
+        { name: "Bonds", return: 3, risk: 5 },
+      ],
+    };
+
+    expect(PortfolioInputSchema.safeParse({ ...base, rf: -10 }).success).toBe(true);
+    expect(PortfolioInputSchema.safeParse({ ...base, rf: 10 }).success).toBe(true);
+    expect(PortfolioInputSchema.safeParse({ ...base, rf: -10.1 }).success).toBe(false);
+    expect(PortfolioInputSchema.safeParse({ ...base, rf: 10.1 }).success).toBe(false);
   });
 
   it("requires risk horizons to use whole trading days and meaningful confidence levels", () => {
