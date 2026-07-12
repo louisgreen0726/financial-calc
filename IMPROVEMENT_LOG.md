@@ -12,7 +12,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [ ] Add option-price and implied-volatility property coverage across a deterministic contract matrix.
 - [x] Audit production bundle sizes and reduce avoidable client-side JavaScript or eager imports.
 - [x] Add automated PWA/offline navigation and update-flow browser coverage.
-- [ ] Add automated accessibility checks for calculator forms, dialogs, navigation, and result announcements.
+- [x] Add automated accessibility checks for calculator forms, dialogs, navigation, and result announcements.
 - [ ] Review all calculator pages for validation/schema drift and inconsistent supported domains.
 - [ ] Profile large loan schedules, portfolio simulations, history filtering, and report exports.
 - [ ] Review dependency upgrades and remove confirmed dead code without destabilizing generated UI primitives.
@@ -199,3 +199,44 @@ Verification:
 - `npm run test:e2e:pwa`: 1 production PWA workflow passed in 38.2 seconds using system Chrome.
 - Static export: 15 routes and 197 precache assets; all bundle budgets passed.
 - `npm audit`: zero known vulnerabilities; `git diff --check`: passed.
+
+### Improvement 6: Automated WCAG route and interaction coverage
+
+Status: completed.
+
+Changes:
+
+- Added Axe 4.12 Playwright checks for WCAG 2.0/2.1/2.2 A and AA rules plus best practices across all 13
+  user-facing routes. Each route is an independent test so one failure does not hide findings on later pages.
+- Added explicit interaction scans for an invalid Options form, the Share Results dialog, the populated History
+  panel, and the 390px mobile navigation/form state. Failures include rule, impact, target, and remediation summary.
+- Wrapped the full desktop sidebar in a named complementary landmark so its brand, calculator search, footer, and
+  collapse control are no longer outside the page landmark structure.
+- Made the shared sensitivity heatmap and Loan amortization schedule scroll containers keyboard-focusable named
+  regions, allowing Safari keyboard users to reach horizontally or vertically clipped content.
+- Corrected Help page heading hierarchy from `h1 -> h2 -> h4` to `h1 -> h2 -> h3` without changing visual styles.
+- Added component and page-level regression assertions for sidebar semantics and both focusable scroll regions.
+
+Files and areas:
+
+- `e2e/accessibility.spec.ts` and Axe development dependency metadata
+- `src/components/layout/app-layout.tsx` and its tests
+- `src/components/sensitivity-heatmap.tsx` and its new component test
+- `src/app/loans/page.tsx`, `src/app/help/page.tsx`, and calculator accessibility tests
+
+Verification:
+
+- Focused Axe suite: 15 tests passed across routes, dialogs, invalid form state, History, and mobile navigation.
+- `npm run verify`: passed; 38 Vitest files and 287 tests passed.
+- `npm run test:e2e`: 17 tests passed (15 accessibility and 2 calculator workflows).
+- `npm run test:e2e:pwa`: 1 production PWA workflow passed.
+- Static export: 15 routes and 197 precache assets; all bundle budgets passed.
+- `npm audit`: zero known vulnerabilities; `git diff --check`: passed.
+
+### Progress checkpoint: 04:19 +08:00
+
+- Continuous-session elapsed time: 1 hour 13 minutes.
+- Completed improvement batches in this session: 6; latest committed improvement before this checkpoint:
+  `01d8300`.
+- Current work: automated accessibility improvement is fully verified and ready to commit.
+- Queue status: 6 active items remain; the queue is intentionally non-empty.

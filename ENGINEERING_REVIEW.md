@@ -54,6 +54,16 @@ browser-level checks beyond the existing suite.
 - The workflow installs a second worker, verifies that the localized update prompt waits for user action, sends
   `SKIP_WAITING`, observes the new controller, and confirms the application-triggered reload.
 
+### Accessibility Follow-up: Automated WCAG Baseline
+
+- Axe Playwright scans now cover all 13 user-facing routes against WCAG 2.0/2.1/2.2 A and AA rules plus automated
+  best practices. Additional states cover invalid field errors, the Share Results dialog, a populated History panel,
+  and the mobile Options navigation/form layout.
+- The new gate identified and fixed page structure that manual component tests did not expose: desktop sidebar text
+  outside landmarks, two keyboard-inaccessible scroll regions, and skipped heading levels throughout Help content.
+- The sidebar is now a named complementary landmark. Sensitivity heatmaps and the Loan amortization table expose
+  named, focusable regions for keyboard scrolling, and Help follows a continuous `h1 -> h2 -> h3` hierarchy.
+
 ### Prioritized Adjustment List
 
 #### P0
@@ -118,7 +128,7 @@ No unresolved P0 findings remain.
 ## Verification Evidence
 
 - Formatting, strict TypeScript, ESLint, Vitest, production build, `npm audit`, and `git diff --check` were run after the fixes.
-- The unit/integration suite covers 37 files and 286 tests, including the numeric parser, TVM negative-rate contract,
+- The unit/integration suite covers 38 files and 287 tests, including the numeric parser, TVM negative-rate contract,
   dividend-adjusted Black-Scholes-Merton pricing and Greeks, cross-tab settings, export naming, Markdown safety, and
   implied-volatility solver, mobile history-control regressions, and related workflows. Two additional Playwright
   tests cover desktop and mobile browser behavior.
@@ -131,6 +141,8 @@ No unresolved P0 findings remain.
   localization, six-input mobile layout, horizontal overflow, console errors, and fixed-navigation overlap in CI.
 - A separate production Playwright workflow verifies PWA installation, precache contents, offline known/unknown
   navigation, correct 404 status, user-controlled worker activation, controller replacement, and reload behavior.
+- Fifteen Axe Playwright checks enforce the route and interaction accessibility baseline in the standard browser
+  workflow, bringing that suite to 17 tests before the separate PWA test runs.
 - Per-route gzip budgets cover all 15 static routes and are part of the default verification command.
 - `npm audit` reported zero known vulnerabilities across 767 installed production, development, optional, and peer
   dependencies.

@@ -488,7 +488,10 @@ function LoansPageContent() {
                 {/* Schedule Table */}
                 <Card className="flex min-h-[320px] min-w-0 flex-1 flex-col overflow-hidden" data-pdf-expand="true">
                   <CardHeader className="pb-3">
-                    <CardTitle className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                    <CardTitle
+                      id="loan-schedule-title"
+                      className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between"
+                    >
                       <span>{t("loans.schedule")}</span>
                       <span className="text-xs font-normal text-muted-foreground">
                         {schedule.length} {t("common.rows")}
@@ -505,6 +508,9 @@ function LoansPageContent() {
                       </div>
                     ) : (
                       <div
+                        role="region"
+                        aria-labelledby="loan-schedule-title"
+                        tabIndex={0}
                         className="max-h-[52vh] min-h-[18rem] w-full max-w-full overflow-auto rounded-b-lg border-t"
                         data-pdf-expand="true"
                       >

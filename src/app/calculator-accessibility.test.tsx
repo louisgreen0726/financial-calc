@@ -284,6 +284,9 @@ describe("calculator page accessibility", () => {
 
     const schedule = screen.getByRole("table", { name: /loans.schedule/ });
     expect(schedule).toBeInTheDocument();
+    const scheduleRegion = screen.getByRole("region", { name: /loans.schedule/ });
+    expect(scheduleRegion).toHaveAttribute("tabindex", "0");
+    expect(scheduleRegion).toContainElement(schedule);
     expect(screen.getAllByRole("columnheader")).toHaveLength(5);
     expect(screen.getAllByRole("row")).toHaveLength(13);
   });

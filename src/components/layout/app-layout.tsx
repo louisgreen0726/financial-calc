@@ -65,7 +65,8 @@ export function AppLayout({ children }: AppLayoutProps) {
         {t("common.skipToContent")}
       </a>
 
-      <div
+      <aside
+        aria-label="FinCalc Pro"
         data-pdf-exclude="true"
         data-collapsed={sidebarCollapsed}
         className={cn(
@@ -92,7 +93,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             {t(sidebarCollapsed ? "common.expandSidebar" : "common.collapseSidebar")}
           </TooltipContent>
         </Tooltip>
-      </div>
+      </aside>
 
       {/* Main Content Area */}
       <div

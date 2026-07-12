@@ -9,9 +9,9 @@ vi.mock("@/lib/i18n", () => ({
 
 vi.mock("@/components/layout/sidebar", () => ({
   Sidebar: ({ collapsed }: { collapsed: boolean }) => (
-    <aside data-testid="sidebar" data-collapsed={collapsed}>
+    <div data-testid="sidebar" data-collapsed={collapsed}>
       Sidebar
-    </aside>
+    </div>
   ),
 }));
 
@@ -49,6 +49,7 @@ describe("AppLayout print contract", () => {
     expect(main).toHaveAttribute("data-print-content", "true");
     expect(main.parentElement).toHaveAttribute("data-app-content", "true");
     expect(main).toHaveTextContent("Printable report");
+    expect(screen.getByRole("complementary", { name: "FinCalc Pro" })).toContainElement(screen.getByTestId("sidebar"));
   });
 
   it("collapses the desktop sidebar, updates content spacing, and persists the preference", async () => {

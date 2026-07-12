@@ -42,21 +42,21 @@ export default function HelpPage() {
             <div className="flex items-start gap-3">
               <div className="p-2 rounded-lg bg-primary/10 text-primary font-bold shrink-0">1</div>
               <div>
-                <h4 className="font-semibold">{t("help.step1Title")}</h4>
+                <h3 className="font-semibold">{t("help.step1Title")}</h3>
                 <p className="text-sm text-muted-foreground">{t("help.step1Desc")}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <div className="p-2 rounded-lg bg-primary/10 text-primary font-bold shrink-0">2</div>
               <div>
-                <h4 className="font-semibold">{t("help.step2Title")}</h4>
+                <h3 className="font-semibold">{t("help.step2Title")}</h3>
                 <p className="text-sm text-muted-foreground">{t("help.step2Desc")}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <div className="p-2 rounded-lg bg-primary/10 text-primary font-bold shrink-0">3</div>
               <div>
-                <h4 className="font-semibold">{t("help.step3Title")}</h4>
+                <h3 className="font-semibold">{t("help.step3Title")}</h3>
                 <p className="text-sm text-muted-foreground">{t("help.step3Desc")}</p>
               </div>
             </div>
@@ -76,35 +76,35 @@ export default function HelpPage() {
         <CardContent>
           <div className="grid border-y md:grid-cols-2 md:[&>*:nth-child(odd)]:border-r">
             <div className="border-b p-4">
-              <h4 className="font-semibold">{t("help.tvmCalc")}</h4>
+              <h3 className="font-semibold">{t("help.tvmCalc")}</h3>
               <p className="mt-1 text-sm text-muted-foreground">{t("help.tvmCalcDesc")}</p>
             </div>
             <div className="border-b p-4">
-              <h4 className="font-semibold">{t("help.cashFlowCalc")}</h4>
+              <h3 className="font-semibold">{t("help.cashFlowCalc")}</h3>
               <p className="mt-1 text-sm text-muted-foreground">{t("help.cashFlowCalcDesc")}</p>
             </div>
             <div className="border-b p-4">
-              <h4 className="font-semibold">{t("help.stockVal")}</h4>
+              <h3 className="font-semibold">{t("help.stockVal")}</h3>
               <p className="mt-1 text-sm text-muted-foreground">{t("help.stockValDesc")}</p>
             </div>
             <div className="border-b p-4">
-              <h4 className="font-semibold">{t("help.portfolioOpt")}</h4>
+              <h3 className="font-semibold">{t("help.portfolioOpt")}</h3>
               <p className="mt-1 text-sm text-muted-foreground">{t("help.portfolioOptDesc")}</p>
             </div>
             <div className="border-b p-4">
-              <h4 className="font-semibold">{t("help.bondsCalc")}</h4>
+              <h3 className="font-semibold">{t("help.bondsCalc")}</h3>
               <p className="mt-1 text-sm text-muted-foreground">{t("help.bondsCalcDesc")}</p>
             </div>
             <div className="border-b p-4">
-              <h4 className="font-semibold">{t("help.optionsCalc")}</h4>
+              <h3 className="font-semibold">{t("help.optionsCalc")}</h3>
               <p className="mt-1 text-sm text-muted-foreground">{t("help.optionsCalcDesc")}</p>
             </div>
             <div className="p-4 max-md:border-b">
-              <h4 className="font-semibold">{t("help.riskMetrics")}</h4>
+              <h3 className="font-semibold">{t("help.riskMetrics")}</h3>
               <p className="mt-1 text-sm text-muted-foreground">{t("help.riskMetricsDesc")}</p>
             </div>
             <div className="p-4">
-              <h4 className="font-semibold">{t("help.loanCalc")}</h4>
+              <h3 className="font-semibold">{t("help.loanCalc")}</h3>
               <p className="mt-1 text-sm text-muted-foreground">{t("help.loanCalcDesc")}</p>
             </div>
           </div>
@@ -120,10 +120,10 @@ export default function HelpPage() {
           <div className="divide-y border-y">
             {FAQ_KEYS.map((faq, i) => (
               <div key={i} className="py-4">
-                <h4 className="flex items-center gap-2 font-semibold">
+                <h3 className="flex items-center gap-2 font-semibold">
                   <ChevronRight className="h-4 w-4 text-primary" />
                   {t(faq.q)}
-                </h4>
+                </h3>
                 <p className="ml-6 mt-2 text-sm leading-6 text-muted-foreground">{t(faq.a)}</p>
               </div>
             ))}

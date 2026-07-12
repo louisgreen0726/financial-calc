@@ -48,7 +48,12 @@ export function SensitivityHeatmap({ data, rowLabels, colLabels, formatCell, cap
   };
 
   return (
-    <div className={cn("max-w-full overflow-x-auto rounded-lg bg-blue-50 p-1 dark:bg-blue-950", className)}>
+    <div
+      role="region"
+      aria-label={caption}
+      tabIndex={0}
+      className={cn("max-w-full overflow-x-auto rounded-lg bg-blue-50 p-1 dark:bg-blue-950", className)}
+    >
       <table className="min-w-[640px] border-collapse overflow-hidden rounded-lg">
         <caption className="sr-only">{caption}</caption>
         <thead>
