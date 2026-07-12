@@ -31,7 +31,7 @@ The app is no longer just a calculator demo. It includes a full app shell, respo
 - **Equity**: CAPM, WACC, and DDM
 - **Bonds**: price, duration, convexity, yield curve, and sensitivity heatmap
 - **Portfolio**: reproducible Monte Carlo risk-return sampling with worker and client fallback
-- **Options**: Black-Scholes-Merton pricing with continuous dividend yield and Greeks
+- **Options**: Black-Scholes-Merton pricing with continuous dividend yield, Greeks, and implied volatility
 - **Risk**: VaR, CVaR, and distribution visualization
 - **Loans**: CPM/CAM amortization schedules with a complete accessible table
 - **Macro**: inflation, purchasing power, real rate, CPI adjustment, and PPP exchange rate

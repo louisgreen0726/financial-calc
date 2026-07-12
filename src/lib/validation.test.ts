@@ -4,6 +4,7 @@ import {
   BondInputSchema,
   EquityDDMSchema,
   EquityWACCSchema,
+  ImpliedVolatilityInputSchema,
   LoanInputSchema,
   OptionsInputSchema,
   RiskInputSchema,
@@ -36,6 +37,15 @@ describe("shared validation schemas", () => {
     expect(OptionsInputSchema.safeParse({ ...base, q: 0.02 }).success).toBe(true);
     expect(OptionsInputSchema.safeParse({ ...base, q: -1 }).success).toBe(false);
     expect(OptionsInputSchema.safeParse({ ...base, q: 1.01 }).success).toBe(false);
+  });
+
+  it("validates the implied-volatility market workflow independently of model volatility", () => {
+    const base = { S: 100, K: 100, t: 1, r: 0.05, q: 0.02, type: "call" as const, marketPrice: 9.23 };
+
+    expect(ImpliedVolatilityInputSchema.safeParse(base).success).toBe(true);
+    expect(ImpliedVolatilityInputSchema.safeParse({ ...base, marketPrice: -1 }).success).toBe(false);
+    expect(ImpliedVolatilityInputSchema.safeParse({ ...base, t: 0 }).success).toBe(false);
+    expect(ImpliedVolatilityInputSchema.safeParse({ ...base, type: "straddle" }).success).toBe(false);
   });
 
   it("rejects WACC inputs with no invested capital", () => {

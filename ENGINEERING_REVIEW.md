@@ -21,6 +21,17 @@ browser-level checks beyond the existing suite.
 - Validation, accessible errors, share URLs, legacy history restoration, CSV/JSON/PDF report inputs, navigation,
   help text, and English/Chinese labels all include the new assumption.
 
+### Feature Extension: Implied Volatility
+
+- The finance engine now solves call and put implied volatility with a bounded bisection method over the application's
+  supported `0%` to `500%` volatility domain. It rejects expired contracts, non-finite inputs, no-arbitrage violations,
+  and prices that require unsupported volatility instead of returning a misleading estimate.
+- The Options page provides a separate market workflow that reuses contract assumptions without depending on the
+  pricing-volatility input. Market price, option type, result, history, sharing, reports, accessible errors, and legacy
+  restore defaults are connected end to end.
+- Unit tests cover dividend-aware call/put round trips, zero-volatility boundaries, impossible prices, and schema
+  independence. Playwright verifies the `q=2%`, market price `9.227` to `20.00%` browser workflow and share URL.
+
 ### Prioritized Adjustment List
 
 #### P0
@@ -85,9 +96,10 @@ No unresolved P0 findings remain.
 ## Verification Evidence
 
 - Formatting, strict TypeScript, ESLint, Vitest, production build, `npm audit`, and `git diff --check` were run after the fixes.
-- The unit/integration suite covers 36 files and 277 tests, including the numeric parser, TVM negative-rate contract,
+- The unit/integration suite covers 36 files and 282 tests, including the numeric parser, TVM negative-rate contract,
   dividend-adjusted Black-Scholes-Merton pricing and Greeks, cross-tab settings, export naming, Markdown safety, and
-  mobile history-control regressions. Two additional Playwright workflows cover desktop and mobile browser behavior.
+  implied-volatility solver, mobile history-control regressions, and related workflows. Two additional Playwright
+  tests cover desktop and mobile browser behavior.
 - Default static build exported 15 application routes and generated a precache manifest with 195 assets; route assets and precache entries were checked for missing files.
 - A `NEXT_PUBLIC_BASE_PATH=/calc` build completed successfully and all exported HTML asset references used the `/calc` prefix.
 - Browser checks covered desktop and 390px layouts across home, TVM, Cash Flow, Portfolio, Loans, History, and Settings.

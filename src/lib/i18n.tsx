@@ -330,6 +330,9 @@ type Translations = {
     rate: string;
     dividendYield: string;
     vol: string;
+    impliedVolatility: string;
+    optionType: string;
+    marketPrice: string;
     call: string;
     callPrice: string;
     put: string;
@@ -352,6 +355,8 @@ type Translations = {
       rateRange: string;
       dividendYieldRange: string;
       volatilityRange: string;
+      optionType: string;
+      marketPriceRange: string;
     };
   };
   risk: {
@@ -714,7 +719,7 @@ const en: Translations = {
     },
     derivatives: {
       title: "Derivatives & Risk",
-      options: { title: "Options Pricing", desc: "Black-Scholes-Merton pricing with dividends and Greeks" },
+      options: { title: "Options Pricing", desc: "Dividend-aware BSM pricing, Greeks, and implied volatility" },
       risk: { title: "Risk Management", desc: "VaR and CVaR distribution view" },
     },
     banking: {
@@ -946,7 +951,8 @@ const en: Translations = {
   },
   options: {
     title: "Options Pricing",
-    subtitle: "Black-Scholes-Merton model for European options with continuous dividends and Greeks analysis.",
+    subtitle:
+      "Black-Scholes-Merton model for European options with continuous dividends, Greeks, and implied volatility.",
     params: "Option Parameters",
     spot: "Spot Price (S)",
     strike: "Strike Price (K)",
@@ -954,6 +960,9 @@ const en: Translations = {
     rate: "Risk-Free Rate (%)",
     dividendYield: "Continuous Dividend Yield (%)",
     vol: "Volatility (σ %)",
+    impliedVolatility: "Implied Volatility",
+    optionType: "Option Type",
+    marketPrice: "Observed Market Price",
     call: "Call Option",
     callPrice: "Call Price",
     put: "Put Option",
@@ -976,6 +985,8 @@ const en: Translations = {
       rateRange: "Risk-free rate is outside the supported range.",
       dividendYieldRange: "Dividend yield is outside the supported range.",
       volatilityRange: "Volatility must be within the supported range.",
+      optionType: "Choose a supported option type.",
+      marketPriceRange: "Market price is outside the model's supported no-arbitrage range.",
     },
   },
   risk: {
@@ -1220,7 +1231,7 @@ const en: Translations = {
     bondsCalcDesc: "Bond price, duration, and convexity calculations using a supplied YTM.",
     optionsCalc: "Options Pricing",
     optionsCalcDesc:
-      "Black-Scholes-Merton option pricing with continuous dividend yield and Greeks (Delta, Gamma, Theta, Vega, Rho).",
+      "Black-Scholes-Merton pricing with continuous dividend yield, implied volatility, and Greeks (Delta, Gamma, Theta, Vega, Rho).",
     riskMetrics: "Risk Metrics",
     riskMetricsDesc: "VaR (Value at Risk) and CVaR (Conditional VaR) calculations.",
     loanCalc: "Loan Calculator",
@@ -1345,7 +1356,7 @@ const zh: Translations = {
     },
     derivatives: {
       title: "衍生品与风险",
-      options: { title: "期权定价", desc: "含连续股息与希腊字母的 BSM 定价" },
+      options: { title: "期权定价", desc: "含连续股息、Greeks 与隐含波动率的 BSM 定价" },
       risk: { title: "风险管理", desc: "VaR 与 CVaR 分布视图" },
     },
     banking: {
@@ -1577,7 +1588,7 @@ const zh: Translations = {
   },
   options: {
     title: "期权定价",
-    subtitle: "支持连续股息收益率的 Black-Scholes-Merton (BSM) 定价及希腊字母分析。",
+    subtitle: "支持连续股息收益率、Greeks 与隐含波动率反解的 Black-Scholes-Merton (BSM) 模型。",
     params: "期权合约参数",
     spot: "标的现价 (S)",
     strike: "行权价格 (K)",
@@ -1585,6 +1596,9 @@ const zh: Translations = {
     rate: "无风险利率 (%)",
     dividendYield: "连续股息收益率 (%)",
     vol: "波动率 (σ %)",
+    impliedVolatility: "隐含波动率",
+    optionType: "期权类型",
+    marketPrice: "市场成交价格",
     call: "看涨期权 (Call)",
     callPrice: "看涨期权价格",
     put: "看跌期权 (Put)",
@@ -1607,6 +1621,8 @@ const zh: Translations = {
       rateRange: "无风险利率超出支持范围。",
       dividendYieldRange: "股息收益率超出支持范围。",
       volatilityRange: "波动率必须处于支持范围内。",
+      optionType: "请选择支持的期权类型。",
+      marketPriceRange: "市场价格超出模型支持的无套利范围。",
     },
   },
   risk: {
@@ -1850,7 +1866,7 @@ const zh: Translations = {
     bondsCalc: "债券与固定收益",
     bondsCalcDesc: "根据给定 YTM 计算债券价格、久期与凸性。",
     optionsCalc: "期权定价",
-    optionsCalcDesc: "支持连续股息收益率的 BSM 期权定价及希腊字母分析（Delta、Gamma、Theta、Vega、Rho）。",
+    optionsCalcDesc: "支持连续股息收益率、隐含波动率反解及希腊字母分析（Delta、Gamma、Theta、Vega、Rho）的 BSM 定价。",
     riskMetrics: "风险指标",
     riskMetricsDesc: "在险价值 (VaR) 和条件风险价值 (CVaR) 计算。",
     loanCalc: "贷款计算器",

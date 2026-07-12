@@ -20,10 +20,13 @@ test("prices, restores, shares, and localizes continuous dividend yield", async 
   await expect(page.locator("#opt-dividend-yield")).toHaveValue("2");
   await expect(page.getByText("$9.23", { exact: true })).toBeVisible();
   await expect(page.getByText("$6.33", { exact: true })).toBeVisible();
+  await page.locator("#opt-market-price").fill("9.227");
+  await expect(page.locator("[data-implied-volatility-result]")).toHaveText("20.00%");
 
   await page.getByRole("button", { name: "Share Results" }).click();
   await page.getByRole("button", { name: "Copy shareable link" }).click();
   await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toContain("options_dividendYield=2");
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain("options_marketPrice=9.227");
   await page.keyboard.press("Escape");
 
   await page.getByRole("button", { name: "Switch to Chinese" }).click();
@@ -44,7 +47,7 @@ test.describe("mobile options workflow", () => {
       scrollWidth: document.documentElement.scrollWidth,
       clientWidth: document.documentElement.clientWidth,
     }));
-    expect(layout).toEqual({ inputCount: 6, scrollWidth: 390, clientWidth: 390 });
+    expect(layout).toEqual({ inputCount: 7, scrollWidth: 390, clientWidth: 390 });
 
     await page.locator("[data-result-status]").evaluate((element) => element.scrollIntoView({ block: "nearest" }));
     const resultNavigationOverlap = await page.evaluate(() => {

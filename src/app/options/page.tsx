@@ -19,6 +19,8 @@ import { OptionsInputSchema } from "@/lib/validation";
 import { ErrorDisplay, ValidationError } from "@/components/ui/error-display";
 import { useShareableUrl } from "@/hooks/use-shareable-url";
 import { buildOptionPayoffData, getOptionPayoffDomain } from "@/lib/chart-data";
+import { ImpliedVolatilityInputSchema } from "@/lib/validation";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function OptionsPage() {
   const { t } = useLanguage();
@@ -28,10 +30,13 @@ export default function OptionsPage() {
   const [rate, setRate] = useState("5"); // %
   const [dividendYield, setDividendYield] = useState("0"); // %
   const [volatility, setVolatility] = useState("20"); // %
+  const [impliedOptionType, setImpliedOptionType] = useState<"call" | "put">("call");
+  const [marketPrice, setMarketPrice] = useState("10");
   const [hasInteracted, setHasInteracted] = useState(false);
+  const [hasImpliedInteracted, setHasImpliedInteracted] = useState(false);
   const shareUrl = useShareableUrl({
     prefix: "options",
-    state: { spot, strike, time, rate, dividendYield, volatility },
+    state: { spot, strike, time, rate, dividendYield, volatility, impliedOptionType, marketPrice },
     onRestore: (inputs) => {
       if (inputs.spot !== undefined) setSpot(String(inputs.spot));
       if (inputs.strike !== undefined) setStrike(String(inputs.strike));
@@ -39,7 +44,10 @@ export default function OptionsPage() {
       if (inputs.rate !== undefined) setRate(String(inputs.rate));
       setDividendYield(inputs.dividendYield !== undefined ? String(inputs.dividendYield) : "0");
       if (inputs.volatility !== undefined) setVolatility(String(inputs.volatility));
+      setImpliedOptionType(inputs.impliedOptionType === "put" ? "put" : "call");
+      setMarketPrice(inputs.marketPrice !== undefined ? String(inputs.marketPrice) : "10");
       setHasInteracted(false);
+      setHasImpliedInteracted(false);
     },
   });
 
@@ -51,8 +59,9 @@ export default function OptionsPage() {
       r: parseOptionalNumber(rate),
       q: parseOptionalNumber(dividendYield),
       sigma: parseOptionalNumber(volatility),
+      marketPrice: parseOptionalNumber(marketPrice),
     }),
-    [dividendYield, rate, spot, strike, time, volatility]
+    [dividendYield, marketPrice, rate, spot, strike, time, volatility]
   );
 
   const validation = useMemo(() => {
@@ -84,6 +93,53 @@ export default function OptionsPage() {
   }, [parsedInputs, t]);
 
   const hasValidationErrors = Object.keys(validation).length > 0;
+
+  const impliedAnalysis = useMemo(() => {
+    const messages = {
+      S: t("options.validation.spotPositive"),
+      K: t("options.validation.strikePositive"),
+      t: t("options.validation.timeRange"),
+      r: t("options.validation.rateRange"),
+      q: t("options.validation.dividendYieldRange"),
+      type: t("options.validation.optionType"),
+      marketPrice: t("options.validation.marketPriceRange"),
+    } as const;
+    const parsed = ImpliedVolatilityInputSchema.safeParse({
+      S: parsedInputs.S ?? Number.NaN,
+      K: parsedInputs.K ?? Number.NaN,
+      t: parsedInputs.t ?? Number.NaN,
+      r: (parsedInputs.r ?? Number.NaN) / 100,
+      q: (parsedInputs.q ?? Number.NaN) / 100,
+      type: impliedOptionType,
+      marketPrice: parsedInputs.marketPrice ?? Number.NaN,
+    });
+
+    if (!parsed.success) {
+      return {
+        value: Number.NaN,
+        errors: Object.fromEntries(
+          parsed.error.issues.map((issue) => {
+            const field = String(issue.path[0]) as keyof typeof messages;
+            return [field, messages[field] ?? t("options.validation.invalidInputs")];
+          })
+        ),
+      };
+    }
+
+    const value = Finance.impliedVolatility(
+      parsed.data.type,
+      parsed.data.S,
+      parsed.data.K,
+      parsed.data.t,
+      parsed.data.r,
+      parsed.data.marketPrice,
+      parsed.data.q
+    );
+    return Number.isFinite(value)
+      ? { value, errors: {} }
+      : { value: Number.NaN, errors: { marketPrice: t("options.validation.marketPriceRange") } };
+  }, [impliedOptionType, parsedInputs, t]);
+  const impliedReady = Number.isFinite(impliedAnalysis.value) && Object.keys(impliedAnalysis.errors).length === 0;
 
   const results = useMemo(() => {
     if (hasValidationErrors) {
@@ -125,8 +181,18 @@ export default function OptionsPage() {
       putPrice: results.putPrice,
       callGreeks: serializeGreeks(results.callGreeks),
       putGreeks: serializeGreeks(results.putGreeks),
+      ...(impliedReady ? { impliedVolatility: impliedAnalysis.value } : {}),
     };
-  }, [results, t]);
+  }, [impliedAnalysis.value, impliedReady, results, t]);
+
+  const reportResults = useMemo(
+    () => ({
+      [t("options.call")]: results.callPrice,
+      [t("options.put")]: results.putPrice,
+      ...(impliedReady ? { [t("options.impliedVolatility")]: `${(impliedAnalysis.value * 100).toFixed(4)}%` } : {}),
+    }),
+    [impliedAnalysis.value, impliedReady, results.callPrice, results.putPrice, t]
+  );
 
   const { addToHistory } = useCalculationHistory({ page: "options" });
 
@@ -137,6 +203,15 @@ export default function OptionsPage() {
     label: t("options.callPrice"),
     resultFormat: "currency",
     enabled: hasInteracted && resultReady,
+  });
+
+  useHistoryRecorder({
+    addToHistory,
+    inputs: { spot, strike, time, rate, dividendYield, impliedOptionType, marketPrice },
+    result: impliedAnalysis.value,
+    label: `${t("options.impliedVolatility")} (${t(`options.${impliedOptionType}`)})`,
+    resultFormat: "percentDecimal",
+    enabled: hasImpliedInteracted && impliedReady,
   });
 
   // Payoff Diagram (Price vs Spot)
@@ -270,6 +345,60 @@ export default function OptionsPage() {
                 />
                 <ValidationError id="opt-vol-error" error={validation.sigma as string | null} />
               </div>
+
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="text-sm font-semibold">{t("options.impliedVolatility")}</h3>
+                <div className="space-y-2">
+                  <Label id="opt-implied-type-label" htmlFor="opt-implied-type">
+                    {t("options.optionType")}
+                  </Label>
+                  <Select
+                    value={impliedOptionType}
+                    onValueChange={(value: "call" | "put") => {
+                      setHasImpliedInteracted(true);
+                      setImpliedOptionType(value);
+                    }}
+                  >
+                    <SelectTrigger id="opt-implied-type" className="w-full" aria-labelledby="opt-implied-type-label">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="call">{t("options.call")}</SelectItem>
+                      <SelectItem value="put">{t("options.put")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="opt-market-price">{t("options.marketPrice")}</Label>
+                  <Input
+                    id="opt-market-price"
+                    value={marketPrice}
+                    onChange={(event) => {
+                      setHasImpliedInteracted(true);
+                      setMarketPrice(event.target.value);
+                    }}
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    aria-invalid={Boolean(impliedAnalysis.errors.marketPrice)}
+                    aria-describedby={impliedAnalysis.errors.marketPrice ? "opt-market-price-error" : undefined}
+                  />
+                  <ValidationError
+                    id="opt-market-price-error"
+                    error={impliedAnalysis.errors.marketPrice as string | null}
+                  />
+                </div>
+                <div
+                  className="flex items-baseline justify-between gap-3 border-t pt-3"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <span className="text-sm text-muted-foreground">{t("options.impliedVolatility")}</span>
+                  <strong className="text-xl" data-implied-volatility-result>
+                    {impliedReady ? `${(impliedAnalysis.value * 100).toFixed(2)}%` : t("common.notAvailable")}
+                  </strong>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -284,8 +413,17 @@ export default function OptionsPage() {
                 resultReady ? (
                   <ResultActions
                     title={t("options.title")}
-                    results={{ [t("options.call")]: results.callPrice, [t("options.put")]: results.putPrice }}
-                    inputs={{ spot, strike, time, rate, dividendYield, volatility }}
+                    results={reportResults}
+                    inputs={{
+                      spot,
+                      strike,
+                      time,
+                      rate,
+                      dividendYield,
+                      volatility,
+                      impliedOptionType,
+                      marketPrice,
+                    }}
                     shareUrl={shareUrl}
                     exportData={chartData as unknown as Record<string, unknown>[]}
                     exportJson={exportResults}
@@ -436,7 +574,10 @@ export default function OptionsPage() {
           if (inputs.rate !== undefined) setRate(String(inputs.rate));
           setDividendYield(inputs.dividendYield !== undefined ? String(inputs.dividendYield) : "0");
           if (inputs.volatility !== undefined) setVolatility(String(inputs.volatility));
+          setImpliedOptionType(inputs.impliedOptionType === "put" ? "put" : "call");
+          setMarketPrice(inputs.marketPrice !== undefined ? String(inputs.marketPrice) : "10");
           setHasInteracted(false);
+          setHasImpliedInteracted(false);
         }}
       />
     </>

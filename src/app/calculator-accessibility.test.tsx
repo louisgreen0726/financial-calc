@@ -157,6 +157,21 @@ describe("calculator page accessibility", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "restore legacy option fixture" }));
     expect(dividendYieldInput).toHaveValue(0);
+    expect(screen.getByLabelText("options.marketPrice")).toHaveValue(10);
+    expect(screen.getByRole("combobox", { name: "options.optionType" })).toHaveTextContent("options.call");
+  });
+
+  it("solves implied volatility and associates impossible market prices with the input", () => {
+    render(<OptionsPage />);
+
+    const marketPriceInput = screen.getByLabelText("options.marketPrice");
+    fireEvent.change(marketPriceInput, { target: { value: "10.4506" } });
+    expect(document.querySelector("[data-implied-volatility-result]")).toHaveTextContent("20.00%");
+
+    fireEvent.change(marketPriceInput, { target: { value: "101" } });
+    expect(marketPriceInput).toHaveAttribute("aria-invalid", "true");
+    expect(marketPriceInput).toHaveAttribute("aria-describedby", "opt-market-price-error");
+    expect(document.getElementById("opt-market-price-error")).toHaveTextContent("options.validation.marketPriceRange");
   });
 
   it("submits TVM through a form and keeps clear non-submitting", () => {

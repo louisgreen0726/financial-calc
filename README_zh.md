@@ -32,7 +32,7 @@ Financial Calc 是一个基于 Next.js 16、React 19、TypeScript、Tailwind CSS
 - **Equity**：CAPM、WACC、DDM
 - **Bonds**：债券定价、久期、凸性、收益率曲线、敏感性热力图
 - **Portfolio**：可复现的蒙特卡洛风险收益抽样，支持 worker 与客户端回退
-- **Options**：支持连续股息收益率的 Black-Scholes-Merton 定价与 Greeks
+- **Options**：支持连续股息收益率、Greeks 与隐含波动率反解的 Black-Scholes-Merton 定价
 - **Risk**：VaR、CVaR、分布视图
 - **Loans**：等额本息 / 等额本金摊销表，完整表格支持辅助技术读取
 - **Macro**：通胀、购买力、实际利率、CPI 调整、PPP 汇率

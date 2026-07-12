@@ -8,7 +8,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 
 ## Active Improvement Queue
 
-- [ ] Complete the implied-volatility workflow: mode UI, market-price validation, history/share/export, i18n, and E2E.
+- [x] Complete the implied-volatility workflow: market-price validation, history/share/export, i18n, and E2E.
 - [ ] Add option-price and implied-volatility property coverage across a deterministic contract matrix.
 - [ ] Audit production bundle sizes and reduce avoidable client-side JavaScript or eager imports.
 - [ ] Add automated PWA/offline navigation and update-flow browser coverage.
@@ -91,3 +91,33 @@ Verification:
 - Completed improvement batches in the current worktree: 2.
 - Current work: implied-volatility solver foundation is implemented and unit-tested; UI workflow remains in progress.
 - Queue status: 10 active items; queue is intentionally non-empty.
+
+### Improvement 3: Stable implied-volatility solver and market workflow
+
+Status: completed.
+
+Changes:
+
+- Added a bounded bisection implied-volatility solver for European calls and puts with continuous dividends.
+- Enforced discounted no-arbitrage bounds, positive maturity, finite inputs, and the application's supported `0%` to
+  `500%` volatility domain before and during the solve.
+- Added a dedicated Options market-price workflow with Call/Put selection, observed price, live IV result, accessible
+  validation, old-history defaults, history recording, share URL state, and structured report inputs/results.
+- Updated English/Chinese navigation, help, model descriptions, README files, and engineering review.
+- Extended Playwright to verify the market price `9.227` round-trips to `20.00%` at a `2%` dividend yield and remains in
+  the copied share URL.
+
+Files and areas:
+
+- `src/lib/finance-math.ts`, `src/lib/validation.ts`, and their tests
+- `src/app/options/page.tsx`, `src/app/calculator-accessibility.test.tsx`, and `src/lib/i18n.tsx`
+- `e2e/options-dividend.spec.ts`, README files, and `ENGINEERING_REVIEW.md`
+
+Verification:
+
+- Focused Vitest: 3 files, 86 tests passed.
+- `npm run verify`: passed; 36 Vitest files and 282 tests passed.
+- TypeScript, ESLint, source formatting, and extra configuration formatting: passed.
+- Playwright: 2 browser workflows passed.
+- Static export: 15 routes and 195 precache assets.
+- `npm audit`: zero known vulnerabilities across 767 installed dependencies.

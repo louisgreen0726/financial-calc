@@ -117,6 +117,16 @@ export const OptionsInputSchema = z.object({
     .max(MAX_VOLATILITY / 100),
 });
 
+export const ImpliedVolatilityInputSchema = OptionsInputSchema.omit({ sigma: true })
+  .extend({
+    type: z.enum(["call", "put"]),
+    marketPrice: z.number().finite().min(0, "Market price cannot be negative"),
+  })
+  .refine((data) => data.t > 0, {
+    message: "Time to maturity must be positive for implied volatility",
+    path: ["t"],
+  });
+
 export const CashFlowSchema = z.object({
   rate: z.number().finite().gt(-100, "Discount rate must be greater than -100%"),
   flows: z
