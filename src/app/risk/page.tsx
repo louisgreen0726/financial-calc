@@ -251,6 +251,18 @@ export default function RiskPage() {
                     [t("risk.stress.extreme")]: stressScenarios.at(-1)?.loss ?? 0,
                   }}
                   inputs={{ value, volatility, confidence, days }}
+                  displayInputs={{
+                    value,
+                    volatility,
+                    confidence: `${(Number(confidence) * 100).toFixed(0)}%`,
+                    days,
+                  }}
+                  inputLabels={{
+                    value: t("risk.val"),
+                    volatility: t("risk.vol"),
+                    confidence: t("risk.conf"),
+                    days: t("risk.horizon"),
+                  }}
                   shareUrl={shareUrl}
                   exportData={exportData}
                   exportJson={

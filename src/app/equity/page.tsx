@@ -364,6 +364,11 @@ export default function EquityPage() {
                     title={t("equity.capm.title")}
                     results={{ [t("equity.capm.re")]: `${(capmResult * 100).toFixed(2)}%` }}
                     inputs={{ rf, beta, rm }}
+                    inputLabels={{
+                      rf: t("equity.capm.rf"),
+                      beta: t("equity.capm.beta"),
+                      rm: t("equity.capm.rm"),
+                    }}
                     shareUrl={shareUrl}
                     exportData={[
                       {
@@ -516,6 +521,13 @@ export default function EquityPage() {
                     title={t("equity.wacc.title")}
                     results={{ [t("equity.wacc.result")]: `${(waccResult * 100).toFixed(2)}%` }}
                     inputs={{ equity, debt, costEquity, costDebt, taxRate }}
+                    inputLabels={{
+                      equity: t("equity.wacc.eqVal"),
+                      debt: t("equity.wacc.debtVal"),
+                      costEquity: t("equity.wacc.costEq"),
+                      costDebt: t("equity.wacc.costDebt"),
+                      taxRate: t("equity.wacc.tax"),
+                    }}
                     shareUrl={shareUrl}
                     exportData={[
                       {
@@ -638,6 +650,11 @@ export default function EquityPage() {
                     title={t("equity.ddm.title")}
                     results={{ [t("equity.ddm.intrinsic")]: ddmResult }}
                     inputs={{ div, growth, reqReturn }}
+                    inputLabels={{
+                      div: t("equity.ddm.d1"),
+                      growth: t("equity.ddm.g"),
+                      reqReturn: t("equity.ddm.req"),
+                    }}
                     shareUrl={shareUrl}
                     exportData={[
                       {

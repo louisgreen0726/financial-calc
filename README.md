@@ -18,7 +18,8 @@ The app is no longer just a calculator demo. It includes a full app shell, respo
 - Calculation history, favorite records, cross-page restore, home-page "continue" restore, and bounded JSON backup import/export
 - Shareable URLs with absolute links, JSON-safe array encoding, legacy URL compatibility, and long-URL protection
 - Inbound shared state is length/cardinality bounded before parsing and malformed `json:` arrays fail closed
-- Self-describing, versioned CSV/JSON reports plus print-optimized, searchable PDF output; CSV includes a BOM
+- Self-describing schema-v2 CSV/JSON reports plus print-optimized, searchable PDF output; CSV includes a BOM
+- Reports pair localized unit-bearing inputs with stable `rawInputs`; display results stay rounded while `data` keeps raw precision
 - Manual PWA/service worker integration with base-path-aware registration
 - Build-generated SHA-256 policies allow only the exact inline scripts emitted in each static HTML document
 - Finite-result guards across calculator pages to avoid displaying `NaN` or `Infinity`
@@ -226,6 +227,8 @@ financial-calc/
 - `src/test/fixtures/financial-reference-cases.json`: pinned NumPy Financial and OpenGamma Strata reference vectors
 - `src/lib/validation.ts`: shared Zod validation schemas and input limits
 - `src/lib/history-format.ts`: history result formatting by unit/type
+- `src/lib/data-export.ts`: schema-v2 report envelope, raw/display input preservation, and spreadsheet-safe CSV serialization
+- `src/lib/report-fields.ts`: localized report field labeling without changing canonical input keys
 - `src/lib/url-state-utils.ts`: URL state serialization and absolute share-link helpers
 - `src/hooks/use-calculation-history.ts`: persisted calculation history model
 - `src/hooks/use-shareable-url.ts`: share URL restore/build flow

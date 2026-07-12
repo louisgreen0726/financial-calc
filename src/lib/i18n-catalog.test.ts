@@ -122,4 +122,41 @@ describe("translation catalogs", () => {
       expect(chinese.get(key)?.trim(), `Missing Chinese navigation copy: ${key}`).toBeTruthy();
     }
   });
+
+  it("keeps percentage and time units explicit on calculator input labels", () => {
+    const percentInputKeys = [
+      "tvm.annualRate",
+      "cashFlow.discountRate",
+      "equity.capm.rf",
+      "equity.capm.rm",
+      "equity.wacc.costEq",
+      "equity.wacc.costDebt",
+      "equity.wacc.tax",
+      "equity.ddm.req",
+      "equity.ddm.g",
+      "bonds.coupon",
+      "bonds.ytm",
+      "portfolio.rf",
+      "portfolio.ret",
+      "portfolio.risk",
+      "options.rate",
+      "options.dividendYield",
+      "options.vol",
+      "risk.vol",
+      "loans.rate",
+      "macro.purchasingPower.inflation",
+      "macro.realRate.nominal",
+      "macro.realRate.inflation",
+    ];
+    for (const key of percentInputKeys) {
+      expect(english.get(key), `English percentage unit missing: ${key}`).toContain("%");
+      expect(chinese.get(key), `Chinese percentage unit missing: ${key}`).toContain("%");
+    }
+
+    const timeInputKeys = ["options.time", "bonds.years", "loans.term", "risk.horizon"];
+    for (const key of timeInputKeys) {
+      expect(english.get(key), `English time unit missing: ${key}`).toMatch(/year|day/i);
+      expect(chinese.get(key), `Chinese time unit missing: ${key}`).toMatch(/年|日/);
+    }
+  });
 });

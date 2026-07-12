@@ -1,8 +1,9 @@
-export const DATA_EXPORT_SCHEMA_VERSION = 1;
+export const DATA_EXPORT_SCHEMA_VERSION = 2;
 
 interface ReportExportSource {
   title: string;
   inputs?: Record<string, number | string>;
+  rawInputs?: Record<string, number | string>;
   results: Record<string, number | string>;
   data?: unknown;
 }
@@ -105,7 +106,7 @@ export function serializeJson(data: unknown, space = 2) {
 }
 
 export function createReportExportEnvelope(
-  { title, inputs = {}, results, data }: ReportExportSource,
+  { title, inputs = {}, rawInputs, results, data }: ReportExportSource,
   exportedAt = new Date().toISOString()
 ) {
   return {
@@ -114,6 +115,7 @@ export function createReportExportEnvelope(
     report: {
       title,
       inputs,
+      ...(rawInputs ? { rawInputs } : {}),
       results,
     },
     ...(data !== undefined ? { data } : {}),
@@ -121,7 +123,7 @@ export function createReportExportEnvelope(
 }
 
 export function createReportCsvRows(
-  { title, inputs = {}, results, tabularData }: ReportCsvSource,
+  { title, inputs = {}, rawInputs, results, tabularData }: ReportCsvSource,
   exportedAt = new Date().toISOString()
 ) {
   const context = {
@@ -129,6 +131,7 @@ export function createReportCsvRows(
     "report.exportedAt": exportedAt,
     "report.title": title,
     ...prefixRecord("input", inputs),
+    ...(rawInputs ? prefixRecord("rawInput", rawInputs) : {}),
     ...prefixRecord("result", results),
   };
 

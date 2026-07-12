@@ -235,6 +235,7 @@ export default function CashFlowPage() {
                         : t("common.notAvailable"),
                     }}
                     inputs={{ rate, flows: flowInputs.join(",") }}
+                    inputLabels={{ rate: t("cashFlow.discountRate"), flows: t("cashFlow.flow") }}
                     shareUrl={shareUrl}
                     exportData={chartData}
                     exportJson={calculateMetrics}

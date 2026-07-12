@@ -347,6 +347,26 @@ export default function BondsPage() {
                     [t("bonds.convexity")]: metrics.convexity.toFixed(2),
                   }}
                   inputs={{ faceValue, couponRate, years, ytm, frequency }}
+                  displayInputs={{
+                    faceValue,
+                    couponRate,
+                    years,
+                    ytm,
+                    frequency:
+                      {
+                        "1": t("bonds.freqOpts.annual"),
+                        "2": t("bonds.freqOpts.semi"),
+                        "4": t("bonds.freqOpts.quart"),
+                        "12": t("bonds.freqOpts.month"),
+                      }[frequency] ?? frequency,
+                  }}
+                  inputLabels={{
+                    faceValue: t("bonds.face"),
+                    couponRate: t("bonds.coupon"),
+                    years: t("bonds.years"),
+                    ytm: t("bonds.ytm"),
+                    frequency: t("bonds.freq"),
+                  }}
                   shareUrl={shareUrl}
                   exportData={chartData}
                   exportJson={metrics}

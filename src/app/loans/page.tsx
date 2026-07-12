@@ -348,6 +348,13 @@ function LoansPageContent() {
                     [t("loans.totalCost")]: stats.totalPayment,
                   }}
                   inputs={{ amount, rate, years, method }}
+                  displayInputs={{ amount, rate, years, method: method === "CPM" ? t("loans.cpm") : t("loans.cam") }}
+                  inputLabels={{
+                    amount: t("loans.amount"),
+                    rate: t("loans.rate"),
+                    years: t("loans.term"),
+                    method: t("loans.method"),
+                  }}
                   shareUrl={shareUrl}
                   exportData={schedule as unknown as Record<string, unknown>[]}
                   exportJson={schedule}

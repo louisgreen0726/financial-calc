@@ -28,6 +28,7 @@ interface MacroActionConfig {
   title: string;
   results: Record<string, number | string>;
   inputs: Record<string, number | string>;
+  inputLabels: Record<string, string>;
   exportData: Record<string, unknown>[];
   exportJson: Record<string, unknown>;
   pdfElementId: string;
@@ -228,6 +229,11 @@ export default function MacroPage() {
         title: t("macro.inflation.title"),
         results: { [t("macro.inflation.rate")]: value },
         inputs: { startPrice, endPrice, years: infYears },
+        inputLabels: {
+          startPrice: t("macro.inflation.startPrice"),
+          endPrice: t("macro.inflation.endPrice"),
+          years: t("macro.inflation.years"),
+        },
         exportData: [{ metric: t("macro.inflation.rate"), value }],
         exportJson: { startPrice, endPrice, years: infYears, inflationRate: infResult },
         pdfElementId: "macro-inflation-report-content",
@@ -244,6 +250,11 @@ export default function MacroPage() {
           [t("macro.purchasingPower.loss")]: loss,
         },
         inputs: { amount: ppAmount, inflation: ppRate, years: ppYears },
+        inputLabels: {
+          amount: t("macro.purchasingPower.amount"),
+          inflation: t("macro.purchasingPower.inflation"),
+          years: t("macro.purchasingPower.years"),
+        },
         exportData: [
           { metric: t("macro.purchasingPower.futureValue"), value: ppResult },
           { metric: t("macro.purchasingPower.loss"), value: loss },
@@ -260,6 +271,10 @@ export default function MacroPage() {
         title: t("macro.realRate.title"),
         results: { [t("macro.realRate.real")]: value },
         inputs: { nominalRate, inflation: realInfRate },
+        inputLabels: {
+          nominalRate: t("macro.realRate.nominal"),
+          inflation: t("macro.realRate.inflation"),
+        },
         exportData: [{ metric: t("macro.realRate.real"), value }],
         exportJson: { nominalRate, inflation: realInfRate, realRate: realResult },
         pdfElementId: "macro-real-rate-report-content",
@@ -272,6 +287,11 @@ export default function MacroPage() {
         title: t("macro.cpiAdjust.title"),
         results: { [t("macro.cpiAdjust.adjusted")]: cpiResult },
         inputs: { amount: cpiAmount, fromCPI, toCPI },
+        inputLabels: {
+          amount: t("macro.cpiAdjust.amount"),
+          fromCPI: t("macro.cpiAdjust.fromCPI"),
+          toCPI: t("macro.cpiAdjust.toCPI"),
+        },
         exportData: [{ metric: t("macro.cpiAdjust.adjusted"), value: cpiResult }],
         exportJson: { amount: cpiAmount, fromCPI, toCPI, adjustedAmount: cpiResult },
         pdfElementId: "macro-cpi-adjust-report-content",
@@ -284,6 +304,10 @@ export default function MacroPage() {
         title: t("macro.ppp.title"),
         results: { [t("macro.ppp.rate")]: pppResult.toFixed(4) },
         inputs: { domesticPrice, foreignPrice },
+        inputLabels: {
+          domesticPrice: t("macro.ppp.domestic"),
+          foreignPrice: t("macro.ppp.foreign"),
+        },
         exportData: [{ metric: t("macro.ppp.rate"), value: pppResult.toFixed(4) }],
         exportJson: { domesticPrice, foreignPrice, pppRate: pppResult },
         pdfElementId: "macro-ppp-report-content",
@@ -547,6 +571,7 @@ export default function MacroPage() {
               title={macroActionConfig.title}
               results={macroActionConfig.results}
               inputs={macroActionConfig.inputs}
+              inputLabels={macroActionConfig.inputLabels}
               shareUrl={shareUrl}
               exportData={macroActionConfig.exportData}
               exportJson={macroActionConfig.exportJson}

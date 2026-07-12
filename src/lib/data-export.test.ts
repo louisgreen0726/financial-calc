@@ -50,6 +50,7 @@ describe("structured data export", () => {
     const source = {
       title: "Loan analysis",
       inputs: { amount: "500000", years: "30" },
+      rawInputs: { amount: "500000", years: "30", method: "CPM" },
       results: { payment: 2533.43 },
       data: [{ period: 1, balance: 499341.57 }],
       tabularData: [{ period: 1, balance: 499341.57 }],
@@ -57,22 +58,26 @@ describe("structured data export", () => {
     const exportedAt = "2026-07-13T01:00:00.000Z";
 
     expect(createReportExportEnvelope(source, exportedAt)).toEqual({
-      schemaVersion: 1,
+      schemaVersion: 2,
       exportedAt,
       report: {
         title: "Loan analysis",
         inputs: { amount: "500000", years: "30" },
+        rawInputs: { amount: "500000", years: "30", method: "CPM" },
         results: { payment: 2533.43 },
       },
       data: [{ period: 1, balance: 499341.57 }],
     });
     expect(createReportCsvRows(source, exportedAt)).toEqual([
       {
-        "report.schemaVersion": 1,
+        "report.schemaVersion": 2,
         "report.exportedAt": exportedAt,
         "report.title": "Loan analysis",
         "input.amount": "500000",
         "input.years": "30",
+        "rawInput.amount": "500000",
+        "rawInput.years": "30",
+        "rawInput.method": "CPM",
         "result.payment": 2533.43,
         "data.period": 1,
         "data.balance": 499341.57,

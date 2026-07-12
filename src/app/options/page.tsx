@@ -189,7 +189,7 @@ export default function OptionsPage() {
     () => ({
       [t("options.call")]: results.callPrice,
       [t("options.put")]: results.putPrice,
-      ...(impliedReady ? { [t("options.impliedVolatility")]: `${(impliedAnalysis.value * 100).toFixed(4)}%` } : {}),
+      ...(impliedReady ? { [t("options.impliedVolatility")]: `${(impliedAnalysis.value * 100).toFixed(2)}%` } : {}),
     }),
     [impliedAnalysis.value, impliedReady, results.callPrice, results.putPrice, t]
   );
@@ -423,6 +423,26 @@ export default function OptionsPage() {
                       volatility,
                       impliedOptionType,
                       marketPrice,
+                    }}
+                    displayInputs={{
+                      spot,
+                      strike,
+                      time,
+                      rate,
+                      dividendYield,
+                      volatility,
+                      impliedOptionType: impliedOptionType === "call" ? t("options.call") : t("options.put"),
+                      marketPrice,
+                    }}
+                    inputLabels={{
+                      spot: t("options.spot"),
+                      strike: t("options.strike"),
+                      time: t("options.time"),
+                      rate: t("options.rate"),
+                      dividendYield: t("options.dividendYield"),
+                      volatility: t("options.vol"),
+                      impliedOptionType: t("options.optionType"),
+                      marketPrice: t("options.marketPrice"),
                     }}
                     shareUrl={shareUrl}
                     exportData={chartData as unknown as Record<string, unknown>[]}

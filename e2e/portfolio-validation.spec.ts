@@ -13,7 +13,7 @@ test("restores supported negative risk-free rates and rejects out-of-range portf
   const errors = collectBrowserErrors(page);
 
   await page.goto("/portfolio/?portfolio_rf=-2&portfolio_correlation=-0.25");
-  const riskFreeRate = page.getByRole("slider", { name: /Risk-Free Rate: -2%/ });
+  const riskFreeRate = page.getByRole("slider", { name: /Risk-Free Rate \(%\): -2%/ });
   const correlation = page.getByRole("slider", { name: /Correlation: -0.25/ });
   await expect(riskFreeRate).toHaveAttribute("aria-valuemin", "-10");
   await expect(riskFreeRate).toHaveAttribute("aria-valuemax", "10");
@@ -21,7 +21,7 @@ test("restores supported negative risk-free rates and rejects out-of-range portf
   await expect(correlation).toHaveAttribute("aria-valuenow", "-0.25");
 
   await page.goto("/portfolio/?portfolio_rf=50&portfolio_correlation=5");
-  await expect(page.getByRole("slider", { name: /Risk-Free Rate: 3%/ })).toHaveAttribute("aria-valuenow", "3");
+  await expect(page.getByRole("slider", { name: /Risk-Free Rate \(%\): 3%/ })).toHaveAttribute("aria-valuenow", "3");
   await expect(page.getByRole("slider", { name: /Correlation: 0.2/ })).toHaveAttribute("aria-valuenow", "0.2");
   expect(errors).toEqual([]);
 });

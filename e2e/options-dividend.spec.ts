@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { expect, test, type Page } from "playwright/test";
 
 function collectBrowserErrors(page: Page) {
@@ -22,6 +23,28 @@ test("prices, restores, shares, and localizes continuous dividend yield", async 
   await expect(page.getByText("$6.33", { exact: true })).toBeVisible();
   await page.locator("#opt-market-price").fill("9.227");
   await expect(page.locator("[data-implied-volatility-result]")).toHaveText("20.00%");
+
+  await page.getByRole("button", { name: "Export" }).click();
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("menuitem", { name: "Export JSON" }).click(),
+  ]);
+  const downloadPath = await download.path();
+  expect(downloadPath).not.toBeNull();
+  const report = JSON.parse(await readFile(downloadPath!, "utf8"));
+  expect(report).toMatchObject({
+    schemaVersion: 2,
+    report: {
+      inputs: {
+        "Risk-Free Rate (%)": "5",
+        "Time to Maturity (Years)": "1",
+        "Option Type": "Call Option",
+      },
+      rawInputs: { rate: "5", time: "1", impliedOptionType: "call" },
+      results: { "Implied Volatility": "20.00%" },
+    },
+  });
+  expect(report.data.impliedVolatility).toBeCloseTo(0.2, 4);
 
   await page.getByRole("button", { name: "Share Results" }).click();
   await page.getByRole("button", { name: "Copy shareable link" }).click();

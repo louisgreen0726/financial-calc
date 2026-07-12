@@ -24,6 +24,7 @@ interface ExportMenuProps {
   pdfTitle?: string;
   pdfFilename?: string;
   reportInputs?: Record<string, number | string>;
+  rawReportInputs?: Record<string, number | string>;
   reportResults?: Record<string, number | string>;
   className?: string;
 }
@@ -35,6 +36,7 @@ export function ExportMenu({
   pdfTitle,
   pdfFilename = "export",
   reportInputs,
+  rawReportInputs,
   reportResults,
   className,
 }: ExportMenuProps) {
@@ -50,6 +52,7 @@ export function ExportMenu({
         createReportCsvRows({
           title: resolvedReportTitle,
           inputs: reportInputs,
+          rawInputs: rawReportInputs,
           results: reportResults,
           tabularData: data,
         })
@@ -66,6 +69,7 @@ export function ExportMenu({
         createReportExportEnvelope({
           title: resolvedReportTitle,
           inputs: reportInputs,
+          rawInputs: rawReportInputs,
           results: reportResults,
           data: jsonData,
         })

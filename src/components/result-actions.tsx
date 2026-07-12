@@ -2,13 +2,13 @@ import { ExportMenu } from "@/components/export-menu";
 import { ShareDialog } from "@/components/share-dialog";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/lib/i18n";
+import { labelReportFields } from "@/lib/report-fields";
 import { History, Share2 } from "lucide-react";
 import { useState } from "react";
 
-interface ResultActionsProps {
+interface ResultActionsBaseProps {
   title: string;
   results: Record<string, number | string>;
-  inputs?: Record<string, number | string>;
   shareUrl?: string;
   exportData?: Record<string, unknown>[];
   exportJson?: Record<string, unknown> | unknown[];
@@ -18,10 +18,26 @@ interface ResultActionsProps {
   onShowHistory?: () => void;
 }
 
+type ResultActionsProps = ResultActionsBaseProps &
+  (
+    | {
+        inputs: Record<string, number | string>;
+        displayInputs?: Record<string, number | string>;
+        inputLabels: Record<string, string>;
+      }
+    | {
+        inputs?: undefined;
+        displayInputs?: never;
+        inputLabels?: never;
+      }
+  );
+
 export function ResultActions({
   title,
   results,
   inputs,
+  displayInputs,
+  inputLabels,
   shareUrl,
   exportData,
   exportJson,
@@ -32,6 +48,7 @@ export function ResultActions({
 }: ResultActionsProps) {
   const { t } = useLanguage();
   const [shareOpen, setShareOpen] = useState(false);
+  const reportInputs = labelReportFields(displayInputs ?? inputs, inputLabels);
 
   return (
     <>
@@ -46,7 +63,8 @@ export function ResultActions({
           pdfElementId={pdfElementId}
           pdfFilename={pdfFilename}
           pdfTitle={pdfTitle}
-          reportInputs={inputs}
+          reportInputs={reportInputs}
+          rawReportInputs={inputs}
           reportResults={results}
           className="min-h-10 gap-2"
         />
@@ -63,7 +81,7 @@ export function ResultActions({
         onOpenChange={setShareOpen}
         title={title}
         results={results}
-        inputs={inputs}
+        inputs={reportInputs}
         shareUrl={shareUrl}
         printElementId={pdfElementId}
         printFilename={pdfFilename}

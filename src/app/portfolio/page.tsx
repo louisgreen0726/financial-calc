@@ -586,10 +586,24 @@ export default function PortfolioPage() {
                         `${formatNumber(visibleMinVol.ret)}% / ${formatNumber(visibleMinVol.risk)}%`,
                     }}
                     inputs={{
-                      [t("portfolio.rf")]: `${rf}%`,
-                      [t("portfolio.corr")]: effectiveCorrelation,
-                      [t("portfolio.seed")]: effectiveSeed,
-                      [t("portfolio.asset")]: assets.map((asset) => asset.name).join(", "),
+                      rf,
+                      correlation: effectiveCorrelation,
+                      seed: effectiveSeed,
+                      assets: JSON.stringify(assets),
+                    }}
+                    displayInputs={{
+                      rf,
+                      correlation: effectiveCorrelation,
+                      seed: effectiveSeed,
+                      assets: assets
+                        .map((asset) => `${asset.name}: ${t("portfolio.retRisk")} ${asset.return}% / ${asset.risk}%`)
+                        .join("; "),
+                    }}
+                    inputLabels={{
+                      rf: t("portfolio.rf"),
+                      correlation: t("portfolio.corr"),
+                      seed: t("portfolio.seed"),
+                      assets: t("portfolio.asset"),
                     }}
                     shareUrl={shareUrl}
                     exportData={visibleSimulations as unknown as Record<string, unknown>[]}

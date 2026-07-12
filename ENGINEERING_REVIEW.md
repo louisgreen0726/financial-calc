@@ -218,6 +218,22 @@ browser-level checks beyond the existing suite.
 - Eight simultaneous local Axe workers exhausted the 30-second test budget without reporting violations. Local browser
   tests now cap at two workers; all 23 workflows pass, while CI retains its existing deterministic single worker.
 
+### Unit and Report Follow-up: Display Labels Without Raw-Data Loss
+
+- All eleven result-action call sites were audited across nine calculators. Human reports previously exposed internal
+  keys and ambiguous values such as `type: 0`, `confidence: 0.99`, or `rate: 5`, even when the UI showed localized
+  enum choices or explicit percent/year/trading-day units.
+- Result actions now require an input-label map whenever inputs are supplied. Optional display inputs translate enum and
+  confidence values, while the original state remains separate. This requirement is a TypeScript union, so future
+  report call sites cannot silently omit labels.
+- Export schema v2 carries localized `report.inputs`, canonical `report.rawInputs`, display-rounded `report.results`,
+  and raw-precision `data`. CSV mirrors both `input.*` and `rawInput.*` columns. This preserves machine consumers while
+  making copied text, Markdown, CSV context, and JSON reports understandable to users.
+- A catalog contract checks percentage and time-unit markers on all relevant bilingual input labels. It found and fixed
+  the Portfolio risk-free-rate label, which displayed a percent value but named only “Risk-Free Rate”.
+- Implied volatility was shown as 20.00% in the page but exported/shared as 20.0000%. Human report precision now matches
+  the visible two-decimal result; JSON `data.impliedVolatility` continues to carry the raw decimal value.
+
 ### Deployment Follow-up: Static Artifact Contract
 
 - A build succeeding did not previously prove that precache entries, route HTML, internal asset references, base-path

@@ -671,6 +671,15 @@ function TVMPageContent() {
                           : result,
                   }}
                   inputs={{ rate, nper, pmt, pv, fv, type }}
+                  displayInputs={{ rate, nper, pmt, pv, fv, type: type === "0" ? t("tvm.end") : t("tvm.begin") }}
+                  inputLabels={{
+                    rate: t("tvm.annualRate"),
+                    nper: t("tvm.periods"),
+                    pmt: t("tvm.payment"),
+                    pv: t("tvm.presentValue"),
+                    fv: t("tvm.futureValue"),
+                    type: t("tvm.paymentMode"),
+                  }}
                   shareUrl={shareUrl}
                   exportJson={{ target, rate, nper, pmt, pv, fv, type, result }}
                   pdfElementId="tvm-report-content"

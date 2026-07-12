@@ -27,7 +27,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Assess and implement hash-based CSP generation for static export with host-independent enforcement.
 - [x] Add property/fuzz coverage for URL and history restoration across every calculator schema.
 - [x] Add deterministic stress scenarios alongside normal VaR without implying predictive certainty.
-- [ ] Audit input-unit labels and display/export rounding consistency across all calculators.
+- [x] Audit and align input-unit labels plus display/export rounding across all calculators.
 - [ ] Plan and test remaining major dependency migrations as isolated compatibility batches.
 - [ ] Reduce `style-src 'unsafe-inline'` exposure by inventorying static versus runtime component/chart styles.
 
@@ -869,3 +869,51 @@ Verification:
 - Current work: Improvement 21 is fully verified and ready to commit; calculator-wide unit/rounding review is next.
 - Queue status: 3 active items remain: calculator-wide input-unit/rounding consistency, isolated major dependency
   migrations, and inline-style CSP reduction.
+
+### Improvement 22: Unit-bearing reports with schema-v2 raw/display separation
+
+Status: completed.
+
+Changes:
+
+- Audited all eleven `ResultActions` call sites across TVM, Cash Flow, Equity, Bonds, Portfolio, Options, Risk, Loans,
+  and Macro against their UI labels, internal units, history formats, and export representations.
+- Added a pure report-field labeler and made `inputLabels` compile-time mandatory whenever result actions receive
+  inputs. Missing labels now fail TypeScript rather than leaking internal keys into future reports.
+- Added optional display inputs for enum and scaled values. Reports now show localized payment timing/frequency/method,
+  option type, 99% confidence, and detailed portfolio asset return/risk values instead of raw codes or decimals.
+- Applied bilingual, unit-bearing input labels to every result action. Fixed Portfolio's risk-free-rate label to include
+  `%`, and added a catalog test covering all percentage and time-unit input labels in both languages.
+- Upgraded report export schema from v1 to v2. JSON now includes localized `report.inputs`, stable
+  `report.rawInputs`, display-rounded `report.results`, and raw-precision `data`; CSV includes both `input.*` and
+  `rawInput.*` context columns.
+- Aligned implied-volatility human output at 2 decimal places across the visible result, sharing, CSV, and JSON report
+  summary while preserving its unrounded decimal in `data.impliedVolatility`.
+- Added focused tests for label fallback/special keys, schema-v2 JSON/CSV structure, bilingual unit markers, and a real
+  Options JSON download that verifies display labels, raw keys, enum values, rounding, and machine precision together.
+
+Files and areas:
+
+- `src/components/result-actions.tsx`, `src/components/export-menu.tsx`, and all calculator result-action call sites
+- `src/lib/report-fields.ts`, `src/lib/data-export.ts`, and focused tests
+- `src/lib/i18n.tsx`, translation contract tests, and `e2e/options-dividend.spec.ts`
+- English/Chinese README, engineering review, and improvement log
+
+Verification:
+
+- Focused report/export/i18n suite: 3 files and 13 tests passed; strict TypeScript and targeted formatting passed.
+- Focused Options browser workflow downloaded and validated the schema-v2 report successfully.
+- `npm run verify`: passed; 49 Vitest files and 415 tests passed.
+- Root export remained 15 routes, 197 precache assets, 96 inline-script hashes, and 722 internal references; every route
+  bundle budget passed.
+- The final default Playwright suite passed all 23 tests, including schema-v2 JSON download and the updated
+  unit-bearing Portfolio slider contract.
+- Production dependency audit reported zero vulnerabilities; strict TypeScript, ESLint, extended formatting, and
+  `git diff --check` passed after the final compile-time input-label constraint.
+
+### Progress checkpoint: 07:43 +08:00
+
+- Continuous-session elapsed time: 4 hours 37 minutes.
+- Completed improvement batches: 22; all calculator reports now preserve both unit-bearing display inputs and raw keys.
+- Current work: Improvement 22 is fully verified and ready to commit; major dependency compatibility is next.
+- Queue status: 2 active items remain: isolated major dependency migrations and inline-style CSP reduction.

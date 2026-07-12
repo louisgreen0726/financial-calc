@@ -19,7 +19,8 @@ Financial Calc 是一个基于 Next.js 16、React 19、TypeScript、Tailwind CSS
 - 分享链接为绝对 URL，数组参数采用 JSON 安全编码，并兼容旧版 `|` 分隔格式
 - 分享 URL 有长度保护，避免资产组合等复杂状态生成过长链接
 - 外部分享状态会在解析前限制长度与数组数量，畸形 `json:` 数组会按失败关闭处理
-- 支持自描述、带版本的 CSV / JSON 报告及打印优化的可搜索 PDF 输出；CSV 带 BOM
+- 支持自描述、schema v2 的 CSV / JSON 报告及打印优化的可搜索 PDF 输出；CSV 带 BOM
+- 报告同时保留带单位的本地化输入与稳定 `rawInputs`；展示结果按界面舍入，`data` 保留原始精度
 - 手动 PWA / service worker 接入，注册逻辑支持 base path
 - 构建时生成 SHA-256 策略，只允许每份静态 HTML 中实际输出的内联脚本
 - 各计算页面加入有限数结果守卫，避免向用户展示 `NaN` 或 `Infinity`
@@ -223,6 +224,8 @@ financial-calc/
 - `src/test/fixtures/financial-reference-cases.json`：固定版本的 NumPy Financial 与 OpenGamma Strata 参考向量
 - `src/lib/validation.ts`：共享 Zod 校验 schema 与输入上限
 - `src/lib/history-format.ts`：按单位/类型格式化历史结果
+- `src/lib/data-export.ts`：schema v2 报告封装、原始/展示输入保留与电子表格安全 CSV 序列化
+- `src/lib/report-fields.ts`：不改变规范输入键的本地化报告字段标注
 - `src/lib/url-state-utils.ts`：URL 状态序列化与绝对分享链接工具
 - `src/hooks/use-calculation-history.ts`：持久化计算历史模型
 - `src/hooks/use-shareable-url.ts`：分享链接恢复与构建流程
