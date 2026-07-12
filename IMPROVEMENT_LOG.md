@@ -15,7 +15,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Add automated accessibility checks for calculator forms, dialogs, navigation, and result announcements.
 - [x] Review all calculator pages for validation/schema drift and inconsistent supported domains.
 - [x] Profile large loan schedules, portfolio simulations, history filtering, and report exports.
-- [ ] Review dependency upgrades and remove confirmed dead code without destabilizing generated UI primitives.
+- [x] Review dependency upgrades and remove confirmed dead code without destabilizing generated UI primitives.
 - [ ] Validate static deployment headers, base-path output, precache completeness, and cache invalidation in automation.
 - [ ] Expand user-facing documentation with model assumptions, limitations, and worked examples.
 
@@ -341,3 +341,45 @@ Verification:
 - `npm run verify`: passed; 40 Vitest files and 347 tests passed.
 - Static export: 15 routes and 197 precache assets; all bundle budgets passed.
 - `npm audit`: zero known vulnerabilities; `git diff --check`: passed.
+
+### Improvement 10: Confirmed dead-code and dependency cleanup
+
+Status: completed.
+
+Changes:
+
+- Ran dependency version review, direct import search, and Knip static analysis, then separated actionable findings
+  from expected false positives for Playwright entry points, public workers, CSS plugins, Husky/lint-staged, and
+  shadcn-generated primitives.
+- Removed the unused `@hookform/resolvers` production dependency. `react-hook-form` and the unused Radix packages
+  remain because checked-in shadcn primitives import them and must continue to typecheck as available UI building
+  blocks.
+- Deleted four confirmed orphan modules with no static, dynamic, test, configuration, or documentation consumers:
+  the old `SensitivityAnalysis` component, unused `useAutoCalculate` hook, disconnected chart theme, and duplicate
+  TypeScript design-token set. This removes 359 source lines.
+- Reviewed available upgrades. The only outdated direct packages are major-version migrations (`@types/node` 20 to
+  26, ESLint 9 to 10, Lucide 0.x to 1.x, and TypeScript 5 to 7); they were intentionally deferred because this batch
+  has no security finding or feature requiring their broader compatibility work.
+
+Files and areas:
+
+- `package.json` and `package-lock.json`
+- Removed `src/components/sensitivity-analysis.tsx`, `src/hooks/use-auto-calculate.ts`, `src/lib/chart-theme.ts`, and
+  `src/lib/design-tokens.ts`
+
+Verification:
+
+- Import search after deletion: no remaining references.
+- `npm run verify`: passed; 40 Vitest files and 347 tests passed.
+- Static export remained 15 routes and 197 precache assets; all bundle budgets passed. Initial bundles were unchanged,
+  confirming these modules were source/install debt rather than hidden runtime chunks.
+- `npm audit`: zero known vulnerabilities; `git diff --check`: passed.
+
+### Progress checkpoint: 04:49 +08:00
+
+- Continuous-session elapsed time: 1 hour 43 minutes.
+- Completed improvement batches in this session: 10; latest committed improvement before this checkpoint:
+  `e0373c5`.
+- Current work: dependency and dead-code cleanup is fully verified and ready to commit.
+- Queue status: 2 active items remain; additional findings will be added as review continues so the queue stays
+  non-empty.

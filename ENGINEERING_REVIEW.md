@@ -98,6 +98,17 @@ browser-level checks beyond the existing suite.
   engine, History is capped at 50 records per page, and report printing uses bounded DOM preparation plus native
   browser pagination.
 
+### Maintenance Follow-up: Dependencies and Dead Source
+
+- Static import and Knip review removed the unused `@hookform/resolvers` dependency and four orphan modules: an old
+  sensitivity component, an unused auto-calculation hook, a disconnected chart theme, and a duplicate TypeScript
+  design-token set. The cleanup removes 359 source lines without changing emitted route bundles.
+- `react-hook-form` and several currently unused Radix packages remain intentionally because checked-in
+  shadcn-generated primitives import them. Removing those packages would leave the local component library unable to
+  typecheck even though current routes do not instantiate every primitive.
+- Available direct upgrades are all major migrations (`@types/node` 26, ESLint 10, Lucide 1.x, TypeScript 7). With no
+  audit findings, they should be handled as compatibility projects rather than mixed into low-risk cleanup.
+
 ### Prioritized Adjustment List
 
 #### P0
