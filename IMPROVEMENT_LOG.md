@@ -9,7 +9,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 ## Active Improvement Queue
 
 - [x] Complete the implied-volatility workflow: market-price validation, history/share/export, i18n, and E2E.
-- [ ] Add option-price and implied-volatility property coverage across a deterministic contract matrix.
+- [x] Add option-price and implied-volatility property coverage across a deterministic contract matrix.
 - [x] Audit production bundle sizes and reduce avoidable client-side JavaScript or eager imports.
 - [x] Add automated PWA/offline navigation and update-flow browser coverage.
 - [x] Add automated accessibility checks for calculator forms, dialogs, navigation, and result announcements.
@@ -240,3 +240,32 @@ Verification:
   `01d8300`.
 - Current work: automated accessibility improvement is fully verified and ready to commit.
 - Queue status: 6 active items remain; the queue is intentionally non-empty.
+
+### Improvement 7: Deterministic option pricing property matrix
+
+Status: completed.
+
+Changes:
+
+- Added a 10-contract deterministic matrix spanning ITM/ATM/OTM contracts, sub-unit and four-digit notionals,
+  0.01-to-30-year maturities, negative and positive rates, negative and high dividend yields, and 5% to 250%
+  volatility.
+- Enforced dividend-adjusted put-call parity, discounted no-arbitrage bounds, price monotonicity in spot and
+  volatility, and degree-one homogeneity when spot and strike are scaled together.
+- Enforced call-put Greek identities for Delta, Gamma, Vega, Theta, and Rho, along with sign and discounted Delta
+  bounds across every contract.
+- Added central finite-difference validation for all five reported Greeks on four representative contracts.
+- Expanded implied-volatility round trips to both calls and puts for all 10 contracts and explicitly covered the
+  solver's exact 0% and 500% supported boundaries.
+
+Files and areas:
+
+- `src/lib/option-properties.test.ts`
+
+Verification:
+
+- New option property matrix: 55 tests passed.
+- Focused finance suite: 2 files and 114 tests passed.
+- `npm run verify`: passed; 39 Vitest files and 342 tests passed.
+- Static export: 15 routes and 197 precache assets; all bundle budgets passed.
+- `git diff --check`: passed.

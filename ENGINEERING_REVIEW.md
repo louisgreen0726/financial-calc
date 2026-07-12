@@ -64,6 +64,17 @@ browser-level checks beyond the existing suite.
 - The sidebar is now a named complementary landmark. Sensitivity heatmaps and the Loan amortization table expose
   named, focusable regions for keyboard scrolling, and Help follows a continuous `h1 -> h2 -> h3` hierarchy.
 
+### Formula Follow-up: Option Property Matrix
+
+- A deterministic 10-contract matrix now exercises Black-Scholes-Merton and implied volatility across moneyness,
+  sub-unit and large notionals, short and 30-year maturities, negative rates, negative/high dividends, and volatility
+  from 5% to 250%.
+- The suite checks discounted put-call parity and no-arbitrage bounds, spot/volatility monotonicity, scale
+  homogeneity, all call-put Greek identities, finite-difference sensitivities, 20 implied-volatility round trips, and
+  the exact 0%/500% solver boundaries.
+- These 55 properties complement point benchmarks: they are fixed and reproducible, but broad enough to catch
+  sign, discount-factor, scaling, and solver-bracketing regressions that isolated examples can miss.
+
 ### Prioritized Adjustment List
 
 #### P0
@@ -128,7 +139,7 @@ No unresolved P0 findings remain.
 ## Verification Evidence
 
 - Formatting, strict TypeScript, ESLint, Vitest, production build, `npm audit`, and `git diff --check` were run after the fixes.
-- The unit/integration suite covers 38 files and 287 tests, including the numeric parser, TVM negative-rate contract,
+- The unit/integration suite covers 39 files and 342 tests, including the numeric parser, TVM negative-rate contract,
   dividend-adjusted Black-Scholes-Merton pricing and Greeks, cross-tab settings, export naming, Markdown safety, and
   implied-volatility solver, mobile history-control regressions, and related workflows. Two additional Playwright
   tests cover desktop and mobile browser behavior.
