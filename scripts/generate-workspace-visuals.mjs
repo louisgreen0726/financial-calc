@@ -123,7 +123,9 @@ await mkdir(outputDir, { recursive: true });
 await Promise.all(
   Object.keys(palettes).map(async (theme) => {
     const output = path.join(outputDir, `workspace-${theme}.webp`);
-    await sharp(Buffer.from(buildVisual(theme))).webp({ quality: 88, effort: 6 }).toFile(output);
+    await sharp(Buffer.from(buildVisual(theme)))
+      .webp({ quality: 88, effort: 6 })
+      .toFile(output);
     console.log(`Generated ${path.relative(root, output)}`);
   })
 );

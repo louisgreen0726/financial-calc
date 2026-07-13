@@ -52,7 +52,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Detect and explain multiple valid TVM RATE roots instead of presenting one as unique.
 - [x] Preserve NPV/IRR invariance when appending economically irrelevant zero cash flows.
 - [x] Stabilize translation-catalog source scanning under full-suite worker contention.
-- [ ] Extend formatting enforcement beyond `src/` to E2E, scripts, workflows, and root configuration.
+- [x] Extend formatting enforcement beyond `src/` to E2E, scripts, workflows, and root configuration.
 - [x] Add analytic and finite-difference oracles for bond duration and convexity.
 - [ ] Reject unsupported fractional or over-600 coupon periods with actionable bond input validation.
 - [x] Repair stale cross-tab PWA update prompts after another tab activates the waiting worker.
@@ -2136,3 +2136,38 @@ Verification:
 
 Queue status: 5 active items remain across default Portfolio asset localization, formatting enforcement, bond input
 validation, app-shell UI refinement, and compatible History comparison.
+
+### Improvement 49: Full-tree formatting and staged-file enforcement
+
+Status: completed.
+
+Changes:
+
+- Expanded `format` and `format:check` from the `src/` subtree to the complete application repository. Prettier now
+  checks E2E tests, scripts, workflows, root configuration, public assets, and documentation while continuing to honor
+  generated/dependency exclusions already defined by Git.
+- Added a narrowly scoped Prettier ignore for `AGENTS.md` files. These operational instruction files are intentionally
+  preserved verbatim; source, configuration, workflow, and product documentation remain covered.
+- Expanded lint-staged so JavaScript, module scripts, TypeScript, and TSX at any depth receive ESLint fixes followed by
+  Prettier. CSS, JSON/JSON5, YAML, Markdown, and MDX at any depth now receive Prettier rather than only `src/**/*.css`.
+- Formatted the four drift candidates found by the full-tree audit. The workspace visual generator and TypeScript
+  config had textual formatting changes; `.prettierrc` and the Vitest config only had working-tree line-ending drift,
+  and their normalized blobs already matched the index.
+- Exercised the new staged patterns on the preceding commits: E2E TypeScript and the improvement log were linted or
+  formatted by the pre-commit hook, confirming the patterns apply beyond `src/` in the real commit path.
+
+Files and areas:
+
+- `package.json`
+- `.prettierignore`
+- `scripts/generate-workspace-visuals.mjs`
+- `tsconfig.json`
+
+Verification:
+
+- `npm run format:check` passed across the full repository.
+- Full ESLint, strict TypeScript, and `git diff --check` passed.
+- The expanded lint-staged tasks completed successfully for staged source, E2E, and Markdown files.
+
+Queue status: 4 active items remain across default Portfolio asset localization, bond input validation, app-shell UI
+refinement, and compatible History comparison.
