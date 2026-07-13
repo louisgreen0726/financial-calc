@@ -73,6 +73,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [ ] Preserve tiny nonzero Fisher real-rate spreads without cancellation.
 - [x] Restore WCAG AA contrast for destructive actions and states in the dark theme.
 - [x] Recover representable NPV tails when discount factors reach zero or infinity.
+- [x] Add a global, responsive Calculator Finder to the application header.
 
 ## 2026-07-13
 
@@ -3503,3 +3504,38 @@ completion plan; the queue will not be expanded.
   lifecycle isolation, and complete Workspace Backup.
 - Current work: finish the global Calculator Finder, then run and repair the final full quality/build/browser matrix.
 - Queue status: exactly two frozen items remain; no further discovery work will be added before stopping.
+
+### Improvement 89: Global Calculator Finder
+
+Status: completed.
+
+Changes:
+
+- Added a familiar Search icon to the global Header on desktop and mobile. It opens a focused Calculator Finder without
+  requiring users to expand the desktop Sidebar or open the mobile navigation drawer first.
+- Reused the localized navigation catalog and the Sidebar's discovery semantics: whitespace-separated terms must all
+  match the same tool's section, title, or description. Results remain grouped by the existing information hierarchy,
+  display both name and capability summary, and expose the established no-results state.
+- Made every result a native focusable Next link. Selecting one closes the dialog and follows the route; Escape restores
+  focus to the trigger, closing resets the query, and initial dialog focus lands directly in the search field.
+- Kept the compact dialog within the viewport with a bounded scrolling result region, labelled the icon trigger and
+  close action, used the existing navigation description instead of duplicate screen-reader copy, and avoided an
+  over-broad live region that would announce the full directory on open.
+
+Files and areas:
+
+- `src/components/calculator-finder.tsx`, `src/components/calculator-finder.test.tsx`
+- `src/components/layout/header.tsx`, `src/components/layout/header.test.tsx`
+- `e2e/calculator-finder.spec.ts`
+
+Verification:
+
+- Finder/Header focused suites passed 7/7 tests; strict TypeScript, focused ESLint, Prettier, and `git diff --check`
+  passed.
+- Real Playwright coverage passed 2/2: `wacc valuation` produced the single Stock Valuation result and navigated to
+  `/equity`; at 320x720 the Header and dialog had no horizontal overflow, search retained initial focus, and the dialog
+  Axe scan reported no violations.
+- The browser server and worker shared port 32636; both tests completed in 25.9 seconds and teardown exited normally.
+
+Queue status: only the final full integration verification remains in the frozen completion plan; no new work will be
+added before the user-authorized stop.

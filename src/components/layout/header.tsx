@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MobileSidebar } from "./mobile-sidebar";
+import { CalculatorFinder } from "@/components/calculator-finder";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { ModeToggle } from "@/components/mode-toggle";
 import { useLanguage } from "@/lib/i18n";
@@ -74,6 +75,7 @@ export const Header = React.memo(function Header({ className }: HeaderProps) {
       </div>
 
       <div className="flex shrink-0 items-center gap-1 border-l pl-2 sm:pl-3">
+        <CalculatorFinder />
         <ModeToggle />
         <LanguageSwitcher />
       </div>

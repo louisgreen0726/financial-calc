@@ -29,6 +29,7 @@ vi.mock("@/lib/i18n", () => ({
       ({
         "common.home": "Home",
         "nav.investing.portfolio.title": "Portfolio",
+        "sidebar.search": "Search calculators",
       })[key] ?? key,
   }),
 }));
@@ -49,6 +50,7 @@ describe("Header", () => {
 
     const utilityControls = screen.getByTestId("mode-toggle").parentElement;
     expect(utilityControls).toHaveProperty("tagName", "DIV");
+    expect(within(utilityControls!).getByRole("button", { name: "Search calculators" })).toBeVisible();
     expect(utilityControls).toContainElement(screen.getByTestId("language-switcher"));
   });
 
