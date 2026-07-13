@@ -3121,3 +3121,33 @@ Verification:
 
 Queue status: complete Workspace Backup and concurrent Playwright port isolation remain active; further UI/product and
 core numeric robustness work remains queued or under audit.
+
+### Improvement 78: Preserve finite FV cancellation at maximum scale
+
+Status: completed.
+
+Changes:
+
+- Reproduced a future-value cancellation failure where valid finite PV and payment inputs produced individually
+  overflowing `PV * term` and `payment * annuityFactor` contributions of opposite signs, while their true net FV was
+  the representable value `MAX_VALUE / 4`. The old direct sum returned `NaN`.
+- Normalized PV/payment by a common input magnitude before applying term and annuity contributions, combines them with
+  compensated summation, and restores scale only after cancellation. Ordinary/due timing and true-overflow rejection
+  remain unchanged.
+- Applied the same scale-first sum to the zero-interest branch so a large `payment * periods` term can cancel a large PV
+  without overflowing before addition.
+- Added constructed positive-rate and zero-rate maximum-scale oracles while retaining the ordinary zero-rate and full
+  TVM reference/property coverage.
+
+Files and areas:
+
+- `src/lib/finance-math.ts`
+- `src/lib/finance-math.test.ts`
+
+Verification:
+
+- The complete finance-math suite passed 76/76 tests.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: complete Workspace Backup and truly isolated concurrent Playwright build/port state remain active;
+further UI/product and core numeric robustness work remains queued or under audit.

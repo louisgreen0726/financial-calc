@@ -76,6 +76,23 @@ test("fv handles zero-rate case exactly", () => {
   expect(Finance.fv(0, 10, 100, 500, 0)).toBe(-1500);
 });
 
+test("fv preserves finite cancellation between individually overflowing terms", () => {
+  const rate = 0.01;
+  const periods = 600;
+  const exponent = periods * Math.log1p(rate);
+  const term = Math.exp(exponent);
+  const annuityFactor = Math.expm1(exponent) / rate;
+  const presentValue = Number.MAX_VALUE / 2;
+  const targetFutureValue = Number.MAX_VALUE / 4;
+  const payment = (-targetFutureValue / term - presentValue) / (annuityFactor / term);
+  const futureValue = Finance.fv(rate, periods, payment, presentValue);
+  const zeroRateOffset = Finance.fv(0, 2, Number.MAX_VALUE * 0.75, -Number.MAX_VALUE);
+
+  expect(Number.isFinite(futureValue)).toBe(true);
+  expect(futureValue / targetFutureValue).toBeCloseTo(1, 12);
+  expect(zeroRateOffset / (-Number.MAX_VALUE * 0.5)).toBeCloseTo(1, 12);
+});
+
 test("pmt matches a standard mortgage payment benchmark", () => {
   const res = Finance.pmt(0.05 / 12, 12 * 30, 100000, 0, 0);
   expect(res).toBeCloseTo(-536.82, 2);
