@@ -20,6 +20,9 @@ const requiredCspDirectives = [
   "form-action 'self'",
   "frame-ancestors 'none'",
 ];
+const allowedManifestDisplayModes = new Set(["browser", "fullscreen", "minimal-ui", "standalone"]);
+const allowedManifestIconPurposes = new Set(["any", "maskable", "monochrome"]);
+const requiredManifestIconSizes = ["192x192", "512x512"];
 
 function invariant(condition, message) {
   if (!condition) throw new Error(message);
@@ -158,6 +161,11 @@ async function resolveExportedReference(pathname, outputDirectory) {
   return null;
 }
 
+async function resolveExportedHtmlReference(pathname, outputDirectory) {
+  const resolvedPath = await resolveExportedReference(pathname, outputDirectory);
+  return resolvedPath?.toLowerCase().endsWith(".html") ? resolvedPath : null;
+}
+
 export function extractHtmlReferences(html) {
   return [...html.matchAll(/\b(?:href|src)\s*=\s*["']([^"']+)["']/gi)].map((match) => match[1]);
 }
@@ -202,15 +210,166 @@ async function validateHtmlReferences({ outputDirectory, htmlFiles, basePath }) 
   return checkedReferences;
 }
 
-function validateWebManifest(manifest) {
-  for (const property of ["id", "start_url", "scope"]) {
-    const value = manifest[property];
-    invariant(typeof value === "string" && value.length > 0, `manifest.json ${property} must be a non-empty string.`);
+function isObjectRecord(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function requireManifestString(value, property) {
+  invariant(
+    typeof value === "string" && value.trim().length > 0,
+    `manifest.json ${property} must be a non-empty string.`
+  );
+  invariant(value === value.trim(), `manifest.json ${property} must not contain surrounding whitespace.`);
+  return value;
+}
+
+function resolveManifestUrl(value, property, manifestUrl, basePath) {
+  const reference = requireManifestString(value, property);
+  invariant(
+    !reference.startsWith("/") && !/^[a-z][a-z\d+.-]*:/i.test(reference),
+    `manifest.json ${property} must stay relative for base-path deployment: ${reference}`
+  );
+
+  let resolvedUrl;
+  try {
+    resolvedUrl = new URL(reference, manifestUrl);
+  } catch {
+    throw new Error(`manifest.json ${property} is not a valid URL: ${reference}`);
+  }
+
+  invariant(resolvedUrl.origin === manifestUrl.origin, `manifest.json ${property} must stay on the deployment origin.`);
+  invariant(
+    resolvedUrl.pathname === basePath || resolvedUrl.pathname.startsWith(`${basePath}/`),
+    `manifest.json ${property} resolves outside base path ${basePath || "/"}: ${reference}`
+  );
+  return resolvedUrl;
+}
+
+function exportedManifestPathname(url, basePath) {
+  return basePath ? url.pathname.slice(basePath.length) || "/" : url.pathname;
+}
+
+async function validateManifestIcon(icon, property, { manifestUrl, basePath, outputDirectory }) {
+  invariant(isObjectRecord(icon), `manifest.json ${property} must be an object.`);
+
+  const src = requireManifestString(icon.src, `${property}.src`);
+  const sizes = requireManifestString(icon.sizes, `${property}.sizes`);
+  const type = requireManifestString(icon.type, `${property}.type`).toLowerCase();
+  invariant(/^image\/[a-z\d.+-]+$/i.test(type), `manifest.json ${property}.type must be an image MIME type.`);
+
+  const sizeTokens = sizes.split(/\s+/);
+  invariant(
+    sizeTokens.every((size) => size === "any" || /^[1-9]\d*x[1-9]\d*$/.test(size)),
+    `manifest.json ${property}.sizes contains an invalid size.`
+  );
+
+  const purpose = icon.purpose === undefined ? "any" : requireManifestString(icon.purpose, `${property}.purpose`);
+  const purposeTokens = purpose.split(/\s+/);
+  invariant(
+    purposeTokens.every((item) => allowedManifestIconPurposes.has(item)),
+    `manifest.json ${property}.purpose contains an unsupported value.`
+  );
+
+  const url = resolveManifestUrl(src, `${property}.src`, manifestUrl, basePath);
+  const exportedPathname = exportedManifestPathname(url, basePath);
+  if (type === "image/png") {
     invariant(
-      !value.startsWith("/") && !/^[a-z][a-z\d+.-]*:/i.test(value),
-      `manifest.json ${property} must stay relative for base-path deployment: ${value}`
+      decodeURIComponent(exportedPathname).toLowerCase().endsWith(".png"),
+      `manifest.json ${property}.src must reference a PNG file when type is image/png.`
     );
   }
+  invariant(
+    await isFile(toOutputPath(outputDirectory, exportedPathname)),
+    `manifest.json ${property}.src references a missing exported file: ${src}`
+  );
+
+  return { purposeTokens, sizeTokens, type };
+}
+
+export async function validateWebManifest(manifest, { outputDirectory, basePath = "" }) {
+  invariant(isObjectRecord(manifest), "manifest.json must contain an object.");
+  const normalizedBasePath = normalizeBasePath(basePath);
+  const manifestUrl = new URL(`${normalizedBasePath}/manifest.json`, "https://static-export.invalid");
+
+  const names = ["name", "short_name"].filter((property) => manifest[property] !== undefined);
+  invariant(names.length > 0, "manifest.json must define name or short_name.");
+  for (const property of names) requireManifestString(manifest[property], property);
+
+  const display = requireManifestString(manifest.display, "display");
+  invariant(allowedManifestDisplayModes.has(display), `manifest.json display is unsupported: ${display}`);
+
+  const idUrl = resolveManifestUrl(manifest.id, "id", manifestUrl, normalizedBasePath);
+  const startUrl = resolveManifestUrl(manifest.start_url, "start_url", manifestUrl, normalizedBasePath);
+  const scopeUrl = resolveManifestUrl(manifest.scope, "scope", manifestUrl, normalizedBasePath);
+  invariant(!idUrl.search && !idUrl.hash, "manifest.json id must not contain a query or fragment.");
+  invariant(!scopeUrl.search && !scopeUrl.hash, "manifest.json scope must not contain a query or fragment.");
+  invariant(scopeUrl.pathname.endsWith("/"), "manifest.json scope must resolve to a directory path.");
+  invariant(startUrl.pathname.startsWith(scopeUrl.pathname), "manifest.json start_url must stay within scope.");
+  invariant(
+    await resolveExportedHtmlReference(exportedManifestPathname(startUrl, normalizedBasePath), outputDirectory),
+    `manifest.json start_url must reference an exported HTML route: ${manifest.start_url}`
+  );
+
+  invariant(
+    Array.isArray(manifest.icons) && manifest.icons.length > 0,
+    "manifest.json icons must be a non-empty array."
+  );
+  const icons = await Promise.all(
+    manifest.icons.map((icon, index) =>
+      validateManifestIcon(icon, `icons[${index}]`, {
+        manifestUrl,
+        basePath: normalizedBasePath,
+        outputDirectory,
+      })
+    )
+  );
+  for (const requiredSize of requiredManifestIconSizes) {
+    invariant(
+      icons.some(
+        ({ purposeTokens, sizeTokens, type }) =>
+          type === "image/png" && purposeTokens.includes("any") && sizeTokens.includes(requiredSize)
+      ),
+      `manifest.json icons must include an ${requiredSize} PNG with purpose any.`
+    );
+  }
+
+  const shortcuts = manifest.shortcuts ?? [];
+  invariant(Array.isArray(shortcuts), "manifest.json shortcuts must be an array when present.");
+  const shortcutUrls = new Set();
+  for (let index = 0; index < shortcuts.length; index += 1) {
+    const shortcut = shortcuts[index];
+    const property = `shortcuts[${index}]`;
+    invariant(isObjectRecord(shortcut), `manifest.json ${property} must be an object.`);
+    requireManifestString(shortcut.name, `${property}.name`);
+    if (shortcut.short_name !== undefined) requireManifestString(shortcut.short_name, `${property}.short_name`);
+    if (shortcut.description !== undefined) requireManifestString(shortcut.description, `${property}.description`);
+
+    const url = resolveManifestUrl(shortcut.url, `${property}.url`, manifestUrl, normalizedBasePath);
+    invariant(url.pathname.startsWith(scopeUrl.pathname), `manifest.json ${property}.url must stay within scope.`);
+    invariant(
+      await resolveExportedHtmlReference(exportedManifestPathname(url, normalizedBasePath), outputDirectory),
+      `manifest.json ${property}.url must reference an exported HTML route: ${shortcut.url}`
+    );
+    if (shortcut.icons !== undefined) {
+      invariant(
+        Array.isArray(shortcut.icons) && shortcut.icons.length > 0,
+        `manifest.json ${property}.icons must be a non-empty array when present.`
+      );
+      await Promise.all(
+        shortcut.icons.map((icon, iconIndex) =>
+          validateManifestIcon(icon, `${property}.icons[${iconIndex}]`, {
+            manifestUrl,
+            basePath: normalizedBasePath,
+            outputDirectory,
+          })
+        )
+      );
+    }
+    invariant(!shortcutUrls.has(url.href), `manifest.json contains a duplicate shortcut URL: ${shortcut.url}`);
+    shortcutUrls.add(url.href);
+  }
+
+  return { icons: icons.length, shortcuts: shortcuts.length };
 }
 
 async function listHtmlFiles(directory) {
@@ -290,7 +449,10 @@ export async function checkStaticExport({ rootDirectory = projectRoot, basePath 
     )
   );
   validateHeaders(await readFile(path.join(outputDirectory, "_headers"), "utf8"), normalizedBasePath);
-  validateWebManifest(JSON.parse(await readFile(path.join(outputDirectory, "manifest.json"), "utf8")));
+  await validateWebManifest(JSON.parse(await readFile(path.join(outputDirectory, "manifest.json"), "utf8")), {
+    outputDirectory,
+    basePath: normalizedBasePath,
+  });
   const htmlFiles = await listHtmlFiles(outputDirectory);
   invariant(htmlFiles.length > 0, "Static export contains no HTML files.");
   const contentPolicies = await Promise.all(

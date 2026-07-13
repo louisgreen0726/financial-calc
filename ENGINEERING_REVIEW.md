@@ -308,7 +308,9 @@ browser-level checks beyond the existing suite.
   must stay out of precache, and duplicate entries fail the gate.
 - Every exported document's internal `href` and `src` must resolve to an emitted file or route. A dedicated CI build
   with `NEXT_PUBLIC_BASE_PATH=/calc` additionally ensures absolute references remain under `/calc` while the PWA
-  manifest keeps its install identity, start URL, and scope relative.
+  manifest keeps its install identity, start URL, and scope relative. Manifest validation also requires supported
+  install metadata, exported 192/512 PNG targets, and scope-contained HTML start/shortcut routes; ordinary files and
+  base-path escapes cannot pass as navigation targets.
 - `public/_headers` remains the canonical root template, while the build rewrites every path selector into the final
   `out/_headers` deployment scope. The checker requires the scoped global CSP/referrer/MIME/framing/permissions block,
   HTML/service-worker metadata revalidation, and immutable hashed assets; a `/calc` artifact containing any known

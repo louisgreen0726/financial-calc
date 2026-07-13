@@ -195,13 +195,15 @@ npm run preview
 - 开发与生产构建固定使用 Webpack，确保 TypeScript Monte Carlo Worker 被输出为浏览器可执行 JavaScript
 - Next 构建完成后会按部署路径生成 headers、为每份 HTML 注入基于 hash 的脚本与 style 元素 CSP，再扫描
   `out/` 并生成 `out/precache-manifest.js`；不要在构建后手工修改 HTML 或 metadata，否则已校验的产物契约会失效
-- `npm run static:check` 校验现有导出；`npm run test:static` 重新构建并校验 `/calc` base-path 导出
+- `npm run static:check` 校验现有导出，包括本地 192/512 PNG 安装图标及 scope 内的 HTML 启动页/快捷入口；
+  `npm run test:static` 会在 `/calc` 下重新构建并校验同一契约
 - 生产环境不使用 `next start`
 - 生产环境不假设服务端 API routes 或 Node runtime
 - 静态路由使用 trailing slash
 - service worker 注册逻辑位于 `src/components/service-worker-registration.tsx`
 - service worker 文件为 `public/sw.js`
-- manifest、PNG 安装图标与开发用 precache 占位文件位于 `public/`
+- manifest、PNG 安装图标与开发用 precache 占位文件位于 `public/`；manifest URL 应保持相对形式，使同一份
+  输出 metadata 在根路径与 `NEXT_PUBLIC_BASE_PATH` 下都有效
 - `NEXT_PUBLIC_BASE_PATH` 已被 metadata、导航与 service worker 注册逻辑支持
 - 使用 base path 部署时，应以 `NEXT_PUBLIC_BASE_PATH=/calc` 构建，并让静态宿主将 `/calc/` 映射到同一份导出的 `out/` 目录；导出文件仍位于 `out/` 根目录，不要再额外嵌套一层 `calc/` 目录
 - base-path 宿主执行 clean URL 重定向时必须保留 `/calc`；如果把 `/calc/options/index.html` 等 precache 请求重定向到根路径，service worker 将无法安装

@@ -201,13 +201,15 @@ Deployment notes:
 - the build scopes deployment headers, injects a per-document hash-based script/style-element CSP, then scans `out/`
   and writes `out/precache-manifest.js`; do not edit generated HTML or metadata after the build because the verified
   artifact contract would become stale
-- `npm run static:check` validates the existing export, while `npm run test:static` rebuilds and validates a `/calc` base-path export
+- `npm run static:check` validates the existing export, including local 192/512 PNG install icons and scope-contained
+  HTML start/shortcut routes; `npm run test:static` rebuilds and validates the same contract under `/calc`
 - production does not require `next start`
 - production does not assume server-side API routes or a Node runtime
 - static routes use trailing slashes
 - service worker registration lives in `src/components/service-worker-registration.tsx`
 - the service worker file is `public/sw.js`
-- app manifest, PNG install icons, and the development precache placeholder live under `public/`
+- app manifest, PNG install icons, and the development precache placeholder live under `public/`; keep manifest URLs
+  relative so the same emitted metadata remains valid at root or under `NEXT_PUBLIC_BASE_PATH`
 - `NEXT_PUBLIC_BASE_PATH` is supported by metadata, navigation, and service worker registration
 - for a base-path deployment, build with `NEXT_PUBLIC_BASE_PATH=/calc` and configure the static host to map `/calc/` to the same exported `out/` directory; exported files remain at the root of `out/`, not inside an additional `calc/` folder
 - base-path hosts must preserve `/calc` when redirecting clean URLs; stripping it from precache requests such as `/calc/options/index.html` prevents service-worker installation

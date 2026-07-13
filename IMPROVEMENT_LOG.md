@@ -43,7 +43,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [ ] Extend preference recovery coverage to failed cleanup of invalid persisted values.
 - [x] Consume pending history restores exactly once even when sessionStorage cleanup is blocked.
 - [x] Generate and verify base-path-aware static deployment `_headers` rules.
-- [ ] Validate PWA manifest icons, shortcuts, and base-path asset targets in the static export gate.
+- [x] Validate PWA manifest icons, shortcuts, and base-path asset targets in the static export gate.
 - [x] Prevent rapid consecutive `useUrlState` field updates from overwriting earlier edits.
 - [x] Split storage feedback between applied session preferences and operations that were not completed.
 - [x] Stabilize Black-Scholes log-moneyness for extreme but finite spot/strike ratios.
@@ -1711,3 +1711,44 @@ Verification:
 Queue status: 7 active items remain. PWA manifest integrity is the next implementation while RATE root semantics,
 preference cleanup failures, Portfolio development translations, local browser resolution, translation-scan stability,
 and broader formatting coverage remain queued.
+
+### Improvement 40: Deployable PWA manifest contract
+
+Status: completed.
+
+Changes:
+
+- Closed a static-export blind spot: the gate previously required `manifest.json` to exist and checked only that
+  `id`, `start_url`, and `scope` were relative strings. Broken icon paths, missing install sizes, invalid display modes,
+  scope escapes, and shortcuts targeting arbitrary files could all pass CI.
+- Added an asynchronous manifest validator for object shape, install naming, supported display modes, portable relative
+  identity/start/scope URLs, and deployment-base containment. Start and shortcut URLs must remain inside scope and
+  resolve to emitted HTML routes, so an existing icon or `manifest.json` cannot masquerade as an application route.
+- Validated icon objects, MIME types, declared dimensions, purposes, and final exported files. Install metadata must
+  include local `192x192` and `512x512` PNG icons usable for the default `any` purpose; optional shortcut icons follow
+  the same local-file and base-path rules.
+- Added deterministic shortcut validation for required names, optional metadata, unique resolved URLs, route existence,
+  scope containment, and optional icon arrays.
+- Upgraded the static-export fixture with install metadata, dummy icon targets, and a TVM shortcut. The test matrix now
+  covers root and `/calc` exports plus malformed objects, missing install assets, unsupported size/purpose/display data,
+  absolute and encoded traversal URLs, missing files, non-HTML start/shortcut targets, and scope escapes.
+- Updated bilingual deployment guidance and engineering review evidence with the emitted-manifest contract.
+
+Files and areas:
+
+- `scripts/check-static-export.mjs` and `src/lib/static-export-check.test.ts`
+- English/Chinese README, engineering review, and improvement log
+
+Verification:
+
+- Focused static-export tests passed 12/12; strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+- The existing root artifact passed `npm run static:check` with 15 routes, 197 precache assets, 16 HTML files, and 722
+  internal references.
+- `npm run test:static` rebuilt `/calc` and passed with 15 routes, 197 precache assets, 16 HTML files, and 706
+  base-path-contained internal references.
+- `npm run verify` passed all 54 Vitest files and 451 tests, 15 routes, 197 precache assets, 722 internal references,
+  and every route bundle budget on a fresh root build.
+
+Queue status: 6 active items remain. TVM RATE root ambiguity is next; preference cleanup, Portfolio development
+translations, deterministic local browser resolution, translation-scan stability, and broader formatting enforcement
+remain queued.
