@@ -8,7 +8,47 @@ export interface HistoryFormatOptions {
   yearsUnit?: string;
 }
 
+function inferHistoryFormatFromInputs(item: CalculationHistoryItem): HistoryResultFormat | null {
+  if (item.page === "tvm" && typeof item.inputs.target === "string") {
+    switch (item.inputs.target) {
+      case "rate":
+        return "percentDecimal";
+      case "nper":
+        return "periods";
+      case "pv":
+      case "fv":
+      case "pmt":
+        return "currency";
+    }
+  }
+
+  if (item.page === "macro" && typeof item.inputs.calculator === "string") {
+    switch (item.inputs.calculator) {
+      case "inflation":
+      case "realRate":
+        return "percent";
+      case "ppp":
+        return "ratio";
+      case "purchasingPower":
+      case "cpiAdjust":
+        return "currency";
+    }
+  }
+
+  if (
+    item.page === "options" &&
+    (item.inputs.impliedOptionType === "call" || item.inputs.impliedOptionType === "put")
+  ) {
+    return "percentDecimal";
+  }
+
+  return null;
+}
+
 function inferHistoryFormat(item: CalculationHistoryItem): HistoryResultFormat {
+  const inputFormat = inferHistoryFormatFromInputs(item);
+  if (inputFormat) return inputFormat;
+
   const label = item.label?.toLowerCase() ?? "";
 
   if (item.page === "portfolio" || label.includes("sharpe") || label.includes("ratio")) {

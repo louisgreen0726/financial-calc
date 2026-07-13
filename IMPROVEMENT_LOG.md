@@ -50,6 +50,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Stabilize Black-Scholes log-moneyness for extreme but finite spot/strike ratios.
 - [x] Normalize History filters when deleting the last record in the active category.
 - [x] Bound legacy cash-flow History parsing so long corrupt records cannot freeze restoration.
+- [x] Infer legacy History result formats from stable raw discriminators before localized labels.
 - [x] Detect and explain multiple valid TVM RATE roots instead of presenting one as unique.
 - [x] Preserve NPV/IRR invariance when appending economically irrelevant zero cash flows.
 - [x] Stabilize translation-catalog source scanning under full-suite worker contention.
@@ -2376,3 +2377,33 @@ two-record History comparison UI; dead dependency cleanup and legacy History for
 - Current work: commit Improvement 54, integrate the validated History comparison dialog/page workflow, and finish the
   independent dead-dependency and legacy display-format batches.
 - Queue status: product, UI, compatibility, and maintenance work all remain assigned; the queue is intentionally non-empty.
+
+### Improvement 55: Locale-independent legacy History result formatting
+
+Status: completed.
+
+Changes:
+
+- Reproduced incorrect display for valid legacy records that predate explicit `resultFormat`. Formatting fell back to
+  English label fragments: `TVM -> NPER` did not contain "period" and rendered as currency; Chinese inflation/real-rate
+  labels rendered as currency; and English PPP labels containing "Rate" rendered as a percentage.
+- Added input-first inference from stable raw discriminators before the existing label heuristic. TVM `target` now
+  distinguishes decimal rate, periods, and currency outputs; Macro `calculator` distinguishes percent, ratio, and
+  currency families; and implied-option `call`/`put` records resolve to decimal percentages.
+- Kept explicit stored metadata at highest priority. A current `resultFormat` always wins even when raw inputs imply a
+  different family, while unknown future discriminators continue to the backward-compatible label/default path.
+- Added English/Chinese, missing-label, deliberately misleading-label, explicit-override, and unknown-discriminator
+  coverage so locale changes cannot alter the inferred unit of the same old record.
+
+Files and areas:
+
+- `src/lib/history-format.ts`
+- `src/lib/history-format.test.ts`
+
+Verification:
+
+- The focused History formatting suite passed 8/8 tests.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: 2 active product/UI items remain across the strict two-record History comparison UI and app-shell
+localization/semantics; dead dependency cleanup and Monte Carlo error precedence are active maintenance batches.
