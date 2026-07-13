@@ -2774,3 +2774,33 @@ Verification:
 
 Queue status: History baseline swapping and clipboard fallback cleanup are active in parallel; History loading
 stability, complete workspace backup, and further UI/product auditing remain queued.
+
+### Improvement 67: Exception-safe legacy clipboard fallback cleanup
+
+Status: completed.
+
+Changes:
+
+- Closed a cleanup gap in the legacy copy fallback used after modern Clipboard permission/API failures. Temporary
+  textarea focus and selection happened before the protected block, so an embedded or restricted browser throwing
+  during either step could leak the hidden node and discard the earlier modern Clipboard failure context.
+- Moved focus, selection, and `execCommand("copy")` into one try/catch/finally lifecycle. Any legacy setup/copy error is
+  now combined with the modern rejection in the existing `AggregateError`, and the temporary textarea is removed on
+  every path while best-effort focus restoration still runs.
+- Contained focus-restoration exceptions inside `finally`. A browser throwing while returning focus to the prior
+  control can no longer turn an otherwise successful copy into a user-visible failure or replace the real copy error.
+- Added regressions for selection failure after a denied modern write and for focus restoration failure after a
+  successful legacy copy, including node cleanup, error ordering, execCommand suppression, and success preservation.
+
+Files and areas:
+
+- `src/lib/clipboard.ts`
+- `src/lib/clipboard.test.ts`
+
+Verification:
+
+- The focused Clipboard suite passed 4/4 tests.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: History baseline swapping remains active; History loading stability, complete workspace backup, and the
+next core/tooling correctness batches remain queued or under audit.

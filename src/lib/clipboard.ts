@@ -32,10 +32,10 @@ export async function copyTextToClipboard(text: string): Promise<void> {
   textArea.style.left = "-9999px";
   textArea.style.top = "0";
   document.body.appendChild(textArea);
-  textArea.focus();
-  textArea.select();
 
   try {
+    textArea.focus();
+    textArea.select();
     const successful = document.execCommand("copy");
     if (!successful) {
       throw new Error("Copy command failed");
@@ -47,6 +47,10 @@ export async function copyTextToClipboard(text: string): Promise<void> {
     throw legacyClipboardError;
   } finally {
     textArea.remove();
-    previouslyFocused?.focus({ preventScroll: true });
+    try {
+      previouslyFocused?.focus({ preventScroll: true });
+    } catch {
+      // Focus restoration must not turn a successful copy into a reported failure.
+    }
   }
 }

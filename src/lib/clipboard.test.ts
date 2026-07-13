@@ -50,4 +50,43 @@ describe("copyTextToClipboard", () => {
     });
     expect(document.querySelector("textarea")).toBeNull();
   });
+
+  it("cleans up and preserves both failures when legacy text selection throws", async () => {
+    const permissionError = new DOMException("Permission denied", "NotAllowedError");
+    const selectionError = new Error("Selection unavailable");
+    installModernClipboard(() => Promise.reject(permissionError));
+    const execCommand = vi.fn(() => true);
+    Object.defineProperty(document, "execCommand", { configurable: true, value: execCommand });
+    vi.spyOn(HTMLTextAreaElement.prototype, "select").mockImplementation(() => {
+      throw selectionError;
+    });
+    const input = document.createElement("input");
+    document.body.appendChild(input);
+    input.focus();
+
+    await expect(copyTextToClipboard("blocked selection")).rejects.toMatchObject({
+      name: "AggregateError",
+      errors: [permissionError, selectionError],
+    });
+
+    expect(execCommand).not.toHaveBeenCalled();
+    expect(document.querySelector("textarea")).toBeNull();
+    expect(document.activeElement).toBe(input);
+  });
+
+  it("does not report a successful fallback as failed when focus restoration throws", async () => {
+    installModernClipboard(() => Promise.reject(new DOMException("Permission denied", "NotAllowedError")));
+    Object.defineProperty(document, "execCommand", { configurable: true, value: vi.fn(() => true) });
+    const input = document.createElement("input");
+    document.body.appendChild(input);
+    input.focus();
+    const restoreFocus = vi.spyOn(input, "focus").mockImplementation(() => {
+      throw new Error("Focus restoration failed");
+    });
+
+    await expect(copyTextToClipboard("copied value")).resolves.toBeUndefined();
+
+    expect(restoreFocus).toHaveBeenCalledOnce();
+    expect(document.querySelector("textarea")).toBeNull();
+  });
 });
