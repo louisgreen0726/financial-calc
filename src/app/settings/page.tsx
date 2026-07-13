@@ -82,6 +82,18 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSetTheme = (nextTheme: "light" | "dark" | "system") => {
+    if (!setTheme(nextTheme)) {
+      toast.error(t("common.storageError"));
+    }
+  };
+
+  const handleSetLanguage = (nextLanguage: "en" | "zh") => {
+    if (!setLanguage(nextLanguage)) {
+      toast.error(t("common.storageError"));
+    }
+  };
+
   const handleClearHistory = async () => {
     try {
       const [historyCleared, favoritesCleared] = await Promise.all([
@@ -228,7 +240,7 @@ export default function SettingsPage() {
                 type="button"
                 variant={theme === "light" ? "default" : "outline"}
                 size="sm"
-                onClick={() => setTheme("light")}
+                onClick={() => handleSetTheme("light")}
                 aria-pressed={theme === "light"}
                 className={cn("min-h-11 justify-start gap-2", theme === "light" && "bg-primary")}
               >
@@ -239,7 +251,7 @@ export default function SettingsPage() {
                 type="button"
                 variant={theme === "dark" ? "default" : "outline"}
                 size="sm"
-                onClick={() => setTheme("dark")}
+                onClick={() => handleSetTheme("dark")}
                 aria-pressed={theme === "dark"}
                 className={cn("min-h-11 justify-start gap-2", theme === "dark" && "bg-primary")}
               >
@@ -250,7 +262,7 @@ export default function SettingsPage() {
                 type="button"
                 variant={theme === "system" ? "default" : "outline"}
                 size="sm"
-                onClick={() => setTheme("system")}
+                onClick={() => handleSetTheme("system")}
                 aria-pressed={theme === "system"}
                 className={cn("min-h-11 justify-start gap-2", theme === "system" && "bg-primary")}
               >
@@ -275,7 +287,7 @@ export default function SettingsPage() {
                 type="button"
                 variant={language === "en" ? "default" : "outline"}
                 size="sm"
-                onClick={() => setLanguage("en")}
+                onClick={() => handleSetLanguage("en")}
                 aria-pressed={language === "en"}
                 className={cn("min-h-11 justify-start gap-2", language === "en" && "bg-primary")}
               >
@@ -286,7 +298,7 @@ export default function SettingsPage() {
                 type="button"
                 variant={language === "zh" ? "default" : "outline"}
                 size="sm"
-                onClick={() => setLanguage("zh")}
+                onClick={() => handleSetLanguage("zh")}
                 aria-pressed={language === "zh"}
                 className={cn("min-h-11 justify-start gap-2", language === "zh" && "bg-primary")}
               >

@@ -5,17 +5,23 @@ import { Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export const LanguageSwitcher = React.memo(function LanguageSwitcher() {
   const { language, setLanguage, t } = useLanguage();
   const visibleLabel = language === "en" ? "EN / 中文" : "中文 / EN";
   const nextLanguageLabel = language === "en" ? t("common.switchToChinese") : t("common.switchToEnglish");
+  const handleLanguageChange = () => {
+    if (!setLanguage(language === "en" ? "zh" : "en")) {
+      toast.error(t("common.storageError"));
+    }
+  };
 
   return (
     <Button
       variant="ghost"
       size="sm"
-      onClick={() => setLanguage(language === "en" ? "zh" : "en")}
+      onClick={handleLanguageChange}
       className={cn(
         "h-9 gap-2 rounded-md px-2.5 text-xs font-medium hover:bg-muted",
         language === "zh" && "bg-accent text-accent-foreground"

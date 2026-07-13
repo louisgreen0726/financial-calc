@@ -1,15 +1,21 @@
 /// <reference types="vitest/globals" />
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { useState } from "react";
 import { ThemeProvider, useTheme } from "@/components/theme-provider";
 
 function ThemeHarness() {
   const { theme, setTheme } = useTheme();
+  const [persisted, setPersisted] = useState<boolean | null>(null);
 
   return (
-    <button type="button" onClick={() => setTheme("dark")}>
-      {theme}
-    </button>
+    <>
+      <span>{theme}</span>
+      <output>{persisted === null ? "idle" : String(persisted)}</output>
+      <button type="button" onClick={() => setPersisted(setTheme("dark"))}>
+        Set dark
+      </button>
+    </>
   );
 }
 
@@ -44,12 +50,13 @@ describe("ThemeProvider", () => {
       </ThemeProvider>
     );
 
-    expect(screen.getByRole("button", { name: "system" })).toBeInTheDocument();
+    expect(screen.getByText("system")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "system" }));
+    fireEvent.click(screen.getByRole("button", { name: "Set dark" }));
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "dark" })).toBeInTheDocument();
+      expect(screen.getByText("dark")).toBeInTheDocument();
+      expect(screen.getByText("false")).toBeInTheDocument();
     });
   });
 
@@ -62,7 +69,7 @@ describe("ThemeProvider", () => {
     );
 
     await waitFor(() => expect(window.localStorage.getItem("theme")).toBeNull());
-    expect(screen.getByRole("button", { name: "system" })).toBeInTheDocument();
+    expect(screen.getByText("system")).toBeInTheDocument();
   });
 
   it("follows theme changes made in another tab", async () => {
@@ -72,7 +79,7 @@ describe("ThemeProvider", () => {
       </ThemeProvider>
     );
 
-    await waitFor(() => expect(screen.getByRole("button", { name: "system" })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("system")).toBeInTheDocument());
     fireEvent(
       window,
       new StorageEvent("storage", {
@@ -81,6 +88,6 @@ describe("ThemeProvider", () => {
       })
     );
 
-    expect(screen.getByRole("button", { name: "dark" })).toBeInTheDocument();
+    expect(screen.getByText("dark")).toBeInTheDocument();
   });
 });

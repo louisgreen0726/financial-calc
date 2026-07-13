@@ -8,7 +8,7 @@ type ResolvedTheme = "light" | "dark";
 
 interface ThemeContextValue {
   theme: Theme;
-  setTheme: (theme: Theme) => void;
+  setTheme: (theme: Theme) => boolean;
   resolvedTheme: ResolvedTheme;
   systemTheme: ResolvedTheme;
 }
@@ -95,7 +95,7 @@ export function ThemeProvider({ children, defaultTheme = "system", enableSystem 
 
   const setTheme = useCallback((nextTheme: Theme) => {
     setThemeState(nextTheme);
-    safeSetItem(THEME_STORAGE_KEY, nextTheme);
+    return safeSetItem(THEME_STORAGE_KEY, nextTheme);
   }, []);
 
   const value = useMemo(

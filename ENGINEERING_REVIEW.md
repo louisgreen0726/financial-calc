@@ -352,7 +352,9 @@ No P0 findings were identified.
   every negative rate. The UI, localized validation, range hint, and schema now share the same exclusive lower bound.
 - Cross-tab settings: language, theme, currency formatting, and the Settings currency selection react to browser
   `storage` events. Persisted values outside the supported theme/language/currency sets are removed and fall back to
-  system, English, and USD rather than remaining as permanent corrupt state.
+  system, English, and USD rather than remaining as permanent corrupt state. Theme and language setters also expose
+  failed writes to every Settings/header entry point, so the in-session choice remains active while a localized toast
+  explains that it may be lost after refresh.
 - Export/share hardening: truncated download names are normalized again after the length limit so they do not end in
   a Windows-invalid dot or space; copied Markdown now neutralizes link and inline-formatting syntax in user text.
 - Mobile result visibility: the page-history control no longer overlaps the fixed bottom navigation or result summary.

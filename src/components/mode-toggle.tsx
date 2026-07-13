@@ -14,11 +14,17 @@ import {
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/theme-provider";
+import { toast } from "sonner";
 
 export const ModeToggle = React.memo(function ModeToggle() {
   const { setTheme, theme } = useTheme();
   const { t } = useLanguage();
   const themeLabel = theme === "dark" ? t("common.dark") : theme === "light" ? t("common.light") : t("common.system");
+  const handleThemeChange = (value: string) => {
+    if (!setTheme(value as "light" | "dark" | "system")) {
+      toast.error(t("common.storageError"));
+    }
+  };
 
   return (
     <DropdownMenu>
@@ -38,11 +44,7 @@ export const ModeToggle = React.memo(function ModeToggle() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[120px]">
-        <DropdownMenuRadioGroup
-          value={theme}
-          onValueChange={(value) => setTheme(value as "light" | "dark" | "system")}
-          aria-label={t("settings.theme")}
-        >
+        <DropdownMenuRadioGroup value={theme} onValueChange={handleThemeChange} aria-label={t("settings.theme")}>
           <DropdownMenuRadioItem value="light" className="cursor-pointer gap-2">
             <Sun className="h-4 w-4" />
             {t("common.light")}

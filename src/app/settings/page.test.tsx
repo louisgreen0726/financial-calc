@@ -5,19 +5,21 @@ import { createCalculationHistoryEnvelope } from "@/lib/calculation-history";
 
 const mocks = vi.hoisted(() => ({
   exportToJSON: vi.fn(),
+  setLanguage: vi.fn(),
+  setTheme: vi.fn(),
   toast: { error: vi.fn(), info: vi.fn(), success: vi.fn() },
 }));
 
 vi.mock("@/lib/i18n", () => ({
   useLanguage: () => ({
     language: "en",
-    setLanguage: vi.fn(),
+    setLanguage: mocks.setLanguage,
     t: (key: string) => key,
   }),
 }));
 
 vi.mock("@/components/theme-provider", () => ({
-  useTheme: () => ({ theme: "light", setTheme: vi.fn() }),
+  useTheme: () => ({ theme: "light", setTheme: mocks.setTheme }),
 }));
 
 vi.mock("@/hooks/use-export", () => ({
@@ -30,6 +32,23 @@ describe("SettingsPage", () => {
   beforeEach(() => {
     window.localStorage.clear();
     vi.clearAllMocks();
+    mocks.setLanguage.mockReturnValue(true);
+    mocks.setTheme.mockReturnValue(true);
+  });
+
+  it("reports theme and language persistence failures", () => {
+    mocks.setTheme.mockReturnValue(false);
+    mocks.setLanguage.mockReturnValue(false);
+    render(<SettingsPage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "settings.dark" }));
+    fireEvent.click(screen.getByRole("button", { name: "中文" }));
+
+    expect(mocks.setTheme).toHaveBeenCalledWith("dark");
+    expect(mocks.setLanguage).toHaveBeenCalledWith("zh");
+    expect(mocks.toast.error).toHaveBeenCalledTimes(2);
+    expect(mocks.toast.error).toHaveBeenNthCalledWith(1, "common.storageError");
+    expect(mocks.toast.error).toHaveBeenNthCalledWith(2, "common.storageError");
   });
 
   it("keeps the previous currency selected when persistence is blocked", () => {

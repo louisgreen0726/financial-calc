@@ -36,7 +36,11 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Add corrupted-storage browser coverage for persisted theme, language, and currency preferences.
 - [x] Add browser coverage for denied clipboard/share permissions and export failure recovery.
 - [x] Audit service-worker cache growth and storage-quota failure behavior across upgrades.
-- [ ] Surface theme/language persistence write failures consistently with currency settings.
+- [x] Surface theme/language persistence write failures consistently with currency settings.
+- [ ] Audit remaining preference setters for silent write failures, starting with sidebar collapse state.
+- [ ] Investigate and eliminate development-only missing translation warnings for Portfolio seed controls.
+- [ ] Make local Playwright browser selection deterministic when the pinned browser binary is unavailable.
+- [ ] Extend preference recovery coverage to failed cleanup of invalid persisted values.
 
 ## 2026-07-13
 
@@ -1332,3 +1336,49 @@ Verification:
 - Current work: all final gates passed; commit Improvement 30 and stop as explicitly requested.
 - Remaining reviewed item: explicit theme/language persistence write-failure feedback. It stays queued and unmodified
   for a future session rather than being started after the requested final round.
+
+### Improvement 31: Honest theme and language persistence feedback
+
+Status: completed after the continuous improvement goal resumed.
+
+Changes:
+
+- Changed the shared theme and language setters to return the actual browser-storage write result while preserving
+  immediate in-session state changes when storage is unavailable.
+- Added localized storage-failure notifications to every theme/language entry point: the Settings page, the header
+  theme menu, and the header language switcher. Users are told that the active choice may be lost after refresh rather
+  than receiving a false impression that it was persisted.
+- Added provider-level regression coverage proving failed writes return `false` without blocking the visible theme or
+  language change, plus Settings coverage for both failure notifications.
+- Extended the real-browser preference workflow to block only theme/language/currency writes, exercise both Settings
+  and header controls, verify English and Chinese error messages, retain immediate UI changes, and confirm no blocked
+  key was written.
+- Updated bilingual feature documentation and the engineering review. Refilled the active queue with follow-up
+  preference, translation, and local-browser reliability work before completing this item.
+
+Files and areas:
+
+- `src/components/theme-provider.tsx`, `src/lib/i18n.tsx`, and focused provider tests
+- `src/app/settings/page.tsx`, `src/components/mode-toggle.tsx`, and `src/components/language-switcher.tsx`
+- `e2e/preferences-storage.spec.ts`
+- English/Chinese README, engineering review, and improvement log
+
+Verification:
+
+- Strict TypeScript passed; three focused Vitest files passed 9/9 tests before the full gate.
+- The preference Playwright file passed 2/2 browser workflows in installed system Chrome. Both the pre-existing corrupt
+  preference flow and the new blocked-write flow completed without console or page errors. The tool wrapper did not
+  exit after reporting both passes and reached its outer timeout; a process audit confirmed no Playwright workers were
+  left behind.
+- `npm run verify`: passed with 54 Vitest files and 431 tests, 15 routes, 197 precache assets, 96 script hashes, 35
+  static style hashes, 2 runtime style hashes per document, 722 internal references, and every route bundle budget.
+- Changed source and documentation passed Prettier; `git diff --check` passed before the full gate.
+
+### Progress checkpoint: 11:55 +08:00
+
+- Resumed-goal elapsed time: 44 minutes; cumulative logged active work: approximately 8 hours 21 minutes.
+- Completed improvement batches: 31; theme/language selection now communicates persistence failures without disabling
+  the usable in-session preference.
+- Current work: Improvement 31 is fully verified and ready to commit; remaining silent preference setters are next.
+- Queue status: 4 active items remain covering sidebar persistence, Portfolio translation warnings, deterministic local
+  Playwright browser selection, and invalid-preference cleanup failures.

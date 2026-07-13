@@ -2017,7 +2017,7 @@ export const translationCatalogs = { en, zh } as const;
 
 interface LanguageContextType {
   language: Language;
-  setLanguage: (lang: Language) => void;
+  setLanguage: (lang: Language) => boolean;
   t: (key: TranslationKey) => string;
   translations: Translations;
 }
@@ -2081,7 +2081,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   const handleSetLanguage = (lang: Language) => {
     setLanguage(lang);
-    safeSetItem(LANGUAGE_KEY, lang);
+    return safeSetItem(LANGUAGE_KEY, lang);
   };
 
   const currentDictionary = translationCatalogs[language];
