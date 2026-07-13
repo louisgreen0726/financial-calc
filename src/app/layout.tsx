@@ -15,10 +15,9 @@ const inter = Inter({
 
 const basePath = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(/\/$/, "");
 const withBasePath = (path: string) => `${basePath}${path}`;
-const workspaceVisuals = {
-  "--workspace-visual-light": `url("${withBasePath("/visuals/workspace-light.webp")}")`,
-  "--workspace-visual-dark": `url("${withBasePath("/visuals/workspace-dark.webp")}")`,
-} as React.CSSProperties;
+const workspaceVisualStyles = `:root{--workspace-visual-light:url("${withBasePath(
+  "/visuals/workspace-light.webp"
+)}");--workspace-visual-dark:url("${withBasePath("/visuals/workspace-dark.webp")}")}`;
 
 export const metadata: Metadata = {
   title: {
@@ -57,7 +56,10 @@ export default function RootLayout({
     // - LanguageProvider updates document.documentElement.lang on the client after hydration.
     // - Any browser-only behavior (theme, local/session storage, service worker) must stay behind client boundaries.
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased`} style={workspaceVisuals} suppressHydrationWarning>
+      <head>
+        <style data-workspace-visuals>{workspaceVisualStyles}</style>
+      </head>
+      <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <LanguageProvider>
             <ErrorBoundary>

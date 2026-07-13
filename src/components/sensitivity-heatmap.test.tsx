@@ -1,11 +1,7 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { SensitivityHeatmap } from "@/components/sensitivity-heatmap";
-
-vi.mock("@/components/theme-provider", () => ({
-  useTheme: () => ({ resolvedTheme: "light" }),
-}));
 
 describe("SensitivityHeatmap", () => {
   it("makes its horizontal scroll region reachable and names it from the table caption", () => {
@@ -23,5 +19,9 @@ describe("SensitivityHeatmap", () => {
     const region = screen.getByRole("region", { name: "Bond price sensitivity" });
     expect(region).toHaveAttribute("tabindex", "0");
     expect(region).toContainElement(screen.getByRole("table", { name: "Bond price sensitivity" }));
+    const cells = screen.getAllByRole("cell");
+    expect(cells[0]).toHaveAttribute("data-heatmap-level", "0");
+    expect(cells[1]).toHaveAttribute("data-heatmap-level", "8");
+    expect(cells.every((cell) => !cell.hasAttribute("style"))).toBe(true);
   });
 });

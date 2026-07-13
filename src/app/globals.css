@@ -308,6 +308,93 @@
     @apply mt-6 flex flex-col gap-2 sm:flex-row;
   }
 
+  ol[data-sonner-toaster].toaster {
+    --normal-bg: var(--popover);
+    --normal-text: var(--popover-foreground);
+    --normal-border: var(--border);
+    --border-radius: var(--radius);
+  }
+
+  .heatmap-cell {
+    color: hsl(0 0% 15%);
+  }
+
+  .dark .heatmap-cell {
+    color: hsl(0 0% 95%);
+  }
+
+  .heatmap-cell[data-heatmap-level="0"] {
+    background-color: hsl(210 70% 60%);
+  }
+
+  .heatmap-cell[data-heatmap-level="1"] {
+    background-color: hsl(207.5 70% 58.5%);
+  }
+
+  .heatmap-cell[data-heatmap-level="2"] {
+    background-color: hsl(205 70% 57%);
+  }
+
+  .heatmap-cell[data-heatmap-level="3"] {
+    background-color: hsl(202.5 70% 55.5%);
+  }
+
+  .heatmap-cell[data-heatmap-level="4"] {
+    background-color: hsl(200 70% 54%);
+  }
+
+  .heatmap-cell[data-heatmap-level="5"] {
+    background-color: hsl(197.5 70% 52.5%);
+  }
+
+  .heatmap-cell[data-heatmap-level="6"] {
+    background-color: hsl(195 70% 51%);
+  }
+
+  .heatmap-cell[data-heatmap-level="7"] {
+    background-color: hsl(192.5 70% 49.5%);
+  }
+
+  .heatmap-cell[data-heatmap-level="8"] {
+    background-color: hsl(190 70% 48%);
+  }
+
+  .dark .heatmap-cell[data-heatmap-level="0"] {
+    background-color: hsl(210 70% 20%);
+  }
+
+  .dark .heatmap-cell[data-heatmap-level="1"] {
+    background-color: hsl(207.5 70% 21.875%);
+  }
+
+  .dark .heatmap-cell[data-heatmap-level="2"] {
+    background-color: hsl(205 70% 23.75%);
+  }
+
+  .dark .heatmap-cell[data-heatmap-level="3"] {
+    background-color: hsl(202.5 70% 25.625%);
+  }
+
+  .dark .heatmap-cell[data-heatmap-level="4"] {
+    background-color: hsl(200 70% 27.5%);
+  }
+
+  .dark .heatmap-cell[data-heatmap-level="5"] {
+    background-color: hsl(197.5 70% 29.375%);
+  }
+
+  .dark .heatmap-cell[data-heatmap-level="6"] {
+    background-color: hsl(195 70% 31.25%);
+  }
+
+  .dark .heatmap-cell[data-heatmap-level="7"] {
+    background-color: hsl(192.5 70% 33.125%);
+  }
+
+  .dark .heatmap-cell[data-heatmap-level="8"] {
+    background-color: hsl(190 70% 35%);
+  }
+
   .home-cover-actions [data-slot="button"],
   .home-cover-actions a {
     @apply w-full sm:w-auto;

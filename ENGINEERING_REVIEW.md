@@ -201,12 +201,15 @@ browser-level checks beyond the existing suite.
 - Static validation recomputes every hash and rejects missing, duplicate, late, stale, or element-level
   `unsafe-inline` meta policies. Browser coverage injects unlisted script and style elements, requires CSP violations,
   and then exercises normal hydration and PWA flows.
-- The export has 19 static style blocks. Each is covered by its document's exact `style-src-elem` hashes. Sonner inserts
-  an empty style element and then a deterministic package CSS string during client startup; the generator extracts and
-  hashes those exact sources from the installed module so dependency updates cannot silently leave a stale constant.
-- The 121 exported style attributes include runtime-mutated Radix, chart, workspace-visual, and heatmap values. The
-  document policy isolates their compatibility exception to `style-src-attr 'unsafe-inline'`; scripts and unlisted
-  style elements do not inherit it. No inline event-handler attributes were found.
+- The export now has 35 static style blocks: 19 framework/component blocks plus one base-path-aware workspace-visual
+  configuration in each of 16 documents. Each is covered by its document's exact `style-src-elem` hashes. Sonner also
+  inserts an empty style element and then a deterministic package CSS string during client startup; the generator
+  extracts and hashes those exact sources so dependency updates cannot silently leave a stale constant.
+- Exported style attributes fell from 121 to 80. Workspace URL variables moved from body attributes into the hashed
+  configuration block, bond heatmap colors became nine static light/dark levels, and fixed Sonner theme variables moved
+  into the stylesheet. Remaining attributes are runtime-mutated Radix, chart, and layout values. The document policy
+  isolates their compatibility exception to `style-src-attr 'unsafe-inline'`; scripts and unlisted style elements do
+  not inherit it. No inline event-handler attributes were found.
 
 ### Risk Follow-up: Deterministic Stress Scenarios
 

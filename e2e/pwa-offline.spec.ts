@@ -65,6 +65,7 @@ test("enforces generated inline script and style-element hashes", async ({ page 
     document.head.append(style);
     const styleViolation = await styleViolationPromise;
     const policy = document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.getAttribute("content") ?? "";
+    const appShell = document.querySelector(".app-shell");
     const directiveHashCount = (directive: string) =>
       policy
         .split(";")
@@ -76,6 +77,8 @@ test("enforces generated inline script and style-element hashes", async ({ page 
       scriptHashSources: directiveHashCount("script-src"),
       styleApplied: getComputedStyle(document.documentElement).getPropertyValue("--financial-calc-csp-probe").trim(),
       styleHashSources: directiveHashCount("style-src-elem"),
+      workspaceBackground: appShell ? getComputedStyle(appShell, "::before").backgroundImage : "",
+      workspaceStyleBlocks: document.querySelectorAll("style[data-workspace-visuals]").length,
       policy,
       scriptViolation,
       styleViolation,
@@ -90,6 +93,8 @@ test("enforces generated inline script and style-element hashes", async ({ page 
   expect(result.policy).not.toMatch(/(?:script-src|style-src-elem)[^;]*'unsafe-inline'/);
   expect(result.scriptHashSources).toBeGreaterThan(0);
   expect(result.styleHashSources).toBeGreaterThan(0);
+  expect(result.workspaceBackground).toContain(appPath("/visuals/workspace-"));
+  expect(result.workspaceStyleBlocks).toBe(1);
   expect(result.executed).toBe(false);
   expect(result.styleApplied).toBe("");
   expect(result.scriptViolation).toMatchObject({ blockedURI: "inline" });

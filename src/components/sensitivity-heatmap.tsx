@@ -1,7 +1,5 @@
 "use client";
 
-import * as React from "react";
-import { useTheme } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -29,22 +27,9 @@ export function SensitivityHeatmap({ data, rowLabels, colLabels, formatCell, cap
   }
   const range = max - min;
 
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
-
-  const cellColor = (value: number) => {
-    // Guard against degenerate data
-    if (!Number.isFinite(value) || range <= 0) {
-      return isDark ? "hsl(210, 70%, 25%)" : "hsl(210, 70%, 60%)";
-    }
-    const t = (value - min) / range; // 0..1
-    const hue = 210 - t * 20; // 210 -> 190
-
-    // Light mode: 60% down to 48%
-    // Dark mode: 20% up to 35% (so cells are distinct from dark bg but readable)
-    const light = isDark ? 20 + t * 15 : 60 - t * 12;
-
-    return `hsl(${hue}, 70%, ${light}%)`;
+  const cellLevel = (value: number) => {
+    if (!Number.isFinite(value) || range <= 0) return 4;
+    return Math.min(8, Math.max(0, Math.round(((value - min) / range) * 8)));
   };
 
   return (
@@ -81,11 +66,8 @@ export function SensitivityHeatmap({ data, rowLabels, colLabels, formatCell, cap
               {row.map((val, colIndex) => (
                 <td
                   key={`cell-${rowIndex}-${colIndex}`}
-                  className="px-4 py-3 text-right font-mono text-sm font-medium"
-                  style={{
-                    backgroundColor: cellColor(val),
-                    color: isDark ? "hsl(0, 0%, 95%)" : "hsl(0, 0%, 15%)",
-                  }}
+                  className="heatmap-cell px-4 py-3 text-right font-mono text-sm font-medium"
+                  data-heatmap-level={cellLevel(val)}
                 >
                   {formatCell(val)}
                 </td>

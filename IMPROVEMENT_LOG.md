@@ -31,9 +31,10 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Plan and test remaining major dependency migrations as isolated compatibility batches.
 - [x] Reduce `style-src 'unsafe-inline'` exposure by inventorying static versus runtime component/chart styles.
 - [x] Bound amortization-table DOM rendering without weakening complete exports or accessibility coverage.
-- [ ] Reduce the remaining dynamic style-attribute compatibility surface in owned components.
+- [x] Reduce the remaining dynamic style-attribute compatibility surface in owned components.
 - [ ] Audit calculator reset/default workflows and add a consistent reversible reset command where missing.
 - [ ] Add corrupted-storage browser coverage for persisted theme, language, and currency preferences.
+- [ ] Add browser coverage for denied clipboard/share permissions and export failure recovery.
 
 ## 2026-07-13
 
@@ -1068,3 +1069,55 @@ Verification:
 - Current work: Improvement 25 is fully verified and ready to commit; owned dynamic style attributes are next.
 - Queue status: 3 active items remain: owned style-attribute reduction, reversible calculator reset/default workflows,
   and corrupted preference-storage browser coverage.
+
+### Improvement 26: Owned inline-style reduction with hashed base-path visuals
+
+Status: completed.
+
+Changes:
+
+- Re-audited all 16 exported documents after style-element CSP enforcement and separated owned values from
+  runtime-required third-party layout values.
+- Moved base-path-aware light/dark workspace image variables from the `<body style>` attribute into one static style
+  block per document. The existing build generator now hashes those blocks, so root and `/calc` asset URLs retain
+  static-export portability without consuming the attribute-level compatibility exception.
+- Replaced 25 continuously generated bond heatmap style attributes with nine bounded `data-heatmap-level` values and
+  static light/dark CSS palettes. Non-finite or flat datasets resolve to a stable middle level, and cells retain
+  readable foreground contrast in both themes.
+- Removed the heatmap's theme hook and per-render color strings. The Bonds route shed about 620 gzip bytes while the
+  rendered matrix still exposes eight distinct levels for its current 5x5 dataset.
+- Moved four fixed Sonner theme variables from its React `style` prop into a higher-specificity static rule while
+  leaving Sonner's genuinely dynamic width, gap, offset, and toast-height values intact.
+- Extended the root/base-path production CSP probe to require exactly one workspace style block and verify the applied
+  pseudo-element background URL includes the deployment prefix.
+- Updated engineering security evidence: aggregate exported style attributes fell from 121 to 80 (34%), while static
+  style blocks increased from 19 to 35 and remain covered by exact per-document hashes.
+
+Files and areas:
+
+- `src/app/layout.tsx` and `src/app/globals.css`
+- `src/components/sensitivity-heatmap.tsx`, its focused test, and `src/components/ui/sonner.tsx`
+- `e2e/pwa-offline.spec.ts`
+- Engineering review and improvement log
+
+Verification:
+
+- Focused heatmap/CSP suite passed with 4 tests; cell extrema map to levels 0/8 and no data cell retains a style
+  attribute. Strict TypeScript and ESLint passed.
+- A parsed root export contained 80 style attributes, 35 style blocks, and exactly 16 workspace configuration blocks.
+- `npm run verify`: passed with 49 files and 416 tests, 15 routes, 197 precache assets, 96 script hashes, 35 static
+  style hashes, 2 runtime style hashes per document, 722 internal references, and every route budget.
+- Root and `/calc` CSP/PWA suites each passed 2/2. The base-path artifact validated 706 internal references and all
+  route budgets; its browser probe observed `/calc/visuals/workspace-*` as the applied background.
+- Desktop light/dark Bonds screenshots were inspected. The heatmap produced eight computed background colors, no
+  inline cell styles, readable dark-theme text, the correct workspace image, and zero console errors.
+- Production dependency audit reported zero vulnerabilities; extended Prettier and `git diff --check` passed.
+
+### Progress checkpoint: 09:06 +08:00
+
+- Continuous-session elapsed time: 6 hours.
+- Completed improvement batches: 26; owned inline style attributes are reduced by 34% and base-path visuals now sit
+  behind exact style-element hashes.
+- Current work: Improvement 26 is fully verified and ready to commit; calculator reset/default consistency is next.
+- Queue status: 3 active items remain: reversible reset/default workflows, corrupted preference-storage coverage, and
+  denied clipboard/share/export recovery.
