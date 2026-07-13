@@ -150,7 +150,13 @@ export function ServiceWorkerRegistration({ reloadPage = reloadCurrentPage }: Se
             }
 
             activationRequested = true;
-            currentWaitingWorker.postMessage({ type: "SKIP_WAITING" });
+            try {
+              currentWaitingWorker.postMessage({ type: "SKIP_WAITING" });
+            } catch (error) {
+              activationRequested = false;
+              logger.warn?.("[PWA] Waiting Service Worker activation failed:", error);
+              reloadOnce();
+            }
           },
         },
       });

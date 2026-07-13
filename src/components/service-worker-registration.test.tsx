@@ -410,6 +410,41 @@ describe("ServiceWorkerRegistration", () => {
     expect(latestPostMessage).toHaveBeenCalledWith({ type: "SKIP_WAITING" });
   });
 
+  it("reloads once when a waiting worker rejects the activation message", async () => {
+    const activationError = new DOMException("Worker became redundant", "InvalidStateError");
+    const postMessage = vi.fn(() => {
+      throw activationError;
+    });
+    const reloadPage = vi.fn();
+    const registration = {
+      scope: "/",
+      waiting: { postMessage },
+      update: vi.fn().mockResolvedValue(undefined),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
+    Object.defineProperty(window.navigator, "serviceWorker", {
+      configurable: true,
+      value: {
+        register: vi.fn().mockResolvedValue(registration),
+        controller: {},
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      },
+    });
+
+    render(<ServiceWorkerRegistration reloadPage={reloadPage} />);
+
+    await waitFor(() => expect(toast.info).toHaveBeenCalledOnce());
+    const action = vi.mocked(toast.info).mock.calls[0][1]?.action as unknown as { onClick: () => void };
+    expect(() => action.onClick()).not.toThrow();
+    action.onClick();
+
+    expect(postMessage).toHaveBeenCalledOnce();
+    expect(logger.warn).toHaveBeenCalledWith("[PWA] Waiting Service Worker activation failed:", activationError);
+    expect(reloadPage).toHaveBeenCalledOnce();
+  });
+
   it("observes an installing worker even when updatefound fired before registration resolved", async () => {
     const installingListeners = new Map<string, EventListener>();
     const installingWorker = {

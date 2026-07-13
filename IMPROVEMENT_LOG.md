@@ -2990,3 +2990,33 @@ Verification:
 
 Queue status: a robust Playwright child-process wrapper, complete workspace backup, and service-worker activation race
 recovery are active in parallel; further UI/product/core work remains queued.
+
+### Improvement 74: Recover from stale Service Worker activation actions
+
+Status: completed.
+
+Changes:
+
+- Closed a user-action race in the PWA update toast. A waiting worker can become redundant after the click handler
+  checks registration state but before `SKIP_WAITING` is posted; browsers may then throw `InvalidStateError` from
+  `postMessage`, which previously escaped the action and left `activationRequested` stuck true.
+- Wrapped the activation message, clears the pending activation state on failure, records the actual worker exception,
+  and falls back to the existing idempotent page reload. The current document can recover whether another tab won the
+  activation race or the stale worker simply stopped accepting messages.
+- Preserved all successful activation/controllerchange behavior. Once fallback reload is scheduled, repeated clicks
+  on the stale toast action cannot post another message or request another reload.
+- Added a regression with a waiting worker whose postMessage throws, asserting the action never leaks an exception,
+  logs the original failure, and reloads/posts exactly once across repeated invocations.
+
+Files and areas:
+
+- `src/components/service-worker-registration.tsx`
+- `src/components/service-worker-registration.test.tsx`
+
+Verification:
+
+- The focused Service Worker registration suite passed 19/19 tests.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: a robust Playwright child-process wrapper and complete workspace backup remain active; further
+UI/product/core robustness work remains queued or under audit.
