@@ -44,7 +44,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Consume pending history restores exactly once even when sessionStorage cleanup is blocked.
 - [ ] Generate and verify base-path-aware static deployment `_headers` rules.
 - [ ] Validate PWA manifest icons, shortcuts, and base-path asset targets in the static export gate.
-- [ ] Prevent rapid consecutive `useUrlState` field updates from overwriting earlier edits.
+- [x] Prevent rapid consecutive `useUrlState` field updates from overwriting earlier edits.
 - [ ] Split storage feedback between applied session preferences and operations that were not completed.
 - [ ] Stabilize Black-Scholes log-moneyness for extreme but finite spot/strike ratios.
 - [ ] Normalize History filters when deleting the last record in the active category.
@@ -1472,5 +1472,40 @@ Verification:
 - The pending-restore Playwright workflow passed in 1.8 seconds using installed system Chrome. The restored TVM values,
   single localized warning, later rate edit, URL state, and absence of console/page errors were all asserted.
 - `npm run verify`: passed with 54 Vitest files and 435 tests, 15 routes, 197 precache assets, 96 script hashes, 35
+  static style hashes, 2 runtime style hashes per document, 722 internal references, and every route bundle budget.
+- Changed source, browser tests, and documentation passed Prettier; `git diff --check` passed before the full gate.
+
+### Improvement 34: Lossless consecutive URL-state updates
+
+Status: completed.
+
+Changes:
+
+- Turned the failure discovered during the pending-restore browser probe into a minimal shared reproduction: editing
+  TVM rate and periods in quick succession produced two router replacements from the same stale search-parameter
+  snapshot, so the second replacement silently restored the old rate.
+- Added a latest-requested state ref inside `useUrlState`. Full-state restores update it immediately, and subsequent
+  field writes merge into that pending state rather than waiting for the asynchronous Next.js router commit.
+- Kept browser navigation authoritative. Once a new URL-derived state is observed, it replaces the optimistic snapshot;
+  reset also restores the ref to calculator defaults before removing owned query parameters.
+- Added hook contracts for full-state restore followed by multiple immediate edits and for an external URL change
+  superseding optimistic state. Added a real TVM workflow that edits two fields consecutively and verifies both the
+  controlled inputs and query parameters retain the new values.
+- Re-ran the pending-history browser workflow alongside the concurrency test to ensure the shared hook fix did not
+  weaken once-only restore behavior.
+- Updated bilingual reliability documentation and engineering review evidence.
+
+Files and areas:
+
+- `src/hooks/use-url-state.ts` and its focused test
+- `e2e/url-state-concurrency.spec.ts`
+- English/Chinese README, engineering review, and improvement log
+
+Verification:
+
+- Strict TypeScript passed; the focused hook suite passed 8/8 tests.
+- The URL concurrency and pending-history Playwright workflows passed 2/2 in 5.5 seconds using installed system Chrome.
+  TVM retained `rate=8` and `nper=24` in both inputs and URL state, with no console or page errors.
+- `npm run verify`: passed with 54 Vitest files and 437 tests, 15 routes, 197 precache assets, 96 script hashes, 35
   static style hashes, 2 runtime style hashes per document, 722 internal references, and every route bundle budget.
 - Changed source, browser tests, and documentation passed Prettier; `git diff --check` passed before the full gate.

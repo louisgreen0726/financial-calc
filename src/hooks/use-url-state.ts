@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { parseOptionalNumber } from "@/lib/input-utils";
 import {
@@ -51,6 +51,11 @@ export function useUrlState<T extends Record<string, UrlStateValue>>({
 
   const derivedState = useMemo(() => readStateFromParams(), [readStateFromParams]);
   const state = derivedState;
+  const latestRequestedStateRef = useRef<T>(derivedState);
+
+  useEffect(() => {
+    latestRequestedStateRef.current = derivedState;
+  }, [derivedState]);
 
   const buildUrl = useCallback(
     (nextState: T = state, preserveExistingParams = true) => {
@@ -74,6 +79,7 @@ export function useUrlState<T extends Record<string, UrlStateValue>>({
 
   const updateUrl = useCallback(
     (newState: T) => {
+      latestRequestedStateRef.current = { ...newState };
       const newUrl = buildUrl(newState);
       router.replace(newUrl, { scroll: false });
     },
@@ -89,13 +95,14 @@ export function useUrlState<T extends Record<string, UrlStateValue>>({
 
   const setField = useCallback(
     <K extends keyof T>(key: K, value: T[K]) => {
-      const newState = { ...derivedState, [key]: value };
+      const newState = { ...latestRequestedStateRef.current, [key]: value };
       updateUrl(newState);
     },
-    [derivedState, updateUrl]
+    [updateUrl]
   );
 
   const reset = useCallback(() => {
+    latestRequestedStateRef.current = { ...defaultValues };
     const params = new URLSearchParams(searchParams.toString());
     for (const key of Object.keys(defaultValues)) {
       params.delete(prefix ? `${prefix}_${key}` : key);

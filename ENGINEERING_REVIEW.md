@@ -209,6 +209,9 @@ browser-level checks beyond the existing suite.
 - Property coverage round-trips representative state for all nine calculators and 500 seeded delimiter/escaping
   arrays, while browser coverage proves malformed and oversized Cash Flow links remain bounded. Versioned history
   tests also cover every calculator page ID.
+- URL-backed forms keep a latest-requested state snapshot between asynchronous Next.js router commits. Consecutive
+  field edits and a full-state restore followed immediately by an edit merge against that snapshot; an observed URL
+  change still replaces it so browser navigation and external links remain authoritative.
 
 ### CI Follow-up: Parallel Gates and Artifact Reuse
 

@@ -42,6 +42,40 @@ describe("useUrlState", () => {
     });
   });
 
+  it("merges consecutive updates against the latest requested state", () => {
+    const { result } = renderHook(() =>
+      useUrlState({
+        defaultValues: { rate: "5", nper: "10", pmt: "0" },
+        prefix: "tvm",
+      })
+    );
+
+    act(() => {
+      result.current.setState({ rate: "7", nper: "20", pmt: "-100" });
+      result.current.setField("rate", "8");
+      result.current.setField("nper", "24");
+    });
+
+    expect(navigationMock.replace).toHaveBeenNthCalledWith(2, "/tvm?tvm_rate=8&tvm_nper=20&tvm_pmt=-100", {
+      scroll: false,
+    });
+    expect(navigationMock.replace).toHaveBeenNthCalledWith(3, "/tvm?tvm_rate=8&tvm_nper=24&tvm_pmt=-100", {
+      scroll: false,
+    });
+  });
+
+  it("yields the optimistic state to an externally observed URL change", () => {
+    const defaultValues = { rate: "5", nper: "10" };
+    const { result, rerender } = renderHook(() => useUrlState({ defaultValues, prefix: "tvm" }));
+
+    act(() => result.current.setField("rate", "8"));
+    navigationMock.searchParams = new URLSearchParams("tvm_rate=9&tvm_nper=18");
+    rerender();
+    act(() => result.current.setField("nper", "24"));
+
+    expect(navigationMock.replace).toHaveBeenLastCalledWith("/tvm?tvm_rate=9&tvm_nper=24", { scroll: false });
+  });
+
   it("resets only its own prefixed parameters", () => {
     navigationMock.searchParams = new URLSearchParams("utm_source=review&fc_rate=7&fc_nper=20&other_value=keep");
     const { result } = renderHook(() => useUrlState({ defaultValues: { rate: "5", nper: "10" }, prefix: "fc" }));

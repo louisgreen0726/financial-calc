@@ -59,6 +59,7 @@ Recent hardening work is reflected in the current source:
 - history records carry result-format metadata so currency, percentages, periods, and ratios render correctly
 - history restore no longer re-records restored entries as fresh calculations
 - cross-page pending restores are consumed once; blocked session cleanup cannot loop or overwrite later user edits
+- rapid URL-backed field edits merge against the latest requested calculator state instead of dropping earlier inputs
 - TVM clears stale results and calculation steps when target, payment timing, or inputs change
 - mobile sidebar content now satisfies Radix Dialog title/description requirements and closes after navigation
 - PWA metadata, install icons, generated precache assets, and bounded service worker caches respect
