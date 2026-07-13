@@ -170,18 +170,18 @@ export function normalizeExportFilename(filename: string, extension: string) {
 export function downloadTextFile({ content, filename, extension, mimeType }: DownloadTextFileOptions) {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
   const downloadFilename = normalizeExportFilename(filename, extension);
-
-  link.href = url;
-  link.download = downloadFilename;
-  link.hidden = true;
-  document.body.appendChild(link);
+  let link: HTMLAnchorElement | null = null;
 
   try {
+    link = document.createElement("a");
+    link.href = url;
+    link.download = downloadFilename;
+    link.hidden = true;
+    document.body.appendChild(link);
     link.click();
   } finally {
-    link.remove();
+    link?.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 

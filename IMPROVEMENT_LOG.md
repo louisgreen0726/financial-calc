@@ -2899,3 +2899,33 @@ Verification:
 
 Queue status: a robust Playwright child-process wrapper, object-URL download cleanup, and complete workspace backup are
 active in parallel; History loading stability and further UI/product work remain queued.
+
+### Improvement 71: Revoke export Blob URLs after DOM setup failures
+
+Status: completed.
+
+Changes:
+
+- Closed a browser resource leak in CSV/JSON downloads. Once `URL.createObjectURL` succeeded, anchor creation,
+  configuration, and DOM insertion still happened before the existing `try/finally`; a CSP, embedded document, or DOM
+  exception during that setup could permanently retain the Blob URL.
+- Moved the complete anchor lifecycle after URL creation into one protected block. The link is nullable and removed on
+  every partial/successful setup path, while URL revocation retains the existing zero-delay scheduling needed after a
+  successful browser download click.
+- Preserved exception propagation so the export hook continues to show its actionable failure toast and keeps the
+  command retryable rather than reporting a false success.
+- Added a DOM insertion failure regression proving no download anchor remains, the original exception propagates, and
+  the exact created Blob URL is revoked when the cleanup timer runs.
+
+Files and areas:
+
+- `src/lib/data-export.ts`
+- `src/lib/data-export.test.ts`
+
+Verification:
+
+- The focused structured data export suite passed 7/7 tests.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: a robust Playwright child-process wrapper and complete workspace backup remain active; History loading
+stability and further UI/product/core work remain queued or under audit.

@@ -120,4 +120,27 @@ describe("structured data export", () => {
     vi.runAllTimers();
     expect(revokeObjectURL).toHaveBeenCalledWith("blob:export");
   });
+
+  it("revokes the Blob URL when DOM insertion fails before the download click", () => {
+    vi.useFakeTimers();
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:failed-export");
+    const revokeObjectURL = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+    vi.spyOn(document.body, "appendChild").mockImplementation(() => {
+      throw new DOMException("Insertion blocked", "HierarchyRequestError");
+    });
+
+    expect(() =>
+      downloadTextFile({
+        content: "value\r\n42",
+        filename: "report",
+        extension: "csv",
+        mimeType: "text/csv;charset=utf-8",
+      })
+    ).toThrow("Insertion blocked");
+
+    expect(document.querySelector('a[download="report.csv"]')).toBeNull();
+    expect(revokeObjectURL).not.toHaveBeenCalled();
+    vi.runAllTimers();
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:failed-export");
+  });
 });
