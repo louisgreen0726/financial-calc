@@ -59,6 +59,19 @@ test("pv handles zero-rate case exactly", () => {
   expect(Finance.pv(0, 10, 100, 500, 0)).toBe(-1500);
 });
 
+test("pv avoids overflowing annuity terms before discounting", () => {
+  const rate = 0.01;
+  const periods = 600;
+  const payment = Number.MAX_VALUE / 200;
+  const expectedFactor = (1 - Math.exp(-periods * Math.log1p(rate))) / rate;
+  const discountedAnnuity = Finance.pv(rate, periods, payment);
+  const zeroRateOffset = Finance.pv(0, 2, Number.MAX_VALUE * 0.75, -Number.MAX_VALUE);
+
+  expect(Number.isFinite(discountedAnnuity)).toBe(true);
+  expect(discountedAnnuity / (-payment * expectedFactor)).toBeCloseTo(1, 12);
+  expect(zeroRateOffset / (-Number.MAX_VALUE * 0.5)).toBeCloseTo(1, 12);
+});
+
 test("fv handles zero-rate case exactly", () => {
   expect(Finance.fv(0, 10, 100, 500, 0)).toBe(-1500);
 });

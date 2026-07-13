@@ -3091,3 +3091,33 @@ Verification:
 
 Queue status: complete Workspace Backup and concurrent Playwright port isolation remain active; further UI/product and
 core robustness work remains queued or under audit.
+
+### Improvement 77: Scale-safe PV annuity and offset contributions
+
+Status: completed.
+
+Changes:
+
+- Reproduced finite present values hidden by intermediate overflow. With a 600-period 1% annuity, a valid maximum-scale
+  payment first formed `payment * annuityFactor = Infinity` even though discounting by the term brings the final PV
+  back below `MAX_VALUE`.
+- Normalized FV and payment by their common input scale, applies `1 / term` and `annuityFactor / term` contributions
+  before a compensated sum, and restores scale only after discounting. Large annuities and opposite-sign offsets now
+  remain finite whenever the final PV is representable, including payment-at-beginning timing.
+- Applied the same scale-first sum to zero interest after review of the analogous PMT issue: a maximum future value and
+  maximum-scale multi-period payment can cancel to a finite PV even when `payment * periods` alone overflows.
+- Added maximum-scale positive-rate and zero-rate offset regressions while retaining exact ordinary zero-rate and the
+  broader TVM reference/property suite.
+
+Files and areas:
+
+- `src/lib/finance-math.ts`
+- `src/lib/finance-math.test.ts`
+
+Verification:
+
+- The complete finance-math suite passed 75/75 tests.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: complete Workspace Backup and concurrent Playwright port isolation remain active; further UI/product and
+core numeric robustness work remains queued or under audit.

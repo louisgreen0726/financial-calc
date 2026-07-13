@@ -208,10 +208,19 @@ export const Finance = {
     if (!isValid(rate) || !isValid(nper) || !isValid(pmt) || !isValid(fv) || !isSupportedPaymentTiming(type))
       return NaN;
     if (nper <= 0 || rate <= -1) return NaN;
-    if (rate === 0) return -(fv + pmt * nper);
+    const inputScale = Math.max(Math.abs(fv), Math.abs(pmt), Number.MIN_VALUE);
+    if (rate === 0) {
+      const normalizedPv = neumaierSum([fv / inputScale, (pmt / inputScale) * nper]);
+      const pv = -normalizedPv * inputScale;
+      return isValid(pv) ? pv : NaN;
+    }
     const factors = getTvmFactors(rate, nper);
     if (!factors || factors.term === 0) return NaN;
-    const pv = -(fv + pmt * (1 + rate * type) * factors.annuityFactor) / factors.term;
+    const normalizedPv = neumaierSum([
+      (fv / inputScale) * (1 / factors.term),
+      (pmt / inputScale) * (1 + rate * type) * (factors.annuityFactor / factors.term),
+    ]);
+    const pv = -normalizedPv * inputScale;
     return isValid(pv) ? pv : NaN;
   },
   fv: (rate: number, nper: number, pmt: number, pv: number, type: PaymentTiming = 0): number => {
