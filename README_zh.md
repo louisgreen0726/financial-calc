@@ -58,6 +58,7 @@ Financial Calc 是一个基于 Next.js 16、React 19、TypeScript、Tailwind CSS
 - 页面级结果渲染会确认计算结果为有限数，再显示、导出或写入历史
 - 历史记录保存结果格式元数据，货币、百分比、期数、比率都能正确显示
 - 从历史或分享链接恢复输入时，不会把恢复动作重新记为新的计算历史
+- 跨页面待恢复数据只消费一次；会话存储清理受阻时不会循环恢复或覆盖用户之后的编辑
 - TVM 在切换目标、付款模式或输入时会清理旧结果和旧计算步骤
 - 移动端 sidebar 满足 Radix Dialog 的 title/description 要求，点击导航后自动关闭
 - PWA metadata、安装图标、构建生成的 precache 资源与有界 service worker 缓存支持 `NEXT_PUBLIC_BASE_PATH`；

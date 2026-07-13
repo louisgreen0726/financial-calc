@@ -3,6 +3,7 @@
 import {
   safeGetItem,
   safeGetJSON,
+  safeGetSessionItem,
   safeGetSessionJSON,
   safeRemoveItem,
   safeRemoveSessionItem,
@@ -48,6 +49,7 @@ describe("storage utilities", () => {
 
   it("reads and writes JSON sessionStorage values with fallback", () => {
     safeSetSessionJSON("session-json-key", { page: "tvm", inputs: { rate: "5" } });
+    expect(safeGetSessionItem("session-json-key")).toContain('"page":"tvm"');
     expect(safeGetSessionJSON("session-json-key", null)).toEqual({ page: "tvm", inputs: { rate: "5" } });
 
     safeRemoveSessionItem("session-json-key");

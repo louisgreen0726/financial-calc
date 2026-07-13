@@ -518,6 +518,7 @@ type Translations = {
     restore: string;
     delete: string;
     restored: string;
+    restoreCleanupFailed: string;
     cleared: string;
     confirmClear: string;
     search: string;
@@ -1185,6 +1186,8 @@ const en: Translations = {
     restore: "Restore",
     delete: "Delete",
     restored: "Calculation restored",
+    restoreCleanupFailed:
+      "The calculation was restored, but temporary restore data could not be cleared. Refreshing may restore it again.",
     cleared: "History cleared",
     confirmClear: "Clear all history?",
     search: "Search history...",
@@ -1855,6 +1858,7 @@ const zh: Translations = {
     restore: "恢复",
     delete: "删除",
     restored: "计算已恢复",
+    restoreCleanupFailed: "计算已恢复，但临时恢复数据无法清除；刷新页面可能会再次恢复。",
     cleared: "历史已清除",
     confirmClear: "确定清除所有历史记录？",
     search: "搜索历史...",

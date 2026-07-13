@@ -191,6 +191,10 @@ browser-level checks beyond the existing suite.
 - Browser coverage verifies the file API, preview, persistence, repeat deduplication, malformed-file rejection, and
   accessible dialog state. This is a local backup/merge workflow; it intentionally does not import favorites or other
   settings and does not provide cloud synchronization.
+- Cross-page restores consume their session payload before invoking page state. If `removeItem` is unavailable, a JSON
+  `null` sentinel provides an equivalent cleanup; if all cleanup writes fail, a module-session signature prevents
+  callback changes and Next.js remounts from replaying the payload. A localized warning accurately notes that a full
+  browser refresh may attempt the restore again.
 
 ### Restore Follow-up: URL Cardinality and Format Boundaries
 

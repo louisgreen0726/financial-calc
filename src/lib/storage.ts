@@ -61,15 +61,25 @@ export function safeSetJSON(key: string, value: unknown): boolean {
 }
 
 export function safeGetSessionJSON<T>(key: string, fallback: T): T {
-  if (typeof window === "undefined") {
+  const stored = safeGetSessionItem(key);
+  if (!stored) return fallback;
+
+  try {
+    return JSON.parse(stored) as T;
+  } catch {
     return fallback;
+  }
+}
+
+export function safeGetSessionItem(key: string): string | null {
+  if (typeof window === "undefined") {
+    return null;
   }
 
   try {
-    const stored = window.sessionStorage.getItem(key);
-    return stored ? (JSON.parse(stored) as T) : fallback;
+    return window.sessionStorage.getItem(key);
   } catch {
-    return fallback;
+    return null;
   }
 }
 

@@ -34,6 +34,11 @@ const historyMock = vi.hoisted(() => ({
   ],
 }));
 
+const toastMock = vi.hoisted(() => ({
+  error: vi.fn(),
+  success: vi.fn(),
+}));
+
 vi.mock("@/hooks/use-calculation-history", () => ({
   useCalculationHistory: () => ({
     history: historyMock.history,
@@ -55,6 +60,8 @@ vi.mock("@/lib/i18n", () => ({
     language: "en",
   }),
 }));
+
+vi.mock("sonner", () => ({ toast: toastMock }));
 
 describe("HistoryPanel pending restore", () => {
   beforeEach(() => {
@@ -78,6 +85,8 @@ describe("HistoryPanel pending restore", () => {
     historyMock.removeFromHistory.mockClear();
     historyMock.clearHistory.mockClear();
     historyMock.retryPersistence.mockClear();
+    toastMock.error.mockClear();
+    toastMock.success.mockClear();
   });
 
   it("consumes pending restore payload and calls onRestore once", async () => {
@@ -119,6 +128,75 @@ describe("HistoryPanel pending restore", () => {
     });
 
     expect(window.sessionStorage.getItem(PENDING_RESTORE_KEY)).toBeNull();
+  });
+
+  it("clears malformed pending restore JSON", async () => {
+    const onRestore = vi.fn();
+    window.sessionStorage.setItem(PENDING_RESTORE_KEY, "{not-json");
+
+    render(<HistoryPanel page="tvm" onRestore={onRestore} />);
+
+    await waitFor(() => expect(window.sessionStorage.getItem(PENDING_RESTORE_KEY)).toBeNull());
+    expect(onRestore).not.toHaveBeenCalled();
+  });
+
+  it("uses a semantic null fallback when removing the consumed payload fails", async () => {
+    const onRestore = vi.fn();
+    window.sessionStorage.setItem(
+      PENDING_RESTORE_KEY,
+      JSON.stringify({ page: "tvm", inputs: { rate: "7" }, timestamp: Date.now() })
+    );
+    const originalRemoveItem = Storage.prototype.removeItem;
+    const removeItem = vi.spyOn(Storage.prototype, "removeItem").mockImplementation(function (this: Storage, key) {
+      if (this === window.sessionStorage && key === PENDING_RESTORE_KEY) {
+        throw new DOMException("Storage blocked", "SecurityError");
+      }
+      return originalRemoveItem.call(this, key);
+    });
+
+    render(<HistoryPanel page="tvm" onRestore={onRestore} />);
+
+    await waitFor(() => expect(onRestore).toHaveBeenCalledTimes(1));
+    expect(window.sessionStorage.getItem(PENDING_RESTORE_KEY)).toBe("null");
+    expect(toastMock.error).not.toHaveBeenCalled();
+    removeItem.mockRestore();
+  });
+
+  it("does not replay a restored payload when every cleanup method is blocked", async () => {
+    const firstRestore = vi.fn();
+    const secondRestore = vi.fn();
+    window.sessionStorage.setItem(
+      PENDING_RESTORE_KEY,
+      JSON.stringify({ page: "tvm", inputs: { rate: "7" }, timestamp: Date.now() })
+    );
+    const originalRemoveItem = Storage.prototype.removeItem;
+    const originalSetItem = Storage.prototype.setItem;
+    const removeItem = vi.spyOn(Storage.prototype, "removeItem").mockImplementation(function (this: Storage, key) {
+      if (this === window.sessionStorage && key === PENDING_RESTORE_KEY) {
+        throw new DOMException("Storage blocked", "SecurityError");
+      }
+      return originalRemoveItem.call(this, key);
+    });
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
+      if (this === window.sessionStorage && key === PENDING_RESTORE_KEY) {
+        throw new DOMException("Storage blocked", "SecurityError");
+      }
+      return originalSetItem.call(this, key, value);
+    });
+
+    const { rerender, unmount } = render(<HistoryPanel page="tvm" onRestore={firstRestore} />);
+
+    await waitFor(() => expect(firstRestore).toHaveBeenCalledTimes(1));
+    expect(toastMock.error).toHaveBeenCalledWith("history.restoreCleanupFailed");
+    rerender(<HistoryPanel page="tvm" onRestore={secondRestore} />);
+    expect(firstRestore).toHaveBeenCalledTimes(1);
+    expect(secondRestore).not.toHaveBeenCalled();
+    unmount();
+    render(<HistoryPanel page="tvm" onRestore={secondRestore} />);
+    expect(secondRestore).not.toHaveBeenCalled();
+
+    setItem.mockRestore();
+    removeItem.mockRestore();
   });
 
   it.each([

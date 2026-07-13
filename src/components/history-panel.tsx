@@ -11,7 +11,7 @@ import { Clock, Trash2, RotateCcw, X, Star, Search, CheckSquare, Square } from "
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { PENDING_RESTORE_KEY } from "@/lib/constants";
-import { safeGetSessionJSON, safeRemoveSessionItem } from "@/lib/storage";
+import { safeGetSessionItem, safeRemoveSessionItem, safeSetSessionJSON } from "@/lib/storage";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { formatHistoryResult } from "@/lib/history-format";
 import { useHistoryFavorites } from "@/hooks/use-history-favorites";
@@ -23,6 +23,7 @@ interface HistoryPanelProps {
 }
 
 const PENDING_RESTORE_MAX_AGE_MS = 5 * 60 * 1000;
+let lastUnclearedPendingRestoreSignature = "";
 
 function parsePendingRestore(value: unknown, page: string, now = Date.now()): Record<string, number | string> | null {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
@@ -56,6 +57,10 @@ function parsePendingRestore(value: unknown, page: string, now = Date.now()): Re
   }
 
   return Object.fromEntries(entries) as Record<string, number | string>;
+}
+
+function clearPendingRestore() {
+  return safeRemoveSessionItem(PENDING_RESTORE_KEY) || safeSetSessionJSON(PENDING_RESTORE_KEY, null);
 }
 
 export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) {
@@ -163,25 +168,38 @@ export function HistoryPanel({ page, onRestore, className }: HistoryPanelProps) 
       return;
     }
 
-    try {
-      const parsed = safeGetSessionJSON<unknown>(PENDING_RESTORE_KEY, null);
-
-      if (!parsed) {
-        return;
-      }
-
-      const pendingInputs = parsePendingRestore(parsed, page);
-      if (!pendingInputs) {
-        safeRemoveSessionItem(PENDING_RESTORE_KEY);
-        return;
-      }
-
-      onRestore(pendingInputs);
-      safeRemoveSessionItem(PENDING_RESTORE_KEY);
-    } catch {
-      safeRemoveSessionItem(PENDING_RESTORE_KEY);
+    const stored = safeGetSessionItem(PENDING_RESTORE_KEY);
+    if (stored === null) {
+      return;
     }
-  }, [onRestore, page]);
+
+    const restoreSignature = `${page}\u0000${stored}`;
+    if (lastUnclearedPendingRestoreSignature === restoreSignature) {
+      return;
+    }
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(stored) as unknown;
+    } catch {
+      clearPendingRestore();
+      return;
+    }
+
+    const pendingInputs = parsePendingRestore(parsed, page);
+    const cleared = clearPendingRestore();
+    if (!cleared) {
+      lastUnclearedPendingRestoreSignature = restoreSignature;
+    }
+    if (!pendingInputs) {
+      return;
+    }
+
+    onRestore(pendingInputs);
+    if (!cleared) {
+      toast.error(t("history.restoreCleanupFailed"));
+    }
+  }, [onRestore, page, t]);
 
   const persistenceMessage =
     persistenceError === "unsupported-version"

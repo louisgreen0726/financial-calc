@@ -41,9 +41,16 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [ ] Investigate and eliminate development-only missing translation warnings for Portfolio seed controls.
 - [ ] Make local Playwright browser selection deterministic when the pinned browser binary is unavailable.
 - [ ] Extend preference recovery coverage to failed cleanup of invalid persisted values.
-- [ ] Consume pending history restores exactly once even when sessionStorage cleanup is blocked.
+- [x] Consume pending history restores exactly once even when sessionStorage cleanup is blocked.
 - [ ] Generate and verify base-path-aware static deployment `_headers` rules.
 - [ ] Validate PWA manifest icons, shortcuts, and base-path asset targets in the static export gate.
+- [ ] Prevent rapid consecutive `useUrlState` field updates from overwriting earlier edits.
+- [ ] Split storage feedback between applied session preferences and operations that were not completed.
+- [ ] Stabilize Black-Scholes log-moneyness for extreme but finite spot/strike ratios.
+- [ ] Normalize History filters when deleting the last record in the active category.
+- [ ] Detect and explain multiple valid TVM RATE roots instead of presenting one as unique.
+- [ ] Preserve NPV/IRR invariance when appending economically irrelevant zero cash flows.
+- [ ] Extend formatting enforcement beyond `src/` to E2E, scripts, workflows, and root configuration.
 
 ## 2026-07-13
 
@@ -1428,3 +1435,42 @@ Verification:
 - Current work: Improvement 32 is fully verified and ready to commit; three parallel audits are ranking the next item.
 - Queue status: 6 active items cover pending-history replay, base-path deployment headers, manifest assets, Portfolio
   translation warnings, deterministic local Playwright browser selection, and invalid-preference cleanup failures.
+
+### Improvement 33: Once-only pending history restore consumption
+
+Status: completed.
+
+Changes:
+
+- Reproduced a pending cross-page restore that could rerun whenever calculator pages supplied a new `onRestore`
+  callback. When sessionStorage cleanup was blocked, restored state caused another render, the effect saw a new callback,
+  and the same payload could be applied repeatedly.
+- Added raw sessionStorage reads so malformed JSON can be distinguished from a missing key and cleaned rather than
+  persisting indefinitely behind a JSON fallback.
+- Made consumption resilient in three tiers: normal `removeItem`, a semantic JSON `null` overwrite when removal alone
+  is blocked, and a module-session payload signature when every cleanup write fails. The signature survives Next.js
+  component remounts but intentionally resets on a full browser refresh.
+- Added a dedicated bilingual warning for the final failure tier. It states that the calculation is active but a full
+  refresh may restore it again, instead of silently hiding the remaining temporary payload.
+- Expanded unit coverage for malformed JSON, removal-only failure, total cleanup failure, callback replacement, and
+  component remount. Added a real TVM browser workflow that blocks both cleanup paths, verifies one restore and one
+  warning, then proves a later URL-backed edit remains stable.
+- The first browser probe also isolated a separate shared `useUrlState` race: two immediate field edits can lose the
+  first value because both updates read the same stale URL snapshot. That defect is queued as the next improvement
+  rather than being folded into this restore-consumption commit.
+
+Files and areas:
+
+- `src/components/history-panel.tsx` and focused tests
+- `src/lib/storage.ts`, `src/lib/storage.test.ts`, and the bilingual history catalog
+- `e2e/history-pending-restore.spec.ts`
+- English/Chinese README, engineering review, and improvement log
+
+Verification:
+
+- Strict TypeScript passed; focused storage, history, and translation suites passed 24/24 tests.
+- The pending-restore Playwright workflow passed in 1.8 seconds using installed system Chrome. The restored TVM values,
+  single localized warning, later rate edit, URL state, and absence of console/page errors were all asserted.
+- `npm run verify`: passed with 54 Vitest files and 435 tests, 15 routes, 197 precache assets, 96 script hashes, 35
+  static style hashes, 2 runtime style hashes per document, 722 internal references, and every route bundle budget.
+- Changed source, browser tests, and documentation passed Prettier; `git diff --check` passed before the full gate.
