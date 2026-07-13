@@ -6,7 +6,7 @@ Active branch: `codex/continuous-improvements`
 
 Minimum session target: 10 hours; continue until the user explicitly stops the goal.
 
-## Active Improvement Queue
+## Completed Improvement Queue
 
 - [x] Complete the implied-volatility workflow: market-price validation, history/share/export, i18n, and E2E.
 - [x] Add option-price and implied-volatility property coverage across a deterministic contract matrix.
@@ -58,22 +58,28 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Add analytic and finite-difference oracles for bond duration and convexity.
 - [x] Explain unsupported fractional or over-600 coupon periods with actionable bond input validation.
 - [x] Repair stale cross-tab PWA update prompts after another tab activates the waiting worker.
-- [ ] Localize remaining hard-coded application-shell copy and refine sidebar information hierarchy.
 - [x] Design and validate a compatible-history scenario comparison workflow before implementation.
 - [x] Add a strict two-record comparison UI for compatible non-currency History results.
 - [x] Handle cross-tab `localStorage.clear()` without reviving queued history or favorite writes.
 - [x] Add a versioned Workspace Backup workflow for history, favorites, and user preferences.
 - [x] Isolate concurrent local Playwright runners by both port and Next.js build directory.
 - [x] Preserve RATE scale invariance for extreme but finite cash flows.
-- [ ] Audit calculator charts and compact mobile result layouts for the next high-impact UI refinement.
 - [x] Expand Sidebar discovery across localized tool descriptions, groups, and multi-term queries.
 - [x] Preserve representable NPV results when large discounted cash flows overflow only during summation.
 - [x] Make RATE sign-change classification scale-safe for maximum finite cash flows.
 - [x] Preserve implied-volatility results when the same option contract is expressed in very small currency units.
-- [ ] Preserve tiny nonzero Fisher real-rate spreads without cancellation.
 - [x] Restore WCAG AA contrast for destructive actions and states in the dark theme.
 - [x] Recover representable NPV tails when discount factors reach zero or infinity.
 - [x] Add a global, responsive Calculator Finder to the application header.
+
+## Future Opportunities Outside The Frozen Plan
+
+The following previously identified ideas were not started and were explicitly excluded when the user froze the
+completion plan at 20:28. They are retained for future sessions without representing unfinished work in this session:
+
+- Localize remaining hard-coded application-shell copy and refine sidebar information hierarchy.
+- Audit calculator charts and compact mobile result layouts for the next high-impact UI refinement.
+- Preserve tiny nonzero Fisher real-rate spreads without cancellation.
 
 ## 2026-07-13
 
@@ -3539,3 +3545,60 @@ Verification:
 
 Queue status: only the final full integration verification remains in the frozen completion plan; no new work will be
 added before the user-authorized stop.
+
+### Improvement 90: Stable official-CLI Playwright lifecycle
+
+Status: completed.
+
+Changes:
+
+- Replaced the programmatic `next()` development server with the supported Next CLI orchestration. Each Playwright run
+  now spawns the pinned CLI through `process.execPath` with `shell: false`, webpack, an explicit localhost binding, its
+  PID-derived port, and its isolated `NEXT_DIST_DIR`/`tsconfig.playwright.json` environment.
+- Bound readiness to this exact child process instead of accepting any HTTP responder on the target port. Startup first
+  rejects an occupied port, then requires the spawned CLI's bounded `Ready in ...` output and a successful HTTP probe;
+  child errors or exits win the race and include a bounded output tail for diagnosis. Explicit server reuse remains an
+  opt-in, while local runs again exercise two workers and CI remains deterministic at one.
+- Added bounded process-tree shutdown. Windows validates `taskkill /PID ... /T /F`; POSIX terminates the detached process
+  group with `SIGTERM` and escalates to `SIGKILL`. Teardown waits for the child streams to close and verifies the port is
+  released before removing the isolated build directory.
+- Removed the configuration-level synchronous exit fallback that could delete a live detached server's build files.
+  Startup or teardown failures now preserve the directory whenever process-tree death cannot be proven, preventing the
+  missing-manifest and poisoned webpack-runtime failure mode that triggered this regression.
+- Replaced the old in-process lifecycle test doubles with injected child-process, readiness, port-ownership, Windows,
+  and POSIX contracts. Coverage now includes occupied ports, HTTP responses without child readiness, early CLI exit,
+  idempotent close, failed taskkill, retained diagnostics on an unreleased port, and local/CI worker counts.
+
+Files and areas:
+
+- `playwright.config.ts`
+- `scripts/start-playwright-dev-server.mjs`
+- `src/lib/playwright-config.test.ts`
+- `src/lib/playwright-dev-server.test.ts`
+
+Verification:
+
+- Focused configuration/lifecycle suites passed 19/19 tests; strict TypeScript, full formatting, targeted ESLint, and
+  `git diff --check` passed.
+- The final two-worker accessibility regression passed 16/16 across all application routes. The complete browser suite
+  then passed 46/46, including Workspace Backup, Calculator Finder, storage recovery, exports, URL state, responsive
+  layouts, and Axe audits.
+- `npm run verify` passed: formatting, strict TypeScript, full ESLint, 67 Vitest files with 650/650 tests, a 16/16-page
+  static build, root static-export verification for 15 routes/197 assets/721 references, and all 15 bundle budgets.
+- The root and `/calc` deployment artifacts each passed their two-test CSP/install/offline/update PWA lifecycle suites.
+  The `/calc` artifact also passed 15-route static verification with 197 assets/705 references and every bundle budget.
+  A full dependency audit reported 0 vulnerabilities.
+- After every final browser run, the managed high port and PWA port 3100 had no listener, no managed test process or
+  `.next/playwright-*` directory remained, and both TypeScript configuration files were unchanged.
+
+Queue status: the user-frozen completion plan is complete. Previously identified ideas outside that plan remain listed
+as future opportunities and are not active work for this session.
+
+### Final progress checkpoint: 21:40 +08:00
+
+- Coordinator-reported active goal runtime: approximately 10 hours 27 minutes, exceeding the requested 10-hour
+  minimum. The session clock since 03:06 is approximately 18 hours 34 minutes including interruptions.
+- Completed improvement batches: 90. The frozen closing work delivered the global Calculator Finder, full Workspace
+  Backup, stable official-CLI browser infrastructure, and a clean full quality/browser/root/base-path production matrix.
+- Final state: every item in the frozen completion plan is implemented, documented, and verified. The user explicitly
+  authorized stopping at this point, so no new improvement item is being added.

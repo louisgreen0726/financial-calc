@@ -35,6 +35,7 @@ describe("Playwright browser configuration", () => {
     expect(resolvePlaywrightDistDir(12_345)).toBe(".next/playwright-12345");
     expect(config.globalSetup).toBe("./scripts/playwright-global-setup.mjs");
     expect(config.webServer).toBeUndefined();
+    expect(config.workers).toBe(2);
     expect(config.timeout).toBe(90_000);
     expect(server).toMatchObject({
       baseURL: "http://localhost:22345",
@@ -53,6 +54,7 @@ describe("Playwright browser configuration", () => {
     expect(server.baseURL).toBe("http://localhost:3000");
     expect(config.use?.baseURL).toBeUndefined();
     expect(server.reuseExistingServer).toBe(false);
+    expect(config.workers).toBe(1);
   });
 
   it("honors a valid explicit port and only reuses a server by explicit opt-in", () => {

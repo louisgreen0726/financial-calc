@@ -1,29 +1,9 @@
-import { rmSync } from "node:fs";
-import path from "node:path";
 import { defineConfig } from "playwright/test";
 import { resolveChromiumLaunchOptions, type ChromiumResolverOptions } from "./scripts/resolve-playwright-browser";
 
 interface BrowserConfigRuntimeOptions {
   environment?: Record<string, string | undefined>;
   pid?: number;
-}
-
-const distDirsToCleanup = new Set<string>();
-let cleanupRegistered = false;
-
-function scheduleDistDirCleanup(distDir: string) {
-  distDirsToCleanup.add(path.resolve(distDir));
-  if (cleanupRegistered) return;
-  cleanupRegistered = true;
-  process.once("exit", () => {
-    for (const directory of distDirsToCleanup) {
-      try {
-        rmSync(directory, { recursive: true, force: true, maxRetries: 5 });
-      } catch {
-        // Normal teardown reports cleanup failures; this crash fallback must preserve the original exit status.
-      }
-    }
-  });
 }
 
 export function resolvePlaywrightDistDir(pid = process.pid) {
@@ -66,7 +46,6 @@ export function createBrowserConfig(
   const baseURL = `http://localhost:${port}`;
   const reuseExistingServer = environment.PLAYWRIGHT_REUSE_EXISTING_SERVER === "1";
   const launchOptions = resolveChromiumLaunchOptions(browserResolverOptions);
-  scheduleDistDirCleanup(distDir);
 
   return defineConfig({
     globalSetup: "./scripts/playwright-global-setup.mjs",
