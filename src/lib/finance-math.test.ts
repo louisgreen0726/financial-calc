@@ -549,6 +549,7 @@ test("npv rejects invalid cash-flow values instead of silently skipping them", (
 
 test("npv uses compensated summation for offsetting large cash flows", () => {
   expect(Finance.npv(0, [1e16, 1, -1e16])).toBe(1);
+  expect(Finance.npv(0, [Number.MAX_VALUE, Number.MAX_VALUE, -Number.MAX_VALUE])).toBe(Number.MAX_VALUE);
 });
 
 test("npv ignores exact zero tails without hiding nonzero overflow", () => {

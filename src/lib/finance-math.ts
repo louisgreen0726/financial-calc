@@ -69,7 +69,7 @@ interface RootEvaluation {
 const normalizeTerms = (terms: number[]): RootEvaluation | null => {
   if (terms.some((term) => !isValid(term))) return null;
 
-  const scale = Math.max(...terms.map(Math.abs), Number.MIN_VALUE);
+  const scale = terms.reduce((maximum, term) => Math.max(maximum, Math.abs(term)), Number.MIN_VALUE);
   const value = neumaierSum(terms.map((term) => term / scale));
   return isValid(value) ? { value, scale } : null;
 };
@@ -382,7 +382,9 @@ export const Finance = {
       return discountFactor === 0 ? NaN : value / discountFactor;
     });
     if (discountedValues.some((value) => !isValid(value))) return NaN;
-    const result = neumaierSum(discountedValues);
+    const evaluation = normalizeTerms(discountedValues);
+    if (!evaluation) return NaN;
+    const result = evaluation.value * evaluation.scale;
     return isValid(result) ? result : NaN;
   },
   paybackPeriod: (values: number[]): number => {

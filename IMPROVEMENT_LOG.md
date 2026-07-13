@@ -67,6 +67,8 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Preserve RATE scale invariance for extreme but finite cash flows.
 - [ ] Audit calculator charts and compact mobile result layouts for the next high-impact UI refinement.
 - [x] Expand Sidebar discovery across localized tool descriptions, groups, and multi-term queries.
+- [x] Preserve representable NPV results when large discounted cash flows overflow only during summation.
+- [ ] Make RATE sign-change classification scale-safe for maximum finite cash flows.
 
 ## 2026-07-13
 
@@ -3243,3 +3245,32 @@ Verification:
 
 Queue status: Workspace Backup, Playwright process/config isolation, NPV extreme-scale stability, and further UI
 refinement remain active or queued; the queue remains intentionally non-empty.
+
+### Improvement 82: Scale-safe NPV summation
+
+Status: completed.
+
+Changes:
+
+- Reproduced a representable NPV hidden by intermediate overflow: at a zero discount rate,
+  `[MAX_VALUE, MAX_VALUE, -MAX_VALUE]` has an exact net value of `MAX_VALUE`, but adding the first two entries directly
+  produced `Infinity` and poisoned the compensated sum into `NaN`.
+- Routed discounted NPV terms through the shared scale-normalized compensated evaluation before restoring magnitude.
+  The function now preserves large cancellations whenever the final NPV is finite while continuing to reject genuine
+  overflow, invalid discounts, and non-finite cash flows.
+- Replaced `Math.max(...terms)` in the shared normalization helper with an iterative reduction. Large NPV/IRR cash-flow
+  collections no longer risk the JavaScript engine's spread-argument limit during scale discovery.
+- Extended the existing large-offset NPV regression with the maximum-finite-value cancellation case.
+
+Files and areas:
+
+- `src/lib/finance-math.ts`
+- `src/lib/finance-math.test.ts`
+
+Verification:
+
+- The complete finance-math suite passed 78/78 tests.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: Workspace Backup and Playwright isolation remain active; RATE sign-change stability, browser integration,
+and the next product/UI refinement remain queued, so the queue stays non-empty.
