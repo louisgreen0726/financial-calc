@@ -49,7 +49,8 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Stabilize Black-Scholes log-moneyness for extreme but finite spot/strike ratios.
 - [x] Normalize History filters when deleting the last record in the active category.
 - [ ] Detect and explain multiple valid TVM RATE roots instead of presenting one as unique.
-- [ ] Preserve NPV/IRR invariance when appending economically irrelevant zero cash flows.
+- [x] Preserve NPV/IRR invariance when appending economically irrelevant zero cash flows.
+- [ ] Stabilize translation-catalog source scanning under full-suite worker contention.
 - [ ] Extend formatting enforcement beyond `src/` to E2E, scripts, workflows, and root configuration.
 
 ## 2026-07-13
@@ -1673,3 +1674,40 @@ Verification:
 - Current work: Improvement 38 is fully verified and ready to commit; NPV/IRR zero-tail invariance is next.
 - Queue status: 7 active items remain across manifest validation, RATE/NPV semantics, preference cleanup, Portfolio
   translations, deterministic local browser resolution, and broader formatting enforcement.
+
+### Improvement 39: Exact-zero cash-flow tail invariance
+
+Status: completed.
+
+Changes:
+
+- Reproduced an NPV/IRR stability defect near the `rate = -100%` singularity: appending economically irrelevant exact
+  zero cash flows could make an otherwise finite calculation return `NaN` after a far-period discount factor
+  underflowed to zero.
+- Short-circuited exact `+0` and `-0` cash flows before discount-factor division in NPV and both the value and Newton
+  derivative paths used by IRR. The result now depends on economically meaningful cash flows rather than the length of
+  a zero-padded schedule.
+- Kept the existing strict behavior for every nonzero value. A real `+1` or `-1` cash flow whose discounted magnitude
+  is not representable still returns `NaN`; `NaN`, infinities, and other invalid inputs remain rejected by entry
+  validation.
+- Added regressions for positive and negative zero tails, an all-zero 120-period schedule, a maximal positive rate,
+  near-singular negative rates, genuine nonzero overflow, and IRR invariance across 118 appended zero periods.
+- Updated bilingual reliability documentation and engineering review evidence with the new numeric contract.
+
+Files and areas:
+
+- `src/lib/finance-math.ts` and `src/lib/finance-math.test.ts`
+- English/Chinese README, engineering review, and improvement log
+
+Verification:
+
+- The focused finance-math suite passed 63/63 tests; strict TypeScript passed.
+- The first full run passed 446 tests but one translation-source scan exceeded its fixed five-second timeout by 39ms.
+  Its focused rerun completed in 384ms, and a clean second `npm run verify` passed all 54 Vitest files and 447 tests,
+  15 routes, 197 precache assets, 722 internal references, and every route bundle budget. The contention-sensitive scan
+  is retained as a separate queue item rather than mixed into this numeric fix.
+- Changed source and documentation passed Prettier; `git diff --check` passed.
+
+Queue status: 7 active items remain. PWA manifest integrity is the next implementation while RATE root semantics,
+preference cleanup failures, Portfolio development translations, local browser resolution, translation-scan stability,
+and broader formatting coverage remain queued.

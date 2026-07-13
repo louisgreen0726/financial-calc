@@ -385,6 +385,27 @@ test("npv uses compensated summation for offsetting large cash flows", () => {
   expect(Finance.npv(0, [1e16, 1, -1e16])).toBe(1);
 });
 
+test("npv ignores exact zero tails without hiding nonzero overflow", () => {
+  const nearSingularRate = -0.9999999999999999;
+
+  expect(Finance.npv(nearSingularRate, [-100, ...Array(119).fill(0)])).toBe(-100);
+  expect(Finance.npv(nearSingularRate, [-100, ...Array(119).fill(-0)])).toBe(-100);
+  expect(Finance.npv(nearSingularRate, Array(120).fill(0))).toBe(0);
+  expect(Finance.npv(Number.MAX_VALUE, [100, ...Array(119).fill(0)])).toBe(100);
+  for (const nonzeroTail of [1, -1]) {
+    expect(Number.isNaN(Finance.npv(nearSingularRate, [0, ...Array(20).fill(0), nonzeroTail]))).toBe(true);
+  }
+});
+
+test("irr is invariant to appended exact zero cash flows", () => {
+  const baseCashFlows = [-100, 0.1];
+  const baseIrr = Finance.irr(baseCashFlows);
+
+  expect(baseIrr).toBeCloseTo(-0.999, 10);
+  expect(Finance.irr([...baseCashFlows, ...Array(118).fill(0)])).toBeCloseTo(baseIrr, 12);
+  expect(Finance.irr([...baseCashFlows, ...Array(118).fill(-0)])).toBeCloseTo(baseIrr, 12);
+});
+
 test("paybackPeriod handles period-zero payback and unrecovered projects", () => {
   expect(Finance.paybackPeriod([100, 50])).toBe(0);
   expect(Finance.paybackPeriod([-100, 60, 60])).toBeCloseTo(1.6667, 4);

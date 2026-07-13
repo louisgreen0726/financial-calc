@@ -318,6 +318,7 @@ export const Finance = {
     if (values.some((value) => !isValid(value))) return NaN;
     const logRate = Math.log1p(rate);
     const discountedValues = values.map((value, period) => {
+      if (value === 0) return 0;
       const discountFactor = Math.exp(logRate * period);
       if (discountFactor === Infinity) return 0;
       return discountFactor === 0 ? NaN : value / discountFactor;
@@ -371,6 +372,7 @@ export const Finance = {
       if (candidateRate <= -1) return null;
       const logRate = Math.log1p(candidateRate);
       const terms = values.map((value, period) => {
+        if (value === 0) return 0;
         const discountFactor = Math.exp(logRate * period);
         if (discountFactor === Infinity) return 0;
         return discountFactor === 0 ? NaN : value / discountFactor;
@@ -394,6 +396,10 @@ export const Finance = {
 
       const derivativeTerms: number[] = [];
       for (let period = 0; period < values.length; period++) {
+        if (values[period] === 0) {
+          derivativeTerms.push(0);
+          continue;
+        }
         const discountFactor = Math.exp(Math.log1p(rate) * period);
         derivativeTerms.push(
           discountFactor === Infinity ? 0 : -(period * values[period]) / (discountFactor * (1 + rate))
