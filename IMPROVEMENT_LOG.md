@@ -64,7 +64,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Handle cross-tab `localStorage.clear()` without reviving queued history or favorite writes.
 - [ ] Add a versioned Workspace Backup workflow for history, favorites, and user preferences.
 - [ ] Isolate concurrent local Playwright runners by both port and Next.js build directory.
-- [ ] Preserve RATE scale invariance for extreme but finite cash flows.
+- [x] Preserve RATE scale invariance for extreme but finite cash flows.
 - [ ] Audit calculator charts and compact mobile result layouts for the next high-impact UI refinement.
 
 ## 2026-07-13
@@ -3184,3 +3184,31 @@ Verification:
 
 Queue status: complete Workspace Backup and isolated concurrent Playwright execution remain active; RATE scale
 invariance and further product/UI refinement are queued, so the work queue remains intentionally non-empty.
+
+### Improvement 80: Preserve RATE invariance at extreme cash-flow scales
+
+Status: completed.
+
+Changes:
+
+- Reproduced a scale-dependent RATE failure with a 36-period annuity. The ordinary-sized cash flows recovered the
+  constructed `3.7%` rate, while multiplying every cash flow by the same factor up to `Number.MAX_VALUE` overflowed
+  intermediate present-value and payment contributions and returned `NaN`.
+- Normalized PV, PMT, and FV once at the solver boundary. Cash-flow evaluation, Newton's derivative, fallback bracket
+  search, and convergence tolerances now all operate on the same dimensionless values, preserving the solver's root
+  while preventing raw maximum-scale products from entering the iteration.
+- Kept existing indeterminate-input checks, multi-root handling, ordinary/due timing, and bracket fallback behavior
+  unchanged, and added a maximum-scale regression against an analytically constructed annuity payment ratio.
+
+Files and areas:
+
+- `src/lib/finance-math.ts`
+- `src/lib/finance-math.test.ts`
+
+Verification:
+
+- The complete finance-math suite passed 78/78 tests.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: Workspace Backup, fully isolated Playwright lifecycle handling, richer Sidebar discovery, and further
+product/UI and core correctness work remain active or queued; the queue remains intentionally non-empty.

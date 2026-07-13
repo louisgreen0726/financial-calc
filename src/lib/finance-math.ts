@@ -310,12 +310,21 @@ export const Finance = {
         : pv === 0 && pmt === 0 && fv === 0;
     if (isIndeterminate) return NaN;
 
+    const inputScale = Math.max(Math.abs(pv), Math.abs(pmt), Math.abs(fv), Number.MIN_VALUE);
+    const scaledPv = pv / inputScale;
+    const scaledPmt = pmt / inputScale;
+    const scaledFv = fv / inputScale;
+
     const evaluateCashFlow = (candidateRate: number): RootEvaluation | null => {
       if (candidateRate <= -1) return null;
       const factors = getTvmFactors(candidateRate, nper);
       if (!factors) return null;
 
-      return normalizeTerms([pv * factors.term, pmt * (1 + candidateRate * type) * factors.annuityFactor, fv]);
+      return normalizeTerms([
+        scaledPv * factors.term,
+        scaledPmt * (1 + candidateRate * type) * factors.annuityFactor,
+        scaledFv,
+      ]);
     };
 
     const cashFlowValue = (candidateRate: number): number => evaluateCashFlow(candidateRate)?.value ?? NaN;
@@ -345,7 +354,7 @@ export const Finance = {
 
       const termDerivative = (nper * factors.term) / (1 + rate);
       const derivative =
-        pv * termDerivative + pmt * (type * factors.annuityFactor + (1 + rate * type) * annuityDerivative);
+        scaledPv * termDerivative + scaledPmt * (type * factors.annuityFactor + (1 + rate * type) * annuityDerivative);
       const normalizedDerivative = derivative / evaluation.scale;
       if (!isValid(normalizedDerivative) || Math.abs(normalizedDerivative) < Number.EPSILON) break;
 

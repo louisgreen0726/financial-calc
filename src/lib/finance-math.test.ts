@@ -638,6 +638,16 @@ test("rate round-trips ordinary and due annuities with the corrected derivative"
   }
 });
 
+test("rate is invariant to cash-flow scale without overflowing intermediate terms", () => {
+  const expectedRate = 0.037;
+  const periods = 36;
+  const exponent = periods * Math.log1p(expectedRate);
+  const paymentRatio = -expectedRate / -Math.expm1(-exponent);
+
+  expect(Finance.rate(periods, paymentRatio, 1)).toBeCloseTo(expectedRate, 10);
+  expect(Finance.rate(periods, paymentRatio * Number.MAX_VALUE, Number.MAX_VALUE)).toBeCloseTo(expectedRate, 10);
+});
+
 test.each([
   {
     label: "ordinary annuity with two positive roots",
