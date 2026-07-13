@@ -1,8 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { CURRENCY_CHANGED_EVENT, CURRENCY_KEY, LANGUAGE_KEY } from "@/lib/constants";
-import { safeGetItem, safeSetItem } from "@/lib/storage";
+import { CURRENCY_CHANGED_EVENT, CURRENCY_KEY, LANGUAGE_KEY, SUPPORTED_CURRENCIES } from "@/lib/constants";
+import { safeGetItem, safeRemoveItem, safeSetItem } from "@/lib/storage";
 
 // --- Types ---
 type Language = "en" | "zh";
@@ -2032,11 +2032,23 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     const saved = safeGetItem(LANGUAGE_KEY);
     if (saved === "en" || saved === "zh") {
       queueMicrotask(() => setLanguage(saved));
+    } else if (saved !== null) {
+      safeRemoveItem(LANGUAGE_KEY);
+    }
+
+    const savedCurrency = safeGetItem(CURRENCY_KEY);
+    if (
+      savedCurrency !== null &&
+      !SUPPORTED_CURRENCIES.includes(savedCurrency as (typeof SUPPORTED_CURRENCIES)[number])
+    ) {
+      safeRemoveItem(CURRENCY_KEY);
     }
 
     const handleStorage = (event: StorageEvent) => {
       if (event.key !== LANGUAGE_KEY) return;
-      setLanguage(event.newValue === "zh" ? "zh" : "en");
+      const nextLanguage = event.newValue === "zh" ? "zh" : "en";
+      if (event.newValue !== null && event.newValue !== nextLanguage) safeRemoveItem(LANGUAGE_KEY);
+      setLanguage(nextLanguage);
     };
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
@@ -2045,7 +2057,15 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const refreshFormat = () => setFormatRevision((revision) => revision + 1);
     const handleStorage = (event: StorageEvent) => {
-      if (event.key === CURRENCY_KEY) refreshFormat();
+      if (event.key === CURRENCY_KEY) {
+        if (
+          event.newValue !== null &&
+          !SUPPORTED_CURRENCIES.includes(event.newValue as (typeof SUPPORTED_CURRENCIES)[number])
+        ) {
+          safeRemoveItem(CURRENCY_KEY);
+        }
+        refreshFormat();
+      }
     };
 
     window.addEventListener(CURRENCY_CHANGED_EVENT, refreshFormat);

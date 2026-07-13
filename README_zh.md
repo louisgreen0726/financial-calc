@@ -45,7 +45,7 @@ Financial Calc 是一个基于 Next.js 16、React 19、TypeScript、Tailwind CSS
 ### 辅助页面
 
 - **History**：历史记录浏览、搜索、收藏、恢复、批量删除、CSV 导出
-- **Settings**：语言、主题、显示币种、带 schema 校验的历史备份/恢复与重置
+- **Settings**：可自愈且跨标签同步的语言/主题/显示币种偏好、带 schema 校验的历史备份/恢复与重置
 - **Help**：使用说明与补充信息
 
 ## 已完成的可靠性增强

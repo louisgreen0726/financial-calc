@@ -53,6 +53,18 @@ describe("ThemeProvider", () => {
     });
   });
 
+  it("removes an invalid persisted theme and uses the configured fallback", async () => {
+    window.localStorage.setItem("theme", "sepia");
+    render(
+      <ThemeProvider defaultTheme="system" enableSystem>
+        <ThemeHarness />
+      </ThemeProvider>
+    );
+
+    await waitFor(() => expect(window.localStorage.getItem("theme")).toBeNull());
+    expect(screen.getByRole("button", { name: "system" })).toBeInTheDocument();
+  });
+
   it("follows theme changes made in another tab", async () => {
     render(
       <ThemeProvider defaultTheme="system" enableSystem>

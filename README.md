@@ -45,7 +45,8 @@ Undo action that restores the prior inputs and visible result state.
 ### Supporting pages
 
 - **History**: saved calculation browsing, search, favorites, restore, batch delete, and CSV export
-- **Settings**: language, theme, display currency, schema-validated history backup/restore, and reset controls
+- **Settings**: self-healing cross-tab language/theme/currency preferences, schema-validated history backup/restore,
+  and reset controls
 - **Help**: usage guide and app support information
 
 ## Reliability Work Included

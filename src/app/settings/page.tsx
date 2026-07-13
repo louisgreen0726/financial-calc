@@ -54,10 +54,21 @@ export default function SettingsPage() {
   const importInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const saved = safeGetItem(CURRENCY_KEY);
-    if (isSupportedCurrency(saved)) {
-      queueMicrotask(() => setCurrency(saved));
-    }
+    const syncCurrency = () => {
+      const saved = safeGetItem(CURRENCY_KEY);
+      setCurrency(isSupportedCurrency(saved) ? saved : DEFAULT_CURRENCY);
+    };
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === CURRENCY_KEY) syncCurrency();
+    };
+
+    queueMicrotask(syncCurrency);
+    window.addEventListener(CURRENCY_CHANGED_EVENT, syncCurrency);
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener(CURRENCY_CHANGED_EVENT, syncCurrency);
+      window.removeEventListener("storage", handleStorage);
+    };
   }, []);
 
   const handleSetCurrency = (nextCurrency: SupportedCurrency) => {

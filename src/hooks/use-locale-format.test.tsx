@@ -48,6 +48,24 @@ describe("useLocaleFormat", () => {
     ).toBeInTheDocument();
   });
 
+  it("removes invalid persisted language and currency values", async () => {
+    window.localStorage.setItem(LANGUAGE_KEY, "fr");
+    window.localStorage.setItem(CURRENCY_KEY, "BTC");
+    render(
+      <LanguageProvider>
+        <LanguageProbe />
+        <CurrencyProbe />
+      </LanguageProvider>
+    );
+
+    expect(await screen.findByText("en")).toBeInTheDocument();
+    expect(
+      await screen.findByText(new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(1234.5))
+    ).toBeInTheDocument();
+    expect(window.localStorage.getItem(LANGUAGE_KEY)).toBeNull();
+    expect(window.localStorage.getItem(CURRENCY_KEY)).toBeNull();
+  });
+
   it("rerenders generic formatters after the persisted settings boundary hydrates", async () => {
     window.localStorage.setItem(CURRENCY_KEY, "EUR");
     render(

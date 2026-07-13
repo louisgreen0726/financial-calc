@@ -33,9 +33,10 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Bound amortization-table DOM rendering without weakening complete exports or accessibility coverage.
 - [x] Reduce the remaining dynamic style-attribute compatibility surface in owned components.
 - [x] Audit calculator reset/default workflows and add a consistent reversible reset command where missing.
-- [ ] Add corrupted-storage browser coverage for persisted theme, language, and currency preferences.
+- [x] Add corrupted-storage browser coverage for persisted theme, language, and currency preferences.
 - [ ] Add browser coverage for denied clipboard/share permissions and export failure recovery.
 - [ ] Audit service-worker cache growth and storage-quota failure behavior across upgrades.
+- [ ] Surface theme/language persistence write failures consistently with currency settings.
 
 ## 2026-07-13
 
@@ -1178,3 +1179,50 @@ Verification:
 - Current work: Improvement 27 is fully verified and ready to commit; corrupted preference-storage coverage is next.
 - Queue status: 3 active items remain: corrupted preference storage, denied clipboard/share/export recovery, and
   service-worker storage-quota behavior.
+
+### Improvement 28: Self-healing cross-tab preference storage
+
+Status: completed.
+
+Changes:
+
+- Audited theme, language, and display-currency hydration plus cross-tab event handling. All three safely fell back from
+  invalid strings, but corrupt values remained indefinitely in localStorage and the Settings currency selection did
+  not follow another tab even though currency formatters did.
+- Added supported-value validation and repair at the provider boundary. Invalid persisted themes, languages, and
+  currencies are removed and resolve to system, English, and USD. Storage access failures remain caught by the existing
+  safe wrappers and are not mistaken for corrupt values.
+- Applied the same repair to runtime `storage` events. Valid cross-tab values update theme classes, document language,
+  translations, currency formatting, and Settings selection; invalid updates restore defaults and delete the bad key.
+- Made Settings subscribe to both real cross-tab currency events and the existing same-tab custom event, with symmetric
+  cleanup. Its selected button can no longer drift from the currency used by calculator formatters.
+- Added unit coverage for invalid theme/language/currency startup values and a production-like browser workflow that
+  injects corrupt storage before hydration, then alternates valid and invalid cross-tab updates for all three settings.
+- Updated bilingual Settings descriptions and engineering review evidence.
+
+Files and areas:
+
+- `src/components/theme-provider.tsx` and focused tests
+- `src/lib/i18n.tsx`, `src/hooks/use-locale-format.test.tsx`, and `src/app/settings/page.tsx`
+- `e2e/preferences-storage.spec.ts`
+- English/Chinese README, engineering review, and improvement log
+
+Verification:
+
+- Focused theme/locale/Settings suite passed with 11 tests; strict TypeScript and ESLint passed.
+- The browser workflow repaired initial `sepia`, `fr`, and `BTC` values; synchronized valid `dark`, `zh`, and `EUR`
+  events; repaired a second invalid update for each key; and reported zero console/page errors.
+- `npm run verify`: passed with 50 Vitest files and 420 tests, 15 routes, 197 precache assets, 96 script hashes, 35
+  static style hashes, 722 internal references, and every route budget.
+- The complete Playwright suite passed all 34 tests in 3.6 minutes, including Settings Axe coverage, Reset/Undo, and
+  the new preference corruption flow.
+- Production dependency audit reported zero vulnerabilities; extended Prettier and `git diff --check` passed.
+
+### Progress checkpoint: 10:06 +08:00
+
+- Continuous-session elapsed time: 7 hours.
+- Completed improvement batches: 28; persisted visual/locale preferences now self-repair and stay synchronized across
+  tabs and Settings UI.
+- Current work: Improvement 28 is fully verified and ready to commit; denied clipboard/share/export recovery is next.
+- Queue status: 3 active items remain: denied clipboard/share/export recovery, service-worker quota behavior, and
+  explicit theme/language write-failure feedback.
