@@ -112,4 +112,24 @@ describe("report printing", () => {
     expect(document.body).not.toHaveAttribute("data-print-mode");
     expect(document.title).toBe("Financial Calc");
   });
+
+  it("rolls back hidden elements and frozen charts when print setup fails partway", () => {
+    const report = document.getElementById("report") as HTMLElement;
+    const chart = document.querySelector(".recharts-wrapper") as HTMLElement;
+    vi.spyOn(chart, "getBoundingClientRect").mockReturnValue({ width: 640, height: 240 } as DOMRect);
+    vi.spyOn(report, "prepend").mockImplementation(() => {
+      throw new DOMException("Insertion blocked", "HierarchyRequestError");
+    });
+
+    expect(() => prepareReportForPrint({ elementId: "report", title: "Report" })).toThrow("Insertion blocked");
+
+    expect(document.body).not.toHaveAttribute("data-print-mode");
+    expect(report).not.toHaveAttribute("data-print-target");
+    expect(document.querySelector('[data-print-report-header="true"]')).toBeNull();
+    expect(document.querySelectorAll('[data-print-hidden-by-export="true"]')).toHaveLength(0);
+    expect(chart).not.toHaveAttribute("data-print-chart");
+    expect(chart.style.getPropertyValue("--print-chart-width")).toBe("");
+    expect(chart.style.getPropertyValue("--print-chart-height")).toBe("");
+    expect(document.title).toBe("Financial Calc");
+  });
 });

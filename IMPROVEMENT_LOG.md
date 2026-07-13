@@ -2960,3 +2960,33 @@ Verification:
 
 Queue status: a robust Playwright child-process wrapper, transactional print preparation, and complete workspace backup
 are active in parallel; further UI/product/core auditing remains queued.
+
+### Improvement 73: Transactional print-report preparation
+
+Status: completed.
+
+Changes:
+
+- Closed a partial-setup corruption path in print/PDF preparation. The previous code hid every node outside the report
+  and froze chart dimensions before creating its cleanup closure; a later DOM exception while prepending the report
+  header or setting print attributes could leave navigation/dialogs hidden and charts permanently frozen.
+- Split discovery from mutation: outside-target elements, visible chart measurements, and the detached print header are
+  all collected before page state changes. An idempotent rollback closure now exists before the first mutation.
+- Wrapped the complete hide/freeze/header/target/body/title setup transaction. Any exception removes the header,
+  restores target/body/title state, clears all temporary hidden markers and chart attributes/CSS variables, then
+  rethrows the original setup failure. Successful print and delayed/afterprint cleanup semantics remain unchanged.
+- Added a mid-transaction regression that forces `report.prepend` to fail after sibling hiding and chart freezing, then
+  asserts full DOM/style/title restoration with no leftover print metadata.
+
+Files and areas:
+
+- `src/lib/print-report.ts`
+- `src/lib/print-report.test.ts`
+
+Verification:
+
+- The focused print-report suite passed 5/5 tests.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: a robust Playwright child-process wrapper, complete workspace backup, and service-worker activation race
+recovery are active in parallel; further UI/product/core work remains queued.

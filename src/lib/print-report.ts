@@ -38,15 +38,14 @@ function createPrintHeader(title: string, generatedLabel: string | undefined) {
   return header;
 }
 
-function hideSiblingsOutsideTarget(target: HTMLElement) {
-  const hiddenElements: HTMLElement[] = [];
+function getElementsOutsideTarget(target: HTMLElement) {
+  const elements: HTMLElement[] = [];
   let current: HTMLElement | null = target;
 
   while (current.parentElement) {
     for (const sibling of current.parentElement.children) {
       if (sibling !== current && sibling instanceof HTMLElement) {
-        sibling.setAttribute(PRINT_HIDDEN_ATTRIBUTE, "true");
-        hiddenElements.push(sibling);
+        elements.push(sibling);
       }
     }
 
@@ -56,27 +55,29 @@ function hideSiblingsOutsideTarget(target: HTMLElement) {
     }
   }
 
-  return hiddenElements;
+  return elements;
 }
 
-function freezeChartDimensions(target: HTMLElement) {
-  const charts = Array.from(target.querySelectorAll<HTMLElement>(".recharts-wrapper"))
+function getChartDimensions(target: HTMLElement) {
+  return Array.from(target.querySelectorAll<HTMLElement>(".recharts-wrapper"))
     .map((chart) => ({ chart, rect: chart.getBoundingClientRect() }))
     .filter(({ rect }) => rect.width > 0 && rect.height > 0);
+}
 
+function freezeChartDimensions(charts: ReturnType<typeof getChartDimensions>) {
   charts.forEach(({ chart, rect }) => {
     chart.setAttribute(PRINT_CHART_ATTRIBUTE, "true");
     chart.style.setProperty(PRINT_CHART_WIDTH, `${rect.width}px`);
     chart.style.setProperty(PRINT_CHART_HEIGHT, `${rect.height}px`);
   });
+}
 
-  return () => {
-    charts.forEach(({ chart }) => {
-      chart.removeAttribute(PRINT_CHART_ATTRIBUTE);
-      chart.style.removeProperty(PRINT_CHART_WIDTH);
-      chart.style.removeProperty(PRINT_CHART_HEIGHT);
-    });
-  };
+function restoreChartDimensions(charts: ReturnType<typeof getChartDimensions>) {
+  charts.forEach(({ chart }) => {
+    chart.removeAttribute(PRINT_CHART_ATTRIBUTE);
+    chart.style.removeProperty(PRINT_CHART_WIDTH);
+    chart.style.removeProperty(PRINT_CHART_HEIGHT);
+  });
 }
 
 export function prepareReportForPrint({ elementId, title, filename, generatedLabel }: PrintReportOptions): () => void {
@@ -88,15 +89,10 @@ export function prepareReportForPrint({ elementId, title, filename, generatedLab
   }
 
   const originalTitle = document.title;
-  const hiddenElements = hideSiblingsOutsideTarget(target);
-  const restoreChartDimensions = freezeChartDimensions(target);
+  const hiddenElements = getElementsOutsideTarget(target);
+  const charts = getChartDimensions(target);
   const header = createPrintHeader(title, generatedLabel);
   let cleanedUp = false;
-
-  target.prepend(header);
-  target.setAttribute(PRINT_TARGET_ATTRIBUTE, "true");
-  document.body.setAttribute(PRINT_MODE_ATTRIBUTE, "report");
-  document.title = normalizeDocumentTitle(filename, title);
 
   const cleanup = () => {
     if (cleanedUp) {
@@ -106,7 +102,7 @@ export function prepareReportForPrint({ elementId, title, filename, generatedLab
     cleanedUp = true;
     header.remove();
     target.removeAttribute(PRINT_TARGET_ATTRIBUTE);
-    restoreChartDimensions();
+    restoreChartDimensions(charts);
     hiddenElements.forEach((element) => element.removeAttribute(PRINT_HIDDEN_ATTRIBUTE));
     document.body.removeAttribute(PRINT_MODE_ATTRIBUTE);
     document.title = originalTitle;
@@ -115,8 +111,19 @@ export function prepareReportForPrint({ elementId, title, filename, generatedLab
     }
   };
 
-  activePrintCleanup = cleanup;
-  return cleanup;
+  try {
+    hiddenElements.forEach((element) => element.setAttribute(PRINT_HIDDEN_ATTRIBUTE, "true"));
+    freezeChartDimensions(charts);
+    target.prepend(header);
+    target.setAttribute(PRINT_TARGET_ATTRIBUTE, "true");
+    document.body.setAttribute(PRINT_MODE_ATTRIBUTE, "report");
+    document.title = normalizeDocumentTitle(filename, title);
+    activePrintCleanup = cleanup;
+    return cleanup;
+  } catch (error) {
+    cleanup();
+    throw error;
+  }
 }
 
 async function waitForPrintLayout() {
