@@ -159,8 +159,9 @@ npm run verify
 GitHub Actions 会把同等覆盖拆分为并行的质量、浏览器以及 root/base-path 生产矩阵，并额外审计生产依赖中的
 高危漏洞。每个生产矩阵只构建一次，然后针对同一份产物校验 precache manifest、HTML 内部引用、PWA
 metadata、静态宿主头、路由体积预算，以及 PWA 安装、离线与更新流程。浏览器任务失败时会保留 7 天的截图和
-trace 诊断产物。本地首次运行 `npm run test:e2e` 前，需要执行
-`npx playwright install chromium` 安装浏览器。
+trace 诊断产物。为保持本地与 CI 一致，建议先执行 `npx playwright install chromium` 安装 Playwright 固定版本；
+若本地缺少该浏览器，配置会按稳定版 Chrome、Edge 的顺序确定性回退，CI 不使用系统浏览器回退。自定义路径可用
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`；显式路径无效时会立即报错，不会静默改选其他浏览器。
 本地 Playwright 最多使用 2 个 worker，避免并发 Axe 扫描争抢 CPU 与内存；CI 继续固定为单 worker，确保结果可复现。
 
 运行生产 PWA 工作流：

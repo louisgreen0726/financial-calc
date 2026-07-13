@@ -39,7 +39,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Surface theme/language persistence write failures consistently with currency settings.
 - [x] Audit remaining preference setters for silent write failures, starting with sidebar collapse state.
 - [ ] Investigate and eliminate development-only missing translation warnings for Portfolio seed controls.
-- [ ] Make local Playwright browser selection deterministic when the pinned browser binary is unavailable.
+- [x] Make local Playwright browser selection deterministic when the pinned browser binary is unavailable.
 - [ ] Extend preference recovery coverage to failed cleanup of invalid persisted values.
 - [x] Consume pending history restores exactly once even when sessionStorage cleanup is blocked.
 - [x] Generate and verify base-path-aware static deployment `_headers` rules.
@@ -1904,3 +1904,65 @@ validated scenario-comparison feature design.
   followed by preference recovery and the remaining numeric/tooling/UI/product queue.
 - Queue status: 7 active items; the newly requested UI and feature work has concrete discovery entries rather than an
   unbounded visual rewrite.
+
+### Improvement 44: Deterministic local Playwright browser resolution
+
+Status: completed.
+
+Changes:
+
+- Confirmed the local failure mode: Playwright 1.61 expected its pinned full Chromium at
+  `C:\Users\mache\AppData\Local\ms-playwright\chromium-1228\chrome-win64\chrome.exe`, which is absent, while stable
+  system Chrome exists under `C:\Program Files`. Every browser command therefore required a manually supplied
+  executable-path environment variable despite a usable local browser.
+- Added one shared resolver for standard and PWA Playwright configs. A non-empty
+  `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` has highest priority and is resolved against the working directory when
+  relative; blank, missing, directory, or non-executable explicit targets fail immediately with the normalized path.
+- CI always retains Playwright's default pinned headless launch and never substitutes auto-updating system software, so
+  a broken `playwright install` remains visible. Locally, `chromium.executablePath()` is probed and that exact pinned
+  full-Chromium path is launched explicitly; this avoids assuming its existence also proves that Playwright's distinct
+  default `chromium-headless-shell` executable is installed.
+- Added deterministic local-only Chrome-then-Edge candidates for Windows, macOS, and Linux, including stable system,
+  per-user, and appropriate PATH locations. Candidate paths are deduplicated case-insensitively on Windows; POSIX
+  probes require executable permission.
+- Kept config imports non-throwing when neither bundled nor system candidates exist. Playwright then provides its
+  standard install guidance at launch; unknown platforms retain explicit and bundled support without guessed paths.
+- Exposed root and PWA config factories that consume the same resolver, so `/calc` inherits identical selection.
+  The base-path config remains a thin call to the PWA factory.
+- Added cross-platform pure tests for explicit absolute/relative paths, Windows environment casing and candidate
+  order, macOS/Linux topology, bundled and CI priority, Chrome/Edge fallback, missing candidates, and both config
+  integrations.
+
+Files and areas:
+
+- `scripts/resolve-playwright-browser.ts`
+- `playwright.config.ts` and `playwright.pwa.config.ts`
+- `src/lib/playwright-browser-resolver.test.ts`
+- English/Chinese README, engineering review, and improvement log
+
+Verification:
+
+- The resolver plus existing PWA-config suites passed 15/15 tests; strict TypeScript, focused ESLint, Prettier, and
+  `git diff --check` passed.
+- With no executable-path environment variable, all 38 standard tests and both two-test PWA configurations listed
+  successfully. A real development-server Portfolio browser workflow launched system Chrome and passed 1/1 in 20.6s.
+- `npm run verify` passed all 55 Vitest files and 483 tests, 15 routes, 197 precache assets, 722 internal references,
+  and every route bundle budget.
+- After explicitly removing the executable-path environment variable, the root production PWA workflow launched via
+  the resolver and passed 2/2 CSP, install, offline navigation, 404, activation, controller, and reload tests in 11.2s.
+
+Queue status: 6 active items remain across Portfolio development translations, invalid-preference cleanup, broader
+formatting enforcement, bond sensitivity oracles, app-shell UI refinement, and validated scenario-comparison design.
+
+### Progress checkpoint: 15:12 +08:00
+
+- Resumed-goal elapsed time: approximately 4 hours; cumulative logged active work: approximately 11 hours 37 minutes.
+  The minimum duration remains a floor, not a completion signal.
+- Completed improvement batches: 44. The latest batches combine numeric semantics, deployment topology, PWA
+  multi-tab correctness, test stability, and deterministic browser tooling with root/base-path verification.
+- Current work: Improvement 44 is fully verified and ready to commit. Invalid-preference cleanup is next while
+  Portfolio diagnostics, formatting, bond oracles, and the requested UI/feature work stay queued.
+- Product/UI discovery: a same-page, same-metric History comparison is feasible as an MVP, but current records contain
+  only one primary result and no stable metric ID, original currency, or model version. The queued design will avoid
+  claiming full scenario equivalence and will reject ambiguous legacy records.
+- Queue status: 6 active items remain; implementation work is concrete and the work queue is intentionally non-empty.

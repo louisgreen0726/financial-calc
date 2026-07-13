@@ -1,6 +1,5 @@
 import { defineConfig } from "playwright/test";
-
-const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
+import { resolveChromiumLaunchOptions, type ChromiumResolverOptions } from "./scripts/resolve-playwright-browser";
 
 function normalizeBasePath(value: string): string {
   if (!value) return "";
@@ -10,9 +9,10 @@ function normalizeBasePath(value: string): string {
   return value;
 }
 
-export function createPwaConfig(configuredBasePath = "") {
+export function createPwaConfig(configuredBasePath = "", browserResolverOptions?: ChromiumResolverOptions) {
   const basePath = normalizeBasePath(configuredBasePath);
   const skipBuild = process.env.PWA_SKIP_BUILD === "1";
+  const launchOptions = resolveChromiumLaunchOptions(browserResolverOptions);
   process.env.PWA_BASE_PATH = basePath;
 
   return defineConfig({
@@ -29,7 +29,7 @@ export function createPwaConfig(configuredBasePath = "") {
       screenshot: "only-on-failure",
       trace: "retain-on-failure",
       serviceWorkers: "allow",
-      ...(executablePath ? { launchOptions: { executablePath } } : {}),
+      ...(launchOptions ? { launchOptions } : {}),
     },
     webServer: {
       command: `${skipBuild ? "" : "npm run build && "}node scripts/serve-pwa-e2e.mjs`,

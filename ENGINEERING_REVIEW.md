@@ -232,6 +232,9 @@ browser-level checks beyond the existing suite.
 - The translation literal-call audit reads its sorted source set concurrently and parses complete parent-free
   TypeScript ASTs in deterministic order. This removes sequential I/O sensitivity under full-suite worker contention
   without weakening source coverage, raising the timeout, or replacing syntax-aware analysis with regular expressions.
+- Both Playwright config families share a tested browser resolver. Explicit paths fail fast, an installed pinned
+  browser remains the default, CI never substitutes system software, and only local runs without the bundle use a
+  deterministic stable Chrome-then-Edge fallback across supported desktop platforms.
 - Next.js compilation caches are isolated by deployment target and lockfile/source hashes. Playwright screenshots and
   traces are now uploaded on failure with seven-day retention instead of remaining inaccessible on an ephemeral runner.
 

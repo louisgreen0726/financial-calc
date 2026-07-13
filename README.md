@@ -163,8 +163,10 @@ GitHub Actions runs the same coverage as parallel quality, browser, and root/bas
 high-severity production dependency audit. Each production matrix entry builds once, then checks that exact artifact's
 precache manifest, internal HTML references, PWA metadata, static-host headers, route bundle budgets, and PWA
 installation/offline/update lifecycle. Failed browser jobs upload their retained screenshots and traces for seven days.
-Locally, install Chromium once with
-`npx playwright install chromium` before running `npm run test:e2e`.
+For reproducible local parity, install Playwright's pinned Chromium once with `npx playwright install chromium`. If it
+is absent locally, the configs deterministically use the first executable stable Chrome, then Edge; CI never uses this
+system-browser fallback. Set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` for a custom browser path; an invalid explicit path
+fails immediately instead of silently selecting another browser.
 The local Playwright configuration caps execution at two workers because concurrent Axe scans are CPU- and
 memory-intensive; CI keeps its single-worker setting for reproducibility.
 
