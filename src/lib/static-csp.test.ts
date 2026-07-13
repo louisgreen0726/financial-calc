@@ -4,9 +4,13 @@ import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 
 interface StaticCspGenerator {
-  createStaticScriptPolicy(html: string): string;
-  injectStaticScriptPolicy(html: string, filename?: string): string;
-  validateStaticScriptPolicy(html: string, filename?: string): { hashes: number; policy: string };
+  getRuntimeStyleHashes(): string[];
+  createStaticContentPolicy(html: string): string;
+  injectStaticContentPolicy(html: string, filename?: string): string;
+  validateStaticContentPolicy(
+    html: string,
+    filename?: string
+  ): { scriptHashes: number; styleHashes: number; runtimeStyleHashes: number; policy: string };
 }
 
 const generatorUrl = pathToFileURL(path.resolve(process.cwd(), "scripts", "generate-static-csp.mjs"));
@@ -17,37 +21,55 @@ function hash(source: string) {
 }
 
 const source =
-  '<!doctype html><html><head><meta charset="utf-8"><script src="/app.js"></script>' +
+  '<!doctype html><html><head><meta charset="utf-8"><style>body { color: navy; }</style>' +
+  '<script src="/app.js"></script>' +
   "<script>window.first = true;</script></head><body><script>window.second = true;</script></body></html>";
 
-describe("static hash-based script CSP", () => {
-  it("injects an exact policy before every script", () => {
-    const hardened = generator.injectStaticScriptPolicy(source, "fixture.html");
-    const result = generator.validateStaticScriptPolicy(hardened, "fixture.html");
-    const expectedHashes = [hash("window.first = true;"), hash("window.second = true;")].sort();
+describe("static hash-based content CSP", () => {
+  it("injects exact script and style-element policies before active content", () => {
+    const hardened = generator.injectStaticContentPolicy(source, "fixture.html");
+    const result = generator.validateStaticContentPolicy(hardened, "fixture.html");
+    const expectedScriptHashes = [hash("window.first = true;"), hash("window.second = true;")].sort();
+    const expectedStyleHashes = [hash("body { color: navy; }"), ...generator.getRuntimeStyleHashes()].sort();
 
-    expect(result.hashes).toBe(2);
+    expect(result.scriptHashes).toBe(2);
+    expect(result.styleHashes).toBe(1);
+    expect(result.runtimeStyleHashes).toBe(2);
     expect(result.policy).toBe(
-      `${["script-src 'self'", ...expectedHashes.map((value) => `'sha256-${value}'`)].join(" ")}; ` +
-        "worker-src 'self' blob:"
+      `${["script-src 'self'", ...expectedScriptHashes.map((value) => `'sha256-${value}'`)].join(" ")}; ` +
+        `${["style-src-elem 'self'", ...expectedStyleHashes.map((value) => `'sha256-${value}'`)].join(" ")}; ` +
+        "style-src-attr 'unsafe-inline'; worker-src 'self' blob:"
     );
-    expect(hardened.indexOf('http-equiv="Content-Security-Policy"')).toBeLessThan(hardened.indexOf("<script"));
-    expect(result.policy).not.toContain("unsafe-inline");
+    const policyOffset = hardened.indexOf('http-equiv="Content-Security-Policy"');
+    expect(policyOffset).toBeLessThan(hardened.indexOf("<script"));
+    expect(policyOffset).toBeLessThan(hardened.indexOf("<style"));
+    expect(result.policy).not.toMatch(/(?:script-src|style-src-elem)[^;]*'unsafe-inline'/);
+    expect(result.policy).toContain("style-src-attr 'unsafe-inline'");
   });
 
   it("detects missing, duplicate, and stale policies", () => {
-    expect(() => generator.validateStaticScriptPolicy(source, "missing.html")).toThrow(/exactly one/);
+    expect(() => generator.validateStaticContentPolicy(source, "missing.html")).toThrow(/exactly one/);
 
-    const hardened = generator.injectStaticScriptPolicy(source);
-    expect(() => generator.injectStaticScriptPolicy(hardened)).toThrow(/already has/);
-    expect(() => generator.validateStaticScriptPolicy(hardened.replace("window.second", "window.changed"))).toThrow(
+    const hardened = generator.injectStaticContentPolicy(source);
+    expect(() => generator.injectStaticContentPolicy(hardened)).toThrow(/already has/);
+    expect(() => generator.validateStaticContentPolicy(hardened.replace("window.second", "window.changed"))).toThrow(
       /do not match/
     );
+    expect(() => generator.validateStaticContentPolicy(hardened.replace("color: navy", "color: red"))).toThrow(
+      /do not match/
+    );
+
+    const policyMeta = hardened.match(/<meta http-equiv="Content-Security-Policy"[^>]+>/)?.[0];
+    expect(policyMeta).toBeDefined();
+    const latePolicy = hardened.replace(policyMeta ?? "", "").replace("</style>", `</style>${policyMeta}`);
+    expect(() => generator.validateStaticContentPolicy(latePolicy)).toThrow(/precede every script and style/);
   });
 
-  it("emits a restrictive script policy even when a document has no inline scripts", () => {
-    expect(generator.createStaticScriptPolicy("<html><head></head><body></body></html>")).toBe(
-      "script-src 'self'; worker-src 'self' blob:"
+  it("emits restrictive element policies even when a document has no inline content", () => {
+    const runtimeStyleSources = generator.getRuntimeStyleHashes().map((value) => `'sha256-${value}'`);
+    expect(generator.createStaticContentPolicy("<html><head></head><body></body></html>")).toBe(
+      `script-src 'self'; ${["style-src-elem 'self'", ...runtimeStyleSources].join(" ")}; ` +
+        "style-src-attr 'unsafe-inline'; worker-src 'self' blob:"
     );
   });
 });

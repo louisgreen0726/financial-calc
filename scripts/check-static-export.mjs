@@ -4,7 +4,7 @@ import path from "node:path";
 import vm from "node:vm";
 import { fileURLToPath } from "node:url";
 
-import { validateStaticScriptPolicy } from "./generate-static-csp.mjs";
+import { validateStaticContentPolicy } from "./generate-static-csp.mjs";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const forbiddenPrecacheAssets = new Set(["/_headers", "/precache-manifest.js", "/sw.js"]);
@@ -293,9 +293,9 @@ export async function checkStaticExport({ rootDirectory = projectRoot, basePath 
   validateWebManifest(JSON.parse(await readFile(path.join(outputDirectory, "manifest.json"), "utf8")));
   const htmlFiles = await listHtmlFiles(outputDirectory);
   invariant(htmlFiles.length > 0, "Static export contains no HTML files.");
-  const scriptPolicies = await Promise.all(
+  const contentPolicies = await Promise.all(
     htmlFiles.map(async (htmlPath) =>
-      validateStaticScriptPolicy(await readFile(htmlPath, "utf8"), path.relative(outputDirectory, htmlPath))
+      validateStaticContentPolicy(await readFile(htmlPath, "utf8"), path.relative(outputDirectory, htmlPath))
     )
   );
   const exportedRoutes = htmlFiles.map((htmlPath) => routeFromHtmlPath(htmlPath, outputDirectory)).filter(Boolean);
@@ -311,13 +311,16 @@ export async function checkStaticExport({ rootDirectory = projectRoot, basePath 
     assets: precacheManifest.assets.length,
     routes: precacheManifest.routes.length,
     htmlFiles: htmlFiles.length,
-    inlineScriptHashes: scriptPolicies.reduce((total, policy) => total + policy.hashes, 0),
+    inlineScriptHashes: contentPolicies.reduce((total, policy) => total + policy.scriptHashes, 0),
+    inlineStyleHashes: contentPolicies.reduce((total, policy) => total + policy.styleHashes, 0),
+    runtimeStyleHashes: contentPolicies[0]?.runtimeStyleHashes ?? 0,
     references,
   };
   logger.log(
     `Static export verified${normalizedBasePath ? ` at ${normalizedBasePath}` : ""}: ${result.routes} routes, ` +
       `${result.assets} precache assets, ${result.htmlFiles} HTML files, ${result.inlineScriptHashes} inline script ` +
-      `hashes, ${result.references} internal references.`
+      `hashes, ${result.inlineStyleHashes} inline style hashes, ${result.runtimeStyleHashes} runtime style hashes per ` +
+      `document, ${result.references} internal references.`
   );
   return result;
 }

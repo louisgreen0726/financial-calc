@@ -28,8 +28,11 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Add property/fuzz coverage for URL and history restoration across every calculator schema.
 - [x] Add deterministic stress scenarios alongside normal VaR without implying predictive certainty.
 - [x] Audit and align input-unit labels plus display/export rounding across all calculators.
-- [ ] Plan and test remaining major dependency migrations as isolated compatibility batches.
-- [ ] Reduce `style-src 'unsafe-inline'` exposure by inventorying static versus runtime component/chart styles.
+- [x] Plan and test remaining major dependency migrations as isolated compatibility batches.
+- [x] Reduce `style-src 'unsafe-inline'` exposure by inventorying static versus runtime component/chart styles.
+- [ ] Bound amortization-table DOM rendering without weakening complete exports or accessibility coverage.
+- [ ] Reduce the remaining dynamic style-attribute compatibility surface in owned components.
+- [ ] Audit calculator reset/default workflows and add a consistent reversible reset command where missing.
 
 ## 2026-07-13
 
@@ -958,3 +961,56 @@ Verification:
 - Current work: Improvement 23 is fully verified and ready to commit; ESLint 10 compatibility is next.
 - Queue status: 3 active items remain: ESLint 10 migration, inline-style CSP reduction, and amortization-table rendering
   scalability without weakening complete exports or accessibility coverage.
+
+### Improvement 24: Per-document style-element CSP with deterministic runtime allowances
+
+Status: completed.
+
+Changes:
+
+- Inventoried the root static export with an HTML parser: 16 documents contained 19 style elements and 121 style
+  attributes. The attributes include runtime-mutated Radix scroll/slider state, chart/heatmap values, and workspace
+  visual variables, so a blanket attribute hash policy would break supported interactions.
+- Extended the build-generated meta policy with exact `style-src-elem` SHA-256 hashes for every static style block.
+  `unsafe-inline` is now isolated to `style-src-attr`; scripts and unlisted style elements do not inherit it.
+- Traced initial browser violations to Sonner's deterministic startup behavior: it appends an empty style node and then
+  writes its packaged CSS. The generator resolves the installed Sonner module, statically extracts its single CSS
+  injection, and hashes both sources. Package upgrades therefore update the allowlist from actual installed code
+  instead of relying on a copied version-specific hash.
+- Extended static validation to recompute script, static-style, and runtime-style sources; reject stale or element-level
+  `unsafe-inline` policies; and require the meta policy to precede both the first script and first style element.
+- Expanded the production attack probe to inject an unknown style block, require a `style-src-elem` violation, and
+  verify its custom property was not applied. Existing script blocking remains covered in the same workflow.
+- Tested ESLint 10.7.0 as an isolated compatibility batch and restored ESLint 9.39.5 after `npm ls` proved that the
+  latest import, JSX accessibility, and React plugins still declare only ESLint 9 peers. TypeScript 7 remains outside
+  `typescript-eslint`'s supported range, and Node types remain aligned with the Node 20 runtime contract.
+- Updated English/Chinese deployment instructions and the engineering review with the exact style-element versus
+  style-attribute trust boundary.
+
+Files and areas:
+
+- `scripts/generate-static-csp.mjs` and `scripts/check-static-export.mjs`
+- `src/lib/static-csp.test.ts` and `src/lib/static-export-check.test.ts`
+- `e2e/pwa-offline.spec.ts`
+- English/Chinese README, engineering review, and improvement log
+
+Verification:
+
+- Focused CSP/static-export suite: 2 files and 8 tests passed, including stale script/style content and late-policy
+  rejection; strict TypeScript and ESLint passed after the final ordering invariant.
+- `npm run verify`: passed with 49 Vitest files and 415 tests, followed by production build, static checks, and every
+  route bundle budget. `/portfolio` remained at 452,584 / 500,000 gzip bytes.
+- Root export validated 15 routes, 197 precache assets, 96 inline-script hashes, 19 static-style hashes, 2 runtime-style
+  hashes per document, 722 internal references, and both CSP/PWA browser tests.
+- `/calc` production export validated the same route/assets/hash counts, 706 internal references, all bundle budgets,
+  and both base-path CSP/PWA browser tests.
+- Production dependency audit reported zero vulnerabilities; extended Prettier and `git diff --check` passed.
+
+### Progress checkpoint: 08:34 +08:00
+
+- Continuous-session elapsed time: 5 hours 28 minutes.
+- Completed improvement batches: 24; arbitrary inline style elements are now blocked without breaking dynamic
+  component style attributes.
+- Current work: Improvement 24 is fully verified and ready to commit; amortization-table DOM scalability is next.
+- Queue status: 3 active items remain: bounded amortization rendering, reducing owned dynamic style attributes, and
+  calculator-wide reversible reset/default workflows.

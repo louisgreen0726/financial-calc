@@ -139,8 +139,10 @@ browser-level checks beyond the existing suite.
 - `react-hook-form` and several currently unused Radix packages remain intentionally because checked-in
   shadcn-generated primitives import them. Removing those packages would leave the local component library unable to
   typecheck even though current routes do not instantiate every primitive.
-- Available direct upgrades are all major migrations (`@types/node` 26, ESLint 10, Lucide 1.x, TypeScript 7). With no
-  audit findings, they should be handled as compatibility projects rather than mixed into low-risk cleanup.
+- Lucide completed its 1.x migration with React 19, full browser, and route-budget verification. ESLint 10 remains
+  blocked because the latest `eslint-plugin-import`, `eslint-plugin-jsx-a11y`, and `eslint-plugin-react` releases only
+  declare ESLint 9 compatibility; forcing that invalid peer tree was rejected. `@types/node` stays aligned with the
+  Node 20 runtime, and TypeScript 7 remains outside `typescript-eslint`'s `<6.1.0` peer range.
 
 ### Persistence Follow-up: History Backup Restore
 
@@ -184,7 +186,7 @@ browser-level checks beyond the existing suite.
 - Next.js compilation caches are isolated by deployment target and lockfile/source hashes. Playwright screenshots and
   traces are now uploaded on failure with seven-day retention instead of remaining inaccessible on an ephemeral runner.
 
-### CSP Follow-up: Static Per-Document Script Hashes
+### CSP Follow-up: Static Per-Document Content Hashes
 
 - The exported site contained 48 globally unique inline script bodies. A single hash allowlist required about 2,615
   characters, exceeding Cloudflare Pages' documented 2,000-character `_headers` line limit. Route-specific header
@@ -195,12 +197,15 @@ browser-level checks beyond the existing suite.
 - Blob permission is scoped to `worker-src`; the stricter document policy does not allow blob-backed scripts.
 - A fixed nonce would be public and reusable in a static export; a secure per-response nonce requires a runtime server
   that this deployment model intentionally does not have. Build-time content hashes are the appropriate static model.
-- Static validation recomputes every hash and rejects missing, duplicate, late, stale, or `unsafe-inline` meta policies.
-  Browser coverage also injects an unlisted script and requires a CSP violation while normal hydration and PWA flows
-  continue working.
-- Inline style hardening remains separate: the current export has 121 style attributes and 19 style elements from
-  React components, charts, and UI primitives. The header retains `style-src 'unsafe-inline'`; no inline event-handler
-  attributes were found, and the stricter script policy does not inherit the style exception.
+- Static validation recomputes every hash and rejects missing, duplicate, late, stale, or element-level
+  `unsafe-inline` meta policies. Browser coverage injects unlisted script and style elements, requires CSP violations,
+  and then exercises normal hydration and PWA flows.
+- The export has 19 static style blocks. Each is covered by its document's exact `style-src-elem` hashes. Sonner inserts
+  an empty style element and then a deterministic package CSS string during client startup; the generator extracts and
+  hashes those exact sources from the installed module so dependency updates cannot silently leave a stale constant.
+- The 121 exported style attributes include runtime-mutated Radix, chart, workspace-visual, and heatmap values. The
+  document policy isolates their compatibility exception to `style-src-attr 'unsafe-inline'`; scripts and unlisted
+  style elements do not inherit it. No inline event-handler attributes were found.
 
 ### Risk Follow-up: Deterministic Stress Scenarios
 
@@ -335,8 +340,8 @@ No unresolved P0 findings remain.
 - The PDF libraries are intentionally lazy-loaded to keep the initial application payload smaller. A first-ever PDF export cannot start after the browser is already offline; once loaded, the runtime cache can retain those chunks.
 - `public/_headers` is a deployment template, not a cross-host standard. Hosts that do not support that file must
   reproduce the response-header policies in their own configuration, including base-path-prefixed cache rules. The
-  generated HTML independently restricts inline scripts by hash, while inline styles remain a documented compatibility
-  boundary for component and chart rendering.
+  generated HTML independently restricts inline scripts and style elements by hash, while dynamic style attributes
+  remain a documented compatibility boundary for component and chart rendering.
 - Financial formulas are unit- and property-tested but are not independently certified for regulated or fiduciary use.
   Production use still requires domain-expert validation against the institution's conventions, rounding rules, and
   approved reference systems.

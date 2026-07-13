@@ -34,45 +34,67 @@ test.afterAll(async () => {
   await Promise.all([rm(updateWorkerPath, { force: true }), rm(offlineMarkerPath, { force: true })]);
 });
 
-test("enforces generated inline-script hashes", async ({ page }) => {
+test("enforces generated inline script and style-element hashes", async ({ page }) => {
   await page.goto(appPath("/"));
 
   const result = await page.evaluate(async () => {
     const probeWindow = window as typeof window & { __financialCalcCspProbe?: boolean };
+    const waitForViolation = () =>
+      new Promise<{ blockedURI: string; effectiveDirective: string } | null>((resolve) => {
+        const timeout = window.setTimeout(() => resolve(null), 2_000);
+        window.addEventListener(
+          "securitypolicyviolation",
+          (event) => {
+            window.clearTimeout(timeout);
+            resolve({ blockedURI: event.blockedURI, effectiveDirective: event.effectiveDirective });
+          },
+          { once: true }
+        );
+      });
+
     probeWindow.__financialCalcCspProbe = false;
-    const violationPromise = new Promise<{ blockedURI: string; effectiveDirective: string } | null>((resolve) => {
-      const timeout = window.setTimeout(() => resolve(null), 2_000);
-      window.addEventListener(
-        "securitypolicyviolation",
-        (event) => {
-          window.clearTimeout(timeout);
-          resolve({ blockedURI: event.blockedURI, effectiveDirective: event.effectiveDirective });
-        },
-        { once: true }
-      );
-    });
+    const scriptViolationPromise = waitForViolation();
     const script = document.createElement("script");
     script.textContent = "window.__financialCalcCspProbe = true;";
     document.head.append(script);
-    const violation = await violationPromise;
+    const scriptViolation = await scriptViolationPromise;
+
+    const styleViolationPromise = waitForViolation();
+    const style = document.createElement("style");
+    style.textContent = ":root { --financial-calc-csp-probe: applied; }";
+    document.head.append(style);
+    const styleViolation = await styleViolationPromise;
     const policy = document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.getAttribute("content") ?? "";
+    const directiveHashCount = (directive: string) =>
+      policy
+        .split(";")
+        .find((value) => value.trimStart().startsWith(`${directive} `))
+        ?.match(/'sha256-[^']+'/g)?.length ?? 0;
 
     return {
       executed: probeWindow.__financialCalcCspProbe,
-      hashSources: policy.match(/'sha256-[^']+'/g)?.length ?? 0,
+      scriptHashSources: directiveHashCount("script-src"),
+      styleApplied: getComputedStyle(document.documentElement).getPropertyValue("--financial-calc-csp-probe").trim(),
+      styleHashSources: directiveHashCount("style-src-elem"),
       policy,
-      violation,
+      scriptViolation,
+      styleViolation,
     };
   });
 
   expect(result.policy).toContain("script-src 'self' 'sha256-");
+  expect(result.policy).toContain("style-src-elem 'self' 'sha256-");
+  expect(result.policy).toContain("style-src-attr 'unsafe-inline'");
   expect(result.policy).toContain("worker-src 'self' blob:");
   expect(result.policy).not.toMatch(/script-src[^;]*blob:/);
-  expect(result.policy).not.toContain("unsafe-inline");
-  expect(result.hashSources).toBeGreaterThan(0);
+  expect(result.policy).not.toMatch(/(?:script-src|style-src-elem)[^;]*'unsafe-inline'/);
+  expect(result.scriptHashSources).toBeGreaterThan(0);
+  expect(result.styleHashSources).toBeGreaterThan(0);
   expect(result.executed).toBe(false);
-  expect(result.violation).toMatchObject({ blockedURI: "inline" });
-  expect(result.violation?.effectiveDirective).toMatch(/^script-src/);
+  expect(result.styleApplied).toBe("");
+  expect(result.scriptViolation).toMatchObject({ blockedURI: "inline" });
+  expect(result.scriptViolation?.effectiveDirective).toMatch(/^script-src/);
+  expect(result.styleViolation).toMatchObject({ blockedURI: "inline", effectiveDirective: "style-src-elem" });
 });
 
 test("installs, serves uncached routes offline, falls back to 404, and activates updates on request", async ({

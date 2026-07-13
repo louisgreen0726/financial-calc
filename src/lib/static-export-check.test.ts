@@ -22,7 +22,7 @@ interface StaticExportChecker {
 }
 
 interface StaticCspGenerator {
-  injectStaticScriptPolicy(html: string, filename?: string): string;
+  injectStaticContentPolicy(html: string, filename?: string): string;
 }
 
 const checkerUrl = pathToFileURL(path.resolve(process.cwd(), "scripts", "check-static-export.mjs"));
@@ -69,7 +69,7 @@ async function createStaticExport({ basePath = "" } = {}) {
     path.join(rootDirectory, "out", "manifest.json"),
     JSON.stringify({ id: "./", start_url: ".", scope: "." })
   );
-  const html = cspGenerator.injectStaticScriptPolicy(
+  const html = cspGenerator.injectStaticContentPolicy(
     `<html><head><link href="${basePath}/_next/static/app.js"></head><body><a href="${basePath}/tvm/">TVM</a></body></html>`
   );
   await writeFile(path.join(rootDirectory, "out", "index.html"), html);
@@ -139,7 +139,7 @@ describe("static export checker", () => {
     await writeFile(path.join(rootDirectory, ".next", "BUILD_ID"), "build-123");
     await writeFile(
       path.join(rootDirectory, "out", "index.html"),
-      cspGenerator.injectStaticScriptPolicy(
+      cspGenerator.injectStaticContentPolicy(
         '<html><head><script src="/_next/static/app.js"></script></head><body></body></html>'
       )
     );
