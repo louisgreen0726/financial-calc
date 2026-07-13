@@ -69,6 +69,8 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Expand Sidebar discovery across localized tool descriptions, groups, and multi-term queries.
 - [x] Preserve representable NPV results when large discounted cash flows overflow only during summation.
 - [x] Make RATE sign-change classification scale-safe for maximum finite cash flows.
+- [x] Preserve implied-volatility results when the same option contract is expressed in very small currency units.
+- [ ] Preserve tiny nonzero Fisher real-rate spreads without cancellation.
 
 ## 2026-07-13
 
@@ -3316,3 +3318,34 @@ Verification:
 
 Queue status: Workspace Backup and Playwright global lifecycle isolation remain active; real browser round trips, UI
 inspection, and further formula audits remain queued, so the queue stays intentionally non-empty.
+
+### Improvement 84: Currency-scale-invariant implied volatility
+
+Status: completed.
+
+Changes:
+
+- Reproduced a scale-dependent implied-volatility failure. A unit-price at-the-money call correctly round-tripped a
+  constructed `20%` volatility, while expressing the identical contract with spot, strike, and market price scaled by
+  `1e-12` made the old absolute tolerance classify it as the zero-volatility boundary.
+- Replaced the `max(1, price...)` absolute tolerance with a dimensionless comparison. Market price, no-arbitrage bounds,
+  the supported `500%` volatility ceiling price, and every bisection midpoint price are normalized by the option's own
+  maximum price scale before applying the existing `1e-10` tolerance.
+- Kept the scale anchored to market price and the relevant call/put upper bound, rather than an unrelated strike, so
+  deep out-of-the-money contracts do not receive an artificially loose price tolerance. Zero bounds and subnormal
+  positive scales retain a nonzero normalization floor.
+- Added a direct unit-versus-`1e-12` round-trip regression while retaining the ordinary call/put, dividend, arbitrage,
+  zero-volatility, and maximum-volatility coverage.
+
+Files and areas:
+
+- `src/lib/finance-math.ts`
+- `src/lib/finance-math.test.ts`
+
+Verification:
+
+- The complete finance-math suite passed 80/80 tests.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: Workspace Backup and Playwright concurrent-runner isolation remain active; Fisher-rate cancellation,
+browser matrix verification, and further UI work remain queued, so the queue remains intentionally non-empty.

@@ -833,14 +833,24 @@ export const Finance = {
     const lowerBound =
       type === "call" ? Math.max(0, discountedSpot - discountedStrike) : Math.max(0, discountedStrike - discountedSpot);
     const upperBound = type === "call" ? discountedSpot : discountedStrike;
-    const priceTolerance = 1e-10 * Math.max(1, Math.abs(marketPrice), Math.abs(upperBound));
-    if (marketPrice < lowerBound - priceTolerance || marketPrice > upperBound + priceTolerance) return NaN;
-    if (Math.abs(marketPrice - lowerBound) <= priceTolerance) return 0;
+    const priceScale = Math.max(Math.abs(marketPrice), Math.abs(upperBound), Number.MIN_VALUE);
+    const normalizedMarketPrice = marketPrice / priceScale;
+    const normalizedLowerBound = lowerBound / priceScale;
+    const normalizedUpperBound = upperBound / priceScale;
+    const priceTolerance = 1e-10;
+    if (
+      normalizedMarketPrice < normalizedLowerBound - priceTolerance ||
+      normalizedMarketPrice > normalizedUpperBound + priceTolerance
+    )
+      return NaN;
+    if (Math.abs(normalizedMarketPrice - normalizedLowerBound) <= priceTolerance) return 0;
 
     const maxVolatility = MAX_VOLATILITY / 100;
     const maxPrice = Finance.blackScholes(type, S, K, t, r, maxVolatility, dividendYield);
-    if (!isValid(maxPrice) || marketPrice > maxPrice + priceTolerance) return NaN;
-    if (Math.abs(marketPrice - maxPrice) <= priceTolerance) return maxVolatility;
+    if (!isValid(maxPrice)) return NaN;
+    const normalizedMaxPrice = maxPrice / priceScale;
+    if (normalizedMarketPrice > normalizedMaxPrice + priceTolerance) return NaN;
+    if (Math.abs(normalizedMarketPrice - normalizedMaxPrice) <= priceTolerance) return maxVolatility;
 
     let lowerVolatility = 0;
     let upperVolatility = maxVolatility;
@@ -848,12 +858,16 @@ export const Finance = {
       const midpoint = (lowerVolatility + upperVolatility) / 2;
       const midpointPrice = Finance.blackScholes(type, S, K, t, r, midpoint, dividendYield);
       if (!isValid(midpointPrice)) return NaN;
+      const normalizedMidpointPrice = midpointPrice / priceScale;
 
-      if (Math.abs(midpointPrice - marketPrice) <= priceTolerance || upperVolatility - lowerVolatility <= 1e-12) {
+      if (
+        Math.abs(normalizedMidpointPrice - normalizedMarketPrice) <= priceTolerance ||
+        upperVolatility - lowerVolatility <= 1e-12
+      ) {
         return midpoint;
       }
 
-      if (midpointPrice < marketPrice) {
+      if (normalizedMidpointPrice < normalizedMarketPrice) {
         lowerVolatility = midpoint;
       } else {
         upperVolatility = midpoint;

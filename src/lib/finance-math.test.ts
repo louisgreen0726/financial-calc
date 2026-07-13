@@ -341,6 +341,17 @@ test("implied volatility round-trips call and put prices with continuous dividen
   }
 });
 
+test("implied volatility is invariant to small currency scales", () => {
+  const expectedVolatility = 0.2;
+  const unitPrice = Finance.blackScholes("call", 1, 1, 1, 0.05, expectedVolatility);
+  const scaledPrice = Finance.blackScholes("call", 1e-12, 1e-12, 1, 0.05, expectedVolatility);
+
+  expect(unitPrice).toBeGreaterThan(0);
+  expect(scaledPrice).toBeCloseTo(unitPrice * 1e-12, 24);
+  expect(Finance.impliedVolatility("call", 1, 1, 1, 0.05, unitPrice)).toBeCloseTo(expectedVolatility, 8);
+  expect(Finance.impliedVolatility("call", 1e-12, 1e-12, 1, 0.05, scaledPrice)).toBeCloseTo(expectedVolatility, 8);
+});
+
 test("implied volatility handles its zero-volatility boundary", () => {
   const discountedSpot = 120 * Math.exp(-0.02);
   const discountedStrike = 100 * Math.exp(-0.05);
