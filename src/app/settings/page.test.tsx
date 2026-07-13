@@ -47,8 +47,8 @@ describe("SettingsPage", () => {
     expect(mocks.setTheme).toHaveBeenCalledWith("dark");
     expect(mocks.setLanguage).toHaveBeenCalledWith("zh");
     expect(mocks.toast.error).toHaveBeenCalledTimes(2);
-    expect(mocks.toast.error).toHaveBeenNthCalledWith(1, "common.storageError");
-    expect(mocks.toast.error).toHaveBeenNthCalledWith(2, "common.storageError");
+    expect(mocks.toast.error).toHaveBeenNthCalledWith(1, "common.changeNotPersisted");
+    expect(mocks.toast.error).toHaveBeenNthCalledWith(2, "common.changeNotPersisted");
   });
 
   it("keeps the previous currency selected when persistence is blocked", () => {
@@ -61,6 +61,7 @@ describe("SettingsPage", () => {
       fireEvent.click(screen.getByRole("button", { name: /CNY/ }));
       expect(screen.getByRole("button", { name: /USD/ })).toHaveAttribute("aria-pressed", "true");
       expect(screen.getByRole("button", { name: /CNY/ })).toHaveAttribute("aria-pressed", "false");
+      expect(mocks.toast.error).toHaveBeenCalledWith("common.storageOperationFailed");
     } finally {
       setItem.mockRestore();
     }
@@ -108,6 +109,39 @@ describe("SettingsPage", () => {
       );
     });
     expect(mocks.toast.success).toHaveBeenCalledWith(expect.stringContaining("settings.importHistorySuccess"));
+  });
+
+  it("reports an incomplete operation when confirmed history import cannot persist", async () => {
+    const item = {
+      id: "blocked-import",
+      page: "tvm" as const,
+      inputs: { rate: "7" },
+      result: 120,
+      timestamp: Date.now(),
+    };
+    const file = {
+      size: 500,
+      text: async () => JSON.stringify(createCalculationHistoryEnvelope([item])),
+    };
+    render(<SettingsPage />);
+
+    fireEvent.change(screen.getByLabelText("settings.importHistoryFile"), { target: { files: [file] } });
+    expect(await screen.findByText(/1 settings\.historyItemsAdded/)).toBeInTheDocument();
+
+    const originalSetItem = Storage.prototype.setItem;
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
+      if (this === window.localStorage && key === "financial-calc-history") {
+        throw new DOMException("Storage blocked", "SecurityError");
+      }
+      return originalSetItem.call(this, key, value);
+    });
+    try {
+      fireEvent.click(screen.getByRole("button", { name: "settings.importHistoryConfirm" }));
+      await waitFor(() => expect(mocks.toast.error).toHaveBeenCalledWith("common.storageOperationFailed"));
+      expect(mocks.toast.success).not.toHaveBeenCalled();
+    } finally {
+      setItem.mockRestore();
+    }
   });
 
   it("rejects malformed imports without changing storage", async () => {

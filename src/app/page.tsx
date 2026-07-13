@@ -45,7 +45,7 @@ export default function Home() {
       timestamp: Date.now(),
     });
     if (!persisted) {
-      toast.error(t("common.storageError"));
+      toast.error(t("common.storageOperationFailed"));
     }
     return persisted;
   };

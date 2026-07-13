@@ -22,7 +22,7 @@ export const ModeToggle = React.memo(function ModeToggle() {
   const themeLabel = theme === "dark" ? t("common.dark") : theme === "light" ? t("common.light") : t("common.system");
   const handleThemeChange = (value: string) => {
     if (!setTheme(value as "light" | "dark" | "system")) {
-      toast.error(t("common.storageError"));
+      toast.error(t("common.changeNotPersisted"));
     }
   };
 

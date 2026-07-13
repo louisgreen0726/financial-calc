@@ -78,19 +78,19 @@ export default function SettingsPage() {
       window.dispatchEvent(new CustomEvent(CURRENCY_CHANGED_EVENT, { detail: nextCurrency }));
       toast.success(`${t("settings.currency")}: ${nextCurrency}`);
     } else {
-      toast.error(t("common.storageError"));
+      toast.error(t("common.storageOperationFailed"));
     }
   };
 
   const handleSetTheme = (nextTheme: "light" | "dark" | "system") => {
     if (!setTheme(nextTheme)) {
-      toast.error(t("common.storageError"));
+      toast.error(t("common.changeNotPersisted"));
     }
   };
 
   const handleSetLanguage = (nextLanguage: "en" | "zh") => {
     if (!setLanguage(nextLanguage)) {
-      toast.error(t("common.storageError"));
+      toast.error(t("common.changeNotPersisted"));
     }
   };
 
@@ -111,10 +111,10 @@ export default function SettingsPage() {
       if (historyCleared && favoritesCleared) {
         toast.success(t("history.cleared"));
       } else {
-        toast.error(t("common.storageError"));
+        toast.error(t("common.storageOperationFailed"));
       }
     } catch {
-      toast.error(t("common.storageError"));
+      toast.error(t("common.storageOperationFailed"));
     }
   };
 
@@ -200,7 +200,9 @@ export default function SettingsPage() {
       });
 
       if (!outcome.ok) {
-        toast.error(outcome.error === "storage" ? t("common.storageError") : getImportErrorMessage(outcome.error));
+        toast.error(
+          outcome.error === "storage" ? t("common.storageOperationFailed") : getImportErrorMessage(outcome.error)
+        );
       } else if (outcome.summary.added + outcome.summary.updated === 0) {
         toast.info(t("settings.importHistoryNoChanges"));
       } else {
@@ -208,7 +210,7 @@ export default function SettingsPage() {
         toast.success(`${t("settings.importHistorySuccess")}: ${formatImportSummary(outcome.summary)}`);
       }
     } catch {
-      toast.error(t("common.storageError"));
+      toast.error(t("common.storageOperationFailed"));
     }
   };
 

@@ -365,7 +365,9 @@ No P0 findings were identified.
   failed writes to every Settings/header entry point, so the in-session choice remains active while a localized toast
   explains that it may be lost after refresh. The desktop sidebar follows the same contract: a blocked collapse-state
   write uses an explicit session override, remains retryable, and yields to the next successful local or cross-tab
-  preference update.
+  preference update. Separate storage-operation copy is used when currency changes, cross-page restores, history clear,
+  or imports do not complete (or a multi-key clear may only partially complete), so feedback never claims an unapplied
+  operation is active.
 - Export/share hardening: truncated download names are normalized again after the length limit so they do not end in
   a Windows-invalid dot or space; copied Markdown now neutralizes link and inline-formatting syntax in user text.
 - Mobile result visibility: the page-history control no longer overlaps the fixed bottom navigation or result summary.

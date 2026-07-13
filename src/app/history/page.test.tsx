@@ -30,6 +30,11 @@ const historyMock = vi.hoisted(() => ({
   ],
 }));
 
+const toastMock = vi.hoisted(() => ({
+  error: vi.fn(),
+  success: vi.fn(),
+}));
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: historyMock.push,
@@ -57,6 +62,8 @@ vi.mock("@/lib/i18n", () => ({
   }),
 }));
 
+vi.mock("sonner", () => ({ toast: toastMock }));
+
 describe("HistoryPage", () => {
   beforeEach(() => {
     window.localStorage.clear();
@@ -65,6 +72,8 @@ describe("HistoryPage", () => {
     historyMock.clearAllHistory.mockClear();
     historyMock.retryPersistence.mockClear();
     historyMock.push.mockClear();
+    toastMock.error.mockClear();
+    toastMock.success.mockClear();
   });
 
   it("hides orphaned favorite ids without rewriting them automatically", async () => {
@@ -108,6 +117,7 @@ describe("HistoryPage", () => {
     try {
       fireEvent.click(screen.getAllByRole("button", { name: "history.restore" })[0]);
       expect(historyMock.push).not.toHaveBeenCalled();
+      expect(toastMock.error).toHaveBeenCalledWith("common.storageOperationFailed");
     } finally {
       setItem.mockRestore();
     }

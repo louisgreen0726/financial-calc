@@ -118,7 +118,7 @@ export default function HistoryPage() {
       timestamp: Date.now(),
     });
     if (!persisted) {
-      toast.error(t("common.storageError"));
+      toast.error(t("common.storageOperationFailed"));
       return;
     }
 

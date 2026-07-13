@@ -70,7 +70,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     (collapsed: boolean) => {
       if (!safeSetJSON(SIDEBAR_COLLAPSED_KEY, collapsed)) {
         setSessionSidebarCollapsed(collapsed);
-        toast.error(t("common.storageError"));
+        toast.error(t("common.changeNotPersisted"));
         return;
       }
 

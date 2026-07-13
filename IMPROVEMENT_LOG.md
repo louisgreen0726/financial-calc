@@ -45,7 +45,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [ ] Generate and verify base-path-aware static deployment `_headers` rules.
 - [ ] Validate PWA manifest icons, shortcuts, and base-path asset targets in the static export gate.
 - [x] Prevent rapid consecutive `useUrlState` field updates from overwriting earlier edits.
-- [ ] Split storage feedback between applied session preferences and operations that were not completed.
+- [x] Split storage feedback between applied session preferences and operations that were not completed.
 - [x] Stabilize Black-Scholes log-moneyness for extreme but finite spot/strike ratios.
 - [ ] Normalize History filters when deleting the last record in the active category.
 - [ ] Detect and explain multiple valid TVM RATE roots instead of presenting one as unique.
@@ -1550,3 +1550,41 @@ Verification:
   generated base-path deployment headers.
 - Queue status: 10 active items remain across user feedback correctness, deployment headers/manifest validation,
   history state, RATE/NPV math semantics, local browser resolution, preference cleanup, translations, and formatting.
+
+### Improvement 36: Truthful storage failure semantics
+
+Status: completed.
+
+Changes:
+
+- Audited all 12 production uses of the former generic storage error. Five preference actions (theme/language in
+  Settings and header controls plus sidebar layout) apply immediately in memory, while seven currency, history
+  restore, clear, and import paths do not complete or may only partially complete.
+- Replaced the ambiguous message with two bilingual contracts: `changeNotPersisted` says the active session preference
+  may be lost on refresh; `storageOperationFailed` says the operation could not be completed and asks the user to
+  inspect current state before retrying, which is honest for non-atomic history/favorites clearing.
+- Mapped every call site to its actual state transition. Currency continues to retain the old selection on failure;
+  Home and History continue to prevent navigation when a pending restore cannot be stored; failed imports emit no
+  success notification.
+- Expanded Settings tests for currency and confirmed-import failures, and History tests for the no-navigation failure
+  path. Existing theme/language and sidebar contracts now assert the session-only message key.
+- Extended the browser preference matrix to block all four preference keys, verify USD remains selected after failed
+  CNY writes, and assert both message classes in English and Chinese alongside the applied theme/language/sidebar state.
+- Updated bilingual reliability documentation and engineering review evidence.
+
+Files and areas:
+
+- `src/lib/i18n.tsx`
+- Settings, Home, History, theme/language controls, and AppLayout storage failure call sites
+- Focused Settings, History, and AppLayout tests plus `e2e/preferences-storage.spec.ts`
+- English/Chinese README, engineering review, and improvement log
+
+Verification:
+
+- Strict TypeScript passed; four focused translation/UI test files passed 17/17 tests.
+- The preference Playwright file passed 2/2 workflows in 8.4 seconds using installed system Chrome. Both message classes,
+  both languages, retained currency, active session preferences, absent blocked keys, and zero console/page errors were
+  asserted.
+- `npm run verify`: passed with 54 Vitest files and 440 tests, 15 routes, 197 precache assets, 96 script hashes, 35
+  static style hashes, 2 runtime style hashes per document, 722 internal references, and every route bundle budget.
+- Changed source, browser tests, and documentation passed Prettier; `git diff --check` passed.

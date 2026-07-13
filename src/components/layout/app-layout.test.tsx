@@ -110,7 +110,7 @@ describe("AppLayout print contract", () => {
     expect(screen.getByTestId("sidebar")).toHaveAttribute("data-collapsed", "true");
     expect(screen.getByRole("main").parentElement).toHaveClass("lg:pl-[4.5rem]");
     expect(window.localStorage.getItem("financial-calc-sidebar-collapsed")).toBeNull();
-    expect(mocks.toast.error).toHaveBeenCalledWith("common.storageError");
+    expect(mocks.toast.error).toHaveBeenCalledWith("common.changeNotPersisted");
 
     setItem.mockRestore();
     fireEvent.click(screen.getByRole("button", { name: "common.expandSidebar" }));

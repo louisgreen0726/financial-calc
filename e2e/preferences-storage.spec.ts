@@ -87,13 +87,21 @@ test("reports blocked preference writes while keeping session changes active", a
     { sidebarStorageKey: sidebarKey, storageKeys: keys }
   );
 
-  const englishError = "The change is active for this session but could not be saved in browser storage.";
-  const chineseError = "本次会话已应用该更改，但浏览器存储写入失败，刷新后可能丢失。";
+  const englishChangeError =
+    "The change is active for this session but could not be saved. It may be lost after refresh.";
+  const englishOperationError =
+    "Browser storage is unavailable, so the operation could not be completed. Check the current state before trying again.";
+  const chineseChangeError = "更改已在本次会话中生效，但无法保存；刷新后可能丢失。";
+  const chineseOperationError = "浏览器存储不可用，操作未能完成。请确认当前状态后重试。";
 
   await page.getByRole("button", { name: "Dark", exact: true }).click();
   await expect(pressedButton(page, "Dark")).toHaveCount(1);
   await expect(page.locator("html")).toHaveClass(/dark/);
-  await expect(page.getByText(englishError, { exact: true }).first()).toBeVisible();
+  await expect(page.getByText(englishChangeError, { exact: true }).first()).toBeVisible();
+
+  await page.getByRole("button", { name: /CNY/ }).click();
+  await expect(pressedButton(page, /USD/)).toHaveCount(1);
+  await expect(page.getByText(englishOperationError, { exact: true }).first()).toBeVisible();
 
   await page.getByRole("button", { name: "中文", exact: true }).click();
   await expect(pressedButton(page, "中文")).toHaveCount(1);
@@ -103,7 +111,11 @@ test("reports blocked preference writes while keeping session changes active", a
   await header.getByRole("button", { name: "切换主题: 深色" }).click();
   await page.getByRole("menuitemradio", { name: "浅色" }).click();
   await expect(page.locator("html")).not.toHaveClass(/dark/);
-  await expect(page.getByText(chineseError, { exact: true }).first()).toBeVisible();
+  await expect(page.getByText(chineseChangeError, { exact: true }).first()).toBeVisible();
+
+  await page.getByRole("button", { name: /CNY/ }).click();
+  await expect(pressedButton(page, /USD/)).toHaveCount(1);
+  await expect(page.getByText(chineseOperationError, { exact: true }).first()).toBeVisible();
 
   await header.getByRole("button", { name: "切换为英文" }).click();
   await expect(page.locator("html")).toHaveAttribute("lang", "en");

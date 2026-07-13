@@ -13,7 +13,7 @@ export const LanguageSwitcher = React.memo(function LanguageSwitcher() {
   const nextLanguageLabel = language === "en" ? t("common.switchToChinese") : t("common.switchToEnglish");
   const handleLanguageChange = () => {
     if (!setLanguage(language === "en" ? "zh" : "en")) {
-      toast.error(t("common.storageError"));
+      toast.error(t("common.changeNotPersisted"));
     }
   };
 

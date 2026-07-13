@@ -62,7 +62,8 @@ type Translations = {
     copied: string;
     copySuccess: string;
     copyError: string;
-    storageError: string;
+    changeNotPersisted: string;
+    storageOperationFailed: string;
     more: string;
     notAvailable: string;
     rows: string;
@@ -719,7 +720,9 @@ const en: Translations = {
     copied: "Copied",
     copySuccess: "Copied to clipboard",
     copyError: "Failed to copy",
-    storageError: "The change is active for this session but could not be saved in browser storage.",
+    changeNotPersisted: "The change is active for this session but could not be saved. It may be lost after refresh.",
+    storageOperationFailed:
+      "Browser storage is unavailable, so the operation could not be completed. Check the current state before trying again.",
     more: "More",
     notAvailable: "N/A",
     rows: "rows",
@@ -1393,7 +1396,8 @@ const zh: Translations = {
     copied: "已复制",
     copySuccess: "已复制到剪贴板",
     copyError: "复制失败",
-    storageError: "本次会话已应用该更改，但浏览器存储写入失败，刷新后可能丢失。",
+    changeNotPersisted: "更改已在本次会话中生效，但无法保存；刷新后可能丢失。",
+    storageOperationFailed: "浏览器存储不可用，操作未能完成。请确认当前状态后重试。",
     more: "更多",
     notAvailable: "暂无",
     rows: "行",

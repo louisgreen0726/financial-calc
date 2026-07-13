@@ -71,6 +71,8 @@ Recent hardening work is reflected in the current source:
   failures show actionable feedback while leaving every action available for retry
 - a blocked sidebar-preference write keeps the requested layout active for the session, reports the persistence
   failure, and yields to a later successful write or cross-tab update
+- storage feedback distinguishes active session-only preferences from currency, restore, clear, and import operations
+  that did not complete or may have completed only partially
 - Recharts tooltip formatters and auto-calculation hooks are compatible with the current stricter dependency/lint versions
 
 ## Tech Stack
