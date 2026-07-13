@@ -195,11 +195,12 @@ export function useMonteCarloSimulation() {
           workerError instanceof Error ? workerError : new Error("Monte Carlo worker initialization failed");
         try {
           await computeInProcess(payload, options, runId);
-        } catch {
+        } catch (fallbackError) {
           if (activeRunIdRef.current !== runId) return;
-          setError(nextError);
+          const finalError = fallbackError instanceof Error ? fallbackError : nextError;
+          setError(finalError);
           setIsRunning(false);
-          options.onError?.(nextError);
+          options.onError?.(finalError);
         }
       }
     },

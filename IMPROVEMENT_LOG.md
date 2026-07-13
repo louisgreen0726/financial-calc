@@ -2476,3 +2476,32 @@ Verification:
 
 Queue status: 3 active items remain across app-shell localization/mobile semantics, Monte Carlo fallback error
 precedence, and finite chart data for extreme option inputs; additional product and robustness audits remain active.
+
+### Improvement 58: Preserve actionable Monte Carlo fallback errors
+
+Status: completed.
+
+Changes:
+
+- Fixed the synchronous Worker failure path used when browser Worker construction or the initial `postMessage` throws.
+  If the in-process fallback also rejects, the hook now reports that final computation/domain error instead of masking
+  it with the earlier Worker infrastructure error.
+- Aligned this path with the existing asynchronous `worker.onerror` fallback behavior while retaining the original
+  Worker error as a safe fallback for non-`Error` rejections.
+- Added independent regressions for both Worker construction failure and postMessage failure using an invalid
+  three-asset correlation. Both paths now expose the actionable correlation-range message through hook state and the
+  `onError` callback exactly once; the postMessage path still terminates its partially initialized Worker.
+
+Files and areas:
+
+- `src/hooks/use-monte-carlo-simulation.ts`
+- `src/hooks/use-monte-carlo-simulation.test.tsx`
+
+Verification:
+
+- The focused Worker lifecycle, fallback, stale-run, and error-precedence suite passed 6/6 tests.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+- The full suite remained green at 59 test files and 578 tests with this change present.
+
+Queue status: 2 active items remain across app-shell localization/mobile semantics and finite chart data for extreme
+option inputs; broader UI and robustness auditing continues so the next queue is already being replenished.

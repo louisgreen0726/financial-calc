@@ -23,6 +23,17 @@ const payload = {
     { id: 2, name: "B", return: 5, risk: 4 },
   ],
 };
+const invalidCorrelationPayload = {
+  simulations: 10,
+  assets: [
+    { id: 1, name: "A", return: 8, risk: 10 },
+    { id: 2, name: "B", return: 5, risk: 4 },
+    { id: 3, name: "C", return: 6, risk: 7 },
+  ],
+  correlation: -0.8,
+  rf: 2,
+};
+const correlationError = "Correlation is outside the valid range for this asset count.";
 
 describe("useMonteCarloSimulation", () => {
   beforeEach(() => {
@@ -70,17 +81,6 @@ describe("useMonteCarloSimulation", () => {
 
   it("preserves a worker domain error when the in-process fallback rejects the same invalid payload", async () => {
     const onError = vi.fn();
-    const invalidCorrelationPayload = {
-      simulations: 10,
-      assets: [
-        { id: 1, name: "A", return: 8, risk: 10 },
-        { id: 2, name: "B", return: 5, risk: 4 },
-        { id: 3, name: "C", return: 6, risk: 7 },
-      ],
-      correlation: -0.8,
-      rf: 2,
-    };
-    const correlationError = "Correlation is outside the valid range for this asset count.";
     const { result } = renderHook(() => useMonteCarloSimulation());
 
     await act(async () => {
@@ -98,6 +98,29 @@ describe("useMonteCarloSimulation", () => {
 
     await waitFor(() => expect(result.current.isRunning).toBe(false));
     expect(worker.terminate).toHaveBeenCalledTimes(1);
+    expect(result.current.result).toBeNull();
+    expect(result.current.error?.message).toBe(correlationError);
+    expect(onError).toHaveBeenCalledOnce();
+    expect(onError.mock.calls[0][0]).toMatchObject({ message: correlationError });
+  });
+
+  it("reports the fallback domain error when Worker construction fails first", async () => {
+    const onError = vi.fn();
+    vi.stubGlobal(
+      "Worker",
+      class {
+        constructor() {
+          throw new Error("worker unavailable");
+        }
+      }
+    );
+    const { result } = renderHook(() => useMonteCarloSimulation());
+
+    await act(async () => {
+      await result.current.run(invalidCorrelationPayload, { onError });
+    });
+
+    expect(result.current.isRunning).toBe(false);
     expect(result.current.result).toBeNull();
     expect(result.current.error?.message).toBe(correlationError);
     expect(onError).toHaveBeenCalledOnce();
@@ -153,5 +176,28 @@ describe("useMonteCarloSimulation", () => {
       [1, 0],
       [0, 1],
     ]);
+  });
+
+  it("reports the fallback domain error when worker postMessage fails first", async () => {
+    const onError = vi.fn();
+    class ThrowingPostMessageWorker extends MockWorker {
+      postMessage = vi.fn(() => {
+        throw new Error("postMessage failed");
+      });
+    }
+    vi.stubGlobal("Worker", ThrowingPostMessageWorker);
+    const { result } = renderHook(() => useMonteCarloSimulation());
+
+    await act(async () => {
+      await result.current.run(invalidCorrelationPayload, { onError });
+    });
+
+    const worker = MockWorker.instances[0];
+    expect(worker.terminate).toHaveBeenCalledTimes(1);
+    expect(result.current.isRunning).toBe(false);
+    expect(result.current.result).toBeNull();
+    expect(result.current.error?.message).toBe(correlationError);
+    expect(onError).toHaveBeenCalledOnce();
+    expect(onError.mock.calls[0][0]).toMatchObject({ message: correlationError });
   });
 });
