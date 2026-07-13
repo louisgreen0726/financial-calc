@@ -2505,3 +2505,35 @@ Verification:
 
 Queue status: 2 active items remain across app-shell localization/mobile semantics and finite chart data for extreme
 option inputs; broader UI and robustness auditing continues so the next queue is already being replenished.
+
+### Improvement 59: Keep option payoff charts finite at numeric extremes
+
+Status: completed.
+
+Changes:
+
+- Hardened the option payoff domain against overflow when a valid finite spot or strike approaches
+  `Number.MAX_VALUE`. Spot expansion and padded upper bounds now saturate at the largest finite number instead of
+  producing an infinite chart axis.
+- Reordered linear interpolation from `(range * index) / sampleCount` to `range * (index / sampleCount)`. The
+  normalized factor is bounded before multiplication, so every generated sample remains finite when the domain span
+  itself is near the JavaScript numeric limit.
+- Preserved exact spot and strike anchors, sorted uniqueness, monotonic intrinsic call/put values, and the established
+  ordinary-input chart contract. A regression locks the existing `[2.5, 1047.5]` domain and 43 points for the normal
+  100/1000 case so hardening cannot silently reshape common charts.
+- Added extreme cases for a maximum spot, maximum strike, and both maximum together. Every domain endpoint, sample,
+  and payoff must remain finite, ordered, and directionally monotonic.
+
+Files and areas:
+
+- `src/lib/chart-data.ts`
+- `src/lib/chart-data.test.ts`
+
+Verification:
+
+- The focused calculator chart-data suite passed 4/4 tests.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+- The full suite remained green at 59 test files and 578 tests with this change present.
+
+Queue status: app-shell localization/mobile semantics is actively being implemented, while new finance correctness,
+tooling, dependency, UI, and robustness audits are replenishing the next prioritized work items.

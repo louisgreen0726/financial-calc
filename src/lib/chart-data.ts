@@ -65,10 +65,11 @@ export function getOptionPayoffDomain(spot: number, strike: number): [number, nu
   }
 
   const coreMin = Math.min(spot * 0.5, strike);
-  const coreMax = Math.max(spot * 1.5, strike);
+  const expandedSpot = spot > Number.MAX_VALUE / 1.5 ? Number.MAX_VALUE : spot * 1.5;
+  const coreMax = Math.max(expandedSpot, strike);
   const padding = (coreMax - coreMin) * 0.05;
 
-  return [Math.max(0, coreMin - padding), coreMax + padding];
+  return [Math.max(0, coreMin - padding), Math.min(Number.MAX_VALUE, coreMax + padding)];
 }
 
 export function buildOptionPayoffData(spot: number, strike: number): OptionPayoffPoint[] {
@@ -78,7 +79,7 @@ export function buildOptionPayoffData(spot: number, strike: number): OptionPayof
   }
 
   const [minSpot, maxSpot] = domain;
-  const samples = Array.from({ length: 41 }, (_, index) => minSpot + ((maxSpot - minSpot) * index) / 40);
+  const samples = Array.from({ length: 41 }, (_, index) => minSpot + (maxSpot - minSpot) * (index / 40));
   samples.push(spot, strike);
 
   return [...new Set(samples)]
