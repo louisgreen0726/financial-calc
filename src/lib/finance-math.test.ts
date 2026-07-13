@@ -1,6 +1,60 @@
 import { expect, test } from "vitest";
 import { Finance } from "./finance-math";
 
+interface BondOracleCase {
+  couponRate: number;
+  faceValue: number;
+  frequency: number;
+  name: string;
+  yearsToMaturity: number;
+  ytm: number;
+}
+
+const bondOracleCases: BondOracleCase[] = [
+  { name: "par annual", faceValue: 100, couponRate: 0.07, yearsToMaturity: 5, ytm: 0.07, frequency: 1 },
+  { name: "premium semiannual", faceValue: 1000, couponRate: 0.05, yearsToMaturity: 10, ytm: 0.04, frequency: 2 },
+  {
+    name: "discount quarterly",
+    faceValue: 2500,
+    couponRate: 0.03,
+    yearsToMaturity: 7.25,
+    ytm: 0.065,
+    frequency: 4,
+  },
+  {
+    name: "negative-yield monthly",
+    faceValue: 1000,
+    couponRate: 0.01,
+    yearsToMaturity: 2,
+    ytm: -0.005,
+    frequency: 12,
+  },
+  {
+    name: "zero-coupon semiannual",
+    faceValue: 1000,
+    couponRate: 0,
+    yearsToMaturity: 3.5,
+    ytm: 0.05,
+    frequency: 2,
+  },
+  { name: "zero-yield monthly", faceValue: 1000, couponRate: 0.06, yearsToMaturity: 1, ytm: 0, frequency: 12 },
+];
+
+function analyticBondPrice(
+  { couponRate, faceValue, frequency, yearsToMaturity, ytm }: BondOracleCase,
+  yieldOverride = ytm
+) {
+  const periods = yearsToMaturity * frequency;
+  const periodicYield = yieldOverride / frequency;
+  const coupon = (faceValue * couponRate) / frequency;
+  if (periodicYield === 0) return faceValue + coupon * periods;
+
+  const logDiscount = -periods * Math.log1p(periodicYield);
+  const discountFactor = Math.exp(logDiscount);
+  const annuityFactor = -Math.expm1(logDiscount) / periodicYield;
+  return coupon * annuityFactor + faceValue * discountFactor;
+}
+
 test("pv handles zero-rate case exactly", () => {
   expect(Finance.pv(0, 10, 100, 500, 0)).toBe(-1500);
 });
@@ -50,6 +104,43 @@ test("bondPrice matches a premium-bond benchmark", () => {
 
 test("bondPrice handles zero-coupon bonds", () => {
   expect(Finance.bondPrice(1000, 0, 2, 0.05, 1)).toBeCloseTo(907.0295, 4);
+});
+
+test("bondPrice matches a stable closed-form annuity oracle across coupon and yield regimes", () => {
+  for (const bondCase of bondOracleCases) {
+    const { couponRate, faceValue, frequency, name, yearsToMaturity, ytm } = bondCase;
+    const actual = Finance.bondPrice(faceValue, couponRate, yearsToMaturity, ytm, frequency);
+    const expected = analyticBondPrice(bondCase);
+    const relativeError = Math.abs(actual - expected) / Math.abs(expected);
+
+    expect(relativeError, name).toBeLessThan(1e-12);
+  }
+});
+
+test("bond duration and convexity match five-point derivatives of the independent price oracle", () => {
+  const yieldStep = 0.001;
+
+  for (const bondCase of bondOracleCases.filter(({ ytm }) => ytm !== 0)) {
+    const { couponRate, faceValue, frequency, name, yearsToMaturity, ytm } = bondCase;
+    const priceMinusTwo = analyticBondPrice(bondCase, ytm - 2 * yieldStep);
+    const priceMinusOne = analyticBondPrice(bondCase, ytm - yieldStep);
+    const price = analyticBondPrice(bondCase, ytm);
+    const pricePlusOne = analyticBondPrice(bondCase, ytm + yieldStep);
+    const pricePlusTwo = analyticBondPrice(bondCase, ytm + 2 * yieldStep);
+    const firstDerivative = (priceMinusTwo - 8 * priceMinusOne + 8 * pricePlusOne - pricePlusTwo) / (12 * yieldStep);
+    const secondDerivative =
+      (-pricePlusTwo + 16 * pricePlusOne - 30 * price + 16 * priceMinusOne - priceMinusTwo) /
+      (12 * yieldStep * yieldStep);
+    const expectedModifiedDuration = -firstDerivative / price;
+    const expectedMacaulayDuration = expectedModifiedDuration * (1 + ytm / frequency);
+    const expectedConvexity = secondDerivative / price;
+    const duration = Finance.bondDuration(faceValue, couponRate, yearsToMaturity, ytm, frequency);
+    const convexity = Finance.bondConvexity(faceValue, couponRate, yearsToMaturity, ytm, frequency);
+
+    expect(duration.modDuration, `${name} modified duration`).toBeCloseTo(expectedModifiedDuration, 7);
+    expect(duration.macDuration, `${name} Macaulay duration`).toBeCloseTo(expectedMacaulayDuration, 7);
+    expect(convexity, `${name} convexity`).toBeCloseTo(expectedConvexity, 6);
+  }
 });
 
 test("loan amortization schedule pays down to zero balance", () => {

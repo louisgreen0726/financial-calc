@@ -52,7 +52,8 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Preserve NPV/IRR invariance when appending economically irrelevant zero cash flows.
 - [x] Stabilize translation-catalog source scanning under full-suite worker contention.
 - [ ] Extend formatting enforcement beyond `src/` to E2E, scripts, workflows, and root configuration.
-- [ ] Add analytic and finite-difference oracles for bond duration and convexity.
+- [x] Add analytic and finite-difference oracles for bond duration and convexity.
+- [ ] Reject unsupported fractional or over-600 coupon periods with actionable bond input validation.
 - [x] Repair stale cross-tab PWA update prompts after another tab activates the waiting worker.
 - [ ] Localize remaining hard-coded application-shell copy and refine sidebar information hierarchy.
 - [ ] Design and validate a compatible-history scenario comparison workflow before implementation.
@@ -2067,3 +2068,36 @@ oracles, app-shell UI refinement, and compatible History comparison.
 - Current work: commit Improvement 46, then integrate the completed bond oracles, Portfolio worker error contract, and
   full-tree formatting gate as separate improvements.
 - Queue status: 5 active items remain, with app-shell semantics already assigned for implementation.
+
+### Improvement 47: Independent bond price and sensitivity oracles
+
+Status: completed.
+
+Changes:
+
+- Audited the fixed-coupon price, Macaulay duration, modified duration, and convexity implementations. Their nominal
+  annual yield and coupon-frequency scaling are correct, but existing sensitivity tests only required finite results
+  and could not detect a missing final coupon, wrong exponent, or an omitted frequency factor.
+- Added a test-only closed-form annuity price oracle that is structurally independent from the production period loop.
+  It uses `log1p` and `expm1` to remain stable near zero yield and has an exact zero-yield branch.
+- Compared production prices across six regimes: par annual, premium semiannual, discount quarterly, negative-yield
+  monthly, zero-coupon, and zero-yield bonds. The matrix includes 29 quarterly periods and checks relative error below
+  `1e-12`.
+- Sampled the independent price oracle at yield offsets of minus/plus 10 and 20 basis points. Five-point first and
+  second derivatives verify modified duration, recover Macaulay duration through the periodic-yield identity, and
+  verify convexity across five non-zero-yield regimes.
+- Kept a separate queue item for the discovered UI contract gap: the core engine requires whole coupon periods and at
+  most 600 periods, while the current input schema can accept unsupported combinations before results become
+  unavailable. That product validation change is intentionally isolated from the formula-oracle batch.
+
+Files and areas:
+
+- `src/lib/finance-math.test.ts`
+
+Verification:
+
+- The focused finance-math suite passed 71/71 tests.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: 5 active items remain across Portfolio diagnostics, formatting enforcement, bond input validation,
+app-shell UI refinement, and compatible History comparison.
