@@ -1,9 +1,30 @@
 export async function copyTextToClipboard(text: string): Promise<void> {
-  if (typeof navigator !== "undefined" && navigator.clipboard && window.isSecureContext) {
-    await navigator.clipboard.writeText(text);
-    return;
+  let modernClipboardFailed = false;
+  let modernClipboardError: unknown;
+
+  if (
+    typeof navigator !== "undefined" &&
+    navigator.clipboard &&
+    typeof window !== "undefined" &&
+    window.isSecureContext
+  ) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch (error) {
+      modernClipboardFailed = true;
+      modernClipboardError = error;
+    }
   }
 
+  if (typeof document === "undefined" || !document.body) {
+    if (modernClipboardFailed) {
+      throw modernClipboardError;
+    }
+    throw new Error("Clipboard copying is unavailable");
+  }
+
+  const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   const textArea = document.createElement("textarea");
   textArea.value = text;
   textArea.setAttribute("readonly", "");
@@ -19,7 +40,13 @@ export async function copyTextToClipboard(text: string): Promise<void> {
     if (!successful) {
       throw new Error("Copy command failed");
     }
+  } catch (legacyClipboardError) {
+    if (modernClipboardFailed) {
+      throw new AggregateError([modernClipboardError, legacyClipboardError], "Clipboard copy failed");
+    }
+    throw legacyClipboardError;
   } finally {
-    document.body.removeChild(textArea);
+    textArea.remove();
+    previouslyFocused?.focus({ preventScroll: true });
   }
 }

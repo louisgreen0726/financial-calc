@@ -504,6 +504,7 @@ type Translations = {
     copyLink: string;
     copyMarkdown: string;
     copyText: string;
+    nativeError: string;
     print: string;
     inputsHeading: string;
     resultsHeading: string;
@@ -1170,6 +1171,7 @@ const en: Translations = {
     copyLink: "Copy shareable link",
     copyMarkdown: "Copy as Markdown table",
     copyText: "Copy as plain text",
+    nativeError: "Unable to share. Try copying the link or text instead.",
     print: "Print / Save as PDF",
     inputsHeading: "Inputs",
     resultsHeading: "Results",
@@ -1839,6 +1841,7 @@ const zh: Translations = {
     copyLink: "复制分享链接",
     copyMarkdown: "复制为 Markdown 表格",
     copyText: "复制为纯文本",
+    nativeError: "无法分享，请尝试复制链接或文本。",
     print: "打印 / 另存为 PDF",
     inputsHeading: "输入参数",
     resultsHeading: "结果",

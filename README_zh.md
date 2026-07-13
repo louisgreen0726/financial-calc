@@ -62,6 +62,8 @@ Financial Calc 是一个基于 Next.js 16、React 19、TypeScript、Tailwind CSS
 - PWA metadata、安装图标、构建生成的 precache 资源与 service worker 缓存支持 `NEXT_PUBLIC_BASE_PATH`
 - Monte Carlo 使用 Webpack 正确构建的 Worker，并固定加入等权组合与所有单资产角点基线
 - “打印 / 另存为 PDF”会隔离当前报告，并使用浏览器原生分页生成清晰、可搜索的输出
+- Clipboard API 被拒绝时会回退到浏览器旧式复制路径；非用户取消的原生分享与导出失败会显示可操作提示，
+  且所有操作都可继续重试
 - Recharts tooltip formatter 与自动计算 hook 已适配当前更严格的依赖类型与 lint 规则
 
 ## 技术栈
@@ -228,6 +230,7 @@ financial-calc/
 - `src/lib/validation.ts`：共享 Zod 校验 schema 与输入上限
 - `src/lib/history-format.ts`：按单位/类型格式化历史结果
 - `src/lib/data-export.ts`：schema v2 报告封装、原始/展示输入保留与电子表格安全 CSV 序列化
+- `src/lib/clipboard.ts`：感知权限拒绝的现代/旧式剪贴板回退与临时 DOM 清理
 - `src/lib/report-fields.ts`：不改变规范输入键的本地化报告字段标注
 - `src/lib/url-state-utils.ts`：URL 状态序列化与绝对分享链接工具
 - `src/hooks/use-calculation-history.ts`：持久化计算历史模型

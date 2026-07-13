@@ -258,6 +258,19 @@ browser-level checks beyond the existing suite.
 - Implied volatility was shown as 20.00% in the page but exported/shared as 20.0000%. Human report precision now matches
   the visible two-decimal result; JSON `data.impliedVolatility` continues to carry the raw decimal value.
 
+### Interaction Follow-up: Share and Export Failure Recovery
+
+- The shared clipboard helper previously stopped after a denied `navigator.clipboard.writeText()` call even though its
+  legacy copy path could still work. Permission or implementation failures now fall back to `execCommand("copy")`,
+  always remove the temporary textarea, and restore the element that held focus before the fallback.
+- Native sharing now distinguishes the expected `AbortError` cancellation from permission, payload, and platform
+  failures. Cancellation remains silent; other failures are logged and show a bilingual message that directs users to
+  the still-available link and text copy actions.
+- CSV and JSON download exceptions already stayed inside the export hook, and print state already used `finally`.
+  Focused tests now prove repeated object-URL failures remain retryable, while a browser workflow covers denied share
+  and clipboard permissions, successful clipboard fallback, two CSV retries, and a missing print target without a
+  stuck disabled Export control.
+
 ### Deployment Follow-up: Static Artifact Contract
 
 - A build succeeding did not previously prove that precache entries, route HTML, internal asset references, base-path

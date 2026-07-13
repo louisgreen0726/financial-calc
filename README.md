@@ -63,6 +63,8 @@ Recent hardening work is reflected in the current source:
 - PWA metadata, install icons, generated precache assets, and service worker caches respect `NEXT_PUBLIC_BASE_PATH`
 - Monte Carlo simulations run in a Webpack-built worker and always include equal-weight and single-asset baselines
 - Print / Save as PDF isolates the active report and uses native browser pagination for sharp, searchable output
+- denied Clipboard API writes fall back to the legacy browser copy path; non-cancelled native-share and export
+  failures show actionable feedback while leaving every action available for retry
 - Recharts tooltip formatters and auto-calculation hooks are compatible with the current stricter dependency/lint versions
 
 ## Tech Stack
@@ -234,6 +236,7 @@ financial-calc/
 - `src/lib/validation.ts`: shared Zod validation schemas and input limits
 - `src/lib/history-format.ts`: history result formatting by unit/type
 - `src/lib/data-export.ts`: schema-v2 report envelope, raw/display input preservation, and spreadsheet-safe CSV serialization
+- `src/lib/clipboard.ts`: permission-aware modern/legacy clipboard fallback with temporary-DOM cleanup
 - `src/lib/report-fields.ts`: localized report field labeling without changing canonical input keys
 - `src/lib/url-state-utils.ts`: URL state serialization and absolute share-link helpers
 - `src/hooks/use-calculation-history.ts`: persisted calculation history model

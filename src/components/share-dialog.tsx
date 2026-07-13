@@ -24,6 +24,10 @@ interface ShareDialogProps {
   className?: string;
 }
 
+function isShareCancellation(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "name" in error && error.name === "AbortError";
+}
+
 /**
  * Share calculation results as a link or text, or print the formatted report.
  */
@@ -119,8 +123,13 @@ export function ShareDialog({
         text: shareText,
         ...(hasShareUrl ? { url: resolvedShareUrl } : {}),
       });
-    } catch {
-      // user cancelled or unsupported payload; keep silent
+    } catch (error) {
+      if (isShareCancellation(error)) {
+        return;
+      }
+
+      logger.error("Native share error:", error);
+      toast.error(t("share.nativeError"));
     }
   };
 

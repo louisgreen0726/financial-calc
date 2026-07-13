@@ -34,7 +34,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Reduce the remaining dynamic style-attribute compatibility surface in owned components.
 - [x] Audit calculator reset/default workflows and add a consistent reversible reset command where missing.
 - [x] Add corrupted-storage browser coverage for persisted theme, language, and currency preferences.
-- [ ] Add browser coverage for denied clipboard/share permissions and export failure recovery.
+- [x] Add browser coverage for denied clipboard/share permissions and export failure recovery.
 - [ ] Audit service-worker cache growth and storage-quota failure behavior across upgrades.
 - [ ] Surface theme/language persistence write failures consistently with currency settings.
 
@@ -1226,3 +1226,55 @@ Verification:
 - Current work: Improvement 28 is fully verified and ready to commit; denied clipboard/share/export recovery is next.
 - Queue status: 3 active items remain: denied clipboard/share/export recovery, service-worker quota behavior, and
   explicit theme/language write-failure feedback.
+
+### Improvement 29: Recoverable share, clipboard, and export failures
+
+Status: completed.
+
+Changes:
+
+- Audited all shared copy, native-share, CSV, JSON, and print entry points. A rejected modern Clipboard API call
+  previously skipped the available legacy path, while every native-share rejection was silently treated as a user
+  cancellation. Export handlers caught failures, but their retry behavior had no regression coverage.
+- Changed clipboard copying to try `document.execCommand("copy")` after secure-context Clipboard API rejection. The
+  fallback always removes its temporary textarea and restores the previously focused element. If both paths fail, an
+  `AggregateError` preserves both causes for diagnostics; even an unusual `Promise.reject(undefined)` is tracked as a
+  real attempted failure.
+- Classified native-share `AbortError` as an expected cancellation across realm-compatible error objects. Permission,
+  payload, and platform failures are logged and surface a bilingual message directing users to link/text copy options,
+  which remain interactive.
+- Added hook contracts proving repeated CSV and JSON object-URL failures show errors without emitting false success or
+  disabling later retries. Added a browser recovery chain for cancelled/denied sharing, Clipboard API plus legacy-copy
+  denial, a successful legacy retry, two consecutive CSV failures, and a missing print target with Export re-enabled.
+- Updated both READMEs and the engineering review with the new failure semantics and maintenance boundary.
+
+Files and areas:
+
+- `src/lib/clipboard.ts`, focused unit tests, and bilingual share translations
+- `src/components/share-dialog.tsx` and its native-share failure tests
+- `src/hooks/use-export.test.tsx` and `e2e/share-export-failures.spec.ts`
+- English/Chinese README, engineering review, and improvement log
+
+Verification:
+
+- Focused clipboard/share/export/copy regression suite passed 9 tests; strict TypeScript and ESLint passed.
+- The browser recovery workflow passed with no uncaught page errors. Expected operational failures were logged, every
+  user-facing error appeared, legacy copy recovered after permission denial, and Export remained enabled after two
+  download failures plus a print failure.
+- `npm run verify`: passed with 53 Vitest files and 426 tests, 15 routes, 197 precache assets, 96 script hashes, 35
+  static style hashes, 2 runtime style hashes per document, 722 internal references, and every route budget.
+- The complete Playwright suite passed all 35 tests in 4.3 minutes, including all route Axe scans, pagination,
+  Reset/Undo, preference repair, and the new failure workflow.
+- Production dependency audit reported zero vulnerabilities; changed-file Prettier and `git diff --check` passed.
+- A broader advisory Prettier scan still reports three pre-existing unmodified files (`generate-workspace-visuals.mjs`,
+  `vitest.config.ts`, and `tsconfig.json`); they are intentionally excluded from this behavioral commit.
+
+### Progress checkpoint: 10:27 +08:00
+
+- Continuous-session elapsed time: 7 hours 21 minutes.
+- Completed improvement batches: 29; denied browser capabilities now fall back where possible, explain real failures,
+  and preserve retryable UI state.
+- Current work: Improvement 29 is fully verified and ready to commit; service-worker cache growth and quota recovery is
+  next.
+- Queue status: 2 active items remain: service-worker cache growth/storage-quota behavior and explicit theme/language
+  write-failure feedback. The next audit will add follow-up items before this queue can become empty.
