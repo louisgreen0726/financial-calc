@@ -562,6 +562,22 @@ type Translations = {
     persistenceUnsupported: string;
     retrySave: string;
     saving: string;
+    compare: string;
+    compareSelected: string;
+    comparisonTitle: string;
+    comparisonRecordedOnly: string;
+    baseline: string;
+    comparison: string;
+    input: string;
+    changeFromBaseline: string;
+    selectForComparison: string;
+    deselectFromComparison: string;
+    selectTwoCompatible: string;
+    notComparableLegacy: string;
+    notComparableCurrency: string;
+    notComparableModel: string;
+    incompatibleMetric: string;
+    percentagePointsUnit: string;
   };
   sensitivity: {
     title: string;
@@ -1244,6 +1260,23 @@ const en: Translations = {
     persistenceUnsupported: "This history was created by a newer app version and cannot be changed here.",
     retrySave: "Retry saving",
     saving: "Saving history changes...",
+    compare: "Compare",
+    compareSelected: "Compare selected",
+    comparisonTitle: "Compare recorded results",
+    comparisonRecordedOnly:
+      "This compares the outputs saved at the time. It does not recalculate them with the current model.",
+    baseline: "Baseline",
+    comparison: "Comparison",
+    input: "Input",
+    changeFromBaseline: "Change from baseline",
+    selectForComparison: "Select for comparison",
+    deselectFromComparison: "Remove from comparison",
+    selectTwoCompatible: "Select two compatible records",
+    notComparableLegacy: "This older or unsupported record cannot be compared.",
+    notComparableCurrency: "The original currency was not recorded for this result.",
+    notComparableModel: "The required model details were not recorded for this result.",
+    incompatibleMetric: "Choose another record for the same metric.",
+    percentagePointsUnit: "percentage points",
   },
   sensitivity: {
     title: "Sensitivity Analysis",
@@ -1926,6 +1959,22 @@ const zh: Translations = {
     persistenceUnsupported: "该历史记录由更新版本的应用创建，当前版本无法修改。",
     retrySave: "重新尝试保存",
     saving: "正在保存历史记录更改...",
+    compare: "比较",
+    compareSelected: "比较所选记录",
+    comparisonTitle: "比较已记录结果",
+    comparisonRecordedOnly: "此处比较保存时记录的输出，不会使用当前模型重新计算。",
+    baseline: "基准记录",
+    comparison: "对比记录",
+    input: "输入项",
+    changeFromBaseline: "相对基准的变化",
+    selectForComparison: "选择用于比较",
+    deselectFromComparison: "从比较中移除",
+    selectTwoCompatible: "请选择两条兼容记录",
+    notComparableLegacy: "这条旧记录或不受支持的记录无法比较。",
+    notComparableCurrency: "这条结果未记录原始币种，无法安全比较。",
+    notComparableModel: "这条结果未记录所需的模型信息，无法安全比较。",
+    incompatibleMetric: "请选择同一指标的另一条记录。",
+    percentagePointsUnit: "个百分点",
   },
   sensitivity: {
     title: "敏感性分析",

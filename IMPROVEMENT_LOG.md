@@ -2407,3 +2407,43 @@ Verification:
 
 Queue status: 2 active product/UI items remain across the strict two-record History comparison UI and app-shell
 localization/semantics; dead dependency cleanup and Monte Carlo error precedence are active maintenance batches.
+
+### Improvement 56: Accessible two-record History comparison workflow
+
+Status: completed.
+
+Changes:
+
+- Added a dedicated comparison mode alongside batch deletion. The modes are mutually exclusive, search or category
+  changes clear the active comparison, and History removals invalidate selected object snapshots instead of silently
+  comparing stale records.
+- Limited selection to the strict comparison contracts established in Improvement 51. The first eligible record locks
+  the metric family; currency, Portfolio/model, legacy/unsupported, already-full, and cross-metric alternatives remain
+  visible with specific disabled explanations exposed through `aria-describedby` as well as tooltips.
+- Added an explicit two-record dialog that identifies the metric, baseline and comparison timestamps/results, reports
+  `comparison - baseline` in absolute units, highlights changed canonical inputs, and states that saved outputs are
+  displayed without current-model recalculation. Percentage deltas are correctly labelled as percentage points.
+- Made dialog visibility derive from the exact pair snapshot captured by the Compare command. Closing the dialog or an
+  external History mutation therefore cannot cause it to reopen automatically while selection mode remains active.
+- Added complete English and Chinese copy, responsive result panels and an overflow-safe input table. The entry command
+  is disabled when the current filtered view contains no compatible pair, while delete/export/favorite/restore behavior
+  remains unchanged.
+- Added page integration tests, focused dialog tests, and a real browser workflow covering compatible and incompatible
+  choices, accessible disabled reasons, recorded-only copy, changed inputs, mode cancellation, and axe analysis.
+
+Files and areas:
+
+- `src/app/history/page.tsx` and its focused component tests
+- `src/components/history-comparison-dialog.tsx` and its focused tests
+- English/Chinese History comparison catalog entries
+- `e2e/history-comparison.spec.ts`
+
+Verification:
+
+- The strict comparison contracts, History page integration, and dialog suites passed 51/51 tests.
+- The real History comparison browser workflow and axe scan passed 1/1 in 33.9 seconds.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: 4 active items remain across app-shell localization/mobile semantics, dead form-dependency cleanup,
+Monte Carlo fallback error precedence, and finite chart data for extreme option inputs; further UI/product auditing
+continues in parallel so the queue remains non-empty.
