@@ -72,6 +72,55 @@ describe("ThemeProvider", () => {
     expect(screen.getByText("system")).toBeInTheDocument();
   });
 
+  it("replaces an invalid theme when removal is blocked and still follows later updates", async () => {
+    window.localStorage.setItem("theme", "sepia");
+    const originalRemoveItem = Storage.prototype.removeItem;
+    vi.spyOn(Storage.prototype, "removeItem").mockImplementation(function removeItem(this: Storage, key) {
+      if (key === "theme") throw new DOMException("Removal blocked", "SecurityError");
+      return originalRemoveItem.call(this, key);
+    });
+    render(
+      <ThemeProvider defaultTheme="system" enableSystem>
+        <ThemeHarness />
+      </ThemeProvider>
+    );
+
+    await waitFor(() => expect(window.localStorage.getItem("theme")).toBe("system"));
+    expect(screen.getByText("system")).toBeInTheDocument();
+
+    window.localStorage.setItem("theme", "dark");
+    fireEvent(window, new StorageEvent("storage", { key: "theme", newValue: "dark" }));
+    expect(screen.getByText("dark")).toBeInTheDocument();
+
+    fireEvent(window, new StorageEvent("storage", { key: "theme", newValue: "sepia" }));
+    expect(screen.getByText("dark")).toBeInTheDocument();
+    expect(window.localStorage.getItem("theme")).toBe("dark");
+
+    window.localStorage.setItem("theme", "sepia");
+    fireEvent(window, new StorageEvent("storage", { key: "theme", newValue: "sepia" }));
+    expect(screen.getByText("system")).toBeInTheDocument();
+    expect(window.localStorage.getItem("theme")).toBe("system");
+  });
+
+  it("uses the theme fallback when both invalid-value cleanup operations are blocked", async () => {
+    window.localStorage.setItem("theme", "sepia");
+    vi.spyOn(Storage.prototype, "removeItem").mockImplementation(() => {
+      throw new DOMException("Removal blocked", "SecurityError");
+    });
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new DOMException("Write blocked", "SecurityError");
+    });
+
+    render(
+      <ThemeProvider defaultTheme="system" enableSystem>
+        <ThemeHarness />
+      </ThemeProvider>
+    );
+
+    await waitFor(() => expect(screen.getByText("system")).toBeInTheDocument());
+    expect(window.localStorage.getItem("theme")).toBe("sepia");
+  });
+
   it("follows theme changes made in another tab", async () => {
     render(
       <ThemeProvider defaultTheme="system" enableSystem>
@@ -80,6 +129,7 @@ describe("ThemeProvider", () => {
     );
 
     await waitFor(() => expect(screen.getByText("system")).toBeInTheDocument());
+    window.localStorage.setItem("theme", "dark");
     fireEvent(
       window,
       new StorageEvent("storage", {

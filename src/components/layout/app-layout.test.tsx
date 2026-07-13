@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AppLayout } from "@/components/layout/app-layout";
 
@@ -29,10 +29,16 @@ vi.mock("@/components/mobile-nav", () => ({
 
 vi.mock("sonner", () => ({ toast: mocks.toast }));
 
+const SIDEBAR_KEY = "financial-calc-sidebar-collapsed";
+
 describe("AppLayout print contract", () => {
   beforeEach(() => {
     window.localStorage.clear();
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("marks fixed application chrome for exclusion and isolates printable content", () => {
@@ -79,11 +85,11 @@ describe("AppLayout print contract", () => {
     expect(sidebar).toHaveAttribute("data-collapsed", "true");
     expect(sidebarFrame).toHaveClass("w-[4.5rem]");
     expect(content).toHaveClass("lg:pl-[4.5rem]");
-    await waitFor(() => expect(window.localStorage.getItem("financial-calc-sidebar-collapsed")).toBe("true"));
+    await waitFor(() => expect(window.localStorage.getItem(SIDEBAR_KEY)).toBe("true"));
   });
 
   it("restores a persisted collapsed preference", () => {
-    window.localStorage.setItem("financial-calc-sidebar-collapsed", "true");
+    window.localStorage.setItem(SIDEBAR_KEY, "true");
 
     render(
       <AppLayout>
@@ -93,6 +99,128 @@ describe("AppLayout print contract", () => {
 
     expect(screen.getByTestId("sidebar")).toHaveAttribute("data-collapsed", "true");
     expect(screen.getByRole("main").parentElement).toHaveClass("lg:pl-[4.5rem]");
+  });
+
+  it("removes a malformed persisted sidebar preference and stays expanded", async () => {
+    window.localStorage.setItem(SIDEBAR_KEY, "{not-json");
+
+    render(
+      <AppLayout>
+        <article>Printable report</article>
+      </AppLayout>
+    );
+
+    expect(screen.getByTestId("sidebar")).toHaveAttribute("data-collapsed", "false");
+    await waitFor(() => expect(window.localStorage.getItem(SIDEBAR_KEY)).toBeNull());
+  });
+
+  it.each(["null", "0", '"collapsed"', "[]", "{}"])(
+    "removes the invalid JSON sidebar preference %s and stays expanded",
+    async (storedValue) => {
+      window.localStorage.setItem(SIDEBAR_KEY, storedValue);
+
+      render(
+        <AppLayout>
+          <article>Printable report</article>
+        </AppLayout>
+      );
+
+      expect(screen.getByTestId("sidebar")).toHaveAttribute("data-collapsed", "false");
+      await waitFor(() => expect(window.localStorage.getItem(SIDEBAR_KEY)).toBeNull());
+    }
+  );
+
+  it("writes the expanded fallback when removing an invalid preference is blocked", async () => {
+    window.localStorage.setItem(SIDEBAR_KEY, '"collapsed"');
+    const originalRemoveItem = Storage.prototype.removeItem;
+    vi.spyOn(Storage.prototype, "removeItem").mockImplementation(function (this: Storage, key) {
+      if (this === window.localStorage && key === SIDEBAR_KEY) {
+        throw new DOMException("Storage removal blocked", "SecurityError");
+      }
+      return originalRemoveItem.call(this, key);
+    });
+
+    render(
+      <AppLayout>
+        <article>Printable report</article>
+      </AppLayout>
+    );
+
+    expect(screen.getByTestId("sidebar")).toHaveAttribute("data-collapsed", "false");
+    await waitFor(() => expect(window.localStorage.getItem(SIDEBAR_KEY)).toBe("false"));
+  });
+
+  it("stays expanded after total cleanup failure and accepts a later valid storage update", async () => {
+    const dirtyValue = '"collapsed"';
+    window.localStorage.setItem(SIDEBAR_KEY, dirtyValue);
+    const originalRemoveItem = Storage.prototype.removeItem;
+    const originalSetItem = Storage.prototype.setItem;
+    const removeItem = vi.spyOn(Storage.prototype, "removeItem").mockImplementation(function (this: Storage, key) {
+      if (this === window.localStorage && key === SIDEBAR_KEY) {
+        throw new DOMException("Storage removal blocked", "SecurityError");
+      }
+      return originalRemoveItem.call(this, key);
+    });
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
+      if (this === window.localStorage && key === SIDEBAR_KEY) {
+        throw new DOMException("Storage writes blocked", "SecurityError");
+      }
+      return originalSetItem.call(this, key, value);
+    });
+
+    render(
+      <AppLayout>
+        <article>Printable report</article>
+      </AppLayout>
+    );
+
+    expect(screen.getByTestId("sidebar")).toHaveAttribute("data-collapsed", "false");
+    expect(window.localStorage.getItem(SIDEBAR_KEY)).toBe(dirtyValue);
+
+    removeItem.mockRestore();
+    setItem.mockRestore();
+    window.localStorage.setItem(SIDEBAR_KEY, "true");
+    fireEvent(window, new StorageEvent("storage", { key: SIDEBAR_KEY, newValue: "true" }));
+
+    await waitFor(() => expect(screen.getByTestId("sidebar")).toHaveAttribute("data-collapsed", "true"));
+  });
+
+  it("repairs an invalid runtime storage update and follows the next valid value", async () => {
+    render(
+      <AppLayout>
+        <article>Printable report</article>
+      </AppLayout>
+    );
+
+    window.localStorage.setItem(SIDEBAR_KEY, "true");
+    fireEvent(window, new StorageEvent("storage", { key: SIDEBAR_KEY, newValue: "true" }));
+    await waitFor(() => expect(screen.getByTestId("sidebar")).toHaveAttribute("data-collapsed", "true"));
+
+    window.localStorage.setItem(SIDEBAR_KEY, "{broken");
+    fireEvent(window, new StorageEvent("storage", { key: SIDEBAR_KEY, newValue: "{broken" }));
+    await waitFor(() => {
+      expect(screen.getByTestId("sidebar")).toHaveAttribute("data-collapsed", "false");
+      expect(window.localStorage.getItem(SIDEBAR_KEY)).toBeNull();
+    });
+
+    window.localStorage.setItem(SIDEBAR_KEY, "true");
+    fireEvent(window, new StorageEvent("storage", { key: SIDEBAR_KEY, newValue: "true" }));
+    await waitFor(() => expect(screen.getByTestId("sidebar")).toHaveAttribute("data-collapsed", "true"));
+  });
+
+  it("ignores a stale invalid storage event when the current preference is valid", async () => {
+    window.localStorage.setItem(SIDEBAR_KEY, "true");
+    render(
+      <AppLayout>
+        <article>Printable report</article>
+      </AppLayout>
+    );
+
+    expect(screen.getByTestId("sidebar")).toHaveAttribute("data-collapsed", "true");
+    fireEvent(window, new StorageEvent("storage", { key: SIDEBAR_KEY, newValue: "{stale" }));
+
+    await waitFor(() => expect(screen.getByTestId("sidebar")).toHaveAttribute("data-collapsed", "true"));
+    expect(window.localStorage.getItem(SIDEBAR_KEY)).toBe("true");
   });
 
   it("keeps a failed sidebar change active for the session and allows a persistence retry", async () => {
@@ -109,7 +237,7 @@ describe("AppLayout print contract", () => {
 
     expect(screen.getByTestId("sidebar")).toHaveAttribute("data-collapsed", "true");
     expect(screen.getByRole("main").parentElement).toHaveClass("lg:pl-[4.5rem]");
-    expect(window.localStorage.getItem("financial-calc-sidebar-collapsed")).toBeNull();
+    expect(window.localStorage.getItem(SIDEBAR_KEY)).toBeNull();
     expect(mocks.toast.error).toHaveBeenCalledWith("common.changeNotPersisted");
 
     setItem.mockRestore();
@@ -117,7 +245,7 @@ describe("AppLayout print contract", () => {
 
     await waitFor(() => {
       expect(screen.getByTestId("sidebar")).toHaveAttribute("data-collapsed", "false");
-      expect(window.localStorage.getItem("financial-calc-sidebar-collapsed")).toBe("false");
+      expect(window.localStorage.getItem(SIDEBAR_KEY)).toBe("false");
     });
     expect(mocks.toast.error).toHaveBeenCalledTimes(1);
   });

@@ -1,8 +1,14 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { CURRENCY_CHANGED_EVENT, CURRENCY_KEY, LANGUAGE_KEY, SUPPORTED_CURRENCIES } from "@/lib/constants";
-import { safeGetItem, safeRemoveItem, safeSetItem } from "@/lib/storage";
+import {
+  CURRENCY_CHANGED_EVENT,
+  CURRENCY_KEY,
+  DEFAULT_CURRENCY,
+  LANGUAGE_KEY,
+  SUPPORTED_CURRENCIES,
+} from "@/lib/constants";
+import { safeGetItem, safeRemoveOrReplaceItem, safeSetItem } from "@/lib/storage";
 
 // --- Types ---
 type Language = "en" | "zh";
@@ -2049,7 +2055,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     if (saved === "en" || saved === "zh") {
       queueMicrotask(() => setLanguage(saved));
     } else if (saved !== null) {
-      safeRemoveItem(LANGUAGE_KEY);
+      safeRemoveOrReplaceItem(LANGUAGE_KEY, "en");
     }
 
     const savedCurrency = safeGetItem(CURRENCY_KEY);
@@ -2057,13 +2063,16 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       savedCurrency !== null &&
       !SUPPORTED_CURRENCIES.includes(savedCurrency as (typeof SUPPORTED_CURRENCIES)[number])
     ) {
-      safeRemoveItem(CURRENCY_KEY);
+      safeRemoveOrReplaceItem(CURRENCY_KEY, DEFAULT_CURRENCY);
     }
 
     const handleStorage = (event: StorageEvent) => {
       if (event.key !== LANGUAGE_KEY) return;
-      const nextLanguage = event.newValue === "zh" ? "zh" : "en";
-      if (event.newValue !== null && event.newValue !== nextLanguage) safeRemoveItem(LANGUAGE_KEY);
+      const currentLanguage = safeGetItem(LANGUAGE_KEY);
+      const nextLanguage = currentLanguage === "zh" ? "zh" : "en";
+      if (currentLanguage !== null && currentLanguage !== nextLanguage) {
+        safeRemoveOrReplaceItem(LANGUAGE_KEY, nextLanguage);
+      }
       setLanguage(nextLanguage);
     };
     window.addEventListener("storage", handleStorage);
@@ -2074,11 +2083,12 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     const refreshFormat = () => setFormatRevision((revision) => revision + 1);
     const handleStorage = (event: StorageEvent) => {
       if (event.key === CURRENCY_KEY) {
+        const currentCurrency = safeGetItem(CURRENCY_KEY);
         if (
-          event.newValue !== null &&
-          !SUPPORTED_CURRENCIES.includes(event.newValue as (typeof SUPPORTED_CURRENCIES)[number])
+          currentCurrency !== null &&
+          !SUPPORTED_CURRENCIES.includes(currentCurrency as (typeof SUPPORTED_CURRENCIES)[number])
         ) {
-          safeRemoveItem(CURRENCY_KEY);
+          safeRemoveOrReplaceItem(CURRENCY_KEY, DEFAULT_CURRENCY);
         }
         refreshFormat();
       }

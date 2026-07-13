@@ -1,5 +1,5 @@
-import { act, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { act, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useLocaleFormat } from "@/hooks/use-locale-format";
 import { LanguageProvider, useLanguage } from "@/lib/i18n";
 import { CURRENCY_CHANGED_EVENT, CURRENCY_KEY, LANGUAGE_KEY } from "@/lib/constants";
@@ -24,6 +24,10 @@ describe("useLocaleFormat", () => {
   beforeEach(() => {
     window.localStorage.clear();
     delete document.documentElement.dataset.finCalcHydrated;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("hydrates from persisted currency and reacts to same-tab currency changes", async () => {
@@ -66,6 +70,92 @@ describe("useLocaleFormat", () => {
     expect(window.localStorage.getItem(CURRENCY_KEY)).toBeNull();
   });
 
+  it("replaces invalid locale preferences when removal is blocked and accepts later updates", async () => {
+    window.localStorage.setItem(LANGUAGE_KEY, "fr");
+    window.localStorage.setItem(CURRENCY_KEY, "BTC");
+    const originalRemoveItem = Storage.prototype.removeItem;
+    vi.spyOn(Storage.prototype, "removeItem").mockImplementation(function removeItem(this: Storage, key) {
+      if (key === LANGUAGE_KEY || key === CURRENCY_KEY) {
+        throw new DOMException("Removal blocked", "SecurityError");
+      }
+      return originalRemoveItem.call(this, key);
+    });
+    render(
+      <LanguageProvider>
+        <LanguageProbe />
+        <CurrencyProbe />
+      </LanguageProvider>
+    );
+
+    expect(await screen.findByText("en")).toBeInTheDocument();
+    expect(
+      await screen.findByText(new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(1234.5))
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(window.localStorage.getItem(LANGUAGE_KEY)).toBe("en");
+      expect(window.localStorage.getItem(CURRENCY_KEY)).toBe("USD");
+    });
+
+    act(() => {
+      window.localStorage.setItem(LANGUAGE_KEY, "zh");
+      window.localStorage.setItem(CURRENCY_KEY, "EUR");
+      window.dispatchEvent(new StorageEvent("storage", { key: LANGUAGE_KEY, newValue: "zh" }));
+      window.dispatchEvent(new StorageEvent("storage", { key: CURRENCY_KEY, newValue: "EUR" }));
+    });
+    expect(screen.getByText("zh")).toBeInTheDocument();
+    expect(
+      screen.getByText(new Intl.NumberFormat("zh-CN", { style: "currency", currency: "EUR" }).format(1234.5))
+    ).toBeInTheDocument();
+
+    act(() => {
+      window.dispatchEvent(new StorageEvent("storage", { key: LANGUAGE_KEY, newValue: "fr" }));
+      window.dispatchEvent(new StorageEvent("storage", { key: CURRENCY_KEY, newValue: "BTC" }));
+    });
+    expect(screen.getByText("zh")).toBeInTheDocument();
+    expect(
+      screen.getByText(new Intl.NumberFormat("zh-CN", { style: "currency", currency: "EUR" }).format(1234.5))
+    ).toBeInTheDocument();
+    expect(window.localStorage.getItem(LANGUAGE_KEY)).toBe("zh");
+    expect(window.localStorage.getItem(CURRENCY_KEY)).toBe("EUR");
+
+    act(() => {
+      window.localStorage.setItem(LANGUAGE_KEY, "fr");
+      window.localStorage.setItem(CURRENCY_KEY, "BTC");
+      window.dispatchEvent(new StorageEvent("storage", { key: LANGUAGE_KEY, newValue: "fr" }));
+      window.dispatchEvent(new StorageEvent("storage", { key: CURRENCY_KEY, newValue: "BTC" }));
+    });
+    expect(screen.getByText("en")).toBeInTheDocument();
+    expect(
+      screen.getByText(new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(1234.5))
+    ).toBeInTheDocument();
+    expect(window.localStorage.getItem(LANGUAGE_KEY)).toBe("en");
+    expect(window.localStorage.getItem(CURRENCY_KEY)).toBe("USD");
+  });
+
+  it("keeps safe locale fallbacks when removal and replacement are both blocked", async () => {
+    window.localStorage.setItem(LANGUAGE_KEY, "fr");
+    window.localStorage.setItem(CURRENCY_KEY, "BTC");
+    vi.spyOn(Storage.prototype, "removeItem").mockImplementation(() => {
+      throw new DOMException("Removal blocked", "SecurityError");
+    });
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new DOMException("Write blocked", "SecurityError");
+    });
+    render(
+      <LanguageProvider>
+        <LanguageProbe />
+        <CurrencyProbe />
+      </LanguageProvider>
+    );
+
+    expect(await screen.findByText("en")).toBeInTheDocument();
+    expect(
+      await screen.findByText(new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(1234.5))
+    ).toBeInTheDocument();
+    expect(window.localStorage.getItem(LANGUAGE_KEY)).toBe("fr");
+    expect(window.localStorage.getItem(CURRENCY_KEY)).toBe("BTC");
+  });
+
   it("rerenders generic formatters after the persisted settings boundary hydrates", async () => {
     window.localStorage.setItem(CURRENCY_KEY, "EUR");
     render(
@@ -101,6 +191,7 @@ describe("useLocaleFormat", () => {
     );
 
     expect(await screen.findByText("en")).toBeInTheDocument();
+    window.localStorage.setItem(LANGUAGE_KEY, "zh");
     act(() => {
       window.dispatchEvent(new StorageEvent("storage", { key: LANGUAGE_KEY, newValue: "zh" }));
     });

@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { safeGetItem, safeRemoveItem, safeSetItem } from "@/lib/storage";
+import { safeGetItem, safeRemoveOrReplaceItem, safeSetItem } from "@/lib/storage";
 
 type Theme = "light" | "dark" | "system";
 type ResolvedTheme = "light" | "dark";
@@ -33,7 +33,7 @@ function normalizeTheme(value: string | null, fallback: Theme): Theme {
 function readStoredTheme(fallback: Theme) {
   const stored = safeGetItem(THEME_STORAGE_KEY);
   const normalized = normalizeTheme(stored, fallback);
-  if (stored !== null && stored !== normalized) safeRemoveItem(THEME_STORAGE_KEY);
+  if (stored !== null && stored !== normalized) safeRemoveOrReplaceItem(THEME_STORAGE_KEY, normalized);
   return normalized;
 }
 
@@ -61,9 +61,7 @@ export function ThemeProvider({ children, defaultTheme = "system", enableSystem 
     };
     const handleStorage = (event: StorageEvent) => {
       if (event.key === THEME_STORAGE_KEY) {
-        const normalized = normalizeTheme(event.newValue, defaultTheme);
-        if (event.newValue !== null && event.newValue !== normalized) safeRemoveItem(THEME_STORAGE_KEY);
-        setThemeState(normalized);
+        setThemeState(readStoredTheme(defaultTheme));
       }
     };
 

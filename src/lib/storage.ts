@@ -38,6 +38,10 @@ export function safeRemoveItem(key: string): boolean {
   }
 }
 
+export function safeRemoveOrReplaceItem(key: string, replacement: string): boolean {
+  return safeRemoveItem(key) || safeSetItem(key, replacement);
+}
+
 export function safeGetJSON<T>(key: string, fallback: T): T {
   const stored = safeGetItem(key);
   if (!stored) {

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useLanguage } from "@/lib/i18n";
 import { SIDEBAR_COLLAPSED_KEY, SIDEBAR_PREFERENCE_CHANGED_EVENT } from "@/lib/constants";
-import { safeGetJSON, safeSetJSON } from "@/lib/storage";
+import { safeGetItem, safeRemoveOrReplaceItem, safeSetJSON } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
@@ -18,24 +18,57 @@ interface AppLayoutProps {
   children: React.ReactNode;
 }
 
+interface SidebarPreferenceSnapshot {
+  collapsed: boolean;
+  needsRepair: boolean;
+}
+
+function parseSidebarPreference(value: string | null): SidebarPreferenceSnapshot {
+  if (value === null) return { collapsed: false, needsRepair: false };
+
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return typeof parsed === "boolean"
+      ? { collapsed: parsed, needsRepair: false }
+      : { collapsed: false, needsRepair: true };
+  } catch {
+    return { collapsed: false, needsRepair: true };
+  }
+}
+
+function readSidebarPreference() {
+  return parseSidebarPreference(safeGetItem(SIDEBAR_COLLAPSED_KEY));
+}
+
+function repairInvalidSidebarPreference() {
+  if (readSidebarPreference().needsRepair) {
+    safeRemoveOrReplaceItem(SIDEBAR_COLLAPSED_KEY, "false");
+  }
+}
+
 function subscribeToSidebarPreference(onStoreChange: () => void) {
   const handleStorage = (event: StorageEvent) => {
     if (event.key === SIDEBAR_COLLAPSED_KEY) {
+      repairInvalidSidebarPreference();
       onStoreChange();
     }
   };
+  const handlePreferenceChanged = () => {
+    repairInvalidSidebarPreference();
+    onStoreChange();
+  };
 
   window.addEventListener("storage", handleStorage);
-  window.addEventListener(SIDEBAR_PREFERENCE_CHANGED_EVENT, onStoreChange);
+  window.addEventListener(SIDEBAR_PREFERENCE_CHANGED_EVENT, handlePreferenceChanged);
 
   return () => {
     window.removeEventListener("storage", handleStorage);
-    window.removeEventListener(SIDEBAR_PREFERENCE_CHANGED_EVENT, onStoreChange);
+    window.removeEventListener(SIDEBAR_PREFERENCE_CHANGED_EVENT, handlePreferenceChanged);
   };
 }
 
 function getSidebarPreference() {
-  return safeGetJSON<unknown>(SIDEBAR_COLLAPSED_KEY, false) === true;
+  return readSidebarPreference().collapsed;
 }
 
 function getServerSidebarPreference() {
@@ -53,6 +86,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const sidebarCollapsed = sessionSidebarCollapsed ?? persistedSidebarCollapsed;
 
   useEffect(() => {
+    repairInvalidSidebarPreference();
     const clearSessionPreference = () => setSessionSidebarCollapsed(null);
     const handleStorage = (event: StorageEvent) => {
       if (event.key === SIDEBAR_COLLAPSED_KEY) clearSessionPreference();

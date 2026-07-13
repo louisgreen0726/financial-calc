@@ -3,9 +3,9 @@ import { expect, test, type Page } from "playwright/test";
 const keys = {
   currency: "financial-calc-currency",
   language: "financial-calc-language",
+  sidebar: "financial-calc-sidebar-collapsed",
   theme: "theme",
 } as const;
-const sidebarKey = "financial-calc-sidebar-collapsed";
 
 function pressedButton(page: Page, text: string | RegExp) {
   return page.locator('button[aria-pressed="true"]').filter({ hasText: text });
@@ -31,17 +31,28 @@ test("repairs invalid preferences and follows valid and corrupted cross-tab upda
     localStorage.setItem(storageKeys.theme, "sepia");
     localStorage.setItem(storageKeys.language, "fr");
     localStorage.setItem(storageKeys.currency, "BTC");
+    localStorage.setItem(storageKeys.sidebar, '"collapsed"');
   }, keys);
   await page.goto("/settings/");
 
   await expect(pressedButton(page, "System")).toHaveCount(1);
   await expect(pressedButton(page, "English")).toHaveCount(1);
   await expect(pressedButton(page, /USD/)).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Collapse sidebar" })).toBeVisible();
+  await expect(page.locator('aside[data-collapsed="false"]')).toBeAttached();
   await expect
     .poll(() =>
       page.evaluate((storageKeys) => storageKeys.map((key) => localStorage.getItem(key)), Object.values(keys))
     )
-    .toEqual([null, null, null]);
+    .toEqual([null, null, null, null]);
+
+  await dispatchStorage(page, keys.sidebar, "true");
+  await expect(page.getByRole("button", { name: "Expand sidebar" })).toBeVisible();
+  await expect(page.locator('aside[data-collapsed="true"]')).toBeAttached();
+  await dispatchStorage(page, keys.sidebar, "{broken");
+  await expect(page.getByRole("button", { name: "Collapse sidebar" })).toBeVisible();
+  await expect(page.locator('aside[data-collapsed="false"]')).toBeAttached();
+  await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), keys.sidebar)).toBeNull();
 
   await dispatchStorage(page, keys.theme, "dark");
   await expect(pressedButton(page, "Dark")).toHaveCount(1);
@@ -66,6 +77,42 @@ test("repairs invalid preferences and follows valid and corrupted cross-tab upda
   expect(errors).toEqual([]);
 });
 
+test("writes safe defaults when invalid preference removal is blocked", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.addInitScript((storageKeys) => {
+    localStorage.setItem(storageKeys.theme, "sepia");
+    localStorage.setItem(storageKeys.language, "fr");
+    localStorage.setItem(storageKeys.currency, "BTC");
+    localStorage.setItem(storageKeys.sidebar, '"collapsed"');
+
+    const originalRemoveItem = Storage.prototype.removeItem;
+    const blockedKeys = new Set<string>(Object.values(storageKeys));
+    Storage.prototype.removeItem = function removeItem(key: string) {
+      if (blockedKeys.has(key)) {
+        throw new DOMException("Storage removal blocked", "SecurityError");
+      }
+      return originalRemoveItem.call(this, key);
+    };
+  }, keys);
+  await page.goto("/settings/");
+
+  await expect(pressedButton(page, "System")).toHaveCount(1);
+  await expect(pressedButton(page, "English")).toHaveCount(1);
+  await expect(pressedButton(page, /USD/)).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Collapse sidebar" })).toBeVisible();
+  await expect(page.locator('aside[data-collapsed="false"]')).toBeAttached();
+  await expect
+    .poll(() =>
+      page.evaluate((storageKeys) => storageKeys.map((key) => localStorage.getItem(key)), Object.values(keys))
+    )
+    .toEqual(["USD", "en", "false", "system"]);
+  expect(errors).toEqual([]);
+});
+
 test("reports blocked preference writes while keeping session changes active", async ({ page }) => {
   const errors: string[] = [];
   page.on("console", (message) => {
@@ -73,19 +120,16 @@ test("reports blocked preference writes while keeping session changes active", a
   });
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/settings/");
-  await page.evaluate(
-    ({ sidebarStorageKey, storageKeys }) => {
-      const originalSetItem = Storage.prototype.setItem;
-      const blockedKeys = new Set<string>([...Object.values(storageKeys), sidebarStorageKey]);
-      Storage.prototype.setItem = function setItem(key: string, value: string) {
-        if (blockedKeys.has(key)) {
-          throw new DOMException("Storage blocked", "SecurityError");
-        }
-        return originalSetItem.call(this, key, value);
-      };
-    },
-    { sidebarStorageKey: sidebarKey, storageKeys: keys }
-  );
+  await page.evaluate((storageKeys) => {
+    const originalSetItem = Storage.prototype.setItem;
+    const blockedKeys = new Set<string>(Object.values(storageKeys));
+    Storage.prototype.setItem = function setItem(key: string, value: string) {
+      if (blockedKeys.has(key)) {
+        throw new DOMException("Storage blocked", "SecurityError");
+      }
+      return originalSetItem.call(this, key, value);
+    };
+  }, keys);
 
   const englishChangeError =
     "The change is active for this session but could not be saved. It may be lost after refresh.";
@@ -124,10 +168,7 @@ test("reports blocked preference writes while keeping session changes active", a
   await expect(page.locator('aside[data-collapsed="true"]')).toBeAttached();
   await expect
     .poll(() =>
-      page.evaluate(
-        (storageKeys) => storageKeys.map((key) => localStorage.getItem(key)),
-        [...Object.values(keys), sidebarKey]
-      )
+      page.evaluate((storageKeys) => storageKeys.map((key) => localStorage.getItem(key)), Object.values(keys))
     )
     .toEqual([null, null, null, null]);
   expect(errors).toEqual([]);

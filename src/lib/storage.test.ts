@@ -6,6 +6,7 @@ import {
   safeGetSessionItem,
   safeGetSessionJSON,
   safeRemoveItem,
+  safeRemoveOrReplaceItem,
   safeRemoveSessionItem,
   safeSetItem,
   safeSetJSON,
@@ -16,6 +17,10 @@ describe("storage utilities", () => {
   beforeEach(() => {
     window.localStorage.clear();
     window.sessionStorage.clear();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("reads and writes plain localStorage values safely", () => {
@@ -73,5 +78,27 @@ describe("storage utilities", () => {
     expect(safeSetSessionJSON("blocked-session", { value: true })).toBe(false);
 
     setItem.mockRestore();
+  });
+
+  it("replaces an invalid value when removal alone is blocked", () => {
+    window.localStorage.setItem("repair-key", "invalid");
+    const originalRemoveItem = Storage.prototype.removeItem;
+    vi.spyOn(Storage.prototype, "removeItem").mockImplementation(function removeItem(this: Storage, key) {
+      if (key === "repair-key") throw new DOMException("Removal blocked", "SecurityError");
+      return originalRemoveItem.call(this, key);
+    });
+
+    expect(safeRemoveOrReplaceItem("repair-key", "fallback")).toBe(true);
+    expect(window.localStorage.getItem("repair-key")).toBe("fallback");
+
+    window.localStorage.setItem("repair-key", "invalid");
+    const originalSetItem = Storage.prototype.setItem;
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(function setItem(this: Storage, key, value) {
+      if (key === "repair-key") throw new DOMException("Write blocked", "SecurityError");
+      return originalSetItem.call(this, key, value);
+    });
+
+    expect(safeRemoveOrReplaceItem("repair-key", "fallback")).toBe(false);
+    expect(window.localStorage.getItem("repair-key")).toBe("invalid");
   });
 });

@@ -40,7 +40,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Audit remaining preference setters for silent write failures, starting with sidebar collapse state.
 - [ ] Investigate and eliminate development-only missing translation warnings for Portfolio seed controls.
 - [x] Make local Playwright browser selection deterministic when the pinned browser binary is unavailable.
-- [ ] Extend preference recovery coverage to failed cleanup of invalid persisted values.
+- [x] Extend preference recovery coverage to failed cleanup of invalid persisted values.
 - [x] Consume pending history restores exactly once even when sessionStorage cleanup is blocked.
 - [x] Generate and verify base-path-aware static deployment `_headers` rules.
 - [x] Validate PWA manifest icons, shortcuts, and base-path asset targets in the static export gate.
@@ -56,6 +56,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Repair stale cross-tab PWA update prompts after another tab activates the waiting worker.
 - [ ] Localize remaining hard-coded application-shell copy and refine sidebar information hierarchy.
 - [ ] Design and validate a compatible-history scenario comparison workflow before implementation.
+- [ ] Handle cross-tab `localStorage.clear()` without reviving queued history or favorite writes.
 
 ## 2026-07-13
 
@@ -1966,3 +1967,53 @@ formatting enforcement, bond sensitivity oracles, app-shell UI refinement, and v
   only one primary result and no stable metric ID, original currency, or model version. The queued design will avoid
   claiming full scenario equivalence and will reject ambiguous legacy records.
 - Queue status: 6 active items remain; implementation work is concrete and the work queue is intentionally non-empty.
+
+### Improvement 45: Recover invalid preferences when storage cleanup is partially blocked
+
+Status: completed.
+
+Changes:
+
+- Reproduced a partial-storage failure where an invalid theme, language, currency, or sidebar value could be read safely
+  for the current session but remain permanently persisted when `removeItem` was denied. Every refresh repeated the
+  invalid-state recovery, and the stale value could continue propagating between tabs.
+- Added a shared remove-or-replace operation. Invalid values are removed when possible; if removal alone is blocked,
+  they are overwritten with the feature's safe default (`system`, `en`, `USD`, or expanded sidebar state). If both
+  operations fail, the UI still uses the safe in-memory fallback.
+- Restricted the persisted sidebar contract to JSON booleans. Malformed JSON and valid JSON of the wrong type now
+  resolve to expanded state and are repaired outside the `useSyncExternalStore` snapshot read, preserving React's
+  pure snapshot requirement.
+- Changed theme, language, currency, and sidebar storage listeners to re-read current storage before updating state.
+  A delayed event carrying an obsolete invalid `newValue` can no longer erase a newer valid choice.
+- Expanded unit coverage for malformed and wrong-type sidebar values, removal-only failures, total cleanup failures,
+  later valid updates, and stale storage events. Expanded the browser workflow to assert both visible defaults and the
+  actual repaired values under normal cleanup, removal-only denial, and blocked preference writes.
+- Diagnosed the initial browser failures as a reused stale Next.js development server. A fresh Playwright-managed
+  server passed the complete preference workflow without executable-path overrides.
+
+Files and areas:
+
+- `src/lib/storage.ts` and `src/lib/storage.test.ts`
+- theme and language/currency providers plus their focused tests
+- sidebar preference parsing, repair, and component tests
+- `e2e/preferences-storage.spec.ts`
+
+Verification:
+
+- The focused preference suites passed 32/32 tests; the real browser preference workflow passed 3/3 tests.
+- `npm run verify` passed all 55 Vitest files and 498 tests, 15 routes, 197 precache assets, 722 internal references,
+  and every route bundle budget.
+- Strict TypeScript, ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: 6 active items remain across cross-tab storage clearing, Portfolio development translations, broader
+formatting enforcement, bond sensitivity oracles, app-shell UI refinement, and compatible History comparison.
+
+### Progress checkpoint: 15:40 +08:00
+
+- Resumed-goal elapsed time: approximately 4 hours 28 minutes; cumulative logged active work: approximately 12 hours
+  5 minutes. Work continues because the user has not requested a stop and the queue remains substantive.
+- Completed improvement batches: 45. Preference recovery now covers valid storage, corrupt values, stale cross-tab
+  events, partial cleanup denial, and total write denial at both component and browser levels.
+- Current work: commit Improvement 45, then prevent real cross-tab `localStorage.clear()` events from leaving stale
+  preferences or reviving queued history/favorite writes.
+- Queue status: 6 active items remain, including the requested UI and useful-feature work.
