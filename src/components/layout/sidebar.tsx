@@ -87,7 +87,7 @@ export const Sidebar = React.memo(function Sidebar({
             </span>
             <span className={cn("min-w-0 flex-1", collapsed && "hidden")}>
               <span className="block truncate text-base font-semibold leading-5">FinCalc Pro</span>
-              <span className="block text-xs text-muted-foreground">Financial workspace</span>
+              <span className="block text-xs text-muted-foreground">{t("sidebar.workspace")}</span>
             </span>
           </Link>
         </div>

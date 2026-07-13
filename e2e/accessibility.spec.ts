@@ -89,8 +89,30 @@ test.describe("mobile accessibility", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test("navigation and calculator controls meet the automated baseline", async ({ page }) => {
+    test.setTimeout(60_000);
     await page.goto("/options/");
     await expect(page.getByRole("navigation", { name: "Primary navigation" })).toBeVisible();
     await expectNoAccessibilityViolations(page, "Options mobile navigation and form");
+
+    await page.getByRole("button", { name: "Toggle Menu" }).click();
+    const englishDrawer = page.getByRole("dialog", { name: "Calculator menu" });
+    await expect(englishDrawer).toBeVisible();
+    await expect(englishDrawer).toHaveAccessibleDescription("Search or browse the full calculator directory.");
+    await expect(englishDrawer.getByText("Financial workspace", { exact: true })).toBeVisible();
+    await expectNoAccessibilityViolations(page, "English mobile calculator menu");
+    await englishDrawer.getByRole("button", { name: "Close" }).click();
+    await expect(englishDrawer).toHaveCount(0);
+
+    await page.getByRole("button", { name: "Switch to Chinese" }).click();
+    await page.getByRole("button", { name: "切换菜单" }).click();
+    const chineseDrawer = page.getByRole("dialog", { name: "计算器菜单" });
+    await expect(chineseDrawer).toBeVisible();
+    await expect(chineseDrawer).toHaveAccessibleDescription("搜索或浏览完整的金融计算器目录。");
+    await expect(chineseDrawer.getByText("金融工作台", { exact: true })).toBeVisible();
+    await expectNoAccessibilityViolations(page, "Chinese mobile calculator menu");
+
+    await chineseDrawer.getByRole("link", { name: "货币时间价值 (TVM)" }).click();
+    await expect(page).toHaveURL(/\/tvm\/$/, { timeout: 15_000 });
+    await expect(chineseDrawer).toHaveCount(0);
   });
 });

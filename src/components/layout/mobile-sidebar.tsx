@@ -26,8 +26,8 @@ export const MobileSidebar = React.memo(function MobileSidebar() {
         data-pdf-exclude="true"
         className="no-print flex w-[86vw] max-w-72 flex-col border-r bg-card p-0"
       >
-        <SheetTitle className="sr-only">{t("common.toggleMenu")}</SheetTitle>
-        <SheetDescription className="sr-only">{t("sidebar.search")}</SheetDescription>
+        <SheetTitle className="sr-only">{t("sidebar.mobileTitle")}</SheetTitle>
+        <SheetDescription className="sr-only">{t("sidebar.mobileDescription")}</SheetDescription>
         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
           <Sidebar
             className="border-none w-full h-full bg-transparent"

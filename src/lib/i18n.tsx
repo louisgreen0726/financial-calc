@@ -97,6 +97,9 @@ type Translations = {
     version: string;
     search: string;
     featured: string;
+    workspace: string;
+    mobileTitle: string;
+    mobileDescription: string;
   };
   nav: {
     core: {
@@ -781,6 +784,9 @@ const en: Translations = {
     version: "v0.5.0",
     search: "Search calculators...",
     featured: "Featured",
+    workspace: "Financial workspace",
+    mobileTitle: "Calculator menu",
+    mobileDescription: "Search or browse the full calculator directory.",
   },
   nav: {
     core: {
@@ -1484,6 +1490,9 @@ const zh: Translations = {
     version: "v0.5.0",
     search: "搜索计算器...",
     featured: "推荐",
+    workspace: "金融工作台",
+    mobileTitle: "计算器菜单",
+    mobileDescription: "搜索或浏览完整的金融计算器目录。",
   },
   nav: {
     core: {

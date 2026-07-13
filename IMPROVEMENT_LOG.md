@@ -2625,3 +2625,53 @@ Verification:
 
 Queue status: app-shell localization/mobile semantics, Monte Carlo trust-boundary limits, and an independent tooling
 improvement are active in parallel; comparison baseline swapping and fuller workspace backup remain queued.
+
+### Progress checkpoint: 18:11 +08:00
+
+- Resumed-goal elapsed time: approximately 6 hours 59 minutes; cumulative logged active work: approximately 14 hours
+  36 minutes. The goal remains active until the user explicitly stops it.
+- Completed improvement batches: 62. Recent work hardened extreme inflation annualization, made History CSV exports
+  machine-readable, synchronized public capability documentation, and kept option chart data finite at numeric limits.
+- Current work: finish the app-shell localization and mobile-dialog semantics batch, then integrate the independently
+  verified Monte Carlo trust-boundary limits and select the next tooling or product improvement.
+- Queue status: core correctness, UI accessibility, tooling, History backup/comparison follow-ups, and operational
+  robustness remain represented; the queue is intentionally non-empty.
+
+### Improvement 63: Localized mobile navigation semantics and workspace identity
+
+Status: completed.
+
+Changes:
+
+- Replaced the desktop/mobile Sidebar's hard-coded English `Financial workspace` subtitle with a typed English/Chinese
+  translation, so changing language updates the complete app-shell identity rather than only calculator links.
+- Replaced the mobile Sheet's action-oriented trigger label and search placeholder as its hidden dialog metadata.
+  Purpose-specific localized title and description now identify the surface as the full calculator menu and explain
+  that users can search or browse the directory.
+- Added component coverage that opens the controlled drawer in both languages and verifies its accessible name,
+  description, workspace subtitle, navigation landmark, close command, and separation from the menu trigger label.
+- Expanded the real mobile browser accessibility workflow to run axe with the English and Chinese drawers open, verify
+  both localized metadata sets, close explicitly in English, and navigate through a Chinese calculator link while
+  confirming the drawer leaves the accessibility tree.
+- Increased only this multi-state axe workflow's test budget and cold-route navigation allowance. Three axe scans had
+  consumed the default 30-second budget while Next.js was compiling the destination; the application had already
+  closed the drawer correctly, but the test allowed only five remaining seconds for the first route compilation.
+- Updated the public reliability overview to describe the localized, purpose-specific mobile dialog contract.
+
+Files and areas:
+
+- `src/components/layout/sidebar.tsx`
+- `src/components/layout/mobile-sidebar.tsx` and its new focused test
+- English/Chinese Sidebar catalog entries
+- `e2e/accessibility.spec.ts`
+- `README.md`
+
+Verification:
+
+- Focused MobileSidebar and translation-catalog suites passed 5/5 tests.
+- The mobile English/Chinese drawer, navigation, and axe browser workflow passed 1/1 in 13.5 seconds on a reused
+  development server.
+- Strict TypeScript, targeted ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: Monte Carlo trust-boundary limits and an independent tooling improvement remain active in parallel;
+comparison baseline swapping, complete workspace backup, and further UI refinement remain queued.

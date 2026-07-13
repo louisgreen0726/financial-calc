@@ -70,7 +70,8 @@ Recent hardening work is reflected in the current source:
 - History falls back to All without an empty-state flash when the last record in an active page category disappears
 - rapid URL-backed field edits merge against the latest requested calculator state instead of dropping earlier inputs
 - TVM clears stale results and calculation steps when target, payment timing, or inputs change
-- mobile sidebar content now satisfies Radix Dialog title/description requirements and closes after navigation
+- mobile sidebar content uses localized purpose-specific Dialog titles/descriptions, exposes a localized workspace
+  identity, and closes after navigation
 - PWA metadata, install icons, generated precache assets, and bounded service worker caches respect
   `NEXT_PUBLIC_BASE_PATH`; cache quota/write failures never replace successful network responses, and a tab whose
   controller is replaced by an update activated elsewhere receives a working direct-refresh action
