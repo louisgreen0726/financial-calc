@@ -49,6 +49,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Split storage feedback between applied session preferences and operations that were not completed.
 - [x] Stabilize Black-Scholes log-moneyness for extreme but finite spot/strike ratios.
 - [x] Normalize History filters when deleting the last record in the active category.
+- [x] Bound legacy cash-flow History parsing so long corrupt records cannot freeze restoration.
 - [x] Detect and explain multiple valid TVM RATE roots instead of presenting one as unique.
 - [x] Preserve NPV/IRR invariance when appending economically irrelevant zero cash flows.
 - [x] Stabilize translation-catalog source scanning under full-suite worker contention.
@@ -2288,3 +2289,38 @@ localization/information hierarchy, and the strict two-record History comparison
 - Current work: commit Improvement 52, then implement stable localized Portfolio defaults and the already validated
   compatible History comparison UI.
 - Queue status: 3 active items remain, with additional UI and compatibility follow-ups identified during current audits.
+
+### Improvement 53: Bounded legacy cash-flow History parsing
+
+Status: completed.
+
+Changes:
+
+- Reproduced a synchronous restore freeze in legacy comma-separated cash-flow records. The parser tried every token end
+  from every start, repeatedly allocated `slice().join()` strings, and recursively selected the fewest valid numeric
+  tokens. A 1,000-token record took about 1.3 seconds in a direct module run; 5,000 tokens exceeded 30 seconds.
+- Replaced exhaustive recursive partitioning with an iterative parser specialized to the accepted number grammar. It
+  consumes the longest finite grouped-thousands token, advances without recursion, and enforces an explicit step budget
+  proportional to stored input size and the fixed 120-flow application limit.
+- Preserved the legacy minimum-token behavior for grouped amounts, signs, decimals, exponents, and boundary whitespace.
+  Added a deterministic 500-case exhaustive reference oracle over short ambiguous records so the optimized grammar is
+  checked against the former semantic contract rather than a handful of examples.
+- Aligned current JSON and legacy records at the parser boundary: both validate the complete stored record and then
+  return at most `MAX_CASH_FLOWS`. A malformed value after the first 120 entries still rejects the whole record instead
+  of silently accepting a valid prefix.
+- Added exact 120-entry and 121-entry tests, multi-group thousands coverage, malformed-tail coverage, and a roughly
+  20KB adversarial legacy string that would exercise the previous recursive blow-up.
+
+Files and areas:
+
+- `src/lib/cash-flow-history.ts`
+- `src/lib/cash-flow-history.test.ts`
+
+Verification:
+
+- The focused cash-flow History suite passed 7/7 tests; its final test body, including the deterministic oracle and
+  long malformed input, completed in approximately 120ms in the isolated agent run.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: 3 active items remain across default Portfolio asset localization, remaining app-shell refinement, and
+the strict two-record History comparison UI; dead dependency cleanup is also in verification.
