@@ -195,9 +195,9 @@ Deployment notes:
 
 - `next.config.ts` uses `output: "export"`
 - development and production builds intentionally use Webpack so the TypeScript Monte Carlo worker is emitted as executable JavaScript
-- the build injects a per-document hash-based script/style-element CSP, then scans `out/` and writes
-  `out/precache-manifest.js`; do not edit generated HTML or the manifest after the build because the hashes would
-  become stale
+- the build scopes deployment headers, injects a per-document hash-based script/style-element CSP, then scans `out/`
+  and writes `out/precache-manifest.js`; do not edit generated HTML or metadata after the build because the verified
+  artifact contract would become stale
 - `npm run static:check` validates the existing export, while `npm run test:static` rebuilds and validates a `/calc` base-path export
 - production does not require `next start`
 - production does not assume server-side API routes or a Node runtime
@@ -208,14 +208,17 @@ Deployment notes:
 - `NEXT_PUBLIC_BASE_PATH` is supported by metadata, navigation, and service worker registration
 - for a base-path deployment, build with `NEXT_PUBLIC_BASE_PATH=/calc` and configure the static host to map `/calc/` to the same exported `out/` directory; exported files remain at the root of `out/`, not inside an additional `calc/` folder
 - base-path hosts must preserve `/calc` when redirecting clean URLs; stripping it from precache requests such as `/calc/options/index.html` prevents service-worker installation
-- `public/_headers` supplies security and cache headers for hosts that support the Netlify/Cloudflare Pages format
-- hosts that do not consume `_headers` must map the same CSP, referrer, nosniff, frame, permissions, and cache policies in their own configuration
+- `public/_headers` is the root-hosting template; every build writes `out/_headers` with all rules automatically scoped
+  to `NEXT_PUBLIC_BASE_PATH` for hosts that support the Netlify/Cloudflare Pages format
+- hosts that do not consume `_headers` must map the final `out/_headers` CSP, referrer, nosniff, frame, permissions, and
+  cache policies in their own configuration
 - each HTML file also carries build-generated `script-src` and `style-src-elem` meta directives with exact SHA-256
   hashes; the generator includes deterministic Sonner startup styles from the installed package, and the policy
   intersects with the host header even on hosts with `_headers` matching or line-length limitations
 - only `style-src-attr` retains inline compatibility for dynamic React chart/component attributes; unlisted style
   elements and scripts are blocked by the document policy
-- for a base-path deployment, prefix the host-specific `/_next/static/*`, `/sw.js`, `/precache-manifest.js`, and `/manifest.json` header rules with that base path
+- for a base-path deployment, deploy the generated `out/_headers`; the global, HTML, static asset, worker, precache,
+  and manifest selectors are already prefixed and the static checker rejects unscoped rules
 - HTML, `sw.js`, and the precache manifest must be revalidated; hashed `/_next/static/*` assets should be cached as immutable for one year
 
 ## Project Structure

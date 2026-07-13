@@ -5,6 +5,9 @@ import vm from "node:vm";
 import { fileURLToPath } from "node:url";
 
 import { validateStaticContentPolicy } from "./generate-static-csp.mjs";
+import { normalizeBasePath, withBasePath } from "./static-export-paths.mjs";
+
+export { normalizeBasePath } from "./static-export-paths.mjs";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const forbiddenPrecacheAssets = new Set(["/_headers", "/precache-manifest.js", "/sw.js"]);
@@ -20,18 +23,6 @@ const requiredCspDirectives = [
 
 function invariant(condition, message) {
   if (!condition) throw new Error(message);
-}
-
-export function normalizeBasePath(value = "") {
-  if (!value) return "";
-  invariant(value.startsWith("/"), `Base path must start with "/": ${value}`);
-  invariant(value !== "/" && !value.endsWith("/"), `Base path must not be "/" or end with "/": ${value}`);
-  invariant(!value.includes("?") && !value.includes("#") && !value.includes("\\"), `Invalid base path: ${value}`);
-  invariant(
-    value.split("/").every((segment, index) => index === 0 || (segment && segment !== "." && segment !== "..")),
-    `Invalid base path segment: ${value}`
-  );
-  return value;
 }
 
 export function parseCommandLine(argumentsToParse, environment = process.env) {
@@ -102,10 +93,12 @@ export function parseHeaders(source) {
   return blocks;
 }
 
-function validateHeaders(source) {
+function validateHeaders(source, basePath = "") {
+  const normalizedBasePath = normalizeBasePath(basePath);
   const blocks = parseHeaders(source);
-  const globalHeaders = blocks.get("/*");
-  invariant(globalHeaders, '_headers must define a global "/*" block.');
+  const globalSelector = withBasePath("/*", normalizedBasePath);
+  const globalHeaders = blocks.get(globalSelector);
+  invariant(globalHeaders, `_headers must define a global "${globalSelector}" block.`);
 
   const csp = globalHeaders.get("content-security-policy") ?? "";
   for (const directive of requiredCspDirectives) {
@@ -123,10 +116,17 @@ function validateHeaders(source) {
     ["/precache-manifest.js", ["no-store", "must-revalidate"]],
     ["/manifest.json", ["no-cache", "must-revalidate"]],
   ]);
-  for (const [route, fragments] of expectedCachePolicies) {
+  for (const [rootRoute, fragments] of expectedCachePolicies) {
+    const route = withBasePath(rootRoute, normalizedBasePath);
     const policy = blocks.get(route)?.get("cache-control")?.toLowerCase() ?? "";
     for (const fragment of fragments) {
       invariant(policy.includes(fragment), `${route} Cache-Control is missing: ${fragment}`);
+    }
+  }
+
+  if (normalizedBasePath) {
+    for (const rootSelector of ["/*", ...expectedCachePolicies.keys()]) {
+      invariant(!blocks.has(rootSelector), `_headers must not define unscoped path rule: ${rootSelector}`);
     }
   }
 }
@@ -289,7 +289,7 @@ export async function checkStaticExport({ rootDirectory = projectRoot, basePath 
       access(path.join(outputDirectory, file))
     )
   );
-  validateHeaders(await readFile(path.join(outputDirectory, "_headers"), "utf8"));
+  validateHeaders(await readFile(path.join(outputDirectory, "_headers"), "utf8"), normalizedBasePath);
   validateWebManifest(JSON.parse(await readFile(path.join(outputDirectory, "manifest.json"), "utf8")));
   const htmlFiles = await listHtmlFiles(outputDirectory);
   invariant(htmlFiles.length > 0, "Static export contains no HTML files.");

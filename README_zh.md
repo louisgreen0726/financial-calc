@@ -190,8 +190,8 @@ npm run preview
 
 - `next.config.ts` 使用 `output: "export"`
 - 开发与生产构建固定使用 Webpack，确保 TypeScript Monte Carlo Worker 被输出为浏览器可执行 JavaScript
-- Next 构建完成后会为每份 HTML 注入基于 hash 的脚本与 style 元素 CSP，再扫描 `out/` 并生成
-  `out/precache-manifest.js`；不要在构建后手工修改 HTML 或 manifest，否则 hash 会失效
+- Next 构建完成后会按部署路径生成 headers、为每份 HTML 注入基于 hash 的脚本与 style 元素 CSP，再扫描
+  `out/` 并生成 `out/precache-manifest.js`；不要在构建后手工修改 HTML 或 metadata，否则已校验的产物契约会失效
 - `npm run static:check` 校验现有导出；`npm run test:static` 重新构建并校验 `/calc` base-path 导出
 - 生产环境不使用 `next start`
 - 生产环境不假设服务端 API routes 或 Node runtime
@@ -202,13 +202,16 @@ npm run preview
 - `NEXT_PUBLIC_BASE_PATH` 已被 metadata、导航与 service worker 注册逻辑支持
 - 使用 base path 部署时，应以 `NEXT_PUBLIC_BASE_PATH=/calc` 构建，并让静态宿主将 `/calc/` 映射到同一份导出的 `out/` 目录；导出文件仍位于 `out/` 根目录，不要再额外嵌套一层 `calc/` 目录
 - base-path 宿主执行 clean URL 重定向时必须保留 `/calc`；如果把 `/calc/options/index.html` 等 precache 请求重定向到根路径，service worker 将无法安装
-- `public/_headers` 为支持 Netlify/Cloudflare Pages 格式的宿主提供安全头与缓存策略
-- 不读取 `_headers` 的静态宿主必须在自己的配置中映射同等的 CSP、Referrer、nosniff、frame、permissions 与缓存策略
+- `public/_headers` 是根路径部署模板；每次构建都会把全部规则按 `NEXT_PUBLIC_BASE_PATH` 自动 scope 后写入
+  `out/_headers`，供支持 Netlify/Cloudflare Pages 格式的宿主使用
+- 不读取 `_headers` 的静态宿主必须在自己的配置中映射最终 `out/_headers` 的 CSP、Referrer、nosniff、frame、
+  permissions 与缓存策略
 - 每份 HTML 还包含构建生成的 `script-src` 与 `style-src-elem` meta 指令及精确 SHA-256 hash；生成器会从
   当前安装的 Sonner 包中提取确定性的启动样式，且该策略会与宿主 header 叠加
 - 只有动态 React 图表和组件所需的 `style-src-attr` 保留内联兼容；未列入 hash 的 style 元素和脚本仍会
   被页面策略阻止
-- 使用 base path 部署时，需要给宿主配置中的 `/_next/static/*`、`/sw.js`、`/precache-manifest.js`、`/manifest.json` 规则增加对应前缀
+- 使用 base path 部署时直接部署生成的 `out/_headers`；全局、HTML、静态资源、worker、precache 与 manifest
+  selector 已带前缀，静态 checker 会拒绝未 scope 的规则
 - HTML、`sw.js` 与 precache manifest 必须重新验证；带哈希的 `/_next/static/*` 资源应按 immutable 缓存一年
 
 ## 项目结构

@@ -306,9 +306,10 @@ browser-level checks beyond the existing suite.
 - Every exported document's internal `href` and `src` must resolve to an emitted file or route. A dedicated CI build
   with `NEXT_PUBLIC_BASE_PATH=/calc` additionally ensures absolute references remain under `/calc` while the PWA
   manifest keeps its install identity, start URL, and scope relative.
-- The emitted `_headers` deployment template is checked for the required CSP, referrer, MIME sniffing, framing, and
-  permissions protections plus revalidation of HTML/service-worker metadata and immutable caching of hashed assets.
-  Host-specific base-path prefixing remains an explicit deployment responsibility.
+- `public/_headers` remains the canonical root template, while the build rewrites every path selector into the final
+  `out/_headers` deployment scope. The checker requires the scoped global CSP/referrer/MIME/framing/permissions block,
+  HTML/service-worker metadata revalidation, and immutable hashed assets; a `/calc` artifact containing any known
+  unscoped root rule now fails automation.
 
 ### Documentation Follow-up: Model Boundaries
 
@@ -403,10 +404,10 @@ No unresolved P0 findings remain.
 ## Residual Constraints
 
 - The PDF libraries are intentionally lazy-loaded to keep the initial application payload smaller. A first-ever PDF export cannot start after the browser is already offline; once loaded, the runtime cache can retain those chunks.
-- `public/_headers` is a deployment template, not a cross-host standard. Hosts that do not support that file must
-  reproduce the response-header policies in their own configuration, including base-path-prefixed cache rules. The
-  generated HTML independently restricts inline scripts and style elements by hash, while dynamic style attributes
-  remain a documented compatibility boundary for component and chart rendering.
+- `out/_headers` uses a common deployment-file convention, not a cross-host standard. Hosts that do not support that
+  file must reproduce its generated, base-path-scoped response policies in their own configuration. The generated HTML
+  independently restricts inline scripts and style elements by hash, while dynamic style attributes remain a
+  documented compatibility boundary for component and chart rendering.
 - Financial formulas are unit- and property-tested but are not independently certified for regulated or fiduciary use.
   Production use still requires domain-expert validation against the institution's conventions, rounding rules, and
   approved reference systems.

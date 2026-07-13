@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -25,10 +25,17 @@ interface StaticCspGenerator {
   injectStaticContentPolicy(html: string, filename?: string): string;
 }
 
+interface StaticHeadersGenerator {
+  generateStaticHeaders(options: { rootDirectory: string; basePath?: string }): Promise<string>;
+  scopeStaticHeaders(source: string, basePath?: string): string;
+}
+
 const checkerUrl = pathToFileURL(path.resolve(process.cwd(), "scripts", "check-static-export.mjs"));
 const checker = (await import(/* @vite-ignore */ checkerUrl.href)) as StaticExportChecker;
 const cspGeneratorUrl = pathToFileURL(path.resolve(process.cwd(), "scripts", "generate-static-csp.mjs"));
 const cspGenerator = (await import(/* @vite-ignore */ cspGeneratorUrl.href)) as StaticCspGenerator;
+const headersGeneratorUrl = pathToFileURL(path.resolve(process.cwd(), "scripts", "generate-static-headers.mjs"));
+const headersGenerator = (await import(/* @vite-ignore */ headersGeneratorUrl.href)) as StaticHeadersGenerator;
 const temporaryDirectories: string[] = [];
 
 const headers = `/*
@@ -64,7 +71,7 @@ async function createStaticExport({ basePath = "" } = {}) {
   await writeFile(path.join(rootDirectory, ".next", "BUILD_ID"), "build-123\n");
   await writeFile(path.join(rootDirectory, "out", "_next", "static", "app.js"), "console.log('app')");
   await writeFile(path.join(rootDirectory, "out", "sw.js"), "self.addEventListener('fetch', () => {})");
-  await writeFile(path.join(rootDirectory, "out", "_headers"), headers);
+  await writeFile(path.join(rootDirectory, "out", "_headers"), headersGenerator.scopeStaticHeaders(headers, basePath));
   await writeFile(
     path.join(rootDirectory, "out", "manifest.json"),
     JSON.stringify({ id: "./", start_url: ".", scope: "." })
@@ -120,6 +127,38 @@ describe("static export checker", () => {
     expect(parsed.get("/_next/static/*")?.get("cache-control")).toContain("immutable");
   });
 
+  it("scopes every deployment header selector without changing header values", () => {
+    expect(headersGenerator.scopeStaticHeaders(headers)).toBe(headers);
+    const scoped = headersGenerator.scopeStaticHeaders(headers, "/calc");
+    const parsed = checker.parseHeaders(scoped);
+
+    expect([...parsed.keys()]).toEqual([
+      "/calc/*",
+      "/calc/_next/static/*",
+      "/calc/*.html",
+      "/calc/sw.js",
+      "/calc/precache-manifest.js",
+      "/calc/manifest.json",
+    ]);
+    expect(parsed.get("/calc/*")?.get("x-content-type-options")).toBe("nosniff");
+    expect(parsed.get("/calc/_next/static/*")?.get("cache-control")).toContain("immutable");
+  });
+
+  it("regenerates headers from the root template without double-prefixing", async () => {
+    const rootDirectory = await mkdtemp(path.join(os.tmpdir(), "financial-calc-headers-"));
+    temporaryDirectories.push(rootDirectory);
+    await mkdir(path.join(rootDirectory, "public"), { recursive: true });
+    await mkdir(path.join(rootDirectory, "out"), { recursive: true });
+    await writeFile(path.join(rootDirectory, "public", "_headers"), headers);
+
+    const first = await headersGenerator.generateStaticHeaders({ rootDirectory, basePath: "/calc" });
+    const second = await headersGenerator.generateStaticHeaders({ rootDirectory, basePath: "/calc" });
+
+    expect(second).toBe(first);
+    expect(await readFile(path.join(rootDirectory, "out", "_headers"), "utf8")).toBe(first);
+    expect(first).not.toContain("/calc/calc/");
+  });
+
   it("validates root and base-path exports end to end", async () => {
     for (const basePath of ["", "/calc"]) {
       const rootDirectory = await createStaticExport({ basePath });
@@ -127,6 +166,15 @@ describe("static export checker", () => {
         checker.checkStaticExport({ rootDirectory, basePath, logger: { log: vi.fn() } })
       ).resolves.toMatchObject({ assets: 3, routes: 2, htmlFiles: 2, references: 4 });
     }
+  });
+
+  it("rejects root-scoped headers for a base-path export", async () => {
+    const rootDirectory = await createStaticExport({ basePath: "/calc" });
+    await writeFile(path.join(rootDirectory, "out", "_headers"), headers);
+
+    await expect(
+      checker.checkStaticExport({ rootDirectory, basePath: "/calc", logger: { log: vi.fn() } })
+    ).rejects.toThrow(/\/calc\/\*/);
   });
 
   it("reports stale manifests and references that escape the configured base path", async () => {

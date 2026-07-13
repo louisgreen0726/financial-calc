@@ -42,7 +42,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [ ] Make local Playwright browser selection deterministic when the pinned browser binary is unavailable.
 - [ ] Extend preference recovery coverage to failed cleanup of invalid persisted values.
 - [x] Consume pending history restores exactly once even when sessionStorage cleanup is blocked.
-- [ ] Generate and verify base-path-aware static deployment `_headers` rules.
+- [x] Generate and verify base-path-aware static deployment `_headers` rules.
 - [ ] Validate PWA manifest icons, shortcuts, and base-path asset targets in the static export gate.
 - [x] Prevent rapid consecutive `useUrlState` field updates from overwriting earlier edits.
 - [x] Split storage feedback between applied session preferences and operations that were not completed.
@@ -1588,3 +1588,45 @@ Verification:
 - `npm run verify`: passed with 54 Vitest files and 440 tests, 15 routes, 197 precache assets, 96 script hashes, 35
   static style hashes, 2 runtime style hashes per document, 722 internal references, and every route bundle budget.
 - Changed source, browser tests, and documentation passed Prettier; `git diff --check` passed.
+
+### Improvement 37: Generated base-path deployment headers
+
+Status: completed.
+
+Changes:
+
+- Confirmed a production artifact gap: `/calc` builds copied the root `public/_headers` unchanged, and the static
+  checker also looked only for root selectors. CI therefore passed while hashed assets, worker metadata, and manifest
+  requests under `/calc` missed their intended cache policies; the broad `/*` security block could also affect sibling
+  applications on the same host.
+- Added one shared base-path normalizer plus selector helper used by both generation and validation, eliminating drift
+  between accepted build values and expected deployment paths.
+- Added a deterministic post-build headers generator. `public/_headers` remains the canonical root template; each build
+  reads that template and writes `out/_headers`, scoping every non-indented selector to `NEXT_PUBLIC_BASE_PATH`. Repeated
+  runs cannot produce `/calc/calc/...` because generated output is never used as input.
+- Made the static checker require the scoped global security block and all five cache-policy blocks. Base-path exports
+  also reject known unscoped root selectors, so a mixture of `/calc/*` and overbroad `/*` cannot pass.
+- Updated the end-to-end static fixture to generate topology-correct headers. Added contracts for byte-identical root
+  output, six `/calc` selectors, preserved header values, repeat generation, and the original root template failing a
+  `/calc` check.
+- Replaced documentation that required deployment operators to prefix rules manually. Hosts supporting `_headers` now
+  deploy final `out/_headers`; other hosts reproduce policies from that generated, scoped artifact.
+
+Files and areas:
+
+- `scripts/static-export-paths.mjs` and `scripts/generate-static-headers.mjs`
+- `scripts/check-static-export.mjs`, its focused test, and the package build chain
+- English/Chinese README, engineering review, and improvement log
+
+Verification:
+
+- Strict TypeScript passed; the focused static-export checker suite passed 8/8 tests.
+- A root `npm run build` plus `npm run static:check` passed and emitted exactly `/*`, `/_next/static/*`, `/*.html`,
+  `/sw.js`, `/precache-manifest.js`, and `/manifest.json`.
+- `npm run test:static` rebuilt `/calc`, passed with 706 internal references, and emitted the corresponding six
+  `/calc/...` selectors with no known root selector.
+- `npm run verify`: passed with 54 Vitest files and 443 tests, 15 routes, 197 precache assets, 96 script hashes, 35
+  static style hashes, 2 runtime style hashes per document, 722 internal references, and every route bundle budget.
+- The production `/calc` PWA Playwright suite passed 2/2 in 1.8 minutes: CSP hashes, installation, uncached offline
+  navigation, 404 fallback, user-controlled worker activation, and reload all remained intact.
+- Changed scripts, tests, metadata, and documentation passed Prettier; `git diff --check` passed.
