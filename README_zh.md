@@ -66,6 +66,7 @@ Financial Calc 是一个基于 Next.js 16、React 19、TypeScript、Tailwind CSS
 - “打印 / 另存为 PDF”会隔离当前报告，并使用浏览器原生分页生成清晰、可搜索的输出
 - Clipboard API 被拒绝时会回退到浏览器旧式复制路径；非用户取消的原生分享与导出失败会显示可操作提示，
   且所有操作都可继续重试
+- 侧边栏偏好写入被阻止时，请求的布局仍会在当前会话生效并提示持久化失败；后续成功写入或跨标签更新会接管状态
 - Recharts tooltip formatter 与自动计算 hook 已适配当前更严格的依赖类型与 lint 规则
 
 ## 技术栈

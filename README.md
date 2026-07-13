@@ -66,6 +66,8 @@ Recent hardening work is reflected in the current source:
 - Print / Save as PDF isolates the active report and uses native browser pagination for sharp, searchable output
 - denied Clipboard API writes fall back to the legacy browser copy path; non-cancelled native-share and export
   failures show actionable feedback while leaving every action available for retry
+- a blocked sidebar-preference write keeps the requested layout active for the session, reports the persistence
+  failure, and yields to a later successful write or cross-tab update
 - Recharts tooltip formatters and auto-calculation hooks are compatible with the current stricter dependency/lint versions
 
 ## Tech Stack

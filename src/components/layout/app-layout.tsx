@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
@@ -12,6 +12,7 @@ import { SIDEBAR_COLLAPSED_KEY, SIDEBAR_PREFERENCE_CHANGED_EVENT } from "@/lib/c
 import { safeGetJSON, safeSetJSON } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { toast } from "sonner";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -43,16 +44,40 @@ function getServerSidebarPreference() {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const { t } = useLanguage();
-  const sidebarCollapsed = useSyncExternalStore(
+  const persistedSidebarCollapsed = useSyncExternalStore(
     subscribeToSidebarPreference,
     getSidebarPreference,
     getServerSidebarPreference
   );
-  const setSidebarCollapsed = useCallback((collapsed: boolean) => {
-    if (safeSetJSON(SIDEBAR_COLLAPSED_KEY, collapsed)) {
-      window.dispatchEvent(new Event(SIDEBAR_PREFERENCE_CHANGED_EVENT));
-    }
+  const [sessionSidebarCollapsed, setSessionSidebarCollapsed] = useState<boolean | null>(null);
+  const sidebarCollapsed = sessionSidebarCollapsed ?? persistedSidebarCollapsed;
+
+  useEffect(() => {
+    const clearSessionPreference = () => setSessionSidebarCollapsed(null);
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === SIDEBAR_COLLAPSED_KEY) clearSessionPreference();
+    };
+
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener(SIDEBAR_PREFERENCE_CHANGED_EVENT, clearSessionPreference);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener(SIDEBAR_PREFERENCE_CHANGED_EVENT, clearSessionPreference);
+    };
   }, []);
+
+  const setSidebarCollapsed = useCallback(
+    (collapsed: boolean) => {
+      if (!safeSetJSON(SIDEBAR_COLLAPSED_KEY, collapsed)) {
+        setSessionSidebarCollapsed(collapsed);
+        toast.error(t("common.storageError"));
+        return;
+      }
+
+      window.dispatchEvent(new Event(SIDEBAR_PREFERENCE_CHANGED_EVENT));
+    },
+    [t]
+  );
 
   return (
     <div className="app-shell relative flex min-h-dvh overflow-x-clip selection:bg-primary/20">

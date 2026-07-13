@@ -5,6 +5,7 @@ const keys = {
   language: "financial-calc-language",
   theme: "theme",
 } as const;
+const sidebarKey = "financial-calc-sidebar-collapsed";
 
 function pressedButton(page: Page, text: string | RegExp) {
   return page.locator('button[aria-pressed="true"]').filter({ hasText: text });
@@ -72,16 +73,19 @@ test("reports blocked preference writes while keeping session changes active", a
   });
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/settings/");
-  await page.evaluate((storageKeys) => {
-    const originalSetItem = Storage.prototype.setItem;
-    const blockedKeys = new Set<string>(Object.values(storageKeys));
-    Storage.prototype.setItem = function setItem(key: string, value: string) {
-      if (blockedKeys.has(key)) {
-        throw new DOMException("Storage blocked", "SecurityError");
-      }
-      return originalSetItem.call(this, key, value);
-    };
-  }, keys);
+  await page.evaluate(
+    ({ sidebarStorageKey, storageKeys }) => {
+      const originalSetItem = Storage.prototype.setItem;
+      const blockedKeys = new Set<string>([...Object.values(storageKeys), sidebarStorageKey]);
+      Storage.prototype.setItem = function setItem(key: string, value: string) {
+        if (blockedKeys.has(key)) {
+          throw new DOMException("Storage blocked", "SecurityError");
+        }
+        return originalSetItem.call(this, key, value);
+      };
+    },
+    { sidebarStorageKey: sidebarKey, storageKeys: keys }
+  );
 
   const englishError = "The change is active for this session but could not be saved in browser storage.";
   const chineseError = "本次会话已应用该更改，但浏览器存储写入失败，刷新后可能丢失。";
@@ -103,10 +107,16 @@ test("reports blocked preference writes while keeping session changes active", a
 
   await header.getByRole("button", { name: "切换为英文" }).click();
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await page.getByRole("button", { name: "Collapse sidebar" }).click();
+  await expect(page.getByRole("button", { name: "Expand sidebar" })).toBeVisible();
+  await expect(page.locator('aside[data-collapsed="true"]')).toBeAttached();
   await expect
     .poll(() =>
-      page.evaluate((storageKeys) => storageKeys.map((key) => localStorage.getItem(key)), Object.values(keys))
+      page.evaluate(
+        (storageKeys) => storageKeys.map((key) => localStorage.getItem(key)),
+        [...Object.values(keys), sidebarKey]
+      )
     )
-    .toEqual([null, null, null]);
+    .toEqual([null, null, null, null]);
   expect(errors).toEqual([]);
 });

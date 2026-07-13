@@ -3,6 +3,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AppLayout } from "@/components/layout/app-layout";
 
+const mocks = vi.hoisted(() => ({
+  toast: { error: vi.fn() },
+}));
+
 vi.mock("@/lib/i18n", () => ({
   useLanguage: () => ({ t: (key: string) => key }),
 }));
@@ -23,9 +27,12 @@ vi.mock("@/components/mobile-nav", () => ({
   MobileNav: () => <div data-testid="mobile-nav">Mobile navigation</div>,
 }));
 
+vi.mock("sonner", () => ({ toast: mocks.toast }));
+
 describe("AppLayout print contract", () => {
   beforeEach(() => {
     window.localStorage.clear();
+    vi.clearAllMocks();
   });
 
   it("marks fixed application chrome for exclusion and isolates printable content", () => {
@@ -86,5 +93,32 @@ describe("AppLayout print contract", () => {
 
     expect(screen.getByTestId("sidebar")).toHaveAttribute("data-collapsed", "true");
     expect(screen.getByRole("main").parentElement).toHaveClass("lg:pl-[4.5rem]");
+  });
+
+  it("keeps a failed sidebar change active for the session and allows a persistence retry", async () => {
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new DOMException("Storage blocked", "SecurityError");
+    });
+    render(
+      <AppLayout>
+        <article>Printable report</article>
+      </AppLayout>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "common.collapseSidebar" }));
+
+    expect(screen.getByTestId("sidebar")).toHaveAttribute("data-collapsed", "true");
+    expect(screen.getByRole("main").parentElement).toHaveClass("lg:pl-[4.5rem]");
+    expect(window.localStorage.getItem("financial-calc-sidebar-collapsed")).toBeNull();
+    expect(mocks.toast.error).toHaveBeenCalledWith("common.storageError");
+
+    setItem.mockRestore();
+    fireEvent.click(screen.getByRole("button", { name: "common.expandSidebar" }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("sidebar")).toHaveAttribute("data-collapsed", "false");
+      expect(window.localStorage.getItem("financial-calc-sidebar-collapsed")).toBe("false");
+    });
+    expect(mocks.toast.error).toHaveBeenCalledTimes(1);
   });
 });

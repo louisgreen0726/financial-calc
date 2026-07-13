@@ -37,10 +37,13 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Add browser coverage for denied clipboard/share permissions and export failure recovery.
 - [x] Audit service-worker cache growth and storage-quota failure behavior across upgrades.
 - [x] Surface theme/language persistence write failures consistently with currency settings.
-- [ ] Audit remaining preference setters for silent write failures, starting with sidebar collapse state.
+- [x] Audit remaining preference setters for silent write failures, starting with sidebar collapse state.
 - [ ] Investigate and eliminate development-only missing translation warnings for Portfolio seed controls.
 - [ ] Make local Playwright browser selection deterministic when the pinned browser binary is unavailable.
 - [ ] Extend preference recovery coverage to failed cleanup of invalid persisted values.
+- [ ] Consume pending history restores exactly once even when sessionStorage cleanup is blocked.
+- [ ] Generate and verify base-path-aware static deployment `_headers` rules.
+- [ ] Validate PWA manifest icons, shortcuts, and base-path asset targets in the static export gate.
 
 ## 2026-07-13
 
@@ -1382,3 +1385,46 @@ Verification:
 - Current work: Improvement 31 is fully verified and ready to commit; remaining silent preference setters are next.
 - Queue status: 4 active items remain covering sidebar persistence, Portfolio translation warnings, deterministic local
   Playwright browser selection, and invalid-preference cleanup failures.
+
+### Improvement 32: Retryable sidebar preference fallback
+
+Status: completed.
+
+Changes:
+
+- Audited the remaining desktop sidebar preference setter. A blocked localStorage write previously left the collapse
+  button visually unresponsive and provided no explanation, unlike the newly hardened theme/language controls.
+- Added an explicit session-only sidebar override. A denied write now applies the requested collapsed or expanded
+  layout immediately, updates content spacing and accessible button state, and shows the existing localized storage
+  failure message.
+- Kept persisted state authoritative whenever it is available. A later successful retry dispatches the existing
+  same-tab preference event and clears the override; cross-tab storage events do the same, preventing stale transient
+  state from masking a valid persisted update.
+- Added a component contract for failed collapse, session behavior, user-visible feedback, and a successful expand
+  retry. Extended the browser storage-denial matrix to include the sidebar key and production DOM state.
+- Updated bilingual reliability documentation and engineering review evidence.
+
+Files and areas:
+
+- `src/components/layout/app-layout.tsx` and its focused test
+- `e2e/preferences-storage.spec.ts`
+- English/Chinese README, engineering review, and improvement log
+
+Verification:
+
+- Strict TypeScript passed; the focused AppLayout suite passed 4/4 tests.
+- The preference Playwright file passed 2/2 workflows in 11.9 seconds using installed system Chrome and one worker.
+  The new path changed the real desktop sidebar while all four blocked preference keys remained absent, with no
+  console or page errors.
+- `npm run verify`: passed with 54 Vitest files and 432 tests, 15 routes, 197 precache assets, 96 script hashes, 35
+  static style hashes, 2 runtime style hashes per document, 722 internal references, and every route bundle budget.
+- Changed source and documentation passed Prettier; `git diff --check` passed.
+
+### Progress checkpoint: 12:12 +08:00
+
+- Resumed-goal elapsed time: 1 hour; cumulative logged active work: approximately 8 hours 37 minutes.
+- Completed improvement batches: 32; all user-facing theme, language, currency, and desktop sidebar preference writes
+  now either persist or provide honest, retryable failure behavior.
+- Current work: Improvement 32 is fully verified and ready to commit; three parallel audits are ranking the next item.
+- Queue status: 6 active items cover pending-history replay, base-path deployment headers, manifest assets, Portfolio
+  translation warnings, deterministic local Playwright browser selection, and invalid-preference cleanup failures.
