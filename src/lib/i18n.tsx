@@ -620,6 +620,8 @@ type Translations = {
     notificationsDesc: string;
     dataManagement: string;
     dataManagementDesc: string;
+    historyData: string;
+    workspaceData: string;
     exportHistoryJson: string;
     importHistoryJson: string;
     importHistoryFile: string;
@@ -635,6 +637,22 @@ type Translations = {
     importHistoryInvalid: string;
     importHistoryTooLarge: string;
     importHistoryUnsupported: string;
+    exportWorkspaceJson: string;
+    importWorkspaceJson: string;
+    importWorkspaceFile: string;
+    importWorkspaceConfirmTitle: string;
+    importWorkspaceConfirm: string;
+    workspaceFavoritesAdded: string;
+    workspaceFavoritesTotal: string;
+    workspacePreferencesReplace: string;
+    importWorkspaceSuccess: string;
+    importWorkspacePartial: string;
+    importWorkspaceInvalid: string;
+    importWorkspaceTooLarge: string;
+    importWorkspaceTooManyItems: string;
+    importWorkspaceUnsupported: string;
+    exportWorkspaceError: string;
+    sidebarPreference: string;
     clearAllHistory: string;
     about: string;
     aboutDesc: string;
@@ -1322,7 +1340,9 @@ const en: Translations = {
     notifications: "Notifications",
     notificationsDesc: "Show toast notifications for actions",
     dataManagement: "Data Management",
-    dataManagementDesc: "Manage your calculation history and data",
+    dataManagementDesc: "Manage calculation history and workspace backups",
+    historyData: "Calculation history",
+    workspaceData: "Workspace backup",
     exportHistoryJson: "Export History (JSON)",
     importHistoryJson: "Import History (JSON)",
     importHistoryFile: "Choose a calculation history JSON file",
@@ -1338,6 +1358,22 @@ const en: Translations = {
     importHistoryInvalid: "The selected file is not a valid calculation history export",
     importHistoryTooLarge: "The selected history file exceeds the import limit",
     importHistoryUnsupported: "This history uses an unsupported schema version",
+    exportWorkspaceJson: "Export Workspace (JSON)",
+    importWorkspaceJson: "Restore Workspace (JSON)",
+    importWorkspaceFile: "Choose a workspace backup JSON file",
+    importWorkspaceConfirmTitle: "Review workspace restore",
+    importWorkspaceConfirm: "Restore workspace",
+    workspaceFavoritesAdded: "favorites added",
+    workspaceFavoritesTotal: "favorites after restore",
+    workspacePreferencesReplace: "Language, theme, currency, and sidebar preferences will replace current choices.",
+    importWorkspaceSuccess: "Workspace backup restored",
+    importWorkspacePartial: "Workspace restore was incomplete",
+    importWorkspaceInvalid: "The selected file is not a valid workspace backup",
+    importWorkspaceTooLarge: "The selected workspace backup exceeds the import limit",
+    importWorkspaceTooManyItems: "The workspace backup contains too many history or favorite records",
+    importWorkspaceUnsupported: "This workspace backup uses an unsupported schema version",
+    exportWorkspaceError: "The current workspace could not be exported",
+    sidebarPreference: "Sidebar preference",
     clearAllHistory: "Clear All History",
     about: "About",
     aboutDesc: "About FinCalc Pro",
@@ -2024,7 +2060,9 @@ const zh: Translations = {
     notifications: "通知",
     notificationsDesc: "显示操作通知提示",
     dataManagement: "数据管理",
-    dataManagementDesc: "管理您的计算历史和数据",
+    dataManagementDesc: "管理计算历史和工作区备份",
+    historyData: "计算历史",
+    workspaceData: "工作区备份",
     exportHistoryJson: "导出历史记录 (JSON)",
     importHistoryJson: "导入历史记录 (JSON)",
     importHistoryFile: "选择计算历史 JSON 文件",
@@ -2040,6 +2078,22 @@ const zh: Translations = {
     importHistoryInvalid: "所选文件不是有效的计算历史导出",
     importHistoryTooLarge: "所选历史文件超过导入限制",
     importHistoryUnsupported: "此历史记录使用了不受支持的 schema 版本",
+    exportWorkspaceJson: "导出工作区 (JSON)",
+    importWorkspaceJson: "恢复工作区 (JSON)",
+    importWorkspaceFile: "选择工作区备份 JSON 文件",
+    importWorkspaceConfirmTitle: "确认恢复工作区",
+    importWorkspaceConfirm: "恢复工作区",
+    workspaceFavoritesAdded: "项收藏新增",
+    workspaceFavoritesTotal: "项恢复后收藏总数",
+    workspacePreferencesReplace: "语言、主题、币种和侧边栏偏好将替换当前选择。",
+    importWorkspaceSuccess: "工作区备份已恢复",
+    importWorkspacePartial: "工作区恢复未完整完成",
+    importWorkspaceInvalid: "所选文件不是有效的工作区备份",
+    importWorkspaceTooLarge: "所选工作区备份超过导入限制",
+    importWorkspaceTooManyItems: "工作区备份包含过多历史记录或收藏记录",
+    importWorkspaceUnsupported: "此工作区备份使用了不受支持的 schema 版本",
+    exportWorkspaceError: "当前工作区无法导出",
+    sidebarPreference: "侧边栏偏好",
     clearAllHistory: "清除所有历史",
     about: "关于",
     aboutDesc: "关于 FinCalc Pro",

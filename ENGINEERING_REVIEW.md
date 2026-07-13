@@ -192,8 +192,8 @@ browser-level checks beyond the existing suite.
   re-reads current history, recomputes the merge, and only then writes a versioned envelope. Unknown future versions
   are preserved rather than overwritten.
 - Browser coverage verifies the file API, preview, persistence, repeat deduplication, malformed-file rejection, and
-  accessible dialog state. This is a local backup/merge workflow; it intentionally does not import favorites or other
-  settings and does not provide cloud synchronization.
+  accessible dialog state. This History-only workflow remains available for portable record merges and does not provide
+  cloud synchronization; full local workspace transfer is a separate, explicitly confirmed workflow.
 - Cross-page restores consume their session payload before invoking page state. If `removeItem` is unavailable, a JSON
   `null` sentinel provides an equivalent cleanup; if all cleanup writes fail, a module-session signature prevents
   callback changes and Next.js remounts from replaying the payload. A localized warning accurately notes that a full
@@ -201,6 +201,30 @@ browser-level checks beyond the existing suite.
 - Page-category filters resolve against the current grouped history before rendering. If deletion, expiry, or cross-tab
   synchronization removes the active category, the same render shows All selected and the remaining records without a
   cascading state-normalization render. Empty Favorites remains an intentional selected view rather than falling back.
+
+### Persistence Follow-up: Complete Workspace Backup
+
+- Settings now exports a separate `financial-calc-workspace` v1 envelope containing normalized current History,
+  favorites that still reference those records, and the effective language, theme, currency, and sidebar-collapse
+  preferences. Generation counters, pending session restores, and the unused settings/drafts keys are intentionally not
+  transferred.
+- The pure parser enforces the outer kind/version, a 2.1 MB byte ceiling, the existing 5,000-history-candidate limit,
+  a matching favorite-count limit, bounded favorite IDs, exact preference keys, supported enums, ISO export time, and
+  a real boolean sidebar value. History candidates still pass through the established expiry, page, input, finite-value,
+  deduplication, and per-page repair contracts. Workspace JSON is downloaded compactly so its actual file size matches
+  that ceiling; ordinary calculation/report JSON keeps the existing readable indentation.
+- Selecting a file computes a no-write preview. Confirmation re-reads current History under its storage lock and merges
+  records; favorites are then unioned under their own lock and filtered against a fresh authoritative History snapshot.
+  Language, theme, currency, and sidebar choices replace current preferences only after this confirmation, with the
+  existing same-page/cross-tab events applied for each successful write.
+- Browser storage cannot atomically commit six independent localStorage keys. Restore therefore avoids a rollback that
+  could erase concurrent edits, retains every successful section, and reports the exact failed sections instead of
+  claiming all-or-nothing success. Unknown History schemas are preserved, and a schema/record change between preview or
+  the two key locks cannot write orphaned favorites.
+- Pure and Settings tests cover malformed/version/size/count boundaries, normalization, History merge, favorite union,
+  first-render preference export, confirmation, provider/storage failures, and cross-lock replacement. The Playwright
+  workflow downloads the real JSON, changes all persisted state, uploads the same file, and checks the restored UI,
+  storage contract, excluded keys, console, and Axe baseline.
 
 ### Restore Follow-up: URL Cardinality and Format Boundaries
 

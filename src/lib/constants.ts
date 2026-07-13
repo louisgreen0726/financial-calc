@@ -57,6 +57,7 @@ export const PENDING_RESTORE_KEY = `${STORAGE_PREFIX}pending-restore`;
 export const LANGUAGE_KEY = `${STORAGE_PREFIX}language`;
 export const CURRENCY_KEY = `${STORAGE_PREFIX}currency`;
 export const SIDEBAR_COLLAPSED_KEY = `${STORAGE_PREFIX}sidebar-collapsed`;
+export const THEME_KEY = "theme";
 export const SIDEBAR_PREFERENCE_CHANGED_EVENT = "financial-calc-sidebar-preference-changed";
 export const HISTORY_CHANGED_EVENT = "financial-calc-history-changed";
 export const FAVORITES_CHANGED_EVENT = "financial-calc-favorites-changed";

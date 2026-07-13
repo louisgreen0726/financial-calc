@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { THEME_KEY } from "@/lib/constants";
 import { isLocalStorageEventForKey, safeGetItem, safeRemoveOrReplaceItem, safeSetItem } from "@/lib/storage";
 
 type Theme = "light" | "dark" | "system";
@@ -20,7 +21,6 @@ interface ThemeProviderProps {
   enableSystem?: boolean;
 }
 
-const THEME_STORAGE_KEY = "theme";
 const THEME_CLASS_NAMES: ResolvedTheme[] = ["light", "dark"];
 const MEDIA_QUERY = "(prefers-color-scheme: dark)";
 
@@ -31,9 +31,9 @@ function normalizeTheme(value: string | null, fallback: Theme): Theme {
 }
 
 function readStoredTheme(fallback: Theme) {
-  const stored = safeGetItem(THEME_STORAGE_KEY);
+  const stored = safeGetItem(THEME_KEY);
   const normalized = normalizeTheme(stored, fallback);
-  if (stored !== null && stored !== normalized) safeRemoveOrReplaceItem(THEME_STORAGE_KEY, normalized);
+  if (stored !== null && stored !== normalized) safeRemoveOrReplaceItem(THEME_KEY, normalized);
   return normalized;
 }
 
@@ -60,7 +60,7 @@ export function ThemeProvider({ children, defaultTheme = "system", enableSystem 
       setThemeState(readStoredTheme(defaultTheme));
     };
     const handleStorage = (event: StorageEvent) => {
-      if (isLocalStorageEventForKey(event, THEME_STORAGE_KEY)) {
+      if (isLocalStorageEventForKey(event, THEME_KEY)) {
         setThemeState(readStoredTheme(defaultTheme));
       }
     };
@@ -93,7 +93,7 @@ export function ThemeProvider({ children, defaultTheme = "system", enableSystem 
 
   const setTheme = useCallback((nextTheme: Theme) => {
     setThemeState(nextTheme);
-    return safeSetItem(THEME_STORAGE_KEY, nextTheme);
+    return safeSetItem(THEME_KEY, nextTheme);
   }, []);
 
   const value = useMemo(

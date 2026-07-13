@@ -62,7 +62,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Design and validate a compatible-history scenario comparison workflow before implementation.
 - [x] Add a strict two-record comparison UI for compatible non-currency History results.
 - [x] Handle cross-tab `localStorage.clear()` without reviving queued history or favorite writes.
-- [ ] Add a versioned Workspace Backup workflow for history, favorites, and user preferences.
+- [x] Add a versioned Workspace Backup workflow for history, favorites, and user preferences.
 - [x] Isolate concurrent local Playwright runners by both port and Next.js build directory.
 - [x] Preserve RATE scale invariance for extreme but finite cash flows.
 - [ ] Audit calculator charts and compact mobile result layouts for the next high-impact UI refinement.
@@ -3452,3 +3452,54 @@ Verification:
 
 Queue status: Workspace Backup, Calculator Finder, and final full integration verification remain in the frozen
 completion plan; no new improvement items will be added before stopping.
+
+### Improvement 88: Versioned full Workspace Backup
+
+Status: completed.
+
+Changes:
+
+- Added a separate `financial-calc-workspace` v1 envelope for normalized calculation History, favorites that still
+  reference those records, and the persisted language, theme, currency, and sidebar-collapse preferences. History-only
+  import/export remains available for users who only want portable calculation records.
+- Enforced exact outer and nested keys, kind/version, ISO export time, supported preference enums, a real boolean sidebar
+  value, bounded favorite IDs/count, the existing 5,000-candidate History ceiling, and a roughly 2.1 MB UTF-8 limit.
+  Imported records continue through the established expiry, page, input, finite-result, deduplication, and per-page caps.
+- Made Workspace JSON compact while leaving every other JSON export formatted. A near-limit 450-record/45,000-input
+  regression proves the compact file remains importable even when pretty-print whitespace would exceed the byte limit,
+  and a Blob-level test verifies the downloaded payload uses the compact contract.
+- Added a no-write preview and explicit confirmation. Confirmation re-reads and merges History under its lock, unions
+  favorites under their own lock against a fresh authoritative History snapshot, then replaces the four preferences.
+  Concurrent schema changes are preserved, orphan favorites cannot be introduced, and successful sections remain when
+  another browser/storage section fails; the toast names every incomplete section instead of claiming atomic success.
+- Added bilingual, labelled History/Workspace action groups and confirmation copy in Settings, shared the theme storage
+  key with the provider, and documented both the user workflow and architectural/non-atomic restore contract.
+
+Files and areas:
+
+- `src/lib/workspace-backup.ts`, `src/lib/workspace-backup.test.ts`
+- `src/app/settings/page.tsx`, `src/app/settings/page.test.tsx`, `e2e/workspace-backup.spec.ts`
+- `src/hooks/use-export.ts`, `src/hooks/use-export.test.tsx`
+- `src/components/theme-provider.tsx`, `src/lib/constants.ts`, `src/lib/i18n.tsx`
+- `README.md`, `ENGINEERING_REVIEW.md`
+
+Verification:
+
+- Six focused Workspace/Settings/export/theme/i18n suites passed 33/33 tests; strict TypeScript, targeted ESLint,
+  Prettier, and `git diff --check` passed.
+- The real Playwright workflow downloaded the compact file, changed/cleared all included state, reloaded without
+  replaying its seed, uploaded and confirmed the same file, then verified History, favorites, language, theme, currency,
+  collapsed sidebar, excluded keys, and the live UI. It passed 1/1 with two Axe scans and no console/page errors.
+
+Queue status: Calculator Finder and final full integration verification are the only remaining items in the frozen
+completion plan; the queue will not be expanded.
+
+### Progress checkpoint: 20:28 +08:00
+
+- Resumed-goal elapsed time: approximately 9 hours 16 minutes; cumulative logged active work: approximately 16 hours
+  53 minutes. The user has now authorized stopping once the frozen completion plan is fully verified.
+- Completed improvement batches: 88. Since the 19:43 checkpoint, work added scale-safe RATE sign classification,
+  currency-invariant implied volatility, NPV endpoint recovery, dark-theme destructive contrast, concurrent Playwright
+  lifecycle isolation, and complete Workspace Backup.
+- Current work: finish the global Calculator Finder, then run and repair the final full quality/build/browser matrix.
+- Queue status: exactly two frozen items remain; no further discovery work will be added before stopping.

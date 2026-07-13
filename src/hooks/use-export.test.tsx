@@ -54,4 +54,29 @@ describe("useExport failure recovery", () => {
     expect(toast.success).not.toHaveBeenCalled();
     expect(logger.error).toHaveBeenCalledTimes(2);
   });
+
+  it("supports compact JSON for byte-bounded workspace backups", async () => {
+    let exportedBlob: Blob | undefined;
+    vi.spyOn(URL, "createObjectURL").mockImplementation((blob) => {
+      if (!(blob instanceof Blob)) throw new TypeError("Expected a Blob export");
+      exportedBlob = blob;
+      return "blob:workspace-backup";
+    });
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    const { result } = renderHook(() => useExport({ filename: "workspace", jsonSpace: 0 }));
+
+    act(() => result.current.exportToJSON({ history: { version: 1, items: [] } }));
+
+    expect(exportedBlob).toBeDefined();
+    const blob = exportedBlob;
+    if (!blob) throw new Error("Expected an exported Blob");
+    const content = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(reader.error);
+      reader.onload = () => resolve(String(reader.result));
+      reader.readAsText(blob);
+    });
+    expect(content).toBe('{"history":{"version":1,"items":[]}}');
+  });
 });

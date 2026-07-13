@@ -18,7 +18,11 @@ import {
   HISTORY_CHANGED_EVENT,
   HISTORY_CLEAR_GENERATION_KEY,
   HISTORY_KEY,
+  LANGUAGE_KEY,
+  SIDEBAR_COLLAPSED_KEY,
+  SIDEBAR_PREFERENCE_CHANGED_EVENT,
   SUPPORTED_CURRENCIES,
+  THEME_KEY,
   type SupportedCurrency,
 } from "@/lib/constants";
 import {
@@ -40,10 +44,25 @@ import {
   prepareCalculationHistoryImport,
   type HistoryImportSummary,
 } from "@/lib/calculation-history";
+import {
+  createWorkspaceBackup,
+  MAX_WORKSPACE_BACKUP_BYTES,
+  normalizeWorkspaceFavoriteIds,
+  parseWorkspaceBackup,
+  prepareWorkspaceBackupRestore,
+  type ParsedWorkspaceBackup,
+  type WorkspaceBackupError,
+  type WorkspaceRestoreSummary,
+} from "@/lib/workspace-backup";
 
 interface PendingHistoryImport {
   source: unknown;
   summary: HistoryImportSummary;
+}
+
+interface PendingWorkspaceImport {
+  parsed: ParsedWorkspaceBackup;
+  summary: WorkspaceRestoreSummary;
 }
 
 function isSupportedCurrency(value: string | null): value is SupportedCurrency {
@@ -53,12 +72,16 @@ function isSupportedCurrency(value: string | null): value is SupportedCurrency {
 export default function SettingsPage() {
   const { t, language, setLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
-  const { exportToJSON } = useExport({ filename: "calculation-history" });
+  const { exportToJSON: exportHistoryToJSON } = useExport({ filename: "calculation-history" });
+  const { exportToJSON: exportWorkspaceToJSON } = useExport({ filename: "financial-calc-workspace", jsonSpace: 0 });
   const [currency, setCurrency] = useState<SupportedCurrency>(DEFAULT_CURRENCY);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [pendingImport, setPendingImport] = useState<PendingHistoryImport | null>(null);
+  const [workspaceImportDialogOpen, setWorkspaceImportDialogOpen] = useState(false);
+  const [pendingWorkspaceImport, setPendingWorkspaceImport] = useState<PendingWorkspaceImport | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const workspaceImportInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const syncCurrency = () => {
@@ -136,13 +159,48 @@ export default function SettingsPage() {
       toast.error(t("settings.importHistoryUnsupported"));
       return;
     }
-    exportToJSON(createCalculationHistoryEnvelope(history.items));
+    exportHistoryToJSON(createCalculationHistoryEnvelope(history.items));
+  };
+
+  const handleExportWorkspace = () => {
+    const history = parseStoredCalculationHistory(safeGetJSON<unknown>(HISTORY_KEY, []));
+    if (history.unsupportedVersion) {
+      toast.error(t("settings.importWorkspaceUnsupported"));
+      return;
+    }
+
+    try {
+      const sidebarPreference = safeGetJSON<unknown>(SIDEBAR_COLLAPSED_KEY, false);
+      const storedLanguage = safeGetItem(LANGUAGE_KEY);
+      const storedTheme = safeGetItem(THEME_KEY);
+      const storedCurrency = safeGetItem(CURRENCY_KEY);
+      const backup = createWorkspaceBackup({
+        history: history.items,
+        favorites: safeGetJSON<unknown>(FAVORITES_KEY, []),
+        preferences: {
+          language: storedLanguage === "en" || storedLanguage === "zh" ? storedLanguage : language,
+          theme: storedTheme === "light" || storedTheme === "dark" || storedTheme === "system" ? storedTheme : theme,
+          currency: isSupportedCurrency(storedCurrency) ? storedCurrency : currency,
+          sidebarCollapsed: typeof sidebarPreference === "boolean" ? sidebarPreference : false,
+        },
+      });
+      exportWorkspaceToJSON(backup);
+    } catch {
+      toast.error(t("settings.exportWorkspaceError"));
+    }
   };
 
   const getImportErrorMessage = (error: "invalid" | "unsupported-version" | "too-many-items") => {
     if (error === "unsupported-version") return t("settings.importHistoryUnsupported");
     if (error === "too-many-items") return t("settings.importHistoryTooLarge");
     return t("settings.importHistoryInvalid");
+  };
+
+  const getWorkspaceImportErrorMessage = (error: WorkspaceBackupError) => {
+    if (error === "unsupported-version") return t("settings.importWorkspaceUnsupported");
+    if (error === "too-large") return t("settings.importWorkspaceTooLarge");
+    if (error === "too-many-items") return t("settings.importWorkspaceTooManyItems");
+    return t("settings.importWorkspaceInvalid");
   };
 
   const formatImportSummary = (summary: HistoryImportSummary) =>
@@ -152,6 +210,14 @@ export default function SettingsPage() {
       `${summary.duplicates} ${t("settings.historyItemsDuplicate")}`,
       `${summary.skipped} ${t("settings.historyItemsSkipped")}`,
       `${summary.total} ${t("settings.historyItemsTotal")}`,
+    ].join(" · ");
+
+  const formatWorkspaceImportSummary = (summary: WorkspaceRestoreSummary) =>
+    [
+      formatImportSummary(summary),
+      `${summary.favoritesAdded} ${t("settings.workspaceFavoritesAdded")}`,
+      `${summary.favoritesTotal} ${t("settings.workspaceFavoritesTotal")}`,
+      t("settings.workspacePreferencesReplace"),
     ].join(" · ");
 
   const handleImportFile = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -187,6 +253,44 @@ export default function SettingsPage() {
     }
   };
 
+  const handleWorkspaceImportFile = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = "";
+    if (!file) return;
+    if (file.size > MAX_WORKSPACE_BACKUP_BYTES) {
+      toast.error(t("settings.importWorkspaceTooLarge"));
+      return;
+    }
+
+    try {
+      const source = JSON.parse(await file.text()) as unknown;
+      const parsed = parseWorkspaceBackup(source, { byteLength: file.size });
+      if (!parsed.ok) {
+        toast.error(getWorkspaceImportErrorMessage(parsed.error));
+        return;
+      }
+      const current = parseStoredCalculationHistory(safeGetJSON<unknown>(HISTORY_KEY, []));
+      if (current.unsupportedVersion) {
+        toast.error(t("settings.importHistoryUnsupported"));
+        return;
+      }
+      const prepared = prepareWorkspaceBackupRestore(
+        parsed.value,
+        current.items,
+        safeGetJSON<unknown>(FAVORITES_KEY, [])
+      );
+      if (!prepared.ok) {
+        toast.error(getWorkspaceImportErrorMessage(prepared.error));
+        return;
+      }
+
+      setPendingWorkspaceImport({ parsed: parsed.value, summary: prepared.summary });
+      setWorkspaceImportDialogOpen(true);
+    } catch {
+      toast.error(t("settings.importWorkspaceInvalid"));
+    }
+  };
+
   const handleImportHistory = async () => {
     const source = pendingImport?.source;
     if (source === undefined) return;
@@ -218,6 +322,87 @@ export default function SettingsPage() {
       }
     } catch {
       toast.error(t("common.storageOperationFailed"));
+    }
+  };
+
+  const handleImportWorkspace = async () => {
+    const parsed = pendingWorkspaceImport?.parsed;
+    if (!parsed) return;
+
+    const failedSections: string[] = [];
+
+    try {
+      const historyOutcome = await withStorageKeyLock(HISTORY_KEY, () => {
+        const current = parseStoredCalculationHistory(safeGetJSON<unknown>(HISTORY_KEY, []));
+        if (current.unsupportedVersion) {
+          return { ok: false as const };
+        }
+        const prepared = prepareWorkspaceBackupRestore(parsed, current.items, safeGetJSON<unknown>(FAVORITES_KEY, []));
+        if (!prepared.ok || !safeSetJSON(HISTORY_KEY, prepared.history)) {
+          return { ok: false as const };
+        }
+        return { ok: true as const };
+      });
+      if (historyOutcome.ok) {
+        window.dispatchEvent(new CustomEvent(HISTORY_CHANGED_EVENT));
+      } else {
+        failedSections.push(t("history.title"));
+      }
+    } catch {
+      failedSections.push(t("history.title"));
+    }
+
+    try {
+      const favoritesPersisted = await withStorageKeyLock(FAVORITES_KEY, () => {
+        const currentHistory = parseStoredCalculationHistory(safeGetJSON<unknown>(HISTORY_KEY, []));
+        if (currentHistory.unsupportedVersion) return false;
+        const finalHistoryIds = new Set(currentHistory.items.map((item) => item.id));
+        const storedFavorites = safeGetJSON<unknown>(FAVORITES_KEY, []);
+        const requested = [...(Array.isArray(storedFavorites) ? storedFavorites : []), ...parsed.backup.favorites];
+        return safeSetJSON(FAVORITES_KEY, normalizeWorkspaceFavoriteIds(requested, finalHistoryIds));
+      });
+      if (favoritesPersisted) {
+        window.dispatchEvent(new CustomEvent(FAVORITES_CHANGED_EVENT));
+      } else {
+        failedSections.push(t("history.favorites"));
+      }
+    } catch {
+      failedSections.push(t("history.favorites"));
+    }
+
+    const { preferences } = parsed.backup;
+    try {
+      if (!setLanguage(preferences.language)) failedSections.push(t("settings.language"));
+    } catch {
+      failedSections.push(t("settings.language"));
+    }
+    try {
+      if (!setTheme(preferences.theme)) failedSections.push(t("settings.theme"));
+    } catch {
+      failedSections.push(t("settings.theme"));
+    }
+
+    try {
+      if (!safeSetItem(CURRENCY_KEY, preferences.currency)) throw new Error("Currency could not be persisted");
+      setCurrency(preferences.currency);
+      window.dispatchEvent(new CustomEvent(CURRENCY_CHANGED_EVENT, { detail: preferences.currency }));
+    } catch {
+      failedSections.push(t("settings.currency"));
+    }
+
+    try {
+      if (!safeSetJSON(SIDEBAR_COLLAPSED_KEY, preferences.sidebarCollapsed)) {
+        throw new Error("Sidebar preference could not be persisted");
+      }
+      window.dispatchEvent(new CustomEvent(SIDEBAR_PREFERENCE_CHANGED_EVENT));
+    } catch {
+      failedSections.push(t("settings.sidebarPreference"));
+    }
+
+    if (failedSections.length === 0) {
+      toast.success(t("settings.importWorkspaceSuccess"));
+    } else {
+      toast.error(`${t("settings.importWorkspacePartial")}: ${failedSections.join(", ")}`);
     }
   };
 
@@ -370,24 +555,67 @@ export default function SettingsPage() {
             aria-label={t("settings.importHistoryFile")}
             onChange={handleImportFile}
           />
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-            <Button variant="outline" size="sm" onClick={handleExportHistory} className="gap-2">
-              <Download className="h-4 w-4" />
-              {t("settings.exportHistoryJson")}
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => importInputRef.current?.click()} className="gap-2">
-              <Upload className="h-4 w-4" />
-              {t("settings.importHistoryJson")}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setClearDialogOpen(true)}
-              className="gap-2 text-destructive hover:text-destructive"
+          <input
+            ref={workspaceImportInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="sr-only"
+            tabIndex={-1}
+            aria-label={t("settings.importWorkspaceFile")}
+            onChange={handleWorkspaceImportFile}
+          />
+          <div className="space-y-3">
+            <p id="settings-history-data-label" className="text-sm font-medium leading-none">
+              {t("settings.historyData")}
+            </p>
+            <div
+              className="grid grid-cols-1 gap-2 sm:grid-cols-3"
+              role="group"
+              aria-labelledby="settings-history-data-label"
             >
-              <Trash2 className="h-4 w-4" />
-              {t("settings.clearAllHistory")}
-            </Button>
+              <Button variant="outline" size="sm" onClick={handleExportHistory} className="gap-2">
+                <Download className="h-4 w-4" />
+                {t("settings.exportHistoryJson")}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => importInputRef.current?.click()} className="gap-2">
+                <Upload className="h-4 w-4" />
+                {t("settings.importHistoryJson")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setClearDialogOpen(true)}
+                className="gap-2 text-destructive hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+                {t("settings.clearAllHistory")}
+              </Button>
+            </div>
+          </div>
+          <Separator />
+          <div className="space-y-3">
+            <p id="settings-workspace-data-label" className="text-sm font-medium leading-none">
+              {t("settings.workspaceData")}
+            </p>
+            <div
+              className="grid grid-cols-1 gap-2 sm:grid-cols-2"
+              role="group"
+              aria-labelledby="settings-workspace-data-label"
+            >
+              <Button variant="outline" size="sm" onClick={handleExportWorkspace} className="gap-2">
+                <Download className="h-4 w-4" />
+                {t("settings.exportWorkspaceJson")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => workspaceImportInputRef.current?.click()}
+                className="gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                {t("settings.importWorkspaceJson")}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -425,6 +653,17 @@ export default function SettingsPage() {
         description={pendingImport ? formatImportSummary(pendingImport.summary) : undefined}
         confirmLabel={t("settings.importHistoryConfirm")}
         onConfirm={() => void handleImportHistory()}
+      />
+      <ConfirmDialog
+        open={workspaceImportDialogOpen}
+        onOpenChange={(open) => {
+          setWorkspaceImportDialogOpen(open);
+          if (!open) setPendingWorkspaceImport(null);
+        }}
+        title={t("settings.importWorkspaceConfirmTitle")}
+        description={pendingWorkspaceImport ? formatWorkspaceImportSummary(pendingWorkspaceImport.summary) : undefined}
+        confirmLabel={t("settings.importWorkspaceConfirm")}
+        onConfirm={() => void handleImportWorkspace()}
       />
     </div>
   );

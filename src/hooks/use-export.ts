@@ -8,9 +8,10 @@ import { downloadTextFile, serializeCsv, serializeJson } from "@/lib/data-export
 
 interface UseExportOptions {
   filename?: string;
+  jsonSpace?: 0 | 2;
 }
 
-export function useExport({ filename = "export" }: UseExportOptions = {}) {
+export function useExport({ filename = "export", jsonSpace = 2 }: UseExportOptions = {}) {
   const { t } = useLanguage();
 
   const exportToCSV = useCallback(
@@ -40,7 +41,7 @@ export function useExport({ filename = "export" }: UseExportOptions = {}) {
     (data: unknown) => {
       try {
         downloadTextFile({
-          content: serializeJson(data),
+          content: serializeJson(data, jsonSpace),
           filename,
           extension: "json",
           mimeType: "application/json;charset=utf-8",
@@ -51,7 +52,7 @@ export function useExport({ filename = "export" }: UseExportOptions = {}) {
         toast.error(t("export.jsonError"));
       }
     },
-    [filename, t]
+    [filename, jsonSpace, t]
   );
 
   return { exportToCSV, exportToJSON };

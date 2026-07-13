@@ -15,7 +15,8 @@ The app is no longer just a calculator demo. It includes a full app shell, respo
 - Static-export Next.js app with `output: "export"`
 - Bilingual UI: English and Chinese
 - Desktop and mobile layouts, including bottom mobile navigation and accessible mobile drawer navigation
-- Calculation history, favorite records, cross-page restore, home-page "continue" restore, and bounded JSON backup import/export
+- Calculation history, favorite records, cross-page restore, home-page "continue" restore, bounded History-only JSON
+  import/export, and a separate versioned full-workspace backup
 - Shareable URLs with absolute links, JSON-safe array encoding, legacy URL compatibility, and long-URL protection
 - Inbound shared state is length/cardinality bounded before parsing and malformed `json:` arrays fail closed
 - Self-describing schema-v2 CSV/JSON reports plus print-optimized, searchable PDF output; CSV includes a BOM
@@ -47,7 +48,7 @@ Undo action that restores the prior inputs and visible result state.
 - **History**: saved calculation browsing, search, favorites, restore, strict two-record comparison, batch delete, and
   CSV export
 - **Settings**: self-healing cross-tab language/theme/currency preferences, explicit feedback when a browser blocks
-  preference persistence, schema-validated history backup/restore, and reset controls
+  preference persistence, schema-validated History-only and full-workspace backup/restore, and reset controls
 - **Help**: usage guide and app support information
 
 ## Reliability Work Included
@@ -65,6 +66,9 @@ Recent hardening work is reflected in the current source:
 - history records carry result-format metadata so currency, percentages, periods, and ratios render correctly
 - History comparison permits only records with proven compatible metadata, shows absolute-unit deltas and canonical
   input changes, and clearly identifies saved outputs as recorded values rather than current-model recalculations
+- Workspace backups use a strict versioned/size-bounded schema for normalized History, aligned favorites, language,
+  theme, currency, and sidebar state; restore merges records and favorites, confirms preference replacement first, and
+  names any storage section that could not be persisted
 - history restore no longer re-records restored entries as fresh calculations
 - cross-page pending restores are consumed once; blocked session cleanup cannot loop or overwrite later user edits
 - History falls back to All without an empty-state flash when the last record in an active page category disappears
@@ -263,6 +267,7 @@ financial-calc/
 - `src/test/fixtures/financial-reference-cases.json`: pinned NumPy Financial and OpenGamma Strata reference vectors
 - `src/lib/validation.ts`: shared Zod validation schemas and input limits
 - `src/lib/history-format.ts`: history result formatting by unit/type
+- `src/lib/workspace-backup.ts`: strict full-workspace backup parsing, normalization, and merge planning
 - `src/lib/data-export.ts`: schema-v2 report envelope, raw/display input preservation, and spreadsheet-safe CSV serialization
 - `src/lib/clipboard.ts`: permission-aware modern/legacy clipboard fallback with temporary-DOM cleanup
 - `src/lib/report-fields.ts`: localized report field labeling without changing canonical input keys
