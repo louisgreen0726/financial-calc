@@ -20,7 +20,7 @@ export function createBrowserConfig(browserResolverOptions?: ChromiumResolverOpt
       ...(launchOptions ? { launchOptions } : {}),
     },
     webServer: {
-      command: "npm run dev",
+      command: "node node_modules/next/dist/bin/next dev --webpack",
       url: "http://localhost:3000",
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,

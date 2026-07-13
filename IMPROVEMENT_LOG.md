@@ -2711,3 +2711,36 @@ Verification:
 
 Queue status: History baseline swapping, Playwright server lifecycle hardening, and stale PWA-test marker recovery are
 active in parallel; History loading stability and complete workspace backup remain queued UI/product improvements.
+
+### Improvement 65: Deterministic Playwright dev-server teardown on Windows
+
+Status: completed.
+
+Changes:
+
+- Reproduced a tooling hang where a focused browser test reported `ok`, but Playwright's `npm run dev` web-server
+  wrapper left the Windows child process tree alive until an outer 186-second timeout. This obscured a passing test and
+  made rapid focused E2E iteration unreliable.
+- Changed the standard Playwright configuration to invoke Next's CLI directly through Node. Playwright now owns the
+  actual development-server parent rather than an intermediate `npm.cmd` wrapper, while retaining the same Webpack
+  mode, port, startup timeout, CI behavior, and local reuse contract.
+- Added a pure configuration regression that asserts the exact direct-Node command, rejects reintroduction of an npm
+  wrapper, and locks the URL/timeout/reuse settings.
+- Independently stopped the manually managed development server, confirmed port 3000 was unused, then ran a real
+  Playwright-managed browser workflow. The test completed and the command exited normally; a post-run socket check
+  confirmed the port was released.
+
+Files and areas:
+
+- `playwright.config.ts`
+- `src/lib/playwright-config.test.ts`
+
+Verification:
+
+- The Playwright configuration and browser-resolver suites passed 14/14 tests.
+- A real bond validation browser workflow passed 1/1; the full command exited 0 in 43.4 seconds and port 3000 had no
+  listener afterward.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: History baseline swapping and stale PWA-test marker recovery are active in parallel; History loading
+stability, complete workspace backup, and further UI/product auditing remain queued.
