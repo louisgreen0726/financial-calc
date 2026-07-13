@@ -68,7 +68,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [ ] Audit calculator charts and compact mobile result layouts for the next high-impact UI refinement.
 - [x] Expand Sidebar discovery across localized tool descriptions, groups, and multi-term queries.
 - [x] Preserve representable NPV results when large discounted cash flows overflow only during summation.
-- [ ] Make RATE sign-change classification scale-safe for maximum finite cash flows.
+- [x] Make RATE sign-change classification scale-safe for maximum finite cash flows.
 
 ## 2026-07-13
 
@@ -3274,3 +3274,45 @@ Verification:
 
 Queue status: Workspace Backup and Playwright isolation remain active; RATE sign-change stability, browser integration,
 and the next product/UI refinement remain queued, so the queue stays non-empty.
+
+### Progress checkpoint: 19:43 +08:00
+
+- Resumed-goal elapsed time: approximately 8 hours 31 minutes; cumulative logged active work: approximately 16 hours
+  8 minutes. The continuous goal remains active and will not be marked complete without an explicit user stop.
+- Completed improvement batches: 82. Since the 19:01 checkpoint, work added maximum-scale PMT/PV/FV/NPER/RATE/NPV
+  stability, bounded generic URL restoration, resilient print/PWA lifecycle behavior, and richer localized Sidebar
+  discovery.
+- Current work: finish the complete Workspace Backup workflow, eliminate Playwright's concurrent Windows teardown and
+  tsconfig side effects, and make RATE sign-change classification scale-safe.
+- Queue status: storage portability, browser infrastructure, financial correctness, product/UI refinement, and final
+  integration verification all remain represented; the queue is intentionally non-empty.
+
+### Improvement 83: Overflow- and underflow-safe RATE sign classification
+
+Status: completed.
+
+Changes:
+
+- Corrected RATE polynomial sign-change classification for finite cash flows whose coefficient sums overflow. This API
+  reports Descartes sign changes, so finite inputs with a mathematically knowable coefficient sign must not degrade to
+  `NaN` merely because `PMT + FV` or `PV + PMT` cannot be represented directly.
+- Rejected an initial common-scale implementation during cross-review because dividing `Number.MIN_VALUE` by a
+  `Number.MAX_VALUE` scale underflows the smaller, still nonzero coefficient to zero and can silently change the count.
+- Added an exact finite-sum sign helper that never performs the sum or a scaling division. Zero and equal-sign cases are
+  direct; opposite signs compare absolute magnitudes and return zero only for exact cancellation. The RATE polynomial is
+  now classified from these stable signs for both ordinary and payment-due timing.
+- Added ordinary/due scale-invariance cases at maximum magnitude, converted prior overflow-as-invalid expectations to
+  their correct count, and added subnormal-versus-maximum regressions that specifically fail the rejected scale approach.
+
+Files and areas:
+
+- `src/lib/finance-math.ts`
+- `src/lib/finance-math.test.ts`
+
+Verification:
+
+- The complete finance-math suite passed 79/79 tests.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: Workspace Backup and Playwright global lifecycle isolation remain active; real browser round trips, UI
+inspection, and further formula audits remain queued, so the queue stays intentionally non-empty.

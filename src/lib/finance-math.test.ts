@@ -603,6 +603,17 @@ test("rate sign changes compress one-period and zero coefficients without creati
   expect(Finance.rateSignChanges(2, 0, 0, 0, 0)).toBe(0);
 });
 
+test("rate sign changes are invariant to cash-flow scale without overflowing coefficients", () => {
+  expect(Finance.rateSignChanges(2, 1, -1, 1, 0)).toBe(1);
+  expect(Finance.rateSignChanges(2, Number.MAX_VALUE, -Number.MAX_VALUE, Number.MAX_VALUE, 0)).toBe(1);
+  expect(Finance.rateSignChanges(2, 1, 1, -1, 1)).toBe(1);
+  expect(Finance.rateSignChanges(2, Number.MAX_VALUE, Number.MAX_VALUE, -Number.MAX_VALUE, 1)).toBe(1);
+  expect(Finance.rateSignChanges(2, Number.MAX_VALUE, -1, Number.MAX_VALUE, 0)).toBe(1);
+  expect(Finance.rateSignChanges(2, Number.MAX_VALUE, Number.MAX_VALUE, -1, 1)).toBe(1);
+  expect(Finance.rateSignChanges(2, -Number.MAX_VALUE, Number.MIN_VALUE, Number.MAX_VALUE, 0)).toBe(1);
+  expect(Finance.rateSignChanges(2, -Number.MAX_VALUE, Number.MAX_VALUE, Number.MIN_VALUE, 1)).toBe(1);
+});
+
 test("rate sign changes reject invalid runtime inputs", () => {
   for (const nper of [0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY]) {
     expect(Number.isNaN(Finance.rateSignChanges(nper, -100, 100, 0))).toBe(true);
@@ -611,8 +622,6 @@ test("rate sign changes reject invalid runtime inputs", () => {
   expect(Number.isNaN(Finance.rateSignChanges(2, -100, Number.POSITIVE_INFINITY, 0))).toBe(true);
   expect(Number.isNaN(Finance.rateSignChanges(2, -100, 100, Number.NEGATIVE_INFINITY))).toBe(true);
   expect(Number.isNaN(Finance.rateSignChanges(2, -100, 100, 0, 2 as never))).toBe(true);
-  expect(Number.isNaN(Finance.rateSignChanges(2, Number.MAX_VALUE, -1, Number.MAX_VALUE, 0))).toBe(true);
-  expect(Number.isNaN(Finance.rateSignChanges(2, Number.MAX_VALUE, Number.MAX_VALUE, -1, 1))).toBe(true);
 });
 
 test("irr falls back to a bracketed solver when the initial guess is poor", () => {

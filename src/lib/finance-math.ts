@@ -38,6 +38,18 @@ const countSignChanges = (values: number[]): number => {
   return changes;
 };
 
+const signOfFiniteSum = (left: number, right: number): number => {
+  const leftSign = Math.sign(left);
+  const rightSign = Math.sign(right);
+  if (leftSign === 0) return rightSign;
+  if (rightSign === 0 || leftSign === rightSign) return leftSign;
+
+  const leftMagnitude = Math.abs(left);
+  const rightMagnitude = Math.abs(right);
+  if (leftMagnitude === rightMagnitude) return 0;
+  return leftMagnitude > rightMagnitude ? leftSign : rightSign;
+};
+
 const neumaierSum = (values: number[]): number => {
   let sum = 0;
   let compensation = 0;
@@ -427,12 +439,11 @@ export const Finance = {
     const coefficients =
       type === 0
         ? nper === 1
-          ? [pv, pmt + fv]
-          : [pv, pmt, pmt + fv]
+          ? [Math.sign(pv), signOfFiniteSum(pmt, fv)]
+          : [Math.sign(pv), Math.sign(pmt), signOfFiniteSum(pmt, fv)]
         : nper === 1
-          ? [pv + pmt, fv]
-          : [pv + pmt, pmt, fv];
-    if (coefficients.some((coefficient) => !isValid(coefficient))) return NaN;
+          ? [signOfFiniteSum(pv, pmt), Math.sign(fv)]
+          : [signOfFiniteSum(pv, pmt), Math.sign(pmt), Math.sign(fv)];
     return countSignChanges(coefficients);
   },
   irr: (values: number[], guess: number = 0.1): number => {
