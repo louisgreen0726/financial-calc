@@ -421,6 +421,33 @@ test("cash-flow sign changes ignore zero flows and identify ambiguous IRR patter
   expect(Number.isNaN(Finance.cashFlowSignChanges([-100, Number.NaN, 120]))).toBe(true);
 });
 
+test("rate sign changes identify ordinary and due cash-flow patterns with multiple possible roots", () => {
+  expect(Finance.rateSignChanges(2, -225, 100, 351, 0)).toBe(2);
+  expect(Finance.rateSignChanges(2, -225, 325, 126, 1)).toBe(2);
+  expect(Finance.rateSignChanges(2, -190, 100, 278, 0)).toBe(2);
+  expect(Finance.rateSignChanges(60, -466.08, 25000, 0, 0)).toBe(1);
+});
+
+test("rate sign changes compress one-period and zero coefficients without creating false reversals", () => {
+  expect(Finance.rateSignChanges(1, -225, 100, 351, 0)).toBe(0);
+  expect(Finance.rateSignChanges(1, -225, 325, 126, 1)).toBe(0);
+  expect(Finance.rateSignChanges(2, 0, 100, -100, 0)).toBe(1);
+  expect(Finance.rateSignChanges(2, -100, 100, 50, 1)).toBe(1);
+  expect(Finance.rateSignChanges(2, 0, 0, 0, 0)).toBe(0);
+});
+
+test("rate sign changes reject invalid runtime inputs", () => {
+  for (const nper of [0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+    expect(Number.isNaN(Finance.rateSignChanges(nper, -100, 100, 0))).toBe(true);
+  }
+  expect(Number.isNaN(Finance.rateSignChanges(2, Number.NaN, 100, 0))).toBe(true);
+  expect(Number.isNaN(Finance.rateSignChanges(2, -100, Number.POSITIVE_INFINITY, 0))).toBe(true);
+  expect(Number.isNaN(Finance.rateSignChanges(2, -100, 100, Number.NEGATIVE_INFINITY))).toBe(true);
+  expect(Number.isNaN(Finance.rateSignChanges(2, -100, 100, 0, 2 as never))).toBe(true);
+  expect(Number.isNaN(Finance.rateSignChanges(2, Number.MAX_VALUE, -1, Number.MAX_VALUE, 0))).toBe(true);
+  expect(Number.isNaN(Finance.rateSignChanges(2, Number.MAX_VALUE, Number.MAX_VALUE, -1, 1))).toBe(true);
+});
+
 test("irr falls back to a bracketed solver when the initial guess is poor", () => {
   expect(Finance.irr([-1000, 300, 420, 680], 9)).toBeCloseTo(0.1634, 4);
 });
@@ -444,6 +471,56 @@ test("rate round-trips ordinary and due annuities with the corrected derivative"
     expect(Finance.rate(48, -125, -5000, futureValue, type)).toBeCloseTo(0.035, 10);
   }
 });
+
+test.each([
+  {
+    label: "ordinary annuity with two positive roots",
+    nper: 2,
+    pmt: -225,
+    pv: 100,
+    fv: 351,
+    type: 0 as const,
+    guesses: [0.04, 0.21],
+    expectedRoots: [0.05, 0.2],
+    defaultRoot: 0.05,
+  },
+  {
+    label: "annuity due with two positive roots",
+    nper: 2,
+    pmt: -225,
+    pv: 325,
+    fv: 126,
+    type: 1 as const,
+    guesses: [0.04, 0.21],
+    expectedRoots: [0.05, 0.2],
+    defaultRoot: 0.05,
+  },
+  {
+    label: "ordinary annuity with negative and positive roots",
+    nper: 2,
+    pmt: -190,
+    pv: 100,
+    fv: 278,
+    type: 0 as const,
+    guesses: [-0.2, 0.1],
+    expectedRoots: [-0.2, 0.1],
+    defaultRoot: 0.1,
+  },
+])(
+  "rate follows the initial guess across $label",
+  ({ nper, pmt, pv, fv, type, guesses, expectedRoots, defaultRoot }) => {
+    const roots = guesses.map((guess) => Finance.rate(nper, pmt, pv, fv, type, guess));
+
+    expect(roots[0]).toBeCloseTo(expectedRoots[0], 8);
+    expect(roots[1]).toBeCloseTo(expectedRoots[1], 8);
+    expect(Finance.rate(nper, pmt, pv, fv, type)).toBeCloseTo(defaultRoot, 8);
+    expect(Math.abs(roots[0] - roots[1])).toBeGreaterThan(0.01);
+    for (const root of roots) {
+      expect(root).toBeGreaterThan(-1);
+      expect(Finance.fv(root, nper, pmt, pv, type)).toBeCloseTo(fv, 8);
+    }
+  }
+);
 
 test("effective and compound rates reject non-positive periodic growth factors", () => {
   expect(Number.isNaN(Finance.effectiveRate(-3, 2))).toBe(true);

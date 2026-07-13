@@ -394,7 +394,9 @@ No unresolved P0 findings remain.
 - Financial calculation boundaries and numeric stability: TVM, RATE/IRR/NPV, bond, WACC/DDM, Black-Scholes, risk, PPP,
   and amortization paths now reject invalid domains and non-finite results. TVM cash-flow fields correctly accept
   negative values. NPV and IRR short-circuit exact-zero discounted terms so zero-padding cannot introduce `NaN` near
-  singular rates, while unrepresentable nonzero terms remain rejected.
+  singular rates, while unrepresentable nonzero terms remain rejected. Integer-period RATE equations with more than
+  one polynomial sign change now surface a conditional multiple-root warning without changing the solver's compatible
+  default result or implying that every mathematical root is economically useful.
 - History and favorites persistence: versioned schemas validate and repair safe legacy data, preserve unknown future schemas, serialize read-modify-write transactions, retain failed operations for retry, and prevent stale tabs from recreating data after Settings clears it.
 - Portfolio simulations: the Web Worker is emitted by Webpack, worker/fallback runs are isolated by run id, and seeded simulations include deterministic equal-weight and single-asset baselines.
 - Static/PWA behavior: the precache manifest is generated from the final export, lazy PDF chunks are not precached, base paths are supported, and unknown offline navigations return the static 404 page rather than the home page.

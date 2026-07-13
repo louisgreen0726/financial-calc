@@ -29,7 +29,7 @@ const guides: Record<"en" | "zh", ModelGuide> = {
         title: "TVM, cash flow & loans",
         assumptions: [
           "TVM rates are per period and must use the same unit as NPER. Cash paid out is negative, cash received is positive, and payments occur at period end unless Beginning is selected.",
-          "Cash-flow item 0 occurs today; later items are one equal period apart. NPV includes item 0. IRR returns one bracketed root, while projects with multiple sign changes can have multiple or no economically useful IRRs.",
+          "Cash-flow item 0 occurs today; later items are one equal period apart. NPV includes item 0. IRR returns one bracketed root, while projects with multiple sign changes can have multiple or no economically useful IRRs. RATE can likewise have more than one mathematically valid solution; TVM reports one numerical root from its iterative search.",
           "Loans use a fixed nominal annual rate divided by 12 and whole monthly periods. CPM fixes the payment; CAM fixes principal repayment.",
         ],
         example:
@@ -121,7 +121,7 @@ const guides: Record<"en" | "zh", ModelGuide> = {
         title: "货币时间价值、现金流与贷款",
         assumptions: [
           "TVM 利率是每期利率，必须与 NPER 使用相同期次单位。现金流出为负、流入为正；除非选择期初，否则付款发生在期末。",
-          "现金流第 0 项发生在当前，后续项目按等长周期排列；NPV 包含第 0 项。IRR 返回一个被括住的根，多次符号变化的项目可能存在多个根或不存在有经济意义的根。",
+          "现金流第 0 项发生在当前，后续项目按等长周期排列；NPV 包含第 0 项。IRR 返回一个被括住的根，多次符号变化的项目可能存在多个根或不存在有经济意义的根。RATE 同样可能存在多个数学上有效的解；TVM 会报告迭代搜索得到的一个数值根。",
           "贷款使用固定名义年利率除以 12，并按完整月份计算。等额本息固定每期付款，等额本金固定每期偿还本金。",
         ],
         example:

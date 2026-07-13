@@ -48,10 +48,11 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Split storage feedback between applied session preferences and operations that were not completed.
 - [x] Stabilize Black-Scholes log-moneyness for extreme but finite spot/strike ratios.
 - [x] Normalize History filters when deleting the last record in the active category.
-- [ ] Detect and explain multiple valid TVM RATE roots instead of presenting one as unique.
+- [x] Detect and explain multiple valid TVM RATE roots instead of presenting one as unique.
 - [x] Preserve NPV/IRR invariance when appending economically irrelevant zero cash flows.
 - [ ] Stabilize translation-catalog source scanning under full-suite worker contention.
 - [ ] Extend formatting enforcement beyond `src/` to E2E, scripts, workflows, and root configuration.
+- [ ] Add analytic and finite-difference oracles for bond duration and convexity.
 
 ## 2026-07-13
 
@@ -1752,3 +1753,54 @@ Verification:
 Queue status: 6 active items remain. TVM RATE root ambiguity is next; preference cleanup, Portfolio development
 translations, deterministic local browser resolution, translation-scan stability, and broader formatting enforcement
 remain queued.
+
+### Improvement 41: Explicit TVM RATE root ambiguity
+
+Status: completed.
+
+Changes:
+
+- Reproduced ordinary and due two-period cash-flow equations with two mathematically valid RATE roots. For example,
+  `nper=2`, `pmt=-225`, `pv=100`, `fv=351`, and end-of-period payments reduce to
+  `100(x-1.05)(x-1.20)` for `x=1+r`, so both 5% and 20% exactly reconstruct the requested future value.
+- Preserved the existing `Finance.rate` API, default 10% guess, Newton path, and bracketed fallback. Different guesses
+  are now regression-tested against two distinct roots, but the application does not silently redefine which root is
+  preferable or claim that fallback always returns the closest root.
+- Extracted a shared zero-aware sign-change counter and added `Finance.rateSignChanges`. For finite positive integer
+  periods it computes the compressed RATE polynomial coefficients for ordinary and due payments, validates derived
+  sums against overflow, and applies Descartes' rule to identify patterns that may contain multiple roots.
+- Added a persistent, accessible warning beside successful ambiguous RATE results. It states that the displayed value
+  is one mathematical solution from the 10% initial guess with a bracketed fallback when needed; changing inputs,
+  target, timing, preset, reset state, or restored history clears it together with the stale result.
+- Added bilingual warning copy and Help model-boundary guidance. The copy deliberately says “mathematically valid” so
+  it does not imply that every root is economically useful.
+- Added formula tests for ordinary/due double-positive roots, negative/positive roots, default-root compatibility,
+  FV round trips, one-period and zero coefficients, invalid inputs, and derived overflow. UI tests cover warning
+  display and clearing plus no false warning for ordinary single-root loans under both payment timings.
+
+Files and areas:
+
+- `src/lib/finance-math.ts` and `src/lib/finance-math.test.ts`
+- `src/app/tvm/page.tsx`, shared calculator/Help tests, bilingual i18n, and model guide
+- English/Chinese README, engineering review, and improvement log
+
+Verification:
+
+- The focused finance-math suite passed 69/69 tests; the combined TVM/Help/finance suites passed 89/89 after the final
+  no-false-positive cases were added.
+- Strict TypeScript and focused ESLint passed; changed source passed Prettier and `git diff --check`.
+- `npm run verify` passed all 54 Vitest files and 460 tests, 15 routes, 197 precache assets, 722 internal references,
+  and every route bundle budget.
+
+Queue status: 6 active items remain across Portfolio development translations, deterministic local browser selection,
+invalid-preference cleanup, translation-scan stability, broader formatting enforcement, and bond sensitivity oracles.
+
+### Progress checkpoint: 13:59 +08:00
+
+- Resumed-goal elapsed time: approximately 2 hours 47 minutes; cumulative logged active work: approximately 10 hours
+  24 minutes. The minimum session duration has been crossed, but the goal remains active until the user explicitly stops.
+- Completed improvement batches: 41; the latest work covers exact-zero discounted tails, deployable PWA manifest
+  topology, and honest disclosure of non-unique RATE solutions, each with independent subagent review.
+- Current work: Improvement 41 has passed focused formula, UI, Help, type, lint, and formatting checks; the full root
+  verification is next, followed by the still-nonempty queue.
+- Queue status: 6 active items remain; lower-risk work can continue even if any browser-specific item needs follow-up.

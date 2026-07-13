@@ -163,6 +163,7 @@ type Translations = {
     calculationErrorDesc: string;
     invalidResult: string;
     runtimeError: string;
+    rateAmbiguous: string;
     stepsTitle: string;
     stepsDesc: string;
     showSteps: string;
@@ -822,6 +823,8 @@ const en: Translations = {
     calculationErrorDesc: "Unable to calculate result. Please check your inputs and try again.",
     invalidResult: "Calculation resulted in an invalid value. Please check your inputs.",
     runtimeError: "An error occurred during calculation. Please verify your inputs.",
+    rateAmbiguous:
+      "These cash flows may produce multiple mathematically valid RATE solutions. The displayed result is one numerical solution found from a 10% initial guess, with a bracketed fallback when needed; other mathematical rates may exist.",
     stepsTitle: "Calculation steps",
     stepsDesc: "Open the detailed derivation when you want to inspect the formula path.",
     showSteps: "Show calculation steps",
@@ -1497,6 +1500,8 @@ const zh: Translations = {
     calculationErrorDesc: "暂时无法计算结果，请检查输入后重试。",
     invalidResult: "计算结果无效，请检查输入参数后重试。",
     runtimeError: "计算过程中发生错误，请核对输入后重试。",
+    rateAmbiguous:
+      "这些现金流可能产生多个数学上有效的 RATE 解。当前结果是从 10% 初始值开始得到的一个数值解，并会在需要时使用区间兜底搜索；其他数学利率可能仍然存在。",
     stepsTitle: "计算步骤",
     stepsDesc: "需要查看公式推导时，可展开详细步骤。",
     showSteps: "展开计算步骤",

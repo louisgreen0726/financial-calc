@@ -221,6 +221,46 @@ describe("calculator page accessibility", () => {
 
     expect(mocks.addToHistory).toHaveBeenCalledTimes(2);
     expect(screen.queryByText("tvm.fixValidation")).not.toBeInTheDocument();
+    expect(screen.queryByText("tvm.rateAmbiguous")).not.toBeInTheDocument();
+  });
+
+  it("warns when a TVM RATE cash-flow pattern may have multiple valid roots", () => {
+    mocks.urlStateOverrides.tvm = {
+      target: "rate",
+      rate: "0",
+      nper: "2",
+      pmt: "-225",
+      pv: "100",
+      fv: "351",
+      type: "0",
+    };
+    render(<TVMPage />);
+
+    fireEvent.submit(screen.getByRole("button", { name: "common.calculate RATE" }).closest("form")!);
+
+    expect(screen.getByRole("status")).toHaveTextContent("5.0000%");
+    expect(screen.getByRole("alert")).toHaveTextContent("tvm.rateAmbiguous");
+
+    fireEvent.change(screen.getByLabelText("tvm.periods"), { target: { value: "3" } });
+    expect(screen.queryByText("tvm.rateAmbiguous")).not.toBeInTheDocument();
+  });
+
+  it.each(["0", "1"] as const)("does not warn for an ordinary single-root RATE calculation with type %s", (type) => {
+    mocks.urlStateOverrides.tvm = {
+      target: "rate",
+      rate: "0",
+      nper: "60",
+      pmt: "-466.08",
+      pv: "25000",
+      fv: "0",
+      type,
+    };
+    render(<TVMPage />);
+
+    fireEvent.submit(screen.getByRole("button", { name: "common.calculate RATE" }).closest("form")!);
+
+    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(screen.queryByText("tvm.rateAmbiguous")).not.toBeInTheDocument();
   });
 
   it("accepts negative TVM rates above the -100 percent singularity", () => {

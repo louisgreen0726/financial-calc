@@ -36,6 +36,7 @@ describe("Help model guide", () => {
     }
     expect(screen.getAllByRole("article")).toHaveLength(6);
     expect(screen.getByText(/FV = 16,288\.95/)).toBeInTheDocument();
+    expect(screen.getByText(/RATE can likewise have more than one mathematically valid solution/)).toBeInTheDocument();
     expect(screen.getByText(/price 9\.227 returns implied volatility near 20\.00%/)).toBeInTheDocument();
     expect(screen.getAllByRole("heading", { name: "Worked example" })).toHaveLength(6);
   });

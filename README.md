@@ -58,6 +58,8 @@ Recent hardening work is reflected in the current source:
 - Black-Scholes prices and Greeks use stable log-moneyness and finite tail limits for extreme spot/strike scales
 - NPV and IRR ignore appended exact-zero cash-flow tails, including near the `-100%` rate singularity, without masking
   genuinely unrepresentable nonzero discounted values
+- TVM RATE preserves its compatible iterative root while warning when an integer-period cash-flow pattern may have
+  multiple mathematically valid rates, including the 10% initial-guess and fallback semantics
 - page-level result readiness checks verify outputs are finite before rendering or recording history
 - history records carry result-format metadata so currency, percentages, periods, and ratios render correctly
 - history restore no longer re-records restored entries as fresh calculations

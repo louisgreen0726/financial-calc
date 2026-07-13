@@ -24,6 +24,20 @@ const toWholePeriods = (years: number, frequency: number) => {
   return Number.isInteger(periods) ? periods : NaN;
 };
 
+const countSignChanges = (values: number[]): number => {
+  let changes = 0;
+  let previousSign = 0;
+
+  for (const value of values) {
+    if (value === 0) continue;
+    const sign = Math.sign(value);
+    if (previousSign !== 0 && sign !== previousSign) changes++;
+    previousSign = sign;
+  }
+
+  return changes;
+};
+
 const neumaierSum = (values: number[]): number => {
   let sum = 0;
   let compensation = 0;
@@ -351,17 +365,29 @@ export const Finance = {
   cashFlowSignChanges: (values: number[]): number => {
     if (!Array.isArray(values) || values.length === 0 || values.some((value) => !isValid(value))) return NaN;
 
-    let changes = 0;
-    let previousSign = 0;
-
-    for (const value of values) {
-      if (value === 0) continue;
-      const sign = Math.sign(value);
-      if (previousSign !== 0 && sign !== previousSign) changes++;
-      previousSign = sign;
+    return countSignChanges(values);
+  },
+  rateSignChanges: (nper: number, pmt: number, pv: number, fv: number = 0, type: PaymentTiming = 0): number => {
+    if (
+      ![nper, pmt, pv, fv].every(isValid) ||
+      !Number.isInteger(nper) ||
+      nper <= 0 ||
+      !isSupportedPaymentTiming(type)
+    ) {
+      return NaN;
     }
 
-    return changes;
+    // Descartes sign changes for the RATE polynomial in x = 1 + rate.
+    const coefficients =
+      type === 0
+        ? nper === 1
+          ? [pv, pmt + fv]
+          : [pv, pmt, pmt + fv]
+        : nper === 1
+          ? [pv + pmt, fv]
+          : [pv + pmt, pmt, fv];
+    if (coefficients.some((coefficient) => !isValid(coefficient))) return NaN;
+    return countSignChanges(coefficients);
   },
   irr: (values: number[], guess: number = 0.1): number => {
     if (!Array.isArray(values) || values.length < 2) return NaN;

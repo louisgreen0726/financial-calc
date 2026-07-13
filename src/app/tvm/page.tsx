@@ -439,6 +439,16 @@ function TVMPageContent() {
   const pmtError = getVisibleError("pmt");
   const pvError = getVisibleError("pv");
   const fvError = getVisibleError("fv");
+  const rateMayHaveMultipleSolutions =
+    result !== null &&
+    target === "rate" &&
+    Finance.rateSignChanges(
+      parseRequiredNumber(nper, Number.NaN),
+      parseRequiredNumber(pmt, Number.NaN),
+      parseRequiredNumber(pv, Number.NaN),
+      parseRequiredNumber(fv, Number.NaN),
+      type === "1" ? 1 : 0
+    ) > 1;
 
   return (
     <>
@@ -729,6 +739,9 @@ function TVMPageContent() {
                   </p>
                 </CardContent>
               </Card>
+            }
+            details={
+              rateMayHaveMultipleSolutions ? <ErrorDisplay message={t("tvm.rateAmbiguous")} variant="warning" /> : null
             }
           />
         </div>
