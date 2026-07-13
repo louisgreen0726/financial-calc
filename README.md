@@ -69,7 +69,8 @@ Recent hardening work is reflected in the current source:
 - TVM clears stale results and calculation steps when target, payment timing, or inputs change
 - mobile sidebar content now satisfies Radix Dialog title/description requirements and closes after navigation
 - PWA metadata, install icons, generated precache assets, and bounded service worker caches respect
-  `NEXT_PUBLIC_BASE_PATH`; cache quota/write failures never replace successful network responses
+  `NEXT_PUBLIC_BASE_PATH`; cache quota/write failures never replace successful network responses, and a tab whose
+  controller is replaced by an update activated elsewhere receives a working direct-refresh action
 - Monte Carlo simulations run in a Webpack-built worker and always include equal-weight and single-asset baselines
 - Print / Save as PDF isolates the active report and uses native browser pagination for sharp, searchable output
 - denied Clipboard API writes fall back to the legacy browser copy path; non-cancelled native-share and export

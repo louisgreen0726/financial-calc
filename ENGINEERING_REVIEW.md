@@ -53,6 +53,9 @@ browser-level checks beyond the existing suite.
   and status; network `Response.error()` values also take the cache path instead of becoming failed navigations.
 - The workflow installs a second worker, verifies that the localized update prompt waits for user action, sends
   `SKIP_WAITING`, observes the new controller, and confirms the application-triggered reload.
+- Each tab tracks its controller identity. A first worker claim stays silent, the tab that requests activation reloads
+  after confirmation, and other tabs replace their now-stale waiting-worker action with a direct reload under the same
+  toast ID when the controller changes externally.
 - The same production workflow now runs against both root hosting and a real `/calc` deployment. The base-path case
   requires an exact `/calc/` worker scope, base-prefixed worker/controller URLs, and base-prefixed precache requests
   before exercising the same offline known/unknown routes and update activation.

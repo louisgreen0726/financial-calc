@@ -69,7 +69,8 @@ Financial Calc 是一个基于 Next.js 16、React 19、TypeScript、Tailwind CSS
 - TVM 在切换目标、付款模式或输入时会清理旧结果和旧计算步骤
 - 移动端 sidebar 满足 Radix Dialog 的 title/description 要求，点击导航后自动关闭
 - PWA metadata、安装图标、构建生成的 precache 资源与有界 service worker 缓存支持 `NEXT_PUBLIC_BASE_PATH`；
-  缓存配额/写入失败不会覆盖成功的网络响应
+  缓存配额/写入失败不会覆盖成功的网络响应；其他标签页激活更新并替换 controller 后，当前标签页会获得可用的
+  直接刷新操作
 - Monte Carlo 使用 Webpack 正确构建的 Worker，并固定加入等权组合与所有单资产角点基线
 - “打印 / 另存为 PDF”会隔离当前报告，并使用浏览器原生分页生成清晰、可搜索的输出
 - Clipboard API 被拒绝时会回退到浏览器旧式复制路径；非用户取消的原生分享与导出失败会显示可操作提示，

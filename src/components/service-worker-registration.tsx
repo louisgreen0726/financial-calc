@@ -7,11 +7,17 @@ import { logger } from "@/lib/logger";
 
 const UPDATE_TOAST_ID = "pwa-update-available";
 
+interface ServiceWorkerRegistrationProps {
+  reloadPage?: () => void;
+}
+
+const reloadCurrentPage = () => window.location.reload();
+
 /**
  * Client component that registers the service worker.
  * Must be a client component since service workers are browser APIs.
  */
-export function ServiceWorkerRegistration() {
+export function ServiceWorkerRegistration({ reloadPage = reloadCurrentPage }: ServiceWorkerRegistrationProps = {}) {
   const { t } = useLanguage();
   const translateRef = useRef(t);
 
@@ -48,14 +54,62 @@ export function ServiceWorkerRegistration() {
 
     const serviceWorkerUrl = `${normalizedBasePath}/sw.js`;
     let disposed = false;
-    let refreshRequested = false;
+    let activationRequested = false;
+    let reloadScheduled = false;
+    let controlledWorker = navigator.serviceWorker.controller ?? null;
+    let hasBeenControlled = controlledWorker !== null;
     let registeredWorker: ServiceWorkerRegistration | undefined;
-    let removeInstallingListener: (() => void) | undefined;
+    const installingListenerCleanups = new Map<ServiceWorker, () => void>();
+    const promptedWorkers = new WeakSet<ServiceWorker>();
+
+    const reloadOnce = () => {
+      if (disposed || reloadScheduled) {
+        return;
+      }
+
+      reloadScheduled = true;
+      activationRequested = false;
+      reloadPage();
+    };
+
+    const showReloadPrompt = () => {
+      toast.info(translateRef.current("common.updateAvailable"), {
+        id: UPDATE_TOAST_ID,
+        duration: Infinity,
+        action: {
+          label: translateRef.current("common.refreshPage"),
+          onClick: reloadOnce,
+        },
+      });
+    };
 
     const handleControllerChange = () => {
-      if (refreshRequested) {
-        refreshRequested = false;
-        window.location.reload();
+      if (disposed || reloadScheduled) {
+        return;
+      }
+
+      const nextController = navigator.serviceWorker.controller ?? null;
+      if (nextController === controlledWorker) {
+        return;
+      }
+
+      controlledWorker = nextController;
+
+      if (nextController === null) {
+        return;
+      }
+
+      if (!hasBeenControlled) {
+        hasBeenControlled = true;
+        return;
+      }
+
+      if (activationRequested) {
+        reloadOnce();
+      } else {
+        // Another tab activated the update. Replace the stale waiting-worker action
+        // with a direct reload action for this still-running document.
+        showReloadPrompt();
       }
     };
 
@@ -64,6 +118,10 @@ export function ServiceWorkerRegistration() {
       if (!waitingWorker || !navigator.serviceWorker.controller) {
         return;
       }
+      if (promptedWorkers.has(waitingWorker)) {
+        return;
+      }
+      promptedWorkers.add(waitingWorker);
 
       toast.info(translateRef.current("common.updateAvailable"), {
         id: UPDATE_TOAST_ID,
@@ -71,11 +129,58 @@ export function ServiceWorkerRegistration() {
         action: {
           label: translateRef.current("common.refreshPage"),
           onClick: () => {
-            refreshRequested = true;
-            waitingWorker.postMessage({ type: "SKIP_WAITING" });
+            if (disposed || reloadScheduled) {
+              return;
+            }
+
+            const currentController = navigator.serviceWorker.controller ?? null;
+            if (currentController !== null && currentController !== controlledWorker) {
+              controlledWorker = currentController;
+              hasBeenControlled = true;
+              reloadOnce();
+              return;
+            }
+
+            const currentWaitingWorker =
+              registration.waiting ?? (waitingWorker.state === "installed" ? waitingWorker : null);
+            if (!currentWaitingWorker) {
+              // The displayed worker was activated elsewhere before this click.
+              reloadOnce();
+              return;
+            }
+
+            activationRequested = true;
+            currentWaitingWorker.postMessage({ type: "SKIP_WAITING" });
           },
         },
       });
+    };
+
+    const observeInstallingWorker = (installingWorker: ServiceWorker) => {
+      if (installingListenerCleanups.has(installingWorker)) {
+        return;
+      }
+
+      const cleanup = () => {
+        if (!installingListenerCleanups.delete(installingWorker)) {
+          return;
+        }
+        installingWorker.removeEventListener("statechange", handleStateChange);
+      };
+      const handleStateChange = () => {
+        if (!disposed && installingWorker.state === "installed" && registeredWorker) {
+          showUpdatePrompt(registeredWorker, installingWorker);
+        }
+        if (installingWorker.state === "installed" || installingWorker.state === "redundant") {
+          cleanup();
+        }
+      };
+
+      installingWorker.addEventListener("statechange", handleStateChange);
+      installingListenerCleanups.set(installingWorker, cleanup);
+      // Inspect after subscribing so an install that completed during registration
+      // cannot fall between the initial state read and listener attachment.
+      handleStateChange();
     };
 
     const handleUpdateFound = () => {
@@ -84,14 +189,7 @@ export function ServiceWorkerRegistration() {
         return;
       }
 
-      const handleStateChange = () => {
-        if (installingWorker.state === "installed" && registeredWorker) {
-          showUpdatePrompt(registeredWorker, installingWorker);
-        }
-      };
-
-      installingWorker.addEventListener("statechange", handleStateChange);
-      removeInstallingListener = () => installingWorker.removeEventListener("statechange", handleStateChange);
+      observeInstallingWorker(installingWorker);
     };
 
     navigator.serviceWorker.addEventListener?.("controllerchange", handleControllerChange);
@@ -106,6 +204,9 @@ export function ServiceWorkerRegistration() {
         registeredWorker = registration;
         logger.info("[PWA] Service Worker registered:", registration.scope);
         registration.addEventListener?.("updatefound", handleUpdateFound);
+        if (registration.installing) {
+          observeInstallingWorker(registration.installing);
+        }
         showUpdatePrompt(registration);
 
         registration.update().catch((error) => {
@@ -118,12 +219,13 @@ export function ServiceWorkerRegistration() {
 
     return () => {
       disposed = true;
-      removeInstallingListener?.();
+      installingListenerCleanups.forEach((cleanup) => cleanup());
+      installingListenerCleanups.clear();
       registeredWorker?.removeEventListener?.("updatefound", handleUpdateFound);
       navigator.serviceWorker.removeEventListener?.("controllerchange", handleControllerChange);
       toast.dismiss(UPDATE_TOAST_ID);
     };
-  }, []);
+  }, [reloadPage]);
 
   return null;
 }

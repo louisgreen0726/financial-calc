@@ -53,7 +53,9 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Stabilize translation-catalog source scanning under full-suite worker contention.
 - [ ] Extend formatting enforcement beyond `src/` to E2E, scripts, workflows, and root configuration.
 - [ ] Add analytic and finite-difference oracles for bond duration and convexity.
-- [ ] Repair stale cross-tab PWA update prompts after another tab activates the waiting worker.
+- [x] Repair stale cross-tab PWA update prompts after another tab activates the waiting worker.
+- [ ] Localize remaining hard-coded application-shell copy and refine sidebar information hierarchy.
+- [ ] Design and validate a compatible-history scenario comparison workflow before implementation.
 
 ## 2026-07-13
 
@@ -1843,3 +1845,62 @@ Verification:
 
 Queue status: 6 active items remain across cross-tab PWA updates, Portfolio development translations, deterministic
 local browser selection, invalid-preference cleanup, broader formatting enforcement, and bond sensitivity oracles.
+
+### Improvement 43: Actionable cross-tab PWA update prompts
+
+Status: completed.
+
+Changes:
+
+- Reproduced a multi-tab update failure: tabs A and B both showed a waiting-worker prompt; after A activated the new
+  worker, B received `controllerchange` but retained an action closing over the now-active worker. Clicking B's stale
+  action sent `SKIP_WAITING` to an active worker, produced no further controller change, and never refreshed the page.
+- Captured the tab's current controller identity when registration starts. A `null` to controller transition remains a
+  normal first install and does not prompt or reload; an old-controller to new-controller transition is recognized as
+  an update activated outside this tab.
+- Preserved the existing user-controlled flow in the initiating tab: its action posts `SKIP_WAITING`, records the local
+  request, and reloads only after `controllerchange` confirms activation.
+- When another tab replaces the controller, reused the existing toast ID to replace the obsolete waiting-worker action
+  with a direct current-page reload. The action no longer sends a meaningless message to the active worker.
+- Hardened the surrounding races: same-controller events are ignored; old-controller to null to new-controller
+  transitions remain recognizable; reload executes at most once; a prompt click prefers the latest waiting worker;
+  and an installed prompt candidate remains activatable while `registration.waiting` is briefly unset.
+- Subscribed to any installing worker already present when registration resolves, deduplicated worker prompts, and
+  released state listeners as soon as a worker becomes installed or redundant instead of retaining every historical
+  worker until page teardown.
+- Added an optional stable reload dependency to the client component so reload behavior can be asserted without
+  mutating jsdom's non-configurable `window.location`. Production still defaults to `window.location.reload()`.
+- Expanded component contracts across unsupported/development/registration paths with first claim, local confirmation,
+  external activation, control loss/reclaim, duplicate events, pre-click activation, latest-worker selection, early
+  installation, one-shot reload, terminal listener release, and full unmount cleanup.
+
+Files and areas:
+
+- `src/components/service-worker-registration.tsx`
+- `src/components/service-worker-registration.test.tsx`
+- English/Chinese README, engineering review, and improvement log
+
+Verification:
+
+- The focused service-worker registration suite passed 18/18 tests.
+- Strict TypeScript and focused ESLint passed; both changed source files passed Prettier and `git diff --check`.
+- `npm run verify` passed all 54 Vitest files and 470 tests, 15 routes, 197 precache assets, 722 internal references,
+  and every route bundle budget.
+- The production root PWA browser workflow reused the final verified artifact and passed 2/2 tests in 10.1 seconds. A fresh
+  `/calc` build passed the same 2/2 CSP, install, offline navigation, 404, user-controlled activation, controller, and
+  reload workflows in 54.1 seconds using system Chrome.
+
+Queue status: 7 active items remain across Portfolio development translations, deterministic local browser selection,
+invalid-preference cleanup, broader formatting enforcement, bond sensitivity oracles, app-shell UI refinement, and a
+validated scenario-comparison feature design.
+
+### Progress checkpoint: 14:30 +08:00
+
+- Resumed-goal elapsed time: approximately 3 hours 18 minutes; cumulative logged active work: approximately 10 hours
+  55 minutes. Work continues because the user has not requested a stop and the queue remains substantive.
+- Completed improvement batches: 43; recent reliability work has passed both unit-level state-machine tests and real
+  root/base-path PWA browser lifecycles.
+- Current work: Improvement 43 is fully verified and ready to commit. Deterministic local browser selection is next,
+  followed by preference recovery and the remaining numeric/tooling/UI/product queue.
+- Queue status: 7 active items; the newly requested UI and feature work has concrete discovery entries rather than an
+  unbounded visual rewrite.
