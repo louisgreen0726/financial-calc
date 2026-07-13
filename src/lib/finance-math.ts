@@ -264,17 +264,24 @@ export const Finance = {
   nper: (rate: number, pmt: number, pv: number, fv: number = 0, type: PaymentTiming = 0): number => {
     if (!isValid(rate) || !isValid(pmt) || !isValid(pv) || !isValid(fv) || !isSupportedPaymentTiming(type)) return NaN;
     if (rate <= -1) return NaN;
+    const inputScale = Math.max(Math.abs(pmt), Math.abs(pv), Math.abs(fv), Number.MIN_VALUE);
+    const scaledPmt = pmt / inputScale;
+    const scaledPv = pv / inputScale;
+    const scaledFv = fv / inputScale;
     if (rate === 0) {
-      if (pmt === 0) return NaN;
-      return -(pv + fv) / pmt;
+      if (scaledPmt === 0) return NaN;
+      const result = -neumaierSum([scaledPv, scaledFv]) / scaledPmt;
+      return isValid(result) ? result : NaN;
     }
-    const num = pmt * (1 + rate * type) - fv * rate;
-    const den = pv * rate + pmt * (1 + rate * type);
-    if (den === 0 || num / den <= 0) return NaN;
-    const logRatio = Math.log(Math.abs(num) / Math.abs(den));
+    const adjustedPayment = scaledPmt * (1 + rate * type);
+    const num = neumaierSum([adjustedPayment, -scaledFv * rate]);
+    const den = neumaierSum([scaledPv * rate, adjustedPayment]);
+    if (num === 0 || den === 0 || Math.sign(num) !== Math.sign(den)) return NaN;
+    const logRatio = Math.log(Math.abs(num)) - Math.log(Math.abs(den));
     const logRate = Math.log1p(rate);
     if (!isFinite(logRatio) || !isFinite(logRate) || logRate === 0) return NaN;
-    return logRatio / logRate;
+    const result = logRatio / logRate;
+    return isValid(result) ? result : NaN;
   },
   rate: (
     nper: number,

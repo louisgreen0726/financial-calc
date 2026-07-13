@@ -60,8 +60,12 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Repair stale cross-tab PWA update prompts after another tab activates the waiting worker.
 - [ ] Localize remaining hard-coded application-shell copy and refine sidebar information hierarchy.
 - [x] Design and validate a compatible-history scenario comparison workflow before implementation.
-- [ ] Add a strict two-record comparison UI for compatible non-currency History results.
+- [x] Add a strict two-record comparison UI for compatible non-currency History results.
 - [x] Handle cross-tab `localStorage.clear()` without reviving queued history or favorite writes.
+- [ ] Add a versioned Workspace Backup workflow for history, favorites, and user preferences.
+- [ ] Isolate concurrent local Playwright runners by both port and Next.js build directory.
+- [ ] Preserve RATE scale invariance for extreme but finite cash flows.
+- [ ] Audit calculator charts and compact mobile result layouts for the next high-impact UI refinement.
 
 ## 2026-07-13
 
@@ -3151,3 +3155,32 @@ Verification:
 
 Queue status: complete Workspace Backup and truly isolated concurrent Playwright build/port state remain active;
 further UI/product and core numeric robustness work remains queued or under audit.
+
+### Improvement 79: Scale-safe NPER cash-flow ratios
+
+Status: completed.
+
+Changes:
+
+- Reproduced finite period counts hidden by overflow in both NPER branches. At nonzero rates, forming the raw payment,
+  present-value, and future-value ratio could overflow even though cash-flow scaling leaves the period count unchanged;
+  at zero rate, adding two maximum balances overflowed before division and returned an invalid result instead of `2`.
+- Normalized all cash flows by a shared finite magnitude before calculating either branch. The nonzero-rate path now
+  determines ratio validity from numerator and denominator signs and evaluates the ratio as a difference of logarithms,
+  avoiding an underflowing or overflowing intermediate division.
+- Used compensated summation for the normalized numerator, denominator, and zero-rate balance total, while retaining
+  existing invalid-domain behavior for zero payments, singular rates, non-finite inputs, and unsupported timing values.
+- Added maximum-scale positive-rate and zero-rate regressions proving NPER remains invariant to cash-flow scale.
+
+Files and areas:
+
+- `src/lib/finance-math.ts`
+- `src/lib/finance-math.test.ts`
+
+Verification:
+
+- The complete finance-math suite passed 77/77 tests.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: complete Workspace Backup and isolated concurrent Playwright execution remain active; RATE scale
+invariance and further product/UI refinement are queued, so the work queue remains intentionally non-empty.

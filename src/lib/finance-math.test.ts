@@ -131,6 +131,15 @@ test("nper and rate are mutually consistent for a typical annuity", () => {
   expect(Finance.rate(nper, pmt, pv, fv, 0, rate)).toBeCloseTo(rate, 6);
 });
 
+test("nper is invariant to cash-flow scale without overflowing its ratio", () => {
+  const rate = 0.5;
+  const expected = Math.log(1.2) / Math.log1p(rate);
+  const scaledResult = Finance.nper(rate, Number.MAX_VALUE, Number.MAX_VALUE * 0.5, -Number.MAX_VALUE);
+
+  expect(scaledResult).toBeCloseTo(expected, 12);
+  expect(Finance.nper(0, -Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE)).toBe(2);
+});
+
 test("TVM helpers reject singular or invalid runtime inputs", () => {
   expect(Number.isNaN(Finance.pv(-1, 10, 100, 0))).toBe(true);
   expect(Number.isNaN(Finance.fv(-1, 10, 100, 1000))).toBe(true);
