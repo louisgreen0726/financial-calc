@@ -40,6 +40,8 @@ Financial Calc 是一个基于 Next.js 16、React 19、TypeScript、Tailwind CSS
 - **Loans**：等额本息 / 等额本金摊销表，支持每页 100 行的无障碍分页与完整 CSV/JSON/打印输出
 - **Macro**：通胀、购买力、实际利率、CPI 调整、PPP 汇率
 
+每个计算器都提供双语的**恢复默认值**操作；它会保留无关 URL 参数，并可通过“撤销”恢复之前的输入与可见结果状态。
+
 ### 辅助页面
 
 - **History**：历史记录浏览、搜索、收藏、恢复、批量删除、CSV 导出

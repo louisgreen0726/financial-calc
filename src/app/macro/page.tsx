@@ -18,6 +18,7 @@ import { useHistoryRecorder } from "@/hooks/use-history-recorder";
 import { HistoryPanel } from "@/components/history-panel";
 import { useShareableUrl } from "@/hooks/use-shareable-url";
 import { normalizeMacroTab, type MacroTab } from "@/lib/route-state";
+import { ResetDefaultsButton } from "@/components/reset-defaults-button";
 
 interface FieldValidationError {
   field: string;
@@ -36,6 +37,21 @@ interface MacroActionConfig {
 }
 
 const EMPTY_RESULT = "\u2014";
+const DEFAULT_MACRO_INPUTS = {
+  startPrice: "100",
+  endPrice: "150",
+  infYears: "10",
+  ppAmount: "100000",
+  ppRate: "3",
+  ppYears: "20",
+  nominalRate: "5",
+  realInfRate: "2",
+  cpiAmount: "1000",
+  fromCPI: "100",
+  toCPI: "125",
+  domesticPrice: "5.81",
+  foreignPrice: "650",
+};
 const isFiniteNumber = (value: number | null): value is number => typeof value === "number" && Number.isFinite(value);
 
 function makeMacroActionConfig(config: MacroActionConfig): MacroActionConfig {
@@ -54,27 +70,27 @@ export default function MacroPage() {
   };
 
   // Inflation Rate Calculator
-  const [startPrice, setStartPrice] = useState<string>("100");
-  const [endPrice, setEndPrice] = useState<string>("150");
-  const [infYears, setInfYears] = useState<string>("10");
+  const [startPrice, setStartPrice] = useState<string>(DEFAULT_MACRO_INPUTS.startPrice);
+  const [endPrice, setEndPrice] = useState<string>(DEFAULT_MACRO_INPUTS.endPrice);
+  const [infYears, setInfYears] = useState<string>(DEFAULT_MACRO_INPUTS.infYears);
 
   // Purchasing Power Calculator
-  const [ppAmount, setPpAmount] = useState<string>("100000");
-  const [ppRate, setPpRate] = useState<string>("3");
-  const [ppYears, setPpYears] = useState<string>("20");
+  const [ppAmount, setPpAmount] = useState<string>(DEFAULT_MACRO_INPUTS.ppAmount);
+  const [ppRate, setPpRate] = useState<string>(DEFAULT_MACRO_INPUTS.ppRate);
+  const [ppYears, setPpYears] = useState<string>(DEFAULT_MACRO_INPUTS.ppYears);
 
   // Real Interest Rate Calculator
-  const [nominalRate, setNominalRate] = useState<string>("5");
-  const [realInfRate, setRealInfRate] = useState<string>("2");
+  const [nominalRate, setNominalRate] = useState<string>(DEFAULT_MACRO_INPUTS.nominalRate);
+  const [realInfRate, setRealInfRate] = useState<string>(DEFAULT_MACRO_INPUTS.realInfRate);
 
   // CPI Adjustment Calculator
-  const [cpiAmount, setCpiAmount] = useState<string>("1000");
-  const [fromCPI, setFromCPI] = useState<string>("100");
-  const [toCPI, setToCPI] = useState<string>("125");
+  const [cpiAmount, setCpiAmount] = useState<string>(DEFAULT_MACRO_INPUTS.cpiAmount);
+  const [fromCPI, setFromCPI] = useState<string>(DEFAULT_MACRO_INPUTS.fromCPI);
+  const [toCPI, setToCPI] = useState<string>(DEFAULT_MACRO_INPUTS.toCPI);
 
   // PPP Calculator
-  const [domesticPrice, setDomesticPrice] = useState<string>("5.81");
-  const [foreignPrice, setForeignPrice] = useState<string>("650");
+  const [domesticPrice, setDomesticPrice] = useState<string>(DEFAULT_MACRO_INPUTS.domesticPrice);
+  const [foreignPrice, setForeignPrice] = useState<string>(DEFAULT_MACRO_INPUTS.foreignPrice);
 
   // Validation functions
   const validateInflationInputs = useCallback((): FieldValidationError[] => {
@@ -497,6 +513,58 @@ export default function MacroPage() {
     },
   });
 
+  const resetDefaults = () => {
+    const previous = {
+      activeTab,
+      hasInteracted,
+      startPrice,
+      endPrice,
+      infYears,
+      ppAmount,
+      ppRate,
+      ppYears,
+      nominalRate,
+      realInfRate,
+      cpiAmount,
+      fromCPI,
+      toCPI,
+      domesticPrice,
+      foreignPrice,
+    };
+    setActiveTab("inflation");
+    setHasInteracted(false);
+    setStartPrice(DEFAULT_MACRO_INPUTS.startPrice);
+    setEndPrice(DEFAULT_MACRO_INPUTS.endPrice);
+    setInfYears(DEFAULT_MACRO_INPUTS.infYears);
+    setPpAmount(DEFAULT_MACRO_INPUTS.ppAmount);
+    setPpRate(DEFAULT_MACRO_INPUTS.ppRate);
+    setPpYears(DEFAULT_MACRO_INPUTS.ppYears);
+    setNominalRate(DEFAULT_MACRO_INPUTS.nominalRate);
+    setRealInfRate(DEFAULT_MACRO_INPUTS.realInfRate);
+    setCpiAmount(DEFAULT_MACRO_INPUTS.cpiAmount);
+    setFromCPI(DEFAULT_MACRO_INPUTS.fromCPI);
+    setToCPI(DEFAULT_MACRO_INPUTS.toCPI);
+    setDomesticPrice(DEFAULT_MACRO_INPUTS.domesticPrice);
+    setForeignPrice(DEFAULT_MACRO_INPUTS.foreignPrice);
+    return () => {
+      setActiveTab(previous.activeTab);
+      setHasInteracted(previous.hasInteracted);
+      setStartPrice(previous.startPrice);
+      setEndPrice(previous.endPrice);
+      setInfYears(previous.infYears);
+      setPpAmount(previous.ppAmount);
+      setPpRate(previous.ppRate);
+      setPpYears(previous.ppYears);
+      setNominalRate(previous.nominalRate);
+      setRealInfRate(previous.realInfRate);
+      setCpiAmount(previous.cpiAmount);
+      setFromCPI(previous.fromCPI);
+      setToCPI(previous.toCPI);
+      setDomesticPrice(previous.domesticPrice);
+      setForeignPrice(previous.foreignPrice);
+    };
+  };
+
   const inflationStartError = inflationErrors.find((error) => error.field === "startPrice")?.message ?? null;
   const inflationEndError = inflationErrors.find((error) => error.field === "endPrice")?.message ?? null;
   const inflationYearsError = inflationErrors.find((error) => error.field === "years")?.message ?? null;
@@ -518,7 +586,10 @@ export default function MacroPage() {
           <h1 className="page-title">{t("macro.title")}</h1>
           <p className="page-description">{t("macro.subtitle")}</p>
         </div>
-        <HistoryPanel page="macro" onRestore={restoreMacroInputs} />
+        <div className="page-actions">
+          <ResetDefaultsButton urlPrefix="macro" onReset={resetDefaults} />
+          <HistoryPanel page="macro" onRestore={restoreMacroInputs} />
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(normalizeMacroTab(value))} className="space-y-6">

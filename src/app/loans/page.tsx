@@ -36,6 +36,14 @@ import { HistoryPanel } from "@/components/history-panel";
 import { LoanInputSchema } from "@/lib/validation";
 import { normalizeLoanMethod, type LoanMethodState } from "@/lib/route-state";
 import { MAX_DISPLAY_ROWS, MAX_PERIODS, MONTHS_PER_YEAR } from "@/lib/constants";
+import { ResetDefaultsButton } from "@/components/reset-defaults-button";
+
+const DEFAULT_LOAN_INPUTS = {
+  method: "CPM" as LoanMethodState,
+  amount: "500000",
+  rate: "4.5",
+  years: "30",
+};
 
 function LoansPageContent() {
   const { t } = useLanguage();
@@ -45,12 +53,7 @@ function LoansPageContent() {
     setField,
     shareUrl,
   } = useUrlState({
-    defaultValues: {
-      method: "CPM" as LoanMethodState,
-      amount: "500000",
-      rate: "4.5",
-      years: "30",
-    },
+    defaultValues: DEFAULT_LOAN_INPUTS,
     prefix: "loans",
   });
 
@@ -83,6 +86,14 @@ function LoansPageContent() {
   const [schedulePagination, setSchedulePagination] = useState({ key: scheduleKey, page: 0 });
   const [printAllSchedule, setPrintAllSchedule] = useState(false);
   const requestedSchedulePage = schedulePagination.key === scheduleKey ? schedulePagination.page : 0;
+
+  const resetDefaults = () => {
+    const previous = { hasInteracted };
+    setHasInteracted(false);
+    return () => {
+      setHasInteracted(previous.hasInteracted);
+    };
+  };
 
   const parsedLoanInputs = useMemo(
     () => ({
@@ -211,18 +222,21 @@ function LoansPageContent() {
           <h1 className="page-title">{t("loans.title")}</h1>
           <p className="page-description">{t("loans.subtitle")}</p>
         </div>
-        <HistoryPanel
-          page="loans"
-          onRestore={(inputs) => {
-            setState({
-              method: inputs.method !== undefined ? normalizeLoanMethod(inputs.method) : method,
-              amount: inputs.amount !== undefined ? String(inputs.amount) : amount,
-              rate: inputs.rate !== undefined ? String(inputs.rate) : rate,
-              years: inputs.years !== undefined ? String(inputs.years) : years,
-            });
-            setHasInteracted(false);
-          }}
-        />
+        <div className="page-actions">
+          <ResetDefaultsButton urlPrefix="loans" onReset={resetDefaults} />
+          <HistoryPanel
+            page="loans"
+            onRestore={(inputs) => {
+              setState({
+                method: inputs.method !== undefined ? normalizeLoanMethod(inputs.method) : method,
+                amount: inputs.amount !== undefined ? String(inputs.amount) : amount,
+                rate: inputs.rate !== undefined ? String(inputs.rate) : rate,
+                years: inputs.years !== undefined ? String(inputs.years) : years,
+              });
+              setHasInteracted(false);
+            }}
+          />
+        </div>
       </div>
 
       <div id="loans-report-content" className="grid gap-6 xl:grid-cols-12">

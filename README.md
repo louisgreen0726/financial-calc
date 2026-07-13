@@ -39,6 +39,9 @@ The app is no longer just a calculator demo. It includes a full app shell, respo
 - **Loans**: CPM/CAM amortization schedules with accessible 100-row pagination and complete CSV/JSON/print output
 - **Macro**: inflation, purchasing power, real rate, CPI adjustment, and PPP exchange rate
 
+Every calculator exposes a bilingual **Reset defaults** action. It preserves unrelated URL parameters and offers an
+Undo action that restores the prior inputs and visible result state.
+
 ### Supporting pages
 
 - **History**: saved calculation browsing, search, favorites, restore, batch delete, and CSV export

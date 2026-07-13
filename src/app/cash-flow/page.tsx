@@ -24,11 +24,15 @@ import { ResultActions } from "@/components/result-actions";
 import { useShareableUrl } from "@/hooks/use-shareable-url";
 import { MAX_CASH_FLOWS } from "@/lib/constants";
 import { parseCashFlowHistory, serializeCashFlowHistory } from "@/lib/cash-flow-history";
+import { ResetDefaultsButton } from "@/components/reset-defaults-button";
+
+const DEFAULT_CASH_FLOW_RATE = "10";
+const DEFAULT_CASH_FLOWS = ["-10000", "3000", "4000", "5000", "6000"];
 
 export default function CashFlowPage() {
   const { t } = useLanguage();
-  const [rate, setRate] = useState<string>("10");
-  const [flowInputs, setFlowInputs] = useState<string[]>(["-10000", "3000", "4000", "5000", "6000"]);
+  const [rate, setRate] = useState<string>(DEFAULT_CASH_FLOW_RATE);
+  const [flowInputs, setFlowInputs] = useState<string[]>(() => [...DEFAULT_CASH_FLOWS]);
   const [hasInteracted, setHasInteracted] = useState(false);
   const { addToHistory } = useCalculationHistory({ page: "cash-flow" });
   const shareUrl = useShareableUrl({
@@ -117,6 +121,18 @@ export default function CashFlowPage() {
     color: val >= 0 ? "hsl(var(--primary))" : "hsl(var(--destructive))", // Emerald for positive, Rose for negative
   }));
 
+  const resetDefaults = () => {
+    const previous = { rate, flowInputs: [...flowInputs], hasInteracted };
+    setRate(DEFAULT_CASH_FLOW_RATE);
+    setFlowInputs([...DEFAULT_CASH_FLOWS]);
+    setHasInteracted(false);
+    return () => {
+      setRate(previous.rate);
+      setFlowInputs(previous.flowInputs);
+      setHasInteracted(previous.hasInteracted);
+    };
+  };
+
   return (
     <>
       <div className="page-stack" data-tone="teal">
@@ -124,6 +140,9 @@ export default function CashFlowPage() {
           <div>
             <h1 className="page-title">{t("cashFlow.title")}</h1>
             <p className="page-description">{t("cashFlow.subtitle")}</p>
+          </div>
+          <div className="page-actions">
+            <ResetDefaultsButton urlPrefix="cash" onReset={resetDefaults} />
           </div>
         </div>
 

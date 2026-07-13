@@ -39,6 +39,7 @@ import {
   MIN_INTEREST_RATE,
   MIN_PORTFOLIO_RISK_FREE_RATE,
 } from "@/lib/constants";
+import { ResetDefaultsButton } from "@/components/reset-defaults-button";
 
 interface Asset {
   id: number;
@@ -59,7 +60,7 @@ export default function PortfolioPage() {
   const { t } = useLanguage();
   const formatSharpe = (value: number | null) => (value === null ? t("common.notAvailable") : formatNumber(value));
   const [rf, setRf] = useState(3.0);
-  const [assets, setAssets] = useState<Asset[]>(DEFAULT_PORTFOLIO_ASSETS);
+  const [assets, setAssets] = useState<Asset[]>(() => DEFAULT_PORTFOLIO_ASSETS.map((asset) => ({ ...asset })));
   const [correlation, setCorrelation] = useState(0.2);
   const [seed, setSeed] = useState(DEFAULT_PORTFOLIO_SEED);
   const [simulations, setSimulations] = useState<PortfolioPoint[]>([]);
@@ -290,6 +291,37 @@ export default function PortfolioPage() {
     onRestore: (restored) => restorePortfolio(restored as Record<string, number | string>),
   });
 
+  const resetDefaults = () => {
+    const previous = {
+      rf,
+      assets: assets.map((asset) => ({ ...asset })),
+      correlation,
+      seed,
+      simulations,
+      optimal,
+      minVol,
+      resultSignature,
+    };
+    setRf(3);
+    setAssets(DEFAULT_PORTFOLIO_ASSETS.map((asset) => ({ ...asset })));
+    setCorrelation(0.2);
+    setSeed(DEFAULT_PORTFOLIO_SEED);
+    setSimulations([]);
+    setOptimal(null);
+    setMinVol(null);
+    setResultSignature("");
+    return () => {
+      setRf(previous.rf);
+      setAssets(previous.assets);
+      setCorrelation(previous.correlation);
+      setSeed(previous.seed);
+      setSimulations(previous.simulations);
+      setOptimal(previous.optimal);
+      setMinVol(previous.minVol);
+      setResultSignature(previous.resultSignature);
+    };
+  };
+
   return (
     <div className="page-stack" data-tone="blue">
       <div className="page-header">
@@ -297,7 +329,10 @@ export default function PortfolioPage() {
           <h1 className="page-title">{t("portfolio.title")}</h1>
           <p className="page-description">{t("portfolio.subtitle")}</p>
         </div>
-        <HistoryPanel page="portfolio" onRestore={restorePortfolio} />
+        <div className="page-actions">
+          <ResetDefaultsButton urlPrefix="portfolio" onReset={resetDefaults} disabled={isRunning} />
+          <HistoryPanel page="portfolio" onRestore={restorePortfolio} />
+        </div>
       </div>
 
       <div className="grid min-w-0 gap-6 xl:grid-cols-12">

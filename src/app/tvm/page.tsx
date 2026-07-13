@@ -28,11 +28,22 @@ import { parseRequiredNumber } from "@/lib/input-utils";
 import { logger } from "@/lib/logger";
 import { normalizeTVMTarget, type TVMTarget } from "@/lib/route-state";
 import { MAX_INTEREST_RATE, MAX_PERIODS, MIN_INTEREST_RATE } from "@/lib/constants";
+import { ResetDefaultsButton } from "@/components/reset-defaults-button";
 
 const SYMBOLS = {
   arrowRight: "\u2192",
   multiply: "\u00D7",
   approximately: "\u2248",
+};
+
+const DEFAULT_TVM_INPUTS = {
+  target: "fv" as string,
+  rate: "5",
+  nper: "10",
+  pmt: "0",
+  pv: "1000",
+  fv: "0",
+  type: "0",
 };
 
 const TVM_PRESETS = {
@@ -60,15 +71,7 @@ function TVMPageContent() {
     setField,
     shareUrl,
   } = useUrlState({
-    defaultValues: {
-      target: "fv" as string,
-      rate: "5",
-      nper: "10",
-      pmt: "0",
-      pv: "1000",
-      fv: "0",
-      type: "0", // 0 = End (Arrears), 1 = Begin (Due)
-    },
+    defaultValues: DEFAULT_TVM_INPUTS, // type: 0 = End (Arrears), 1 = Begin (Due)
     prefix: "tvm",
   });
 
@@ -398,6 +401,27 @@ function TVMPageContent() {
     clearErrors();
   };
 
+  const resetDefaults = () => {
+    const previous = {
+      result,
+      calculationError,
+      calcSteps,
+      touchedFields,
+    };
+    setResult(null);
+    setCalculationError(null);
+    setCalcSteps(null);
+    setTouchedFields({});
+    clearErrors();
+    return () => {
+      setResult(previous.result);
+      setCalculationError(previous.calculationError);
+      setCalcSteps(previous.calcSteps);
+      setTouchedFields(previous.touchedFields);
+      clearErrors();
+    };
+  };
+
   const applyPreset = (presetKey: keyof typeof TVM_PRESETS) => {
     const preset = TVM_PRESETS[presetKey].values;
     setState(preset);
@@ -423,6 +447,9 @@ function TVMPageContent() {
           <div>
             <h1 className="page-title">{t("tvm.title")}</h1>
             <p className="page-description">{t("tvm.subtitle")}</p>
+          </div>
+          <div className="page-actions">
+            <ResetDefaultsButton urlPrefix="tvm" onReset={resetDefaults} />
           </div>
         </div>
 

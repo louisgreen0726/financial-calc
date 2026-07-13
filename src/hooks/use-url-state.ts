@@ -96,8 +96,13 @@ export function useUrlState<T extends Record<string, UrlStateValue>>({
   );
 
   const reset = useCallback(() => {
-    router.replace(pathname, { scroll: false });
-  }, [pathname, router]);
+    const params = new URLSearchParams(searchParams.toString());
+    for (const key of Object.keys(defaultValues)) {
+      params.delete(prefix ? `${prefix}_${key}` : key);
+    }
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }, [defaultValues, pathname, prefix, router, searchParams]);
 
   const shareUrl = toAbsoluteAppUrl(buildUrl(state, false));
 

@@ -145,6 +145,21 @@ browser-level checks beyond the existing suite.
   declare ESLint 9 compatibility; forcing that invalid peer tree was rejected. `@types/node` stays aligned with the
   Node 20 runtime, and TypeScript 7 remains outside `typescript-eslint`'s `<6.1.0` peer range.
 
+### Workflow Follow-up: Reversible Calculator Defaults
+
+- Only TVM previously exposed a clear command, and it emptied fields rather than consistently restoring defaults.
+  Every calculator now uses one bilingual Reset defaults action in the page header. Resets affect current calculator
+  inputs and derived results only; history, favorites, currency, language, and theme remain untouched.
+- The shared action removes only its calculator-prefixed query parameters and preserves base paths, hashes, and
+  unrelated parameters. It emits a location notification understood by both URL-state implementations, avoiding stale
+  state or competing router writes.
+- Each page returns an Undo closure that captures its complete relevant state. Portfolio includes simulation points,
+  extrema, and result signatures and disables reset while a worker run is active; TVM includes derived steps/results;
+  multi-model Equity and Macro include active tabs and interaction state.
+- Browser coverage starts all nine calculators from shared URLs, resets to defaults, verifies unrelated query survival,
+  and invokes Undo to restore both input values and prefixed URL state. A `/calc` component contract protects base-path
+  preservation.
+
 ### Persistence Follow-up: History Backup Restore
 
 - Settings could download raw history storage but offered no restore path, and legacy/malformed storage could be

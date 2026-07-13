@@ -22,15 +22,24 @@ import { BondInputSchema } from "@/lib/validation";
 import { ResultShell } from "@/components/result-shell";
 import { ResultActions } from "@/components/result-actions";
 import { useShareableUrl } from "@/hooks/use-shareable-url";
+import { ResetDefaultsButton } from "@/components/reset-defaults-button";
+
+const DEFAULT_BOND_INPUTS: Record<"faceValue" | "couponRate" | "years" | "ytm" | "frequency", string> = {
+  faceValue: "1000",
+  couponRate: "5",
+  years: "10",
+  ytm: "4",
+  frequency: "2",
+};
 
 export default function BondsPage() {
   const { t } = useLanguage();
   const [showErrors, setShowErrors] = useState(false);
-  const [faceValue, setFaceValue] = useState("1000");
-  const [couponRate, setCouponRate] = useState("5");
-  const [years, setYears] = useState("10");
-  const [ytm, setYtm] = useState("4");
-  const [frequency, setFrequency] = useState("2");
+  const [faceValue, setFaceValue] = useState(DEFAULT_BOND_INPUTS.faceValue);
+  const [couponRate, setCouponRate] = useState(DEFAULT_BOND_INPUTS.couponRate);
+  const [years, setYears] = useState(DEFAULT_BOND_INPUTS.years);
+  const [ytm, setYtm] = useState(DEFAULT_BOND_INPUTS.ytm);
+  const [frequency, setFrequency] = useState(DEFAULT_BOND_INPUTS.frequency);
   const [hasInteracted, setHasInteracted] = useState(false);
   const shareUrl = useShareableUrl({
     prefix: "bonds",
@@ -167,6 +176,26 @@ export default function BondsPage() {
   const colLabels = ["2%", "3%", "4%", "5%", "6%"];
   const formatCell = (v: number) => (Number.isFinite(v) ? formatCurrency(v) : t("common.notAvailable"));
 
+  const resetDefaults = () => {
+    const previous = { faceValue, couponRate, years, ytm, frequency, showErrors, hasInteracted };
+    setFaceValue(DEFAULT_BOND_INPUTS.faceValue);
+    setCouponRate(DEFAULT_BOND_INPUTS.couponRate);
+    setYears(DEFAULT_BOND_INPUTS.years);
+    setYtm(DEFAULT_BOND_INPUTS.ytm);
+    setFrequency(DEFAULT_BOND_INPUTS.frequency);
+    setShowErrors(false);
+    setHasInteracted(false);
+    return () => {
+      setFaceValue(previous.faceValue);
+      setCouponRate(previous.couponRate);
+      setYears(previous.years);
+      setYtm(previous.ytm);
+      setFrequency(previous.frequency);
+      setShowErrors(previous.showErrors);
+      setHasInteracted(previous.hasInteracted);
+    };
+  };
+
   return (
     <div className="page-stack" data-tone="blue">
       <div className="page-header">
@@ -175,6 +204,7 @@ export default function BondsPage() {
           <p className="page-description">{t("bonds.subtitle")}</p>
         </div>
         <div className="page-actions">
+          <ResetDefaultsButton urlPrefix="bonds" onReset={resetDefaults} />
           <HistoryPanel
             page="bonds"
             onRestore={(inputs) => {

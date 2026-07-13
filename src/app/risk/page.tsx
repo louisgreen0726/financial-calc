@@ -25,13 +25,21 @@ import {
   calculateParametricNormalRisk,
   type DeterministicStressScenarioId,
 } from "@/lib/risk-math";
+import { ResetDefaultsButton } from "@/components/reset-defaults-button";
+
+const DEFAULT_RISK_INPUTS: Record<"value" | "volatility" | "confidence" | "days", string> = {
+  value: "100000",
+  volatility: "15",
+  confidence: "0.95",
+  days: "10",
+};
 
 export default function RiskPage() {
   const { t } = useLanguage();
-  const [value, setValue] = useState("100000"); // Portfolio Value
-  const [volatility, setVolatility] = useState("15"); // Annual Vol %
-  const [confidence, setConfidence] = useState("0.95");
-  const [days, setDays] = useState("10"); // Horizon
+  const [value, setValue] = useState(DEFAULT_RISK_INPUTS.value); // Portfolio Value
+  const [volatility, setVolatility] = useState(DEFAULT_RISK_INPUTS.volatility); // Annual Vol %
+  const [confidence, setConfidence] = useState(DEFAULT_RISK_INPUTS.confidence);
+  const [days, setDays] = useState(DEFAULT_RISK_INPUTS.days); // Horizon
   const [hasInteracted, setHasInteracted] = useState(false);
   const { addToHistory } = useCalculationHistory({ page: "risk" });
   const shareUrl = useShareableUrl({
@@ -49,6 +57,22 @@ export default function RiskPage() {
   const updateField = (setter: (value: string) => void) => (nextValue: string) => {
     setHasInteracted(true);
     setter(nextValue);
+  };
+
+  const resetDefaults = () => {
+    const previous = { value, volatility, confidence, days, hasInteracted };
+    setValue(DEFAULT_RISK_INPUTS.value);
+    setVolatility(DEFAULT_RISK_INPUTS.volatility);
+    setConfidence(DEFAULT_RISK_INPUTS.confidence);
+    setDays(DEFAULT_RISK_INPUTS.days);
+    setHasInteracted(false);
+    return () => {
+      setValue(previous.value);
+      setVolatility(previous.volatility);
+      setConfidence(previous.confidence);
+      setDays(previous.days);
+      setHasInteracted(previous.hasInteracted);
+    };
   };
 
   const parsedInputs = useMemo(
@@ -157,16 +181,19 @@ export default function RiskPage() {
           <h1 className="page-title">{t("risk.title")}</h1>
           <p className="page-description">{t("risk.subtitle")}</p>
         </div>
-        <HistoryPanel
-          page="risk"
-          onRestore={(inputs) => {
-            if (inputs.value !== undefined) setValue(String(inputs.value));
-            if (inputs.volatility !== undefined) setVolatility(String(inputs.volatility));
-            if (inputs.confidence !== undefined) setConfidence(String(inputs.confidence));
-            if (inputs.days !== undefined) setDays(String(inputs.days));
-            setHasInteracted(false);
-          }}
-        />
+        <div className="page-actions">
+          <ResetDefaultsButton urlPrefix="risk" onReset={resetDefaults} />
+          <HistoryPanel
+            page="risk"
+            onRestore={(inputs) => {
+              if (inputs.value !== undefined) setValue(String(inputs.value));
+              if (inputs.volatility !== undefined) setVolatility(String(inputs.volatility));
+              if (inputs.confidence !== undefined) setConfidence(String(inputs.confidence));
+              if (inputs.days !== undefined) setDays(String(inputs.days));
+              setHasInteracted(false);
+            }}
+          />
+        </div>
       </div>
 
       <div id="risk-report-content" className="grid min-w-0 gap-6 lg:grid-cols-12">

@@ -21,17 +21,29 @@ import { useShareableUrl } from "@/hooks/use-shareable-url";
 import { buildOptionPayoffData, getOptionPayoffDomain } from "@/lib/chart-data";
 import { ImpliedVolatilityInputSchema } from "@/lib/validation";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ResetDefaultsButton } from "@/components/reset-defaults-button";
+
+const DEFAULT_OPTION_INPUTS = {
+  spot: "100",
+  strike: "100",
+  time: "1",
+  rate: "5",
+  dividendYield: "0",
+  volatility: "20",
+  impliedOptionType: "call" as const,
+  marketPrice: "10",
+};
 
 export default function OptionsPage() {
   const { t } = useLanguage();
-  const [spot, setSpot] = useState("100");
-  const [strike, setStrike] = useState("100");
-  const [time, setTime] = useState("1"); // Years
-  const [rate, setRate] = useState("5"); // %
-  const [dividendYield, setDividendYield] = useState("0"); // %
-  const [volatility, setVolatility] = useState("20"); // %
-  const [impliedOptionType, setImpliedOptionType] = useState<"call" | "put">("call");
-  const [marketPrice, setMarketPrice] = useState("10");
+  const [spot, setSpot] = useState(DEFAULT_OPTION_INPUTS.spot);
+  const [strike, setStrike] = useState(DEFAULT_OPTION_INPUTS.strike);
+  const [time, setTime] = useState(DEFAULT_OPTION_INPUTS.time); // Years
+  const [rate, setRate] = useState(DEFAULT_OPTION_INPUTS.rate); // %
+  const [dividendYield, setDividendYield] = useState(DEFAULT_OPTION_INPUTS.dividendYield); // %
+  const [volatility, setVolatility] = useState(DEFAULT_OPTION_INPUTS.volatility); // %
+  const [impliedOptionType, setImpliedOptionType] = useState<"call" | "put">(DEFAULT_OPTION_INPUTS.impliedOptionType);
+  const [marketPrice, setMarketPrice] = useState(DEFAULT_OPTION_INPUTS.marketPrice);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [hasImpliedInteracted, setHasImpliedInteracted] = useState(false);
   const shareUrl = useShareableUrl({
@@ -50,6 +62,43 @@ export default function OptionsPage() {
       setHasImpliedInteracted(false);
     },
   });
+
+  const resetDefaults = () => {
+    const previous = {
+      spot,
+      strike,
+      time,
+      rate,
+      dividendYield,
+      volatility,
+      impliedOptionType,
+      marketPrice,
+      hasInteracted,
+      hasImpliedInteracted,
+    };
+    setSpot(DEFAULT_OPTION_INPUTS.spot);
+    setStrike(DEFAULT_OPTION_INPUTS.strike);
+    setTime(DEFAULT_OPTION_INPUTS.time);
+    setRate(DEFAULT_OPTION_INPUTS.rate);
+    setDividendYield(DEFAULT_OPTION_INPUTS.dividendYield);
+    setVolatility(DEFAULT_OPTION_INPUTS.volatility);
+    setImpliedOptionType(DEFAULT_OPTION_INPUTS.impliedOptionType);
+    setMarketPrice(DEFAULT_OPTION_INPUTS.marketPrice);
+    setHasInteracted(false);
+    setHasImpliedInteracted(false);
+    return () => {
+      setSpot(previous.spot);
+      setStrike(previous.strike);
+      setTime(previous.time);
+      setRate(previous.rate);
+      setDividendYield(previous.dividendYield);
+      setVolatility(previous.volatility);
+      setImpliedOptionType(previous.impliedOptionType);
+      setMarketPrice(previous.marketPrice);
+      setHasInteracted(previous.hasInteracted);
+      setHasImpliedInteracted(previous.hasImpliedInteracted);
+    };
+  };
 
   const parsedInputs = useMemo(
     () => ({
@@ -234,6 +283,9 @@ export default function OptionsPage() {
           <div>
             <h1 className="page-title">{t("options.title")}</h1>
             <p className="page-description">{t("options.subtitle")}</p>
+          </div>
+          <div className="page-actions">
+            <ResetDefaultsButton urlPrefix="options" onReset={resetDefaults} />
           </div>
         </div>
 

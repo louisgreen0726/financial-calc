@@ -19,33 +19,46 @@ import { EquityCAPMSchema, EquityDDMSchema, EquityWACCSchema } from "@/lib/valid
 import { ResultShell } from "@/components/result-shell";
 import { ResultActions } from "@/components/result-actions";
 import { useShareableUrl } from "@/hooks/use-shareable-url";
+import { ResetDefaultsButton } from "@/components/reset-defaults-button";
 
 type EquitySection = "capm" | "wacc" | "ddm";
+
+const DEFAULT_EQUITY_INPUTS = {
+  rf: "3.5",
+  beta: "1.2",
+  rm: "10",
+  equity: "1000000",
+  debt: "500000",
+  costEquity: "12",
+  costDebt: "6",
+  taxRate: "25",
+  div: "2.5",
+  growth: "4",
+  reqReturn: "9",
+} as const;
+const EMPTY_EQUITY_INTERACTIONS: Record<EquitySection, boolean> = { capm: false, wacc: false, ddm: false };
 
 export default function EquityPage() {
   const { t } = useLanguage();
   const [showErrors, setShowErrors] = useState(false);
-  const [interactedSections, setInteractedSections] = useState<Record<EquitySection, boolean>>({
-    capm: false,
-    wacc: false,
-    ddm: false,
-  });
+  const [interactedSections, setInteractedSections] =
+    useState<Record<EquitySection, boolean>>(EMPTY_EQUITY_INTERACTIONS);
   // CAPM State
-  const [rf, setRf] = useState("3.5");
-  const [beta, setBeta] = useState("1.2");
-  const [rm, setRm] = useState("10");
+  const [rf, setRf] = useState<string>(DEFAULT_EQUITY_INPUTS.rf);
+  const [beta, setBeta] = useState<string>(DEFAULT_EQUITY_INPUTS.beta);
+  const [rm, setRm] = useState<string>(DEFAULT_EQUITY_INPUTS.rm);
 
   // WACC State
-  const [equity, setEquity] = useState("1000000");
-  const [debt, setDebt] = useState("500000");
-  const [costEquity, setCostEquity] = useState("12");
-  const [costDebt, setCostDebt] = useState("6");
-  const [taxRate, setTaxRate] = useState("25");
+  const [equity, setEquity] = useState<string>(DEFAULT_EQUITY_INPUTS.equity);
+  const [debt, setDebt] = useState<string>(DEFAULT_EQUITY_INPUTS.debt);
+  const [costEquity, setCostEquity] = useState<string>(DEFAULT_EQUITY_INPUTS.costEquity);
+  const [costDebt, setCostDebt] = useState<string>(DEFAULT_EQUITY_INPUTS.costDebt);
+  const [taxRate, setTaxRate] = useState<string>(DEFAULT_EQUITY_INPUTS.taxRate);
 
   // DDM State
-  const [div, setDiv] = useState("2.5");
-  const [growth, setGrowth] = useState("4");
-  const [reqReturn, setReqReturn] = useState("9");
+  const [div, setDiv] = useState<string>(DEFAULT_EQUITY_INPUTS.div);
+  const [growth, setGrowth] = useState<string>(DEFAULT_EQUITY_INPUTS.growth);
+  const [reqReturn, setReqReturn] = useState<string>(DEFAULT_EQUITY_INPUTS.reqReturn);
   const [activeSection, setActiveSection] = useState<EquitySection>("capm");
 
   const shareUrl = useShareableUrl({
@@ -82,6 +95,45 @@ export default function EquityPage() {
       setInteractedSections({ capm: false, wacc: false, ddm: false });
     },
   });
+
+  const resetDefaults = () => {
+    const previous = {
+      inputs: { rf, beta, rm, equity, debt, costEquity, costDebt, taxRate, div, growth, reqReturn },
+      activeSection,
+      interactedSections,
+      showErrors,
+    };
+    setRf(DEFAULT_EQUITY_INPUTS.rf);
+    setBeta(DEFAULT_EQUITY_INPUTS.beta);
+    setRm(DEFAULT_EQUITY_INPUTS.rm);
+    setEquity(DEFAULT_EQUITY_INPUTS.equity);
+    setDebt(DEFAULT_EQUITY_INPUTS.debt);
+    setCostEquity(DEFAULT_EQUITY_INPUTS.costEquity);
+    setCostDebt(DEFAULT_EQUITY_INPUTS.costDebt);
+    setTaxRate(DEFAULT_EQUITY_INPUTS.taxRate);
+    setDiv(DEFAULT_EQUITY_INPUTS.div);
+    setGrowth(DEFAULT_EQUITY_INPUTS.growth);
+    setReqReturn(DEFAULT_EQUITY_INPUTS.reqReturn);
+    setActiveSection("capm");
+    setInteractedSections(EMPTY_EQUITY_INTERACTIONS);
+    setShowErrors(false);
+    return () => {
+      setRf(previous.inputs.rf);
+      setBeta(previous.inputs.beta);
+      setRm(previous.inputs.rm);
+      setEquity(previous.inputs.equity);
+      setDebt(previous.inputs.debt);
+      setCostEquity(previous.inputs.costEquity);
+      setCostDebt(previous.inputs.costDebt);
+      setTaxRate(previous.inputs.taxRate);
+      setDiv(previous.inputs.div);
+      setGrowth(previous.inputs.growth);
+      setReqReturn(previous.inputs.reqReturn);
+      setActiveSection(previous.activeSection);
+      setInteractedSections(previous.interactedSections);
+      setShowErrors(previous.showErrors);
+    };
+  };
 
   // Memoized calculations for performance
   const capmResult = useMemo(() => {
@@ -222,6 +274,7 @@ export default function EquityPage() {
           <p className="page-description">{t("equity.subtitle")}</p>
         </div>
         <div className="page-actions">
+          <ResetDefaultsButton urlPrefix="equity" onReset={resetDefaults} />
           <HistoryPanel
             page="equity"
             onRestore={(inputs) => {

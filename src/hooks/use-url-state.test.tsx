@@ -42,6 +42,15 @@ describe("useUrlState", () => {
     });
   });
 
+  it("resets only its own prefixed parameters", () => {
+    navigationMock.searchParams = new URLSearchParams("utm_source=review&fc_rate=7&fc_nper=20&other_value=keep");
+    const { result } = renderHook(() => useUrlState({ defaultValues: { rate: "5", nper: "10" }, prefix: "fc" }));
+
+    act(() => result.current.reset());
+
+    expect(navigationMock.replace).toHaveBeenCalledWith("/tvm?utm_source=review&other_value=keep", { scroll: false });
+  });
+
   it("preserves empty string values so controlled inputs can stay blank", () => {
     navigationMock.searchParams = new URLSearchParams("source=share&fc_rate=5&fc_nper=10");
 

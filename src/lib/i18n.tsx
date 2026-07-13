@@ -29,6 +29,9 @@ type Translations = {
     add: string;
     remove: string;
     clear: string;
+    resetDefaults: string;
+    defaultsRestored: string;
+    undo: string;
     cancel: string;
     close: string;
     confirm: string;
@@ -681,6 +684,9 @@ const en: Translations = {
     add: "Add",
     remove: "Remove",
     clear: "Clear",
+    resetDefaults: "Reset defaults",
+    defaultsRestored: "Default values restored",
+    undo: "Undo",
     cancel: "Cancel",
     close: "Close",
     confirm: "Confirm",
@@ -1349,6 +1355,9 @@ const zh: Translations = {
     add: "新增",
     remove: "删除",
     clear: "重置",
+    resetDefaults: "恢复默认值",
+    defaultsRestored: "已恢复默认值",
+    undo: "撤销",
     cancel: "取消",
     close: "关闭",
     confirm: "确认",

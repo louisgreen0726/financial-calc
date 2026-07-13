@@ -32,9 +32,10 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Reduce `style-src 'unsafe-inline'` exposure by inventorying static versus runtime component/chart styles.
 - [x] Bound amortization-table DOM rendering without weakening complete exports or accessibility coverage.
 - [x] Reduce the remaining dynamic style-attribute compatibility surface in owned components.
-- [ ] Audit calculator reset/default workflows and add a consistent reversible reset command where missing.
+- [x] Audit calculator reset/default workflows and add a consistent reversible reset command where missing.
 - [ ] Add corrupted-storage browser coverage for persisted theme, language, and currency preferences.
 - [ ] Add browser coverage for denied clipboard/share permissions and export failure recovery.
+- [ ] Audit service-worker cache growth and storage-quota failure behavior across upgrades.
 
 ## 2026-07-13
 
@@ -1121,3 +1122,59 @@ Verification:
 - Current work: Improvement 26 is fully verified and ready to commit; calculator reset/default consistency is next.
 - Queue status: 3 active items remain: reversible reset/default workflows, corrupted preference-storage coverage, and
   denied clipboard/share/export recovery.
+
+### Improvement 27: Reversible Reset defaults across all calculators
+
+Status: completed.
+
+Changes:
+
+- Audited all nine calculators. TVM alone had a Clear command that emptied values; Cash Flow, Equity, Portfolio, Bonds,
+  Options, Risk, Loans, and Macro had no consistent way to restore defaults.
+- Added one bilingual Reset defaults action to every calculator header. The shared component uses a familiar reset icon,
+  preserves base paths/hash fragments/unrelated query parameters, removes only the active calculator prefix, and shows
+  an Undo action through the existing notification system.
+- Unified both state architectures by explicitly notifying `popstate` after History API replacements. This keeps
+  Next `useSearchParams` and the local `useShareableUrl` subscription synchronized without issuing competing router
+  transitions.
+- Improved `useUrlState.reset()` itself so future callers remove only owned keys rather than discarding all query
+  parameters. Added a focused contract that preserves analytics and unrelated feature state.
+- Captured page-specific Undo state rather than only input text: TVM restores results, errors, derivation steps, and
+  touched fields; Equity/Macro restore active models and interaction state; Loans restores recording state; all simple
+  calculators restore their interaction/error state.
+- Portfolio captures cloned assets, risk-free rate, correlation, seed, simulation points, optimal/minimum-volatility
+  results, and freshness signature. Reset is disabled while the worker is running because a canceled computation cannot
+  honestly be restored by Undo.
+- Exercised the browser matrix under two workers. Initial implementations exposed two real TVM/Loans URL races: an
+  asynchronous router write could land after direct cleanup or Undo. Replacing the competing writes with one History
+  API update plus explicit location notification eliminated the race; six concurrent repeated cases then passed.
+- Documented the reset/Undo behavior in English/Chinese README and the engineering review.
+
+Files and areas:
+
+- `src/components/reset-defaults-button.tsx` and its focused test
+- All nine calculator route pages and bilingual common labels
+- `src/hooks/use-url-state.ts` and its reset contract
+- `e2e/reset-defaults.spec.ts`
+- English/Chinese README, engineering review, and improvement log
+
+Verification:
+
+- Focused reset, URL-state, and translation suites passed with 11 tests; strict TypeScript and ESLint passed across all
+  nine page integrations.
+- The nine-route browser matrix passed 9/9 under two workers. TVM/Loans additionally passed six repeated concurrent
+  cases after the location-notification fix.
+- `npm run verify`: passed with 50 Vitest files and 418 tests, 15 routes, 197 precache assets, 96 script hashes, 35
+  static style hashes, 722 internal references, and every route budget.
+- The complete Playwright suite passed all 33 tests in 3.3 minutes, including all route Axe scans and existing workflows.
+- A focused component contract used `/calc/options/` and proved Reset/Undo preserves the base path, fragment, unrelated
+  query parameter, calculator value, and original History state.
+- Production dependency audit reported zero vulnerabilities; extended Prettier and `git diff --check` passed.
+
+### Progress checkpoint: 09:52 +08:00
+
+- Continuous-session elapsed time: 6 hours 46 minutes.
+- Completed improvement batches: 27; every calculator now has a consistent default recovery path with a real Undo.
+- Current work: Improvement 27 is fully verified and ready to commit; corrupted preference-storage coverage is next.
+- Queue status: 3 active items remain: corrupted preference storage, denied clipboard/share/export recovery, and
+  service-worker storage-quota behavior.
