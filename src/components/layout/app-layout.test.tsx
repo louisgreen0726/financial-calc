@@ -101,6 +101,42 @@ describe("AppLayout print contract", () => {
     expect(screen.getByRole("main").parentElement).toHaveClass("lg:pl-[4.5rem]");
   });
 
+  it("expands after another tab clears localStorage but ignores a sessionStorage clear", async () => {
+    window.localStorage.setItem(SIDEBAR_KEY, "true");
+    render(
+      <AppLayout>
+        <article>Printable report</article>
+      </AppLayout>
+    );
+
+    expect(screen.getByTestId("sidebar")).toHaveAttribute("data-collapsed", "true");
+    fireEvent(window, new StorageEvent("storage", { key: null, storageArea: window.sessionStorage }));
+    expect(screen.getByTestId("sidebar")).toHaveAttribute("data-collapsed", "true");
+
+    window.localStorage.clear();
+    fireEvent(window, new StorageEvent("storage", { key: null, storageArea: window.localStorage }));
+
+    await waitFor(() => expect(screen.getByTestId("sidebar")).toHaveAttribute("data-collapsed", "false"));
+  });
+
+  it("drops a failed-write session override after another tab clears localStorage", async () => {
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new DOMException("Storage blocked", "SecurityError");
+    });
+    render(
+      <AppLayout>
+        <article>Printable report</article>
+      </AppLayout>
+    );
+    fireEvent.click(screen.getByRole("button", { name: "common.collapseSidebar" }));
+    expect(screen.getByTestId("sidebar")).toHaveAttribute("data-collapsed", "true");
+
+    fireEvent(window, new StorageEvent("storage", { key: null, storageArea: window.localStorage }));
+
+    await waitFor(() => expect(screen.getByTestId("sidebar")).toHaveAttribute("data-collapsed", "false"));
+    setItem.mockRestore();
+  });
+
   it("removes a malformed persisted sidebar preference and stays expanded", async () => {
     window.localStorage.setItem(SIDEBAR_KEY, "{not-json");
 

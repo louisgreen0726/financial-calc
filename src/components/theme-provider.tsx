@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { safeGetItem, safeRemoveOrReplaceItem, safeSetItem } from "@/lib/storage";
+import { isLocalStorageEventForKey, safeGetItem, safeRemoveOrReplaceItem, safeSetItem } from "@/lib/storage";
 
 type Theme = "light" | "dark" | "system";
 type ResolvedTheme = "light" | "dark";
@@ -60,7 +60,7 @@ export function ThemeProvider({ children, defaultTheme = "system", enableSystem 
       setThemeState(readStoredTheme(defaultTheme));
     };
     const handleStorage = (event: StorageEvent) => {
-      if (event.key === THEME_STORAGE_KEY) {
+      if (isLocalStorageEventForKey(event, THEME_STORAGE_KEY)) {
         setThemeState(readStoredTheme(defaultTheme));
       }
     };

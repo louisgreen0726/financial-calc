@@ -1,5 +1,29 @@
 "use client";
 
+export function isLocalStorageEventForKey(event: StorageEvent, key: string): boolean {
+  if (event.key !== null && event.key !== key) {
+    return false;
+  }
+
+  // Synthetic storage events commonly omit storageArea. Real events must come
+  // from localStorage so a sessionStorage clear cannot reset persisted state.
+  if (event.storageArea === null) {
+    return true;
+  }
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  try {
+    if (event.storageArea === window.sessionStorage) {
+      return false;
+    }
+    return event.storageArea === window.localStorage;
+  } catch {
+    return false;
+  }
+}
+
 export function safeGetItem(key: string): string | null {
   if (typeof window === "undefined") {
     return null;

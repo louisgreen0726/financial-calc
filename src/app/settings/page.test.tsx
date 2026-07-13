@@ -67,6 +67,20 @@ describe("SettingsPage", () => {
     }
   });
 
+  it("returns to the default currency after another tab clears localStorage", async () => {
+    window.localStorage.setItem("financial-calc-currency", "EUR");
+    render(<SettingsPage />);
+
+    await waitFor(() => expect(screen.getByRole("button", { name: /EUR/ })).toHaveAttribute("aria-pressed", "true"));
+    fireEvent(window, new StorageEvent("storage", { key: null, storageArea: window.sessionStorage }));
+    expect(screen.getByRole("button", { name: /EUR/ })).toHaveAttribute("aria-pressed", "true");
+
+    window.localStorage.clear();
+    fireEvent(window, new StorageEvent("storage", { key: null, storageArea: window.localStorage }));
+
+    expect(screen.getByRole("button", { name: /USD/ })).toHaveAttribute("aria-pressed", "true");
+  });
+
   it("exports a normalized versioned history envelope", () => {
     const item = {
       id: "legacy",

@@ -8,7 +8,7 @@ import {
   LANGUAGE_KEY,
   SUPPORTED_CURRENCIES,
 } from "@/lib/constants";
-import { safeGetItem, safeRemoveOrReplaceItem, safeSetItem } from "@/lib/storage";
+import { isLocalStorageEventForKey, safeGetItem, safeRemoveOrReplaceItem, safeSetItem } from "@/lib/storage";
 
 // --- Types ---
 type Language = "en" | "zh";
@@ -2067,7 +2067,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     }
 
     const handleStorage = (event: StorageEvent) => {
-      if (event.key !== LANGUAGE_KEY) return;
+      if (!isLocalStorageEventForKey(event, LANGUAGE_KEY)) return;
       const currentLanguage = safeGetItem(LANGUAGE_KEY);
       const nextLanguage = currentLanguage === "zh" ? "zh" : "en";
       if (currentLanguage !== null && currentLanguage !== nextLanguage) {
@@ -2082,7 +2082,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const refreshFormat = () => setFormatRevision((revision) => revision + 1);
     const handleStorage = (event: StorageEvent) => {
-      if (event.key === CURRENCY_KEY) {
+      if (isLocalStorageEventForKey(event, CURRENCY_KEY)) {
         const currentCurrency = safeGetItem(CURRENCY_KEY);
         if (
           currentCurrency !== null &&

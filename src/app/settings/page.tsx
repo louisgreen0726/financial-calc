@@ -21,7 +21,14 @@ import {
   SUPPORTED_CURRENCIES,
   type SupportedCurrency,
 } from "@/lib/constants";
-import { safeGetItem, safeGetJSON, safeRemoveItem, safeSetItem, safeSetJSON } from "@/lib/storage";
+import {
+  isLocalStorageEventForKey,
+  safeGetItem,
+  safeGetJSON,
+  safeRemoveItem,
+  safeSetItem,
+  safeSetJSON,
+} from "@/lib/storage";
 import { nextStorageGeneration, withStorageKeyLock } from "@/lib/storage-coordinator";
 import { useTheme } from "@/components/theme-provider";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -59,7 +66,7 @@ export default function SettingsPage() {
       setCurrency(isSupportedCurrency(saved) ? saved : DEFAULT_CURRENCY);
     };
     const handleStorage = (event: StorageEvent) => {
-      if (event.key === CURRENCY_KEY) syncCurrency();
+      if (isLocalStorageEventForKey(event, CURRENCY_KEY)) syncCurrency();
     };
 
     queueMicrotask(syncCurrency);

@@ -7,17 +7,17 @@ import { formatCurrency } from "@/lib/utils";
 
 function CurrencyProbe() {
   const { formatCurrencyLocale } = useLocaleFormat();
-  return <output>{formatCurrencyLocale(1234.5)}</output>;
+  return <output data-testid="locale-currency">{formatCurrencyLocale(1234.5)}</output>;
 }
 
 function GenericCurrencyProbe() {
   useLanguage();
-  return <output>{formatCurrency(1234.5)}</output>;
+  return <output data-testid="generic-currency">{formatCurrency(1234.5)}</output>;
 }
 
 function LanguageProbe() {
   const { language } = useLanguage();
-  return <output>{language}</output>;
+  return <output data-testid="language">{language}</output>;
 }
 
 describe("useLocaleFormat", () => {
@@ -198,5 +198,45 @@ describe("useLocaleFormat", () => {
 
     expect(screen.getByText("zh")).toBeInTheDocument();
     expect(document.documentElement.lang).toBe("zh");
+  });
+
+  it("returns language and currency formatters to defaults after another tab clears localStorage", async () => {
+    window.localStorage.setItem(LANGUAGE_KEY, "zh");
+    window.localStorage.setItem(CURRENCY_KEY, "EUR");
+    render(
+      <LanguageProvider>
+        <LanguageProbe />
+        <CurrencyProbe />
+        <GenericCurrencyProbe />
+      </LanguageProvider>
+    );
+    const eur = new Intl.NumberFormat("zh-CN", { style: "currency", currency: "EUR" }).format(1234.5);
+    await waitFor(() => {
+      expect(screen.getByTestId("language")).toHaveTextContent("zh");
+      expect(screen.getByTestId("locale-currency")).toHaveTextContent(eur);
+    });
+
+    act(() => {
+      window.dispatchEvent(new StorageEvent("storage", { key: null, storageArea: window.sessionStorage }));
+    });
+    expect(screen.getByTestId("language")).toHaveTextContent("zh");
+    expect(screen.getByTestId("locale-currency")).toHaveTextContent(eur);
+
+    window.localStorage.clear();
+    act(() => {
+      window.dispatchEvent(new StorageEvent("storage", { key: null, storageArea: window.localStorage }));
+    });
+
+    const localeUsd = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(1234.5);
+    const genericUsd = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      currencyDisplay: "narrowSymbol",
+    }).format(1234.5);
+    await waitFor(() => {
+      expect(screen.getByTestId("language")).toHaveTextContent("en");
+      expect(screen.getByTestId("locale-currency")).toHaveTextContent(localeUsd);
+      expect(screen.getByTestId("generic-currency")).toHaveTextContent(genericUsd);
+    });
   });
 });

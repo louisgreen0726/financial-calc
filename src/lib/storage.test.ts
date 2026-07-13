@@ -1,6 +1,7 @@
 /// <reference types="vitest/globals" />
 
 import {
+  isLocalStorageEventForKey,
   safeGetItem,
   safeGetJSON,
   safeGetSessionItem,
@@ -29,6 +30,32 @@ describe("storage utilities", () => {
 
     expect(safeRemoveItem("plain-key")).toBe(true);
     expect(safeGetItem("plain-key")).toBeNull();
+  });
+
+  it("matches localStorage key and clear events without accepting sessionStorage events", () => {
+    expect(
+      isLocalStorageEventForKey(
+        new StorageEvent("storage", { key: "target", storageArea: window.localStorage }),
+        "target"
+      )
+    ).toBe(true);
+    expect(
+      isLocalStorageEventForKey(new StorageEvent("storage", { key: null, storageArea: window.localStorage }), "target")
+    ).toBe(true);
+    expect(isLocalStorageEventForKey(new StorageEvent("storage", { key: null }), "target")).toBe(true);
+    expect(
+      isLocalStorageEventForKey(
+        new StorageEvent("storage", { key: "target", storageArea: window.sessionStorage }),
+        "target"
+      )
+    ).toBe(false);
+    expect(
+      isLocalStorageEventForKey(
+        new StorageEvent("storage", { key: null, storageArea: window.sessionStorage }),
+        "target"
+      )
+    ).toBe(false);
+    expect(isLocalStorageEventForKey(new StorageEvent("storage", { key: "other" }), "target")).toBe(false);
   });
 
   it("reads and writes JSON localStorage values with fallback", () => {

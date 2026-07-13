@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useCalculationHistory } from "@/hooks/use-calculation-history";
 import { HISTORY_CHANGED_EVENT, HISTORY_CLEAR_GENERATION_KEY, HISTORY_KEY } from "@/lib/constants";
+import { storageLockName, withStorageLock } from "@/lib/storage-coordinator";
 
 function storedItem(id: string, page: "tvm" | "risk", timestamp: number) {
   return { id, page, inputs: { value: id }, result: timestamp, timestamp };
@@ -232,5 +233,77 @@ describe("useCalculationHistory", () => {
 
     await waitFor(() => expect(result.current.hasPendingPersistence).toBe(false));
     expect(JSON.parse(window.localStorage.getItem(HISTORY_KEY) ?? "null")).toEqual({ version: 1, items: [] });
+  });
+
+  it("discards failed pending writes after another tab clears localStorage", async () => {
+    const { result } = renderHook(() => useCalculationHistory({ page: "tvm" }));
+    await waitFor(() => expect(result.current.isInitialized).toBe(true));
+    const originalSetItem = Storage.prototype.setItem;
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(function setItem(
+      this: Storage,
+      key,
+      value
+    ) {
+      if (key === HISTORY_KEY) {
+        throw new DOMException("Quota exceeded", "QuotaExceededError");
+      }
+      return originalSetItem.call(this, key, value);
+    });
+
+    act(() => {
+      result.current.addToHistory({ rate: "5" }, 100);
+    });
+    await waitFor(() => {
+      expect(result.current.hasPendingPersistence).toBe(true);
+      expect(result.current.persistenceStatus).toBe("failed");
+      expect(result.current.history).toHaveLength(1);
+    });
+
+    window.localStorage.clear();
+    act(() => window.dispatchEvent(new StorageEvent("storage", { key: null, storageArea: window.localStorage })));
+
+    await waitFor(() => {
+      expect(result.current.history).toEqual([]);
+      expect(result.current.hasPendingPersistence).toBe(false);
+      expect(result.current.persistenceStatus).toBe("idle");
+      expect(result.current.persistenceError).toBeNull();
+    });
+
+    setItem.mockRestore();
+    act(() => {
+      window.dispatchEvent(new Event("focus"));
+      window.dispatchEvent(new Event("online"));
+    });
+    await waitFor(() => expect(window.localStorage.getItem(HISTORY_KEY)).toBeNull());
+  });
+
+  it("invalidates a write that is still waiting for the storage lock when another tab clears storage", async () => {
+    const { result } = renderHook(() => useCalculationHistory({ page: "tvm" }));
+    await waitFor(() => expect(result.current.isInitialized).toBe(true));
+    let releaseLock!: () => void;
+    const lockBlocker = withStorageLock(storageLockName(HISTORY_KEY), () => {
+      return new Promise<void>((resolve) => {
+        releaseLock = resolve;
+      });
+    });
+
+    act(() => {
+      result.current.addToHistory({ rate: "7" }, 700);
+    });
+    await waitFor(() => expect(result.current.hasPendingPersistence).toBe(true));
+
+    window.localStorage.clear();
+    act(() => window.dispatchEvent(new StorageEvent("storage", { key: null, storageArea: window.localStorage })));
+    await waitFor(() => expect(result.current.hasPendingPersistence).toBe(false));
+
+    await act(async () => {
+      releaseLock();
+      await lockBlocker;
+    });
+
+    await waitFor(() => {
+      expect(result.current.history).toEqual([]);
+      expect(window.localStorage.getItem(HISTORY_KEY)).toBeNull();
+    });
   });
 });

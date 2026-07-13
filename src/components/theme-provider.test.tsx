@@ -140,4 +140,22 @@ describe("ThemeProvider", () => {
 
     expect(screen.getByText("dark")).toBeInTheDocument();
   });
+
+  it("uses the configured fallback after another tab clears localStorage", async () => {
+    window.localStorage.setItem("theme", "dark");
+    render(
+      <ThemeProvider defaultTheme="system" enableSystem>
+        <ThemeHarness />
+      </ThemeProvider>
+    );
+
+    await waitFor(() => expect(screen.getByText("dark")).toBeInTheDocument());
+    fireEvent(window, new StorageEvent("storage", { key: null, storageArea: window.sessionStorage }));
+    expect(screen.getByText("dark")).toBeInTheDocument();
+
+    window.localStorage.clear();
+    fireEvent(window, new StorageEvent("storage", { key: null, storageArea: window.localStorage }));
+
+    expect(screen.getByText("system")).toBeInTheDocument();
+  });
 });

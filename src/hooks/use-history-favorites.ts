@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FAVORITES_CHANGED_EVENT, FAVORITES_CLEAR_GENERATION_KEY, FAVORITES_KEY } from "@/lib/constants";
-import { safeGetItem, safeGetJSON, safeSetJSON } from "@/lib/storage";
+import { isLocalStorageEventForKey, safeGetItem, safeGetJSON, safeRemoveItem, safeSetJSON } from "@/lib/storage";
 import {
   getPersistenceRetryDelay,
   getStorageGeneration,
@@ -75,6 +75,7 @@ export function useHistoryFavorites(validHistoryIds: Set<string>) {
   const favoritesRef = useRef<Set<string>>(new Set());
   const pendingOperationsRef = useRef<FavoriteOperation[]>([]);
   const pendingGenerationRef = useRef(0);
+  const externalClearRevisionRef = useRef(0);
   const isMountedRef = useRef(true);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const retryAttemptRef = useRef(0);
@@ -126,6 +127,28 @@ export function useHistoryFavorites(validHistoryIds: Set<string>) {
     ]
   );
 
+  const handleExternalStorageClear = useCallback(() => {
+    externalClearRevisionRef.current += 1;
+    pendingOperationsRef.current = [];
+    pendingGenerationRef.current = readClearGeneration();
+    clearRetryTimer();
+    retryAttemptRef.current = 0;
+    safeRemoveItem(FAVORITES_KEY);
+    const nextFavorites = new Set<string>();
+    favoritesRef.current = nextFavorites;
+    safeSetFavorites(nextFavorites);
+    safeSetPendingOperationCount(0);
+    safeSetPersistenceStatus("idle");
+    safeSetPersistenceError(null);
+  }, [
+    clearRetryTimer,
+    readClearGeneration,
+    safeSetFavorites,
+    safeSetPendingOperationCount,
+    safeSetPersistenceError,
+    safeSetPersistenceStatus,
+  ]);
+
   const scheduleRetry = useCallback(() => {
     if (typeof window === "undefined" || pendingOperationsRef.current.length === 0 || retryTimerRef.current !== null) {
       return;
@@ -152,9 +175,13 @@ export function useHistoryFavorites(validHistoryIds: Set<string>) {
 
     safeSetPersistenceStatus("saving");
     safeSetPersistenceError(null);
+    const externalClearRevision = externalClearRevisionRef.current;
 
     try {
       const outcome = await withStorageLock(FAVORITES_LOCK_NAME, () => {
+        if (externalClearRevision !== externalClearRevisionRef.current) {
+          return { type: "cleared" as const };
+        }
         if (discardStaleOperations()) {
           return { type: "cleared" as const };
         }
@@ -172,6 +199,10 @@ export function useHistoryFavorites(validHistoryIds: Set<string>) {
         pendingOperationsRef.current.splice(0, operations.length);
         return { type: "persisted" as const, nextFavorites };
       });
+
+      if (externalClearRevision !== externalClearRevisionRef.current) {
+        return "persisted";
+      }
 
       if (outcome.type === "persisted") {
         const remainingOperations = pendingOperationsRef.current;
@@ -213,6 +244,9 @@ export function useHistoryFavorites(validHistoryIds: Set<string>) {
       logger.warn("History favorites could not be persisted.");
       return "pending";
     } catch (error) {
+      if (externalClearRevision !== externalClearRevisionRef.current) {
+        return "persisted";
+      }
       safeSetPersistenceStatus("failed");
       safeSetPersistenceError("storage");
       safeSetPendingOperationCount(pendingOperationsRef.current.length);
@@ -232,7 +266,11 @@ export function useHistoryFavorites(validHistoryIds: Set<string>) {
 
   useEffect(() => {
     isMountedRef.current = true;
+    const initialClearRevision = externalClearRevisionRef.current;
     queueMicrotask(() => {
+      if (initialClearRevision !== externalClearRevisionRef.current) {
+        return;
+      }
       const nextFavorites = applyFavoriteOperations(readFavoriteIds(), pendingOperationsRef.current);
       if (pendingOperationsRef.current.length === 0) {
         pendingGenerationRef.current = readClearGeneration();
@@ -263,7 +301,12 @@ export function useHistoryFavorites(validHistoryIds: Set<string>) {
       }
     };
     const handleStorage = (event: StorageEvent) => {
-      if (event.key === FAVORITES_KEY || event.key === FAVORITES_CLEAR_GENERATION_KEY) {
+      if (event.key === null && isLocalStorageEventForKey(event, FAVORITES_KEY)) {
+        handleExternalStorageClear();
+      } else if (
+        isLocalStorageEventForKey(event, FAVORITES_KEY) ||
+        isLocalStorageEventForKey(event, FAVORITES_CLEAR_GENERATION_KEY)
+      ) {
         refreshFavorites();
       }
     };
@@ -284,7 +327,14 @@ export function useHistoryFavorites(validHistoryIds: Set<string>) {
       window.removeEventListener("online", retryNow);
       window.removeEventListener("focus", retryNow);
     };
-  }, [clearRetryTimer, discardStaleOperations, flushPendingOperations, safeSetFavorites, safeSetPendingOperationCount]);
+  }, [
+    clearRetryTimer,
+    discardStaleOperations,
+    flushPendingOperations,
+    handleExternalStorageClear,
+    safeSetFavorites,
+    safeSetPendingOperationCount,
+  ]);
 
   useEffect(() => {
     if (retryRevision > 0 && pendingOperationsRef.current.length > 0) {

@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useHistoryFavorites } from "@/hooks/use-history-favorites";
 import { FAVORITES_CLEAR_GENERATION_KEY, FAVORITES_KEY } from "@/lib/constants";
+import { storageLockName, withStorageLock } from "@/lib/storage-coordinator";
 
 describe("useHistoryFavorites", () => {
   beforeEach(() => {
@@ -117,5 +118,79 @@ describe("useHistoryFavorites", () => {
 
     await waitFor(() => expect(result.current.hasPendingPersistence).toBe(false));
     expect(window.localStorage.getItem(FAVORITES_KEY)).toBeNull();
+  });
+
+  it("discards failed pending writes after another tab clears localStorage", async () => {
+    const validIds = new Set(["one"]);
+    const { result } = renderHook(() => useHistoryFavorites(validIds));
+    await waitFor(() => expect(result.current.favorites.size).toBe(0));
+    const originalSetItem = Storage.prototype.setItem;
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(function setItem(
+      this: Storage,
+      key,
+      value
+    ) {
+      if (key === FAVORITES_KEY) {
+        throw new DOMException("Quota exceeded", "QuotaExceededError");
+      }
+      return originalSetItem.call(this, key, value);
+    });
+
+    act(() => {
+      result.current.toggleFavorite("one");
+    });
+    await waitFor(() => {
+      expect(result.current.hasPendingPersistence).toBe(true);
+      expect(result.current.persistenceStatus).toBe("failed");
+      expect([...result.current.favorites]).toEqual(["one"]);
+    });
+
+    window.localStorage.clear();
+    act(() => window.dispatchEvent(new StorageEvent("storage", { key: null, storageArea: window.localStorage })));
+
+    await waitFor(() => {
+      expect(result.current.favorites.size).toBe(0);
+      expect(result.current.hasPendingPersistence).toBe(false);
+      expect(result.current.persistenceStatus).toBe("idle");
+      expect(result.current.persistenceError).toBeNull();
+    });
+
+    setItem.mockRestore();
+    act(() => {
+      window.dispatchEvent(new Event("focus"));
+      window.dispatchEvent(new Event("online"));
+    });
+    await waitFor(() => expect(window.localStorage.getItem(FAVORITES_KEY)).toBeNull());
+  });
+
+  it("invalidates a write that is still waiting for the storage lock when another tab clears storage", async () => {
+    let releaseLock!: () => void;
+    const lockBlocker = withStorageLock(storageLockName(FAVORITES_KEY), () => {
+      return new Promise<void>((resolve) => {
+        releaseLock = resolve;
+      });
+    });
+    const validIds = new Set(["one"]);
+    const { result } = renderHook(() => useHistoryFavorites(validIds));
+    await waitFor(() => expect(result.current.favorites.size).toBe(0));
+
+    act(() => {
+      result.current.toggleFavorite("one");
+    });
+    await waitFor(() => expect(result.current.hasPendingPersistence).toBe(true));
+
+    window.localStorage.clear();
+    act(() => window.dispatchEvent(new StorageEvent("storage", { key: null, storageArea: window.localStorage })));
+    await waitFor(() => expect(result.current.hasPendingPersistence).toBe(false));
+
+    await act(async () => {
+      releaseLock();
+      await lockBlocker;
+    });
+
+    await waitFor(() => {
+      expect(result.current.favorites.size).toBe(0);
+      expect(window.localStorage.getItem(FAVORITES_KEY)).toBeNull();
+    });
   });
 });

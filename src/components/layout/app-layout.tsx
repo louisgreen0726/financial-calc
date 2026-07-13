@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useLanguage } from "@/lib/i18n";
 import { SIDEBAR_COLLAPSED_KEY, SIDEBAR_PREFERENCE_CHANGED_EVENT } from "@/lib/constants";
-import { safeGetItem, safeRemoveOrReplaceItem, safeSetJSON } from "@/lib/storage";
+import { isLocalStorageEventForKey, safeGetItem, safeRemoveOrReplaceItem, safeSetJSON } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
@@ -48,7 +48,7 @@ function repairInvalidSidebarPreference() {
 
 function subscribeToSidebarPreference(onStoreChange: () => void) {
   const handleStorage = (event: StorageEvent) => {
-    if (event.key === SIDEBAR_COLLAPSED_KEY) {
+    if (isLocalStorageEventForKey(event, SIDEBAR_COLLAPSED_KEY)) {
       repairInvalidSidebarPreference();
       onStoreChange();
     }
@@ -89,7 +89,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     repairInvalidSidebarPreference();
     const clearSessionPreference = () => setSessionSidebarCollapsed(null);
     const handleStorage = (event: StorageEvent) => {
-      if (event.key === SIDEBAR_COLLAPSED_KEY) clearSessionPreference();
+      if (isLocalStorageEventForKey(event, SIDEBAR_COLLAPSED_KEY)) clearSessionPreference();
     };
 
     window.addEventListener("storage", handleStorage);

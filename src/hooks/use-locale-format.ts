@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { useLanguage } from "@/lib/i18n";
 import { CURRENCY_CHANGED_EVENT, CURRENCY_KEY, DEFAULT_CURRENCY, SUPPORTED_CURRENCIES } from "@/lib/constants";
-import { safeGetItem } from "@/lib/storage";
+import { isLocalStorageEventForKey, safeGetItem } from "@/lib/storage";
 
 function getCurrencySnapshot() {
   const storedCurrency = safeGetItem(CURRENCY_KEY);
@@ -14,7 +14,7 @@ function getCurrencySnapshot() {
 
 function subscribeToCurrency(onStoreChange: () => void) {
   const handleStorage = (event: StorageEvent) => {
-    if (event.key === CURRENCY_KEY) onStoreChange();
+    if (isLocalStorageEventForKey(event, CURRENCY_KEY)) onStoreChange();
   };
 
   window.addEventListener(CURRENCY_CHANGED_EVENT, onStoreChange);

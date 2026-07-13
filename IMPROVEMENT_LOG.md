@@ -56,7 +56,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Repair stale cross-tab PWA update prompts after another tab activates the waiting worker.
 - [ ] Localize remaining hard-coded application-shell copy and refine sidebar information hierarchy.
 - [ ] Design and validate a compatible-history scenario comparison workflow before implementation.
-- [ ] Handle cross-tab `localStorage.clear()` without reviving queued history or favorite writes.
+- [x] Handle cross-tab `localStorage.clear()` without reviving queued history or favorite writes.
 
 ## 2026-07-13
 
@@ -2017,3 +2017,53 @@ formatting enforcement, bond sensitivity oracles, app-shell UI refinement, and c
 - Current work: commit Improvement 45, then prevent real cross-tab `localStorage.clear()` events from leaving stale
   preferences or reviving queued history/favorite writes.
 - Queue status: 6 active items remain, including the requested UI and useful-feature work.
+
+### Improvement 46: Safe cross-tab full-storage clearing
+
+Status: completed.
+
+Changes:
+
+- Reproduced the browser's distinct full-clear contract: `localStorage.clear()` notifies other documents with one
+  `storage` event whose key is `null`. Existing listeners only accepted their concrete key, so live tabs retained stale
+  theme, language, currency, sidebar, history, and favorite state.
+- Added one shared event predicate that recognizes a target-key update or a full local-storage clear, accepts synthetic
+  events without a `storageArea` for component tests, and explicitly rejects `sessionStorage` and unrelated storage
+  areas. Theme, language, currency formatting/settings, and sidebar subscriptions now re-read their safe defaults on
+  a real cross-tab clear.
+- Added a hard external-clear path to History and favorites. It invalidates the current write revision, discards queued
+  mutations, cancels retry timers, clears persistence errors and in-memory state, and removes any targeted value that a
+  racing local write may have recreated.
+- Guarded async initialization, refreshes, lock waiters, successful writes, and failure continuations with the external
+  clear revision. An operation that was already waiting for a storage lock cannot repopulate data after the clear, and
+  focus, online, timer, or manual retry signals have no stale work left to replay.
+- Added a real three-page browser workflow. One page displayed a favorited History record, one displayed non-default
+  preferences, and a third called `localStorage.clear()`; native browser events immediately emptied History and reset
+  the open Settings UI without console or page errors.
+
+Files and areas:
+
+- `src/lib/storage.ts` and its tests
+- Theme, language/currency, Settings, and AppLayout storage subscriptions plus focused tests
+- `src/hooks/use-calculation-history.ts`, `src/hooks/use-history-favorites.ts`, and their state-machine tests
+- `e2e/storage-clear-sync.spec.ts`
+
+Verification:
+
+- Seven focused storage/provider/history files passed 69/69 tests, including failed writes followed by clear and writes
+  still waiting for the storage lock.
+- The real multi-page Playwright workflow passed 1/1 from a fresh development server in 51.3 seconds.
+- Strict TypeScript, full ESLint, targeted Prettier, and `git diff --check` passed.
+
+Queue status: 5 active items remain across Portfolio diagnostics, broader formatting enforcement, bond sensitivity
+oracles, app-shell UI refinement, and compatible History comparison.
+
+### Progress checkpoint: 16:05 +08:00
+
+- Resumed-goal elapsed time: approximately 4 hours 53 minutes; cumulative logged active work: approximately 12 hours
+  30 minutes. The goal remains active and the implementation queue remains non-empty.
+- Completed improvement batches: 46. Cross-tab storage clearing now has provider, queued-write, lock-race, retry, and
+  real-browser coverage.
+- Current work: commit Improvement 46, then integrate the completed bond oracles, Portfolio worker error contract, and
+  full-tree formatting gate as separate improvements.
+- Queue status: 5 active items remain, with app-shell semantics already assigned for implementation.

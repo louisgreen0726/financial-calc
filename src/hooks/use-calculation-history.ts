@@ -9,7 +9,7 @@ import {
   MAX_HISTORY_ITEMS,
   type CalculatorPageId,
 } from "@/lib/constants";
-import { safeGetItem, safeGetJSON, safeSetJSON } from "@/lib/storage";
+import { isLocalStorageEventForKey, safeGetItem, safeGetJSON, safeRemoveItem, safeSetJSON } from "@/lib/storage";
 import {
   getPersistenceRetryDelay,
   getStorageGeneration,
@@ -141,6 +141,7 @@ export function useCalculationHistory({ page, maxItems = MAX_HISTORY_ITEMS }: Us
   const [pendingOperationCount, setPendingOperationCount] = useState(0);
   const pendingOperationsRef = useRef<HistoryOperation[]>([]);
   const pendingGenerationRef = useRef(0);
+  const externalClearRevisionRef = useRef(0);
   const isInitializedRef = useRef(false);
   const isMountedRef = useRef(true);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -197,6 +198,29 @@ export function useCalculationHistory({ page, maxItems = MAX_HISTORY_ITEMS }: Us
     ]
   );
 
+  const handleExternalStorageClear = useCallback(() => {
+    externalClearRevisionRef.current += 1;
+    pendingOperationsRef.current = [];
+    pendingGenerationRef.current = readClearGeneration();
+    clearRetryTimer();
+    retryAttemptRef.current = 0;
+    safeRemoveItem(HISTORY_KEY);
+    isInitializedRef.current = true;
+    safeSetHistory([]);
+    safeSetInitialized(true);
+    safeSetPendingOperationCount(0);
+    safeSetPersistenceStatus("idle");
+    safeSetPersistenceError(null);
+  }, [
+    clearRetryTimer,
+    readClearGeneration,
+    safeSetHistory,
+    safeSetInitialized,
+    safeSetPendingOperationCount,
+    safeSetPersistenceError,
+    safeSetPersistenceStatus,
+  ]);
+
   const scheduleRetry = useCallback(() => {
     if (typeof window === "undefined" || pendingOperationsRef.current.length === 0 || retryTimerRef.current !== null) {
       return;
@@ -240,9 +264,13 @@ export function useCalculationHistory({ page, maxItems = MAX_HISTORY_ITEMS }: Us
 
     safeSetPersistenceStatus("saving");
     safeSetPersistenceError(null);
+    const externalClearRevision = externalClearRevisionRef.current;
 
     try {
       const outcome = await withStorageLock(HISTORY_LOCK_NAME, () => {
+        if (externalClearRevision !== externalClearRevisionRef.current) {
+          return { type: "cleared" as const, items: [] };
+        }
         if (discardStaleOperations()) {
           return { type: "cleared" as const, items: readHistory().items };
         }
@@ -265,6 +293,10 @@ export function useCalculationHistory({ page, maxItems = MAX_HISTORY_ITEMS }: Us
         pendingOperationsRef.current.splice(0, operations.length);
         return { type: "persisted" as const, nextHistory };
       });
+
+      if (externalClearRevision !== externalClearRevisionRef.current) {
+        return "persisted";
+      }
 
       if (outcome.type === "persisted") {
         const remainingOperations = pendingOperationsRef.current;
@@ -313,6 +345,9 @@ export function useCalculationHistory({ page, maxItems = MAX_HISTORY_ITEMS }: Us
       }
       return "pending";
     } catch (error) {
+      if (externalClearRevision !== externalClearRevisionRef.current) {
+        return "persisted";
+      }
       safeSetPersistenceStatus("failed");
       safeSetPersistenceError("storage");
       safeSetPendingOperationCount(pendingOperationsRef.current.length);
@@ -335,10 +370,11 @@ export function useCalculationHistory({ page, maxItems = MAX_HISTORY_ITEMS }: Us
   useEffect(() => {
     isMountedRef.current = true;
     let cancelled = false;
+    const initialClearRevision = externalClearRevisionRef.current;
 
     queueMicrotask(() => {
       void readAndRepairHistory().then((initialHistory) => {
-        if (cancelled) {
+        if (cancelled || initialClearRevision !== externalClearRevisionRef.current) {
           return;
         }
 
@@ -376,10 +412,14 @@ export function useCalculationHistory({ page, maxItems = MAX_HISTORY_ITEMS }: Us
     }
 
     const refreshHistory = () => {
+      const externalClearRevision = externalClearRevisionRef.current;
       void (async () => {
         const discarded = discardStaleOperations();
         const pendingOperations = pendingOperationsRef.current;
         const storedHistory = pendingOperations.length === 0 ? await readAndRepairHistory() : readHistory();
+        if (externalClearRevision !== externalClearRevisionRef.current) {
+          return;
+        }
         safeSetHistory(applyHistoryOperations(storedHistory.items, pendingOperationsRef.current));
         isInitializedRef.current = true;
         safeSetInitialized(true);
@@ -390,7 +430,12 @@ export function useCalculationHistory({ page, maxItems = MAX_HISTORY_ITEMS }: Us
       })();
     };
     const handleStorage = (event: StorageEvent) => {
-      if (event.key === HISTORY_KEY || event.key === HISTORY_CLEAR_GENERATION_KEY) {
+      if (event.key === null && isLocalStorageEventForKey(event, HISTORY_KEY)) {
+        handleExternalStorageClear();
+      } else if (
+        isLocalStorageEventForKey(event, HISTORY_KEY) ||
+        isLocalStorageEventForKey(event, HISTORY_CLEAR_GENERATION_KEY)
+      ) {
         refreshHistory();
       }
     };
@@ -415,6 +460,7 @@ export function useCalculationHistory({ page, maxItems = MAX_HISTORY_ITEMS }: Us
     clearRetryTimer,
     discardStaleOperations,
     flushPendingOperations,
+    handleExternalStorageClear,
     readAndRepairHistory,
     readHistory,
     safeSetHistory,
