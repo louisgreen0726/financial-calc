@@ -61,6 +61,23 @@ browser-level checks beyond the existing suite.
   exported `.html` files directly while retaining directory-index behavior for navigation; production hosts must
   likewise preserve the configured prefix in every redirect.
 
+### PWA Follow-up: Bounded Cache Failure Recovery
+
+- Install previously stored every route HTML twice: once under its emitted `index.html` path and once under a clean
+  navigation alias. Offline fallback already maps navigation paths to emitted files, so the 15 aliases added no
+  capability. Removing them saves about 970,939 bytes and 15 CacheStorage entries per current build, and about twice
+  that transient storage during an upgrade while old and new versions coexist.
+- Runtime caches are capped at 40 entries, but the worker used to write entry 41 before trimming. At quota, the write
+  could fail before cleanup and reject an otherwise successful resource request. New entries now reserve space first;
+  a `QuotaExceededError` trims to half capacity and retries once.
+- Cache reads, opens, and writes are best effort around successful network responses. A second quota failure or a
+  disabled CacheStorage implementation is warned once per operation/cache and returns the network response instead of
+  converting online navigation into a stale fallback, 404, or failed subresource.
+- A failed essential precache install deletes its partial version cache. Activation uses failure-isolated stale-cache
+  deletion and still claims clients if one old cache is busy. VM tests inject quota, open, write, cleanup, and deletion
+  failures; production root and `/calc` browser suites prove emitted-path offline navigation, 404 status, CSP, and
+  user-controlled updates remain intact without clean-path aliases.
+
 ### Accessibility Follow-up: Automated WCAG Baseline
 
 - Axe Playwright scans now cover all 13 user-facing routes against WCAG 2.0/2.1/2.2 A and AA rules plus automated

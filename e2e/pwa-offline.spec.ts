@@ -141,7 +141,7 @@ test("installs, serves uncached routes offline, falls back to 404, and activates
   expect(cacheState.controller).toContain(appPath("/sw.js"));
   expect(cacheState.names.some((name) => name.startsWith("financial-calc-") && name.includes("-static-"))).toBe(true);
   expect(cacheState.paths).toContain(appPath("/options/index.html"));
-  expect(cacheState.paths).toContain(appPath("/options/"));
+  expect(cacheState.paths).not.toContain(appPath("/options/"));
   expect(cacheState.paths).toContain(appPath("/404.html"));
   expect(cacheState.paths.every((pathname) => !basePath || pathname.startsWith(`${basePath}/`))).toBe(true);
 

@@ -23,6 +23,17 @@ function createCache(matchValue?: unknown) {
   };
 }
 
+function createCacheableResponse(contentType = "application/javascript") {
+  return {
+    ok: true,
+    type: "basic",
+    status: 200,
+    statusText: "OK",
+    headers: new Headers({ "content-type": contentType }),
+    clone: vi.fn(() => ({ source: "response-clone" })),
+  };
+}
+
 async function loadServiceWorker({
   assets = [],
   routes = [],
@@ -284,6 +295,57 @@ describe("service worker navigation strategy", () => {
     expect(caches.open).toHaveBeenCalledWith(expect.stringContaining("runtime"));
   });
 
+  it("returns a successful navigation when runtime cache quota recovery also fails", async () => {
+    const response = createCacheableResponse("text/html; charset=utf-8");
+    const quotaError = new DOMException("Quota exceeded", "QuotaExceededError");
+    const runtimeCache = createCache();
+    runtimeCache.keys.mockResolvedValue(
+      Array.from({ length: 40 }, (_, index) => new TestRequest(`https://example.test/runtime-${index}.html`))
+    );
+    runtimeCache.put.mockRejectedValue(quotaError);
+    const staticCache = createCache();
+    const { listeners } = await loadServiceWorker({
+      fetchMock: vi.fn().mockResolvedValue(response),
+      runtimeCache,
+      staticCache,
+    });
+
+    const { responsePromise } = await dispatchFetch(listeners.get("fetch"), {
+      method: "GET",
+      mode: "navigate",
+      url: "https://example.test/loans/",
+    });
+
+    await expect(responsePromise).resolves.toBe(response);
+    expect(runtimeCache.put).toHaveBeenCalledTimes(2);
+    expect(runtimeCache.delete).toHaveBeenCalled();
+    expect(staticCache.match).not.toHaveBeenCalled();
+  });
+
+  it("returns a successful asset when cache storage cannot be opened or written", async () => {
+    const response = createCacheableResponse();
+    const runtimeCache = createCache();
+    runtimeCache.put.mockRejectedValue(new TypeError("Cache write unavailable"));
+    const loadedWorker = await loadServiceWorker({
+      fetchMock: vi.fn().mockResolvedValue(response),
+      runtimeCache,
+    });
+    const request = {
+      method: "GET",
+      mode: "cors",
+      url: "https://example.test/_next/static/chunks/lazy.js",
+    };
+
+    await expect((await dispatchFetch(loadedWorker.listeners.get("fetch"), request)).responsePromise).resolves.toBe(
+      response
+    );
+
+    loadedWorker.caches.open.mockRejectedValue(new DOMException("Storage disabled", "SecurityError"));
+    await expect((await dispatchFetch(loadedWorker.listeners.get("fetch"), request)).responsePromise).resolves.toBe(
+      response
+    );
+  });
+
   it("deletes only stale caches owned by the active service-worker scope", async () => {
     const fetchMock = vi.fn();
     const { listeners, caches, workerGlobal } = await loadServiceWorker({ fetchMock });
@@ -310,6 +372,25 @@ describe("service worker navigation strategy", () => {
     expect(caches.delete).not.toHaveBeenCalledWith(currentRuntime);
     expect(caches.delete).not.toHaveBeenCalledWith(otherScope);
     expect(caches.delete).not.toHaveBeenCalledWith(unrelated);
+    expect(workerGlobal.clients.claim).toHaveBeenCalledTimes(1);
+  });
+
+  it("claims clients even when one stale cache cannot be deleted", async () => {
+    const { listeners, caches, workerGlobal } = await loadServiceWorker({ fetchMock: vi.fn() });
+    caches.keys.mockResolvedValue(["financial-calc-_2F-static-old-build", "financial-calc-_2F-runtime-old-build"]);
+    caches.delete
+      .mockRejectedValueOnce(new DOMException("Cache busy", "InvalidStateError"))
+      .mockResolvedValueOnce(true);
+    let activationPromise: Promise<unknown> | undefined;
+
+    listeners.get("activate")?.({
+      waitUntil: (promise: Promise<unknown>) => {
+        activationPromise = promise;
+      },
+    });
+
+    await expect(activationPromise).resolves.toBeUndefined();
+    expect(caches.delete).toHaveBeenCalledTimes(2);
     expect(workerGlobal.clients.claim).toHaveBeenCalledTimes(1);
   });
 
@@ -341,7 +422,7 @@ describe("service worker navigation strategy", () => {
     staticCache.add.mockImplementation((asset: string) =>
       asset.endsWith("404.html") ? Promise.reject(new TypeError("offline")) : Promise.resolve()
     );
-    const { listeners } = await loadServiceWorker({
+    const { listeners, caches } = await loadServiceWorker({
       assets: ["/index.html", "/404.html"],
       fetchMock: vi.fn(),
       staticCache,
@@ -355,5 +436,6 @@ describe("service worker navigation strategy", () => {
     });
 
     await expect(installationPromise).rejects.toThrow("Unable to cache essential offline assets");
+    expect(caches.delete).toHaveBeenCalledWith("financial-calc-_2F-static-test-build");
   });
 });

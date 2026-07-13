@@ -23,7 +23,18 @@ const withBasePath = (assetPath) => {
 
 const precacheAssets = [...new Set(manifest.assets)].map(withBasePath);
 const precacheAssetPaths = new Set(precacheAssets.map((asset) => new URL(asset, self.location.origin).pathname));
-const routePaths = new Set(manifest.routes.map(withBasePath));
+const reportedCacheFailures = new Set();
+
+function isQuotaExceededError(error) {
+  return typeof error === "object" && error !== null && "name" in error && error.name === "QuotaExceededError";
+}
+
+function reportCacheFailure(operation, cacheName, error) {
+  const key = `${operation}:${cacheName}`;
+  if (reportedCacheFailures.has(key)) return;
+  reportedCacheFailures.add(key);
+  console.warn(`[PWA] Cache ${operation} failed for ${cacheName}; continuing without this cache update.`, error);
+}
 
 function isWithinScope(url) {
   return !BASE_PATH || url.pathname === BASE_PATH || url.pathname.startsWith(`${BASE_PATH}/`);
@@ -79,6 +90,59 @@ async function trimCache(cache, maxEntries) {
   }
 }
 
+async function matchCache(cacheName, cacheKey) {
+  try {
+    const cache = await caches.open(cacheName);
+    return await cache.match(cacheKey);
+  } catch (error) {
+    reportCacheFailure("read", cacheName, error);
+    return undefined;
+  }
+}
+
+async function putResponseInCache(cacheName, cacheKey, response, maxEntries) {
+  let cache;
+  try {
+    cache = await caches.open(cacheName);
+  } catch (error) {
+    reportCacheFailure("open", cacheName, error);
+    return false;
+  }
+
+  const write = async () => {
+    if (maxEntries !== undefined) {
+      const existingResponse = await cache.match(cacheKey);
+      if (!existingResponse) {
+        await trimCache(cache, Math.max(0, maxEntries - 1));
+      }
+    }
+    await cache.put(cacheKey, response.clone());
+    if (maxEntries !== undefined) {
+      await trimCache(cache, maxEntries);
+    }
+  };
+
+  try {
+    await write();
+    return true;
+  } catch (error) {
+    if (maxEntries !== undefined && isQuotaExceededError(error)) {
+      try {
+        await trimCache(cache, Math.floor(maxEntries / 2));
+        await cache.put(cacheKey, response.clone());
+        await trimCache(cache, maxEntries);
+        return true;
+      } catch (retryError) {
+        reportCacheFailure("quota-recovery", cacheName, retryError);
+        return false;
+      }
+    }
+
+    reportCacheFailure("write", cacheName, error);
+    return false;
+  }
+}
+
 function respondWithLifetime(event, responsePromise) {
   event.respondWith(responsePromise);
   event.waitUntil(
@@ -116,15 +180,16 @@ async function populatePrecache(cache) {
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
-      const cache = await caches.open(STATIC_CACHE);
-      await populatePrecache(cache);
-
-      for (const routePath of routePaths) {
-        const routeUrl = new URL(routePath, self.location.origin);
-        const routeResponse = await cache.match(routeAssetPath(routeUrl.pathname));
-        if (routeResponse) {
-          await cache.put(navigationCacheKey(routeUrl), routeResponse);
+      try {
+        const cache = await caches.open(STATIC_CACHE);
+        await populatePrecache(cache);
+      } catch (error) {
+        try {
+          await caches.delete(STATIC_CACHE);
+        } catch (cleanupError) {
+          reportCacheFailure("partial-install-cleanup", STATIC_CACHE, cleanupError);
         }
+        throw error;
       }
     })()
   );
@@ -133,13 +198,24 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
-      const cacheNames = await caches.keys();
-      await Promise.all(
-        cacheNames
-          .filter((name) => name.startsWith(CACHE_PREFIX) && !OWNED_CACHES.has(name))
-          .map((name) => caches.delete(name))
-      );
-      await self.clients.claim();
+      try {
+        const cacheNames = await caches.keys();
+        const staleCacheNames = cacheNames.filter((name) => name.startsWith(CACHE_PREFIX) && !OWNED_CACHES.has(name));
+        const deletionResults = await Promise.allSettled(staleCacheNames.map((name) => caches.delete(name)));
+        deletionResults.forEach((result, index) => {
+          if (result.status === "rejected") {
+            reportCacheFailure("stale-delete", staleCacheNames[index], result.reason);
+          }
+        });
+      } catch (error) {
+        reportCacheFailure("enumeration", CACHE_PREFIX, error);
+      }
+
+      try {
+        await self.clients.claim();
+      } catch (error) {
+        reportCacheFailure("client-claim", CACHE_PREFIX, error);
+      }
     })()
   );
 });
@@ -151,13 +227,12 @@ self.addEventListener("message", (event) => {
 });
 
 async function cacheFirst(request, cacheName, cacheKey = request) {
-  const cache = await caches.open(cacheName);
-  const cached = await cache.match(cacheKey);
+  const cached = await matchCache(cacheName, cacheKey);
   if (cached) return cached;
 
   const response = await fetch(cacheKey);
   if (isCacheable(response)) {
-    await cache.put(cacheKey, response.clone());
+    await putResponseInCache(cacheName, cacheKey, response);
   }
   return response;
 }
@@ -176,47 +251,44 @@ async function fetchWithTimeout(request, timeoutMs) {
 async function navigationNetworkFirst(request) {
   const url = new URL(request.url);
   const cacheKey = navigationCacheKey(url);
-  const runtimeCache = await caches.open(RUNTIME_CACHE);
+  let response;
 
   try {
-    const response = await fetchWithTimeout(request, NAVIGATION_TIMEOUT_MS);
+    response = await fetchWithTimeout(request, NAVIGATION_TIMEOUT_MS);
     if (response.type === "error" || response.status === 0) {
       throw new TypeError("Navigation network request returned an error response.");
     }
-    const contentType = response.headers.get("content-type") ?? "";
-    if (isCacheable(response) && contentType.includes("text/html")) {
-      await runtimeCache.put(cacheKey, response.clone());
-      await trimCache(runtimeCache, MAX_RUNTIME_ENTRIES);
-    }
-    return response;
   } catch {
-    const runtimeResponse = await runtimeCache.match(cacheKey);
+    const runtimeResponse = await matchCache(RUNTIME_CACHE, cacheKey);
     if (runtimeResponse) return toNavigationResponse(runtimeResponse);
 
-    const staticCache = await caches.open(STATIC_CACHE);
-    const routeResponse = await staticCache.match(cacheKey);
+    const routeResponse = await matchCache(STATIC_CACHE, cacheKey);
     if (routeResponse) return toNavigationResponse(routeResponse);
 
-    const routeAssetResponse = await staticCache.match(routeAssetPath(url.pathname));
+    const routeAssetResponse = await matchCache(STATIC_CACHE, routeAssetPath(url.pathname));
     if (routeAssetResponse) return toNavigationResponse(routeAssetResponse);
 
     // An unknown offline navigation must not silently render the home page.
-    const notFoundResponse = (await staticCache.match(withBasePath("/404.html"))) ?? Response.error();
+    const notFoundResponse = (await matchCache(STATIC_CACHE, withBasePath("/404.html"))) ?? Response.error();
     return notFoundResponse.type === "error"
       ? notFoundResponse
       : toNavigationResponse(notFoundResponse, 404, "Not Found");
   }
+
+  const contentType = response.headers.get("content-type") ?? "";
+  if (isCacheable(response) && contentType.includes("text/html")) {
+    await putResponseInCache(RUNTIME_CACHE, cacheKey, response, MAX_RUNTIME_ENTRIES);
+  }
+  return response;
 }
 
 async function runtimeCacheFirst(request) {
-  const cache = await caches.open(RUNTIME_CACHE);
-  const cached = await cache.match(request);
+  const cached = await matchCache(RUNTIME_CACHE, request);
   if (cached) return cached;
 
   const response = await fetch(request);
   if (isCacheable(response)) {
-    await cache.put(request, response.clone());
-    await trimCache(cache, MAX_RUNTIME_ENTRIES);
+    await putResponseInCache(RUNTIME_CACHE, request, response, MAX_RUNTIME_ENTRIES);
   }
   return response;
 }

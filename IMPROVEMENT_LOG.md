@@ -35,7 +35,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Audit calculator reset/default workflows and add a consistent reversible reset command where missing.
 - [x] Add corrupted-storage browser coverage for persisted theme, language, and currency preferences.
 - [x] Add browser coverage for denied clipboard/share permissions and export failure recovery.
-- [ ] Audit service-worker cache growth and storage-quota failure behavior across upgrades.
+- [x] Audit service-worker cache growth and storage-quota failure behavior across upgrades.
 - [ ] Surface theme/language persistence write failures consistently with currency settings.
 
 ## 2026-07-13
@@ -1278,3 +1278,57 @@ Verification:
   next.
 - Queue status: 2 active items remain: service-worker cache growth/storage-quota behavior and explicit theme/language
   write-failure feedback. The next audit will add follow-up items before this queue can become empty.
+
+### Improvement 30: Bounded service-worker cache growth and quota recovery
+
+Status: completed; final round per user instruction.
+
+Changes:
+
+- Modeled install, activate, cache-first, network-first, offline fallback, version upgrade, and CacheStorage failure
+  behavior. The runtime cache nominally capped itself at 40 entries, but wrote a 41st item before trimming. A quota
+  failure therefore happened before cleanup and could reject a successful asset response or send an online navigation
+  into stale/offline fallback handling.
+- Made cache reads, opens, and writes best effort around successful network requests. Runtime writes reserve a slot
+  before adding a genuinely new key; `QuotaExceededError` trims the cache to 20 entries and retries once. If storage is
+  disabled or both writes fail, the original network response still reaches the page and warnings are deduplicated per
+  cache operation.
+- Removed 15 clean-navigation aliases from the static install cache. Offline navigation already maps clean paths to
+  emitted `index.html` assets, so the aliases duplicated about 970,939 bytes in the current build without adding
+  coverage. Each installed version now has 197 static entries rather than 212, reducing upgrade coexistence by about
+  1.94 MB before the old version is removed.
+- Added transactional install cleanup: if either essential offline document cannot be cached, the partially populated
+  new version cache is deleted before installation rejects. Stale-cache deletion now uses settled results, so one busy
+  old cache does not prevent client claiming or the rest of the cleanup.
+- Expanded deterministic worker VM coverage for double quota failure, storage-open/write failure, bounded eviction,
+  partial-install cleanup, and isolated activation deletion. Updated production PWA checks to require emitted route
+  assets and the absence of duplicate clean-path aliases.
+- Updated bilingual reliability documentation and engineering review evidence.
+
+Files and areas:
+
+- `public/sw.js`
+- `src/lib/service-worker-script.test.ts`
+- `e2e/pwa-offline.spec.ts`
+- English/Chinese README, engineering review, and improvement log
+
+Verification:
+
+- Focused service-worker VM suite passed 12 tests; strict TypeScript and ESLint passed.
+- Root production PWA suite passed 2/2: exact CSP enforcement, 197-asset installation without route aliases, offline
+  Options navigation, offline 404 status, waiting-worker prompt, explicit activation, and reload all succeeded.
+- `/calc` production PWA suite passed the same 2/2 contract with base-prefixed scope, worker, cache keys, assets,
+  offline routes, and update flow.
+- `npm run verify`: passed with 53 Vitest files and 429 tests, 15 routes, 197 precache assets, 96 script hashes, 35
+  static style hashes, 2 runtime style hashes per document, 722 internal references, and every route budget.
+- Production dependency audit reported zero vulnerabilities; changed-file Prettier and `git diff --check` passed.
+
+### Progress checkpoint: 10:43 +08:00
+
+- Continuous-session elapsed time: 7 hours 37 minutes. The user explicitly requested stopping after this final round,
+  superseding the earlier minimum-duration request.
+- Completed improvement batches: 30; service-worker storage growth is lower and cache failures can no longer turn a
+  successful online response into a failed request.
+- Current work: all final gates passed; commit Improvement 30 and stop as explicitly requested.
+- Remaining reviewed item: explicit theme/language persistence write-failure feedback. It stays queued and unmodified
+  for a future session rather than being started after the requested final round.
