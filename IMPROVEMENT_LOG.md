@@ -71,6 +71,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Make RATE sign-change classification scale-safe for maximum finite cash flows.
 - [x] Preserve implied-volatility results when the same option contract is expressed in very small currency units.
 - [ ] Preserve tiny nonzero Fisher real-rate spreads without cancellation.
+- [x] Restore WCAG AA contrast for destructive actions and states in the dark theme.
 
 ## 2026-07-13
 
@@ -3349,3 +3350,35 @@ Verification:
 
 Queue status: Workspace Backup and Playwright concurrent-runner isolation remain active; Fisher-rate cancellation,
 browser matrix verification, and further UI work remain queued, so the queue remains intentionally non-empty.
+
+### Improvement 85: Accessible dark-theme destructive states
+
+Status: completed.
+
+Changes:
+
+- A real restored-dark-theme Axe run found the destructive action text at `#dd4b4b` against the Settings card surface
+  had only a `4.24:1` contrast ratio, below the WCAG AA `4.5:1` threshold for 14px text.
+- Raised the dark destructive semantic color from 58% to 66% lightness. The resulting token clears AA not only on the
+  card where the violation was observed, but also on the lighter popover and muted hover surfaces that reuse
+  `text-destructive`, while retaining the existing dark foreground for solid destructive buttons.
+- Reduced the dark destructive menu focus tint from 20% to the shared 10% state so same-hue text does not lose contrast,
+  and removed a progress action hover style that deliberately faded destructive text to 80% opacity.
+- Re-ran the complete Workspace round trip in restored dark mode; both the confirmation-dialog and final-page Axe scans
+  passed with no violations.
+
+Files and areas:
+
+- `src/app/globals.css`
+- `src/components/ui/dropdown-menu.tsx`
+- `src/components/progress-bar.tsx`
+
+Verification:
+
+- `npx playwright test e2e/workspace-backup.spec.ts --workers=1`: passed 1/1, including both Axe audits.
+- The isolated server and worker shared port 27100; the test took 32.1 seconds, the full process exited normally in
+  38.0 seconds, and the listener/build directory were released by teardown.
+- Focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: Workspace Backup and concurrent Playwright lifecycle isolation remain active; financial edge cases and
+the next product/UI refinement remain queued, so the queue stays intentionally non-empty.

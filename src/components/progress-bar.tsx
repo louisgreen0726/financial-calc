@@ -63,7 +63,7 @@ export function ProgressBar({
               variant="ghost"
               size="sm"
               onClick={onCancel}
-              className="ml-1 h-10 px-2 text-destructive hover:text-destructive/80 sm:h-8"
+              className="ml-1 h-10 px-2 text-destructive hover:text-destructive sm:h-8"
               aria-label={resolvedCancelAriaLabel}
             >
               <X className="h-3 w-3" />
