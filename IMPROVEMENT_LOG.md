@@ -30,9 +30,10 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Audit and align input-unit labels plus display/export rounding across all calculators.
 - [x] Plan and test remaining major dependency migrations as isolated compatibility batches.
 - [x] Reduce `style-src 'unsafe-inline'` exposure by inventorying static versus runtime component/chart styles.
-- [ ] Bound amortization-table DOM rendering without weakening complete exports or accessibility coverage.
+- [x] Bound amortization-table DOM rendering without weakening complete exports or accessibility coverage.
 - [ ] Reduce the remaining dynamic style-attribute compatibility surface in owned components.
 - [ ] Audit calculator reset/default workflows and add a consistent reversible reset command where missing.
+- [ ] Add corrupted-storage browser coverage for persisted theme, language, and currency preferences.
 
 ## 2026-07-13
 
@@ -1014,3 +1015,56 @@ Verification:
 - Current work: Improvement 24 is fully verified and ready to commit; amortization-table DOM scalability is next.
 - Queue status: 3 active items remain: bounded amortization rendering, reducing owned dynamic style attributes, and
   calculator-wide reversible reset/default workflows.
+
+### Improvement 25: Bounded amortization DOM with complete structured and print exports
+
+Status: completed.
+
+Changes:
+
+- Replaced the live 360-600-row amortization DOM with stable 100-row pages using the existing display-row boundary.
+  Previous/next icon controls expose localized names, disabled end states, a live page indicator, and visible/total row
+  ranges; the table keeps its named keyboard-scroll region and semantic row/column headers.
+- Keyed pagination to method and raw loan inputs so any direct edit, restored history item, shared URL, or browser
+  navigation starts the corresponding schedule on page one without a state-setting effect or stale out-of-range page.
+- Added a shared print-mode lifecycle callback through result actions, export menus, share dialogs, and the print
+  coordinator. Loans expands the live table to all rows, waits for React/layout to settle, opens the print dialog, and
+  restores the selected bounded page on `afterprint` or fallback cleanup.
+- Kept CSV and JSON connected to the complete schedule array rather than the visible slice. A browser download contract
+  verifies that a 50-year schedule emits all 600 data rows, while a print probe observes all 600 DOM rows exactly when
+  `window.print()` is invoked and only 100 after cleanup.
+- Removed an incorrect `max=100` attribute from the loan amount input. It had reused the interest-rate maximum and made
+  the default 500,000 amount fail native HTML validity even though the calculation schema correctly accepted it.
+- Removed the Loans-only 60-second Axe allowance introduced for the former 2,400-node accessibility tree. The paginated
+  route now passes under the same 30-second budget as every other page.
+- Updated bilingual feature documentation and engineering review evidence for bounded live rows versus complete
+  machine/print output.
+
+Files and areas:
+
+- `src/app/loans/page.tsx` and bilingual pagination labels in `src/lib/i18n.tsx`
+- `src/lib/print-report.ts`, shared result/export/share components, and print coordinator tests
+- `e2e/loans-pagination.spec.ts` and `e2e/accessibility.spec.ts`
+- English/Chinese README, engineering review, and improvement log
+
+Verification:
+
+- Focused print/i18n suite passed with 8 tests; the Loans browser contract passed pagination, native validity, 600-row
+  CSV, 600-row print expansion, cleanup restoration, and console-error checks.
+- Three Loans Axe runs passed with two workers. Concurrent scans fell from roughly 24-25 seconds before pagination to
+  19 seconds in the repeated profile; the final full suite completed the route in 17 seconds under the default limit.
+- `npm run verify`: passed with 49 Vitest files and 416 tests, 15 routes, 197 precache assets, unchanged CSP hash counts,
+  722 internal references, and every route budget. `/loans` measured 422,794 / 470,000 gzip bytes.
+- The complete Playwright suite passed all 24 tests in 2.6 minutes.
+- Desktop 1440px and mobile 390px screenshots were inspected. Both rendered exactly 100 live rows with no document
+  overflow; table/pager widths were 686px desktop and 356px mobile, and mobile pager/navigation overlap was zero.
+- Production dependency audit reported zero vulnerabilities; extended Prettier and `git diff --check` passed.
+
+### Progress checkpoint: 08:52 +08:00
+
+- Continuous-session elapsed time: 5 hours 46 minutes.
+- Completed improvement batches: 25; large loan schedules no longer inflate the live accessibility tree or require a
+  special browser timeout, while all export formats remain complete.
+- Current work: Improvement 25 is fully verified and ready to commit; owned dynamic style attributes are next.
+- Queue status: 3 active items remain: owned style-attribute reduction, reversible calculator reset/default workflows,
+  and corrupted preference-storage browser coverage.

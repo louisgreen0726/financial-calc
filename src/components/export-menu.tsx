@@ -26,6 +26,7 @@ interface ExportMenuProps {
   reportInputs?: Record<string, number | string>;
   rawReportInputs?: Record<string, number | string>;
   reportResults?: Record<string, number | string>;
+  onPrintModeChange?: (isPrinting: boolean) => void;
   className?: string;
 }
 
@@ -38,6 +39,7 @@ export function ExportMenu({
   reportInputs,
   rawReportInputs,
   reportResults,
+  onPrintModeChange,
   className,
 }: ExportMenuProps) {
   const { t } = useLanguage();
@@ -93,6 +95,7 @@ export function ExportMenu({
         elementId: pdfElementId,
         title: resolvedReportTitle,
         generatedLabel: t("export.generatedAt"),
+        onPrintModeChange,
       });
     } catch (error) {
       toast.error(t("export.pdfError"));

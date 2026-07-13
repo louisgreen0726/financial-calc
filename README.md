@@ -36,7 +36,7 @@ The app is no longer just a calculator demo. It includes a full app shell, respo
 - **Portfolio**: reproducible Monte Carlo risk-return sampling with worker and client fallback
 - **Options**: Black-Scholes-Merton pricing with continuous dividend yield, Greeks, and implied volatility
 - **Risk**: VaR, CVaR, distribution visualization, and deterministic 5%/10%/20% stress scenarios
-- **Loans**: CPM/CAM amortization schedules with a complete accessible table
+- **Loans**: CPM/CAM amortization schedules with accessible 100-row pagination and complete CSV/JSON/print output
 - **Macro**: inflation, purchasing power, real rate, CPI adjustment, and PPP exchange rate
 
 ### Supporting pages

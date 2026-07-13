@@ -84,6 +84,27 @@ describe("report printing", () => {
     expect(document.querySelector('[data-print-report-header="true"]')).toBeNull();
   });
 
+  it("waits for caller-owned complete content and restores it after printing", async () => {
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+      callback(0);
+      return 1;
+    });
+    const report = document.getElementById("report") as HTMLElement;
+    const onPrintModeChange = vi.fn((isPrinting: boolean) => {
+      report.dataset.rows = isPrinting ? "600" : "100";
+    });
+    const print = vi.spyOn(window, "print").mockImplementation(() => {
+      expect(report.dataset.rows).toBe("600");
+      window.dispatchEvent(new Event("afterprint"));
+    });
+
+    await printReport({ elementId: "report", title: "Report", onPrintModeChange });
+
+    expect(print).toHaveBeenCalledOnce();
+    expect(onPrintModeChange.mock.calls).toEqual([[true], [false]]);
+    expect(report.dataset.rows).toBe("100");
+  });
+
   it("fails without changing the page when the report target is missing", () => {
     expect(() => prepareReportForPrint({ elementId: "missing", title: "Report" })).toThrow(
       'Element with id "missing" not found'

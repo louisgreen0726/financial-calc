@@ -37,7 +37,7 @@ Financial Calc 是一个基于 Next.js 16、React 19、TypeScript、Tailwind CSS
 - **Portfolio**：可复现的蒙特卡洛风险收益抽样，支持 worker 与客户端回退
 - **Options**：支持连续股息收益率、Greeks 与隐含波动率反解的 Black-Scholes-Merton 定价
 - **Risk**：VaR、CVaR、分布视图，以及确定性的 5%/10%/20% 压力情景
-- **Loans**：等额本息 / 等额本金摊销表，完整表格支持辅助技术读取
+- **Loans**：等额本息 / 等额本金摊销表，支持每页 100 行的无障碍分页与完整 CSV/JSON/打印输出
 - **Macro**：通胀、购买力、实际利率、CPI 调整、PPP 汇率
 
 ### 辅助页面

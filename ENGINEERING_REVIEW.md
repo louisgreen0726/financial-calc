@@ -68,8 +68,8 @@ browser-level checks beyond the existing suite.
   and the mobile Options navigation/form layout.
 - The new gate identified and fixed page structure that manual component tests did not expose: desktop sidebar text
   outside landmarks, two keyboard-inaccessible scroll regions, and skipped heading levels throughout Help content.
-- The sidebar is now a named complementary landmark. Sensitivity heatmaps and the Loan amortization table expose
-  named, focusable regions for keyboard scrolling, and Help follows a continuous `h1 -> h2 -> h3` hierarchy.
+- The sidebar is now a named complementary landmark. Sensitivity heatmaps and the paginated Loan amortization table
+  expose named, focusable regions for keyboard scrolling, and Help follows a continuous `h1 -> h2 -> h3` hierarchy.
 
 ### Formula Follow-up: Option Property Matrix
 
@@ -127,9 +127,10 @@ browser-level checks beyond the existing suite.
   and fallback path from O(n^2) to O(n).
 - A 20-asset, 5,000-point, 31-round alternating benchmark improved from 4.7835 ms to 0.5344 ms median (8.95x). A
   quadratic reference matrix covers 426 weight/correlation combinations to protect numerical equivalence.
-- Other bounded paths did not justify riskier changes: a maximum 600-period loan schedule averaged 0.016 ms in the
-  engine, History is capped at 50 records per page, and report printing uses bounded DOM preparation plus native
-  browser pagination.
+- A maximum 600-period loan schedule averages 0.016 ms in the engine, but rendering every row created about 2,400
+  accessible nodes for the default 360-period case. The live table now renders at most 100 rows with bounded page
+  controls; CSV/JSON retain the complete array, and the shared print coordinator expands all rows for print layout and
+  restores the selected page afterward. History remains capped at 50 records per page.
 
 ### Maintenance Follow-up: Dependencies and Dead Source
 

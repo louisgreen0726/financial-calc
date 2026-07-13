@@ -63,6 +63,9 @@ type Translations = {
     more: string;
     notAvailable: string;
     rows: string;
+    page: string;
+    previousPage: string;
+    nextPage: string;
     tvmShort: string;
     portfolioShort: string;
     range: string;
@@ -712,6 +715,9 @@ const en: Translations = {
     more: "More",
     notAvailable: "N/A",
     rows: "rows",
+    page: "Page",
+    previousPage: "Previous page",
+    nextPage: "Next page",
     tvmShort: "TVM",
     portfolioShort: "Portfolio",
     range: "Range",
@@ -1377,6 +1383,9 @@ const zh: Translations = {
     more: "更多",
     notAvailable: "暂无",
     rows: "行",
+    page: "页",
+    previousPage: "上一页",
+    nextPage: "下一页",
     tvmShort: "TVM",
     portfolioShort: "组合",
     range: "范围",

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import {
   PieChart,
@@ -22,7 +23,7 @@ import {
 } from "recharts";
 import { useLanguage } from "@/lib/i18n";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { useUrlState } from "@/hooks/use-url-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ValidationError } from "@/components/ui/error-display";
@@ -34,7 +35,7 @@ import { useHistoryRecorder } from "@/hooks/use-history-recorder";
 import { HistoryPanel } from "@/components/history-panel";
 import { LoanInputSchema } from "@/lib/validation";
 import { normalizeLoanMethod, type LoanMethodState } from "@/lib/route-state";
-import { MAX_INTEREST_RATE, MAX_PERIODS, MONTHS_PER_YEAR } from "@/lib/constants";
+import { MAX_DISPLAY_ROWS, MAX_PERIODS, MONTHS_PER_YEAR } from "@/lib/constants";
 
 function LoansPageContent() {
   const { t } = useLanguage();
@@ -78,6 +79,10 @@ function LoansPageContent() {
     setHasInteracted(true);
     setField("years", v);
   };
+  const scheduleKey = `${method}|${amount}|${rate}|${years}`;
+  const [schedulePagination, setSchedulePagination] = useState({ key: scheduleKey, page: 0 });
+  const [printAllSchedule, setPrintAllSchedule] = useState(false);
+  const requestedSchedulePage = schedulePagination.key === scheduleKey ? schedulePagination.page : 0;
 
   const parsedLoanInputs = useMemo(
     () => ({
@@ -155,6 +160,20 @@ function LoansPageContent() {
   }, [schedule]);
   const statsAreFinite = Object.values(stats).every(Number.isFinite);
   const loanReady = schedule.length > 0 && statsAreFinite;
+  const schedulePageCount = Math.max(1, Math.ceil(schedule.length / MAX_DISPLAY_ROWS));
+  const schedulePage = Math.min(requestedSchedulePage, schedulePageCount - 1);
+  const scheduleStart = schedule.length === 0 ? 0 : schedulePage * MAX_DISPLAY_ROWS;
+  const scheduleEnd = Math.min(scheduleStart + MAX_DISPLAY_ROWS, schedule.length);
+  const displayedSchedule = printAllSchedule ? schedule : schedule.slice(scheduleStart, scheduleEnd);
+  const scheduleRange =
+    schedule.length === 0
+      ? `0 ${t("common.rows")}`
+      : printAllSchedule
+        ? `${schedule.length} ${t("common.rows")}`
+        : `${scheduleStart + 1}-${scheduleEnd} / ${schedule.length} ${t("common.rows")}`;
+  const goToSchedulePage = (page: number) => {
+    setSchedulePagination({ key: scheduleKey, page: Math.min(Math.max(page, 0), schedulePageCount - 1) });
+  };
   const paymentLabel = method === "CPM" ? t("loans.monthly") : t("loans.firstPayment");
   const paymentResults =
     method === "CPM"
@@ -244,7 +263,6 @@ function LoansPageContent() {
                 id="loan-amount"
                 type="number"
                 min="0"
-                max={MAX_INTEREST_RATE}
                 step="0.01"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
@@ -361,6 +379,7 @@ function LoansPageContent() {
                   pdfElementId="loans-report-content"
                   pdfFilename={`loan-summary-${method}-${rate}pct-${years}yr`}
                   pdfTitle={reportTitle}
+                  onPrintModeChange={setPrintAllSchedule}
                 />
               ) : null
             }
@@ -503,9 +522,7 @@ function LoansPageContent() {
                       className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <span>{t("loans.schedule")}</span>
-                      <span className="text-xs font-normal text-muted-foreground">
-                        {schedule.length} {t("common.rows")}
-                      </span>
+                      <span className="text-xs font-normal text-muted-foreground">{scheduleRange}</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="flex-1 p-0">
@@ -524,9 +541,9 @@ function LoansPageContent() {
                         className="max-h-[52vh] min-h-[18rem] w-full max-w-full overflow-auto rounded-b-lg border-t"
                         data-pdf-expand="true"
                       >
-                        <table className="w-full min-w-[680px] border-collapse text-sm">
+                        <table id="loan-schedule-table" className="w-full min-w-[680px] border-collapse text-sm">
                           <caption className="sr-only">
-                            {t("loans.schedule")}: {schedule.length} {t("common.rows")}
+                            {t("loans.schedule")}: {scheduleRange}
                           </caption>
                           <thead className="sticky top-0 z-10 bg-background text-muted-foreground">
                             <tr className="border-b">
@@ -548,7 +565,7 @@ function LoansPageContent() {
                             </tr>
                           </thead>
                           <tbody>
-                            {schedule.map((row) => (
+                            {displayedSchedule.map((row) => (
                               <tr key={row.period} className="h-11 border-b hover:bg-muted/50">
                                 <th scope="row" className="px-4 text-left font-mono text-xs font-normal">
                                   {row.period}
@@ -565,6 +582,38 @@ function LoansPageContent() {
                         </table>
                       </div>
                     )}
+                    {!printAllSchedule && schedulePageCount > 1 ? (
+                      <div
+                        className="flex min-h-14 items-center justify-center gap-3 border-t px-4 py-2"
+                        data-pdf-exclude="true"
+                      >
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon-sm"
+                          aria-label={t("common.previousPage")}
+                          title={t("common.previousPage")}
+                          disabled={schedulePage === 0}
+                          onClick={() => goToSchedulePage(schedulePage - 1)}
+                        >
+                          <ChevronLeft />
+                        </Button>
+                        <span className="min-w-20 text-center text-sm tabular-nums" aria-live="polite">
+                          {t("common.page")} {schedulePage + 1} / {schedulePageCount}
+                        </span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon-sm"
+                          aria-label={t("common.nextPage")}
+                          title={t("common.nextPage")}
+                          disabled={schedulePage === schedulePageCount - 1}
+                          onClick={() => goToSchedulePage(schedulePage + 1)}
+                        >
+                          <ChevronRight />
+                        </Button>
+                      </div>
+                    ) : null}
                   </CardContent>
                 </Card>
               </div>

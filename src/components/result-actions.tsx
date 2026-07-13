@@ -15,6 +15,7 @@ interface ResultActionsBaseProps {
   pdfElementId?: string;
   pdfFilename?: string;
   pdfTitle?: string;
+  onPrintModeChange?: (isPrinting: boolean) => void;
   onShowHistory?: () => void;
 }
 
@@ -44,6 +45,7 @@ export function ResultActions({
   pdfElementId,
   pdfFilename,
   pdfTitle,
+  onPrintModeChange,
   onShowHistory,
 }: ResultActionsProps) {
   const { t } = useLanguage();
@@ -66,6 +68,7 @@ export function ResultActions({
           reportInputs={reportInputs}
           rawReportInputs={inputs}
           reportResults={results}
+          onPrintModeChange={onPrintModeChange}
           className="min-h-10 gap-2"
         />
         {onShowHistory ? (
@@ -85,6 +88,7 @@ export function ResultActions({
         shareUrl={shareUrl}
         printElementId={pdfElementId}
         printFilename={pdfFilename}
+        onPrintModeChange={onPrintModeChange}
       />
     </>
   );

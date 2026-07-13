@@ -20,6 +20,7 @@ interface ShareDialogProps {
   shareUrl?: string;
   printElementId?: string;
   printFilename?: string;
+  onPrintModeChange?: (isPrinting: boolean) => void;
   className?: string;
 }
 
@@ -35,6 +36,7 @@ export function ShareDialog({
   shareUrl,
   printElementId,
   printFilename,
+  onPrintModeChange,
   className,
 }: ShareDialogProps) {
   const { t } = useLanguage();
@@ -135,6 +137,7 @@ export function ShareDialog({
         title,
         filename: printFilename,
         generatedLabel: t("export.generatedAt"),
+        onPrintModeChange,
       });
     } catch (error) {
       logger.error("Report print error:", error);

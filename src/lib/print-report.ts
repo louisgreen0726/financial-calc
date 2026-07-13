@@ -3,6 +3,7 @@ interface PrintReportOptions {
   title: string;
   filename?: string;
   generatedLabel?: string;
+  onPrintModeChange?: (isPrinting: boolean) => void;
 }
 
 const PRINT_MODE_ATTRIBUTE = "data-print-mode";
@@ -127,14 +128,24 @@ async function waitForPrintLayout() {
 }
 
 export async function printReport(options: PrintReportOptions): Promise<void> {
-  const cleanup = prepareReportForPrint(options);
+  let cleanup: (() => void) | null = null;
+  let restored = false;
+  const restore = () => {
+    if (restored) return;
+    restored = true;
+    cleanup?.();
+    void options.onPrintModeChange?.(false);
+  };
   const handleAfterPrint = () => {
     window.removeEventListener("afterprint", handleAfterPrint);
-    cleanup();
+    restore();
   };
-  window.addEventListener("afterprint", handleAfterPrint, { once: true });
 
   try {
+    await options.onPrintModeChange?.(true);
+    await waitForPrintLayout();
+    cleanup = prepareReportForPrint(options);
+    window.addEventListener("afterprint", handleAfterPrint, { once: true });
     await waitForPrintLayout();
     window.print();
     window.setTimeout(handleAfterPrint, PRINT_CLEANUP_DELAY_MS);
