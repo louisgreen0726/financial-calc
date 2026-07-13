@@ -2171,3 +2171,36 @@ Verification:
 
 Queue status: 4 active items remain across default Portfolio asset localization, bond input validation, app-shell UI
 refinement, and compatible History comparison.
+
+### Improvement 50: Correct Header navigation and breadcrumb semantics
+
+Status: completed.
+
+Changes:
+
+- Audited the application Header across all routes. The visible Home-to-page breadcrumb was a plain `div`, while the
+  theme and language utility controls were wrapped in an unnamed `nav`; assistive technology therefore received an
+  unexplained navigation landmark but could not recognize the actual page hierarchy.
+- Promoted the desktop breadcrumb to the Header's single navigation landmark and gave it a route-specific accessible
+  name assembled from already localized Home and page titles. This avoids adding another generic landmark named like
+  the primary calculator navigation.
+- Marked the current breadcrumb item with `aria-current="page"` and hid the decorative chevron from accessibility
+  APIs. Non-root routes retain a Home link; the root route now exposes Home as the current item without a redundant
+  self-link or separator.
+- Replaced the utility `nav` around theme and language controls with a regular `div`. The controls retain their own
+  names and behavior without implying that they are a collection of navigation links.
+- Added component contracts for a calculator route and the root route, including the unique landmark count/name,
+  Home link, current-page semantics, decorative icon handling, and utility-control containment.
+
+Files and areas:
+
+- `src/components/layout/header.tsx`
+- `src/components/layout/header.test.tsx`
+
+Verification:
+
+- The focused Header suite passed 2/2 tests.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: 4 active items remain across default Portfolio asset localization, bond input validation, remaining
+app-shell localization/information hierarchy, and the compatible History comparison feature.
