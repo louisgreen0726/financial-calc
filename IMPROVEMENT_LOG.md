@@ -66,6 +66,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [ ] Isolate concurrent local Playwright runners by both port and Next.js build directory.
 - [x] Preserve RATE scale invariance for extreme but finite cash flows.
 - [ ] Audit calculator charts and compact mobile result layouts for the next high-impact UI refinement.
+- [x] Expand Sidebar discovery across localized tool descriptions, groups, and multi-term queries.
 
 ## 2026-07-13
 
@@ -3212,3 +3213,33 @@ Verification:
 
 Queue status: Workspace Backup, fully isolated Playwright lifecycle handling, richer Sidebar discovery, and further
 product/UI and core correctness work remain active or queued; the queue remains intentionally non-empty.
+
+### Improvement 81: Search the full localized calculator directory
+
+Status: completed.
+
+Changes:
+
+- Expanded Sidebar search beyond calculator titles. Each query now searches the localized section name, tool name,
+  and tool description, so intent terms such as `WACC`, `amortization`, `convexity`, or a translated category label
+  find the relevant destination even when that word is not present in the visible tool title.
+- Split whitespace-separated queries into terms and requires every term to match the same tool's combined search
+  document. This supports focused queries such as `wacc valuation` while preventing unrelated partial matches from
+  flooding the navigation list.
+- Preserved the existing section expansion, empty state, active-route semantics, desktop collapse behavior, and the
+  shared Sidebar used inside the mobile menu.
+- Added direct interaction coverage for description matching, section-name discovery, multi-term intersection, and
+  the no-results state.
+
+Files and areas:
+
+- `src/components/layout/sidebar.tsx`
+- `src/components/layout/sidebar.test.tsx`
+
+Verification:
+
+- The focused Sidebar and calculator accessibility suites passed 22/22 tests.
+- Focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: Workspace Backup, Playwright process/config isolation, NPV extreme-scale stability, and further UI
+refinement remain active or queued; the queue remains intentionally non-empty.

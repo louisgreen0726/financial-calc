@@ -44,12 +44,14 @@ export const Sidebar = React.memo(function Sidebar({
   };
 
   const sections = useMemo(() => {
-    const q = query.toLowerCase().trim();
-    if (!q) return NAV_CONFIG;
+    const terms = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+    if (terms.length === 0) return NAV_CONFIG;
+
     return NAV_CONFIG.map((sec) => {
+      const sectionLabel = t(sec.titleKey);
       const items = sec.items.filter((it) => {
-        const name = t(it.titleKey) ?? it.titleKey;
-        return name.toLowerCase().includes(q);
+        const searchText = `${sectionLabel} ${t(it.titleKey)} ${t(it.descKey)}`.toLowerCase();
+        return terms.every((term) => searchText.includes(term));
       });
       if (items.length === 0) return null;
       return { ...sec, items } as typeof sec;
