@@ -38,11 +38,16 @@ async function listSourceFiles(directory: string): Promise<string[]> {
 
 async function collectLiteralTranslationCalls(sourceDirectory: string): Promise<Map<string, string[]>> {
   const calls = new Map<string, string[]>();
-  const sourceFiles = await listSourceFiles(sourceDirectory);
+  const sourceFiles = (await listSourceFiles(sourceDirectory)).sort();
+  const sources = await Promise.all(
+    sourceFiles.map(async (filename) => ({
+      filename,
+      source: await readFile(filename, "utf8"),
+    }))
+  );
 
-  for (const filename of sourceFiles) {
-    const source = await readFile(filename, "utf8");
-    const sourceFile = ts.createSourceFile(filename, source, ts.ScriptTarget.Latest, true);
+  for (const { filename, source } of sources) {
+    const sourceFile = ts.createSourceFile(filename, source, ts.ScriptTarget.Latest, false);
     const visit = (node: ts.Node) => {
       if (
         ts.isCallExpression(node) &&
@@ -92,7 +97,8 @@ describe("translation catalogs", () => {
     const calls = await collectLiteralTranslationCalls(path.resolve(process.cwd(), "src"));
     const missing = [...calls]
       .filter(([key]) => !english.has(key) || !chinese.has(key))
-      .map(([key, locations]) => `${key} (${locations.join(", ")})`);
+      .map(([key, locations]) => `${key} (${locations.join(", ")})`)
+      .sort();
 
     expect(missing).toEqual([]);
     expect(calls.size).toBeGreaterThan(250);

@@ -226,6 +226,9 @@ browser-level checks beyond the existing suite.
   security headers, route budgets, installation, offline navigation, and update activation against that exact output.
 - Explicit `PWA_SKIP_BUILD=1` artifact reuse is covered by a config test; local PWA commands still build by default.
   Root-path PWA verification against a prebuilt artifact fell from the previously recorded 38.2 seconds to 9.8 seconds.
+- The translation literal-call audit reads its sorted source set concurrently and parses complete parent-free
+  TypeScript ASTs in deterministic order. This removes sequential I/O sensitivity under full-suite worker contention
+  without weakening source coverage, raising the timeout, or replacing syntax-aware analysis with regular expressions.
 - Next.js compilation caches are isolated by deployment target and lockfile/source hashes. Playwright screenshots and
   traces are now uploaded on failure with seven-day retention instead of remaining inaccessible on an ephemeral runner.
 

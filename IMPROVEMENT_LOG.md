@@ -50,9 +50,10 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Normalize History filters when deleting the last record in the active category.
 - [x] Detect and explain multiple valid TVM RATE roots instead of presenting one as unique.
 - [x] Preserve NPV/IRR invariance when appending economically irrelevant zero cash flows.
-- [ ] Stabilize translation-catalog source scanning under full-suite worker contention.
+- [x] Stabilize translation-catalog source scanning under full-suite worker contention.
 - [ ] Extend formatting enforcement beyond `src/` to E2E, scripts, workflows, and root configuration.
 - [ ] Add analytic and finite-difference oracles for bond duration and convexity.
+- [ ] Repair stale cross-tab PWA update prompts after another tab activates the waiting worker.
 
 ## 2026-07-13
 
@@ -1804,3 +1805,41 @@ invalid-preference cleanup, translation-scan stability, broader formatting enfor
 - Current work: Improvement 41 has passed focused formula, UI, Help, type, lint, and formatting checks; the full root
   verification is next, followed by the still-nonempty queue.
 - Queue status: 6 active items remain; lower-risk work can continue even if any browser-specific item needs follow-up.
+
+### Improvement 42: Contention-resistant translation source audit
+
+Status: completed.
+
+Changes:
+
+- Investigated the transient full-suite failure recorded during Improvement 39. The literal translation-call audit
+  exceeded Vitest's five-second default by 39ms even though its focused rerun finished in 384ms, confirming a worker
+  contention problem rather than a catalog correctness failure.
+- Found that the audit performed 171 sequential asynchronous reads across roughly 0.98MB of source while up to 16
+  Vitest forks competed for I/O, CPU, and memory. It also asked TypeScript to build parent links that the traversal and
+  line-number diagnostics never consume.
+- Sorted the complete source-file list, read source text concurrently, then retained sequential full AST parsing with
+  `setParentNodes=false`. The check still scans production and test TypeScript/JavaScript files with the TypeScript
+  parser; it does not trade correctness for a comment/string-sensitive regular expression.
+- Sorted missing-key diagnostics so a future failure has stable output independent of filesystem enumeration order.
+  Parent-free ASTs continue to produce the same key locations through `getStart(sourceFile)` and line mapping.
+- Kept the original five-second timeout as a pressure signal instead of hiding the bottleneck by increasing it or
+  globally reducing Vitest concurrency.
+
+Files and areas:
+
+- `src/lib/i18n-catalog.test.ts`
+- Engineering review and improvement log
+
+Verification:
+
+- Nine consecutive focused translation-source runs passed. The first full-file run reported 899ms for the literal
+  scan; the final measured repetitions reported 533ms, 492ms, and 1085ms, all with the original five-second timeout.
+- Three consecutive complete `npm test` runs passed all 54 files and 460 tests under normal worker concurrency in
+  54.77s, 60.24s, and 38.08s.
+- `npm run verify` passed all 54 Vitest files and 460 tests, 15 routes, 197 precache assets, 722 internal references,
+  and every route bundle budget.
+- Changed source and documentation passed Prettier and `git diff --check`.
+
+Queue status: 6 active items remain across cross-tab PWA updates, Portfolio development translations, deterministic
+local browser selection, invalid-preference cleanup, broader formatting enforcement, and bond sensitivity oracles.
