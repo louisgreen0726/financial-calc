@@ -575,6 +575,23 @@ test("npv ignores exact zero tails without hiding nonzero overflow", () => {
   }
 });
 
+test("npv recovers finite values when discount factors reach floating-point endpoints", () => {
+  const expectedSubnormal = Math.exp(-Math.log(Number.MAX_VALUE));
+  const nearSingularRate = -0.9999999999999999;
+  const tailPeriod = 21;
+  const expectedAmplifiedTail = Math.exp(Math.log(Number.MIN_VALUE) - tailPeriod * Math.log1p(nearSingularRate));
+
+  for (const sign of [1, -1]) {
+    const discountedSubnormal = Finance.npv(Number.MAX_VALUE, [0, 0, sign * Number.MAX_VALUE]);
+    expect(Math.sign(discountedSubnormal)).toBe(sign);
+    expect(Math.abs(discountedSubnormal) / expectedSubnormal).toBeCloseTo(1, 12);
+
+    const amplifiedTail = Finance.npv(nearSingularRate, [0, ...Array(tailPeriod - 1).fill(0), sign * Number.MIN_VALUE]);
+    expect(Math.sign(amplifiedTail)).toBe(sign);
+    expect(Math.abs(amplifiedTail) / expectedAmplifiedTail).toBeCloseTo(1, 12);
+  }
+});
+
 test("irr is invariant to appended exact zero cash flows", () => {
   const baseCashFlows = [-100, 0.1];
   const baseIrr = Finance.irr(baseCashFlows);

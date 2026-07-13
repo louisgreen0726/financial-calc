@@ -72,6 +72,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Preserve implied-volatility results when the same option contract is expressed in very small currency units.
 - [ ] Preserve tiny nonzero Fisher real-rate spreads without cancellation.
 - [x] Restore WCAG AA contrast for destructive actions and states in the dark theme.
+- [x] Recover representable NPV tails when discount factors reach zero or infinity.
 
 ## 2026-07-13
 
@@ -3382,3 +3383,34 @@ Verification:
 
 Queue status: Workspace Backup and concurrent Playwright lifecycle isolation remain active; financial edge cases and
 the next product/UI refinement remain queued, so the queue stays intentionally non-empty.
+
+### Improvement 86: Recover NPV values beyond discount-factor range
+
+Status: completed.
+
+Changes:
+
+- Reproduced both floating-point endpoints in NPV discounting. At `Number.MAX_VALUE` interest, a period-two maximum cash
+  flow has the representable discounted value `1 / MAX_VALUE` (about `5.56e-309`), but the old infinite factor shortcut
+  erased it to zero. Near `-100%`, a period-21 minimum subnormal tail should amplify to about `5.50e11`, while the factor
+  itself underflowed to zero and forced `NaN`.
+- Kept the ordinary finite-factor division path unchanged. Only when `exp(logRate * period)` reaches zero or infinity,
+  the engine now combines the cash-flow and discount magnitudes in log space, restores the original sign, and then
+  exponentiates the final magnitude.
+- Preserved true overflow rejection and values below the representable subnormal floor, while recovering finite positive
+  and negative tails on both endpoint paths.
+- Added ratio-based subnormal assertions so a returned zero cannot accidentally pass an absolute-tolerance matcher, plus
+  an independent log-magnitude oracle for the near-singular amplified tail.
+
+Files and areas:
+
+- `src/lib/finance-math.ts`
+- `src/lib/finance-math.test.ts`
+
+Verification:
+
+- The complete finance-math suite passed 81/81 tests.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: Workspace Backup and Playwright concurrent-runner isolation remain active; Fisher real-rate precision,
+browser integration, and further product/UI refinement remain queued, so the queue stays intentionally non-empty.

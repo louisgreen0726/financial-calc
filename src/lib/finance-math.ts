@@ -389,9 +389,12 @@ export const Finance = {
     const logRate = Math.log1p(rate);
     const discountedValues = values.map((value, period) => {
       if (value === 0) return 0;
-      const discountFactor = Math.exp(logRate * period);
-      if (discountFactor === Infinity) return 0;
-      return discountFactor === 0 ? NaN : value / discountFactor;
+      const discountExponent = logRate * period;
+      const discountFactor = Math.exp(discountExponent);
+      if (discountFactor !== 0 && discountFactor !== Infinity) return value / discountFactor;
+
+      const discountedValue = Math.sign(value) * Math.exp(Math.log(Math.abs(value)) - discountExponent);
+      return isValid(discountedValue) ? discountedValue : NaN;
     });
     if (discountedValues.some((value) => !isValid(value))) return NaN;
     const evaluation = normalizeTerms(discountedValues);
