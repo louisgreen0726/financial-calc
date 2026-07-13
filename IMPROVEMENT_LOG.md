@@ -2447,3 +2447,32 @@ Verification:
 Queue status: 4 active items remain across app-shell localization/mobile semantics, dead form-dependency cleanup,
 Monte Carlo fallback error precedence, and finite chart data for extreme option inputs; further UI/product auditing
 continues in parallel so the queue remains non-empty.
+
+### Improvement 57: Remove the orphaned form abstraction and runtime dependency
+
+Status: completed.
+
+Changes:
+
+- Repeated the full static import audit after earlier dead-source cleanup and confirmed the checked-in shadcn
+  `form.tsx` primitive had no route, component, test, configuration, dynamic-import, or documentation consumer.
+- Removed that isolated primitive and the resulting unused `react-hook-form` production dependency from both package
+  manifests. This avoids shipping and maintaining a form state library while the application uses its existing
+  calculator-specific controlled state and validation contracts.
+- Updated the current engineering review to replace its now-stale reason for retaining the dependency. Historical log
+  entries remain unchanged because they accurately describe the dependency boundary at the time of those batches.
+
+Files and areas:
+
+- `package.json` and `package-lock.json`
+- Removed `src/components/ui/form.tsx`
+- `ENGINEERING_REVIEW.md`
+
+Verification:
+
+- Full-repository import search found no remaining source consumer of the primitive or package.
+- `npm ls react-hook-form --all` reports an empty tree and `npm audit --omit=dev` reports zero known vulnerabilities.
+- Strict TypeScript, the full Vitest suite, Prettier, and `git diff --check` passed.
+
+Queue status: 3 active items remain across app-shell localization/mobile semantics, Monte Carlo fallback error
+precedence, and finite chart data for extreme option inputs; additional product and robustness audits remain active.

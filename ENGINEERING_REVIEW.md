@@ -157,9 +157,9 @@ browser-level checks beyond the existing suite.
 - Static import and Knip review removed the unused `@hookform/resolvers` dependency and four orphan modules: an old
   sensitivity component, an unused auto-calculation hook, a disconnected chart theme, and a duplicate TypeScript
   design-token set. The cleanup removes 359 source lines without changing emitted route bundles.
-- `react-hook-form` and several currently unused Radix packages remain intentionally because checked-in
-  shadcn-generated primitives import them. Removing those packages would leave the local component library unable to
-  typecheck even though current routes do not instantiate every primitive.
+- A follow-up import audit found that the only remaining `react-hook-form` consumer was the unreferenced generated
+  `form.tsx` primitive itself. Both the unused primitive and its production dependency have now been removed; the
+  remaining checked-in shadcn primitives retain only packages that they import directly.
 - Lucide completed its 1.x migration with React 19, full browser, and route-budget verification. ESLint 10 remains
   blocked because the latest `eslint-plugin-import`, `eslint-plugin-jsx-a11y`, and `eslint-plugin-react` releases only
   declare ESLint 9 compatibility; forcing that invalid peer tree was rejected. `@types/node` stays aligned with the
