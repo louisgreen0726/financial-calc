@@ -37,4 +37,22 @@ describe("share Markdown generation", () => {
       "\\[click\\](javascript:alert(1)) \\*bold\\* \\`code\\`"
     );
   });
+
+  it("keeps every line-ending form inside the current Markdown block", () => {
+    expect(escapeMarkdownTableCell("first\rsecond\r\nthird\nfourth | value")).toBe(
+      "first<br>second<br>third<br>fourth \\| value"
+    );
+
+    const markdown = generateShareMarkdown({
+      title: "Trusted report\r# Forged heading",
+      inputs: { Amount: "100\r| forged | row" },
+      results: { Total: "100" },
+      labels,
+      formatResultValue: String,
+    });
+
+    expect(markdown).not.toContain("\r");
+    expect(markdown).toContain("## Trusted report<br># Forged heading\n");
+    expect(markdown).toContain("| Amount | 100<br>\\| forged \\| row |");
+  });
 });

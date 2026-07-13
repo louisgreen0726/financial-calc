@@ -22,7 +22,7 @@ export interface ShareMarkdownPayload {
 export function escapeMarkdownText(value: ShareValue): string {
   return escapeHtml(String(value))
     .replace(/([\\`*_[\]])/g, "\\$1")
-    .replace(/\r?\n/g, "<br>");
+    .replace(/\r\n?|\n/g, "<br>");
 }
 
 export function escapeMarkdownTableCell(value: ShareValue): string {

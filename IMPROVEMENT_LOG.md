@@ -2841,3 +2841,30 @@ Verification:
 
 Queue status: a robust Playwright child-process wrapper, bare-CR Markdown containment, and extreme purchasing-power/CPI
 stability are active in parallel; History loading stability and complete workspace backup remain queued.
+
+### Improvement 69: Contain bare carriage returns in shared Markdown
+
+Status: completed.
+
+Changes:
+
+- Closed a Markdown structure-escape gap in user-facing shared reports. CommonMark treats a bare carriage return as a
+  line ending, but the sanitizer only converted LF and CRLF; a stored/user input containing only `\r` could therefore
+  leave its current heading or table cell and visually forge a new Markdown heading/row.
+- Normalized CRLF, bare CR, and LF to `<br>` in the common text escaper before table-specific pipe escaping. All line
+  ending forms now remain visibly separated inside the intended heading/cell without leaving raw control characters.
+- Added direct mixed-line-ending coverage plus a generated report containing a forged heading and forged table row.
+  The regression asserts no raw CR survives and both payloads remain inside their current Markdown blocks.
+
+Files and areas:
+
+- `src/lib/share-markdown.ts`
+- `src/lib/share-markdown.test.ts`
+
+Verification:
+
+- The focused Markdown sharing suite passed 4/4 tests.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: a robust Playwright child-process wrapper and extreme purchasing-power/CPI stability remain active;
+History loading stability, complete workspace backup, and further UI/product work remain queued.
