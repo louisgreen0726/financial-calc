@@ -36,6 +36,10 @@ const toastMock = vi.hoisted(() => ({
   success: vi.fn(),
 }));
 
+const exportMock = vi.hoisted(() => ({
+  exportToCSV: vi.fn(),
+}));
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: historyMock.push,
@@ -65,6 +69,10 @@ vi.mock("@/lib/i18n", () => ({
 
 vi.mock("sonner", () => ({ toast: toastMock }));
 
+vi.mock("@/hooks/use-export", () => ({
+  useExport: () => exportMock,
+}));
+
 describe("HistoryPage", () => {
   beforeEach(() => {
     window.localStorage.clear();
@@ -93,6 +101,42 @@ describe("HistoryPage", () => {
     historyMock.push.mockClear();
     toastMock.error.mockClear();
     toastMock.success.mockClear();
+    exportMock.exportToCSV.mockClear();
+  });
+
+  it("exports stable raw history fields alongside localized display values", () => {
+    historyMock.history = [
+      {
+        id: "capm-export",
+        page: "equity",
+        inputs: { rf: "3.5", beta: "1.2", rm: "10" },
+        result: 0.08,
+        timestamp: 1_700_000_000_000,
+        label: "CAPM",
+        resultFormat: "percentDecimal",
+        resultUnit: "percentage points",
+      },
+    ];
+    render(<HistoryPage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "export.csv" }));
+
+    expect(exportMock.exportToCSV).toHaveBeenCalledOnce();
+    expect(exportMock.exportToCSV).toHaveBeenCalledWith([
+      {
+        id: "capm-export",
+        pageId: "equity",
+        page: "nav.investing.equity.title",
+        inputs: JSON.stringify({ rf: "3.5", beta: "1.2", rm: "10" }),
+        result: "8%",
+        rawResult: 0.08,
+        resultFormat: "percentDecimal",
+        resultUnit: "percentage points",
+        label: "CAPM",
+        timestamp: new Date(1_700_000_000_000).toLocaleString("en-US"),
+        timestampIso: "2023-11-14T22:13:20.000Z",
+      },
+    ]);
   });
 
   it("hides orphaned favorite ids without rewriting them automatically", async () => {

@@ -382,11 +382,17 @@ export default function HistoryPage() {
       return;
     }
     const data = history.map((item) => ({
+      id: item.id,
+      pageId: item.page,
       page: pageTitleMap[item.page] || item.page,
       inputs: JSON.stringify(item.inputs),
       result: formatHistoryResult(item, historyFormatOptions),
+      rawResult: item.result,
+      resultFormat: item.resultFormat ?? "",
+      resultUnit: item.resultUnit ?? "",
       label: item.label || "",
       timestamp: formatDate(item.timestamp),
+      timestampIso: new Date(item.timestamp).toISOString(),
     }));
     exportToCSV(data as unknown as Record<string, unknown>[]);
   };

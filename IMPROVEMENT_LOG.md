@@ -2565,3 +2565,33 @@ Verification:
 
 Queue status: app-shell localization/mobile semantics, extreme inflation-rate stability, and an independent tooling
 improvement are active in parallel; History comparison workflow follow-ups remain queued for product prioritization.
+
+### Improvement 61: Machine-readable History CSV columns
+
+Status: completed.
+
+Changes:
+
+- Extended the History CSV export without removing or renaming its existing localized `page`, formatted `result`,
+  serialized `inputs`, label, and local timestamp columns.
+- Added stable record identity and source fields: `id`, language-independent `pageId`, numeric `rawResult`, stored
+  `resultFormat`, stored `resultUnit`, and ISO-8601 `timestampIso`. Downstream audits and spreadsheet workflows can now
+  sort, join, calculate, and process exports without reverse-parsing translated or rounded display strings.
+- Kept legacy metadata explicit: records that predate result format/unit fields export empty stored-metadata cells
+  rather than inventing a contract that was not persisted.
+- Added a page-level export regression that verifies localized and raw fields are emitted together with exact values,
+  including decimal percentage storage versus its formatted percentage display.
+
+Files and areas:
+
+- `src/app/history/page.tsx`
+- `src/app/history/page.test.tsx`
+
+Verification:
+
+- The focused History page suite passed 8/8 tests.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed with all parallel batches present.
+
+Queue status: app-shell localization/mobile semantics, extreme inflation-rate stability, and an independent tooling
+improvement remain active in parallel; comparison baseline swapping and fuller workspace backup are queued product
+follow-ups.
