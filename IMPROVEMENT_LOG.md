@@ -38,7 +38,8 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Audit service-worker cache growth and storage-quota failure behavior across upgrades.
 - [x] Surface theme/language persistence write failures consistently with currency settings.
 - [x] Audit remaining preference setters for silent write failures, starting with sidebar collapse state.
-- [ ] Investigate and eliminate development-only missing translation warnings for Portfolio seed controls.
+- [x] Investigate and eliminate development-only missing translation warnings for Portfolio seed controls.
+- [ ] Localize default Portfolio asset names without overwriting user-edited or restored names.
 - [x] Make local Playwright browser selection deterministic when the pinned browser binary is unavailable.
 - [x] Extend preference recovery coverage to failed cleanup of invalid persisted values.
 - [x] Consume pending history restores exactly once even when sessionStorage cleanup is blocked.
@@ -2101,3 +2102,37 @@ Verification:
 
 Queue status: 5 active items remain across Portfolio diagnostics, formatting enforcement, bond input validation,
 app-shell UI refinement, and compatible History comparison.
+
+### Improvement 48: Preserve Portfolio domain errors through worker fallback
+
+Status: completed.
+
+Changes:
+
+- Re-audited equal-correlation matrices for portfolios from two through twenty assets. The existing lower bound
+  `-1 / (N - 1)`, page-level clamp, and calculation-engine guard correctly enforce positive semidefiniteness; the
+  covariance oracle already covers negative, zero, positive, boundary, and high-asset-count regimes.
+- Traced the direct-worker failure path for a three-asset payload with correlation `-0.8`. The worker reports the
+  domain error, the hook terminates it, and the in-process fallback rejects the same invalid payload. No partial result
+  is valid in this path, so the original correlation diagnosis must survive rather than becoming a generic fallback
+  failure or leaving the simulation active.
+- Added a hook contract test that drives that exact worker error. It asserts one termination, `isRunning=false`, a null
+  result, the preserved correlation message in hook state, and one `onError` callback with the same message.
+- Investigated the queued development-only seed translation warning. Both `portfolio.seed` keys exist in the typed
+  schema and English/Chinese catalogs, the page call is a literal, and the focused catalog audit passes; no current
+  warning path remains to change. Replaced that stale queue observation with the confirmed user-facing gap that the
+  four editable default asset names remain English after Chinese hydration or reset.
+
+Files and areas:
+
+- `src/hooks/use-monte-carlo-simulation.test.tsx`
+- Portfolio translation and correlation contract audit
+
+Verification:
+
+- The focused Monte Carlo worker hook suite passed 4/4 tests.
+- The focused translation literal audit passed and confirmed both seed keys are cataloged.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: 5 active items remain across default Portfolio asset localization, formatting enforcement, bond input
+validation, app-shell UI refinement, and compatible History comparison.
