@@ -2595,3 +2595,33 @@ Verification:
 Queue status: app-shell localization/mobile semantics, extreme inflation-rate stability, and an independent tooling
 improvement remain active in parallel; comparison baseline swapping and fuller workspace backup are queued product
 follow-ups.
+
+### Improvement 62: Stable inflation annualization across extreme price scales
+
+Status: completed.
+
+Changes:
+
+- Reproduced two failures in `inflationRate` for valid positive finite prices: dividing `Number.MAX_VALUE` by
+  `Number.MIN_VALUE` overflowed and returned `NaN`, while the reciprocal ratio underflowed to zero and incorrectly
+  returned an exact `-100%` annual rate even over a 100-year horizon.
+- Reworked annualization in the logarithmic domain. Ordinary ratios use `log1p((end - start) / start)` for precision
+  near equal prices; overflowed, underflowed, or rounded-to-minus-one relative changes use the difference of finite
+  endpoint logarithms. `expm1` then recovers the annual rate without cancellation around zero.
+- Preserved invalid-input and unrepresentable-output behavior while keeping the standard 100-to-150 over ten years
+  result unchanged.
+- Added extreme upward/downward 100-year regressions with finite expected values and a reciprocal annual-factor
+  property, so neither direction can regress independently.
+
+Files and areas:
+
+- `src/lib/finance-math.ts`
+- `src/lib/finance-math.test.ts`
+
+Verification:
+
+- The complete finance-math suite passed 72/72 tests.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: app-shell localization/mobile semantics, Monte Carlo trust-boundary limits, and an independent tooling
+improvement are active in parallel; comparison baseline swapping and fuller workspace backup remain queued.

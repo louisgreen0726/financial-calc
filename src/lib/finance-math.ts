@@ -887,7 +887,12 @@ export const Finance = {
   inflationRate: (startPrice: number, endPrice: number, years: number): number => {
     if (!isValid(startPrice) || !isValid(endPrice) || !isValid(years)) return NaN;
     if (startPrice <= 0 || endPrice <= 0 || years <= 0) return NaN;
-    const result = Math.pow(endPrice / startPrice, 1 / years) - 1;
+    const relativeChange = (endPrice - startPrice) / startPrice;
+    const totalLogChange =
+      Number.isFinite(relativeChange) && relativeChange > -1
+        ? Math.log1p(relativeChange)
+        : Math.log(endPrice) - Math.log(startPrice);
+    const result = Math.expm1(totalLogChange / years);
     return isValid(result) ? result : NaN;
   },
   purchasingPower: (currentAmount: number, inflationRate: number, years: number): number => {

@@ -206,6 +206,16 @@ test("finite inputs never leak overflow values from CAPM or macro helpers", () =
   expect(Number.isNaN(Finance.exchangeRatePPP(Number.MIN_VALUE, Number.MAX_VALUE))).toBe(true);
 });
 
+test("inflation rate annualizes extreme finite price ratios without intermediate overflow or underflow", () => {
+  const growth = Finance.inflationRate(Number.MIN_VALUE, Number.MAX_VALUE, 100);
+  const decline = Finance.inflationRate(Number.MAX_VALUE, Number.MIN_VALUE, 100);
+
+  expect(growth).toBeCloseTo(2_068_278.8886936563, 6);
+  expect(decline).toBeCloseTo(-0.9999995165064431, 12);
+  expect((1 + growth) * (1 + decline)).toBeCloseTo(1, 9);
+  expect(Finance.inflationRate(100, 150, 10)).toBeCloseTo(0.04137974399241062, 12);
+});
+
 test("PPP exchange rate matches the displayed foreign-per-domestic unit direction", () => {
   expect(Finance.exchangeRatePPP(5.81, 650)).toBeCloseTo(111.8760757, 7);
 });
