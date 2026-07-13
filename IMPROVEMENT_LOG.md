@@ -3062,3 +3062,32 @@ Verification:
 
 Queue status: complete Workspace Backup and concurrent Playwright port isolation remain active; shared URL-state bounds
 and further core/UI robustness work remain queued or in implementation.
+
+### Improvement 76: Bound generic URL-state restoration before parsing
+
+Status: completed.
+
+Changes:
+
+- Closed the remaining inbound URL-size gap in the generic `useUrlState` hook used directly by calculator routes. The
+  shareable-URL hook already enforced the 4,000-character per-value parser boundary, but this path accepted arbitrarily
+  long decoded scalars and sent oversized arrays into parsing; malformed arrays could also replace useful defaults with
+  an empty value.
+- Applied the shared `MAX_URL_STATE_VALUE_LENGTH` limit immediately after parameter lookup and before number, array, or
+  string handling. Oversized values are ignored independently, so each field retains its configured default while
+  valid sibling parameters still restore normally.
+- Added a mixed regression with oversized scalar and array values plus a legal period value, proving invalid fields do
+  not erase defaults and the rest of the shared URL remains usable.
+
+Files and areas:
+
+- `src/hooks/use-url-state.ts`
+- `src/hooks/use-url-state.test.tsx`
+
+Verification:
+
+- The focused generic URL-state suite passed 9/9 tests.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: complete Workspace Backup and concurrent Playwright port isolation remain active; further UI/product and
+core robustness work remains queued or under audit.

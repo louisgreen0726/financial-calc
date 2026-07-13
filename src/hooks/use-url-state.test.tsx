@@ -2,6 +2,7 @@
 
 import { act, renderHook } from "@testing-library/react";
 import { useUrlState } from "@/hooks/use-url-state";
+import { MAX_URL_STATE_VALUE_LENGTH } from "@/lib/url-state-utils";
 
 const navigationMock = vi.hoisted(() => ({
   pathname: "/tvm",
@@ -153,5 +154,20 @@ describe("useUrlState", () => {
     expect(result.current.shareUrl).toBe(
       `${window.location.origin}/loans?loans_method=CPM&loans_amount=250000&loans_rate=4.25&loans_years=30`
     );
+  });
+
+  it("ignores oversized restored values without replacing defaults", () => {
+    navigationMock.searchParams = new URLSearchParams("fc_nper=24");
+    navigationMock.searchParams.set("fc_rate", "9".repeat(MAX_URL_STATE_VALUE_LENGTH + 1));
+    navigationMock.searchParams.set("fc_flows", "x".repeat(MAX_URL_STATE_VALUE_LENGTH + 1));
+
+    const { result } = renderHook(() =>
+      useUrlState({
+        defaultValues: { rate: "5", nper: "10", flows: ["-1000", "600"] },
+        prefix: "fc",
+      })
+    );
+
+    expect(result.current.state).toEqual({ rate: "5", nper: "24", flows: ["-1000", "600"] });
   });
 });

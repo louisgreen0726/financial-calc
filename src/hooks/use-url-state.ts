@@ -5,6 +5,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { parseOptionalNumber } from "@/lib/input-utils";
 import {
   normalizePathname,
+  MAX_URL_STATE_VALUE_LENGTH,
   isShareUrlWithinLimit,
   parseUrlArrayValue,
   serializeUrlValue,
@@ -32,17 +33,19 @@ export function useUrlState<T extends Record<string, UrlStateValue>>({
       const paramKey = prefix ? `${prefix}_${key}` : key;
       const paramValue = searchParams.get(paramKey);
 
-      if (paramValue !== null) {
-        if (typeof defaultValue === "number") {
-          const parsed = parseOptionalNumber(paramValue);
-          if (parsed !== null) {
-            (initialState as Record<string, unknown>)[key] = parsed;
-          }
-        } else if (Array.isArray(defaultValue)) {
-          (initialState as Record<string, unknown>)[key] = parseUrlArrayValue(paramValue);
-        } else {
-          (initialState as Record<string, unknown>)[key] = paramValue;
+      if (paramValue === null || paramValue.length > MAX_URL_STATE_VALUE_LENGTH) {
+        continue;
+      }
+
+      if (typeof defaultValue === "number") {
+        const parsed = parseOptionalNumber(paramValue);
+        if (parsed !== null) {
+          (initialState as Record<string, unknown>)[key] = parsed;
         }
+      } else if (Array.isArray(defaultValue)) {
+        (initialState as Record<string, unknown>)[key] = parseUrlArrayValue(paramValue);
+      } else {
+        (initialState as Record<string, unknown>)[key] = paramValue;
       }
     }
 
