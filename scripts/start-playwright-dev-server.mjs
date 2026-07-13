@@ -219,7 +219,7 @@ export async function terminateProcessTree({
 
   if (platform === "win32") {
     const systemRoot = environment.SystemRoot ?? environment.WINDIR ?? "C:\\Windows";
-    const taskkillPath = path.join(systemRoot, "System32", "taskkill.exe");
+    const taskkillPath = path.win32.join(systemRoot, "System32", "taskkill.exe");
     const taskkill = spawnProcess(taskkillPath, ["/PID", String(child.pid), "/T", "/F"], {
       shell: false,
       stdio: "ignore",
