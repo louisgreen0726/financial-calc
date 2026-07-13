@@ -68,6 +68,22 @@ test("pmt matches a standard mortgage payment benchmark", () => {
   expect(res).toBeCloseTo(-536.82, 2);
 });
 
+test("pmt avoids overflowing large balances before division", () => {
+  const rate = 0.01;
+  const periods = 600;
+  const expectedLevelPayment = -Number.MAX_VALUE * (rate / (1 - Math.exp(-periods * Math.log1p(rate))));
+  const levelPayment = Finance.pmt(rate, periods, Number.MAX_VALUE);
+  const offsetPayment = Finance.pmt(rate, periods, Number.MAX_VALUE, -Number.MAX_VALUE);
+  const dueOffsetPayment = Finance.pmt(rate, periods, Number.MAX_VALUE, -Number.MAX_VALUE, 1);
+  const zeroRatePayment = Finance.pmt(0, periods, Number.MAX_VALUE, Number.MAX_VALUE);
+
+  expect(Number.isFinite(levelPayment)).toBe(true);
+  expect(levelPayment / expectedLevelPayment).toBeCloseTo(1, 12);
+  expect(offsetPayment / (-Number.MAX_VALUE * rate)).toBeCloseTo(1, 12);
+  expect(dueOffsetPayment / ((-Number.MAX_VALUE * rate) / (1 + rate))).toBeCloseTo(1, 12);
+  expect(zeroRatePayment / (-Number.MAX_VALUE / (periods / 2))).toBeCloseTo(1, 12);
+});
+
 test("TVM helpers remain stable for rates close to zero", () => {
   expect(Finance.pmt(1e-16, 360, -100000)).toBeCloseTo(100000 / 360, 8);
   expect(Finance.pv(1e-16, 360, 100, 0)).toBeCloseTo(-36000, 8);

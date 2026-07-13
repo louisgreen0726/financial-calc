@@ -3020,3 +3020,45 @@ Verification:
 
 Queue status: a robust Playwright child-process wrapper and complete workspace backup remain active; further
 UI/product/core robustness work remains queued or under audit.
+
+### Progress checkpoint: 19:01 +08:00
+
+- Resumed-goal elapsed time: approximately 7 hours 49 minutes; cumulative logged active work: approximately 15 hours
+  26 minutes. The goal remains active until the user explicitly stops it.
+- Completed improvement batches: 74. Since the 18:11 checkpoint, work added localized mobile navigation, bounded
+  Monte Carlo execution at every boundary, machine-readable History export, baseline swapping, a stable History loading
+  skeleton, extreme macro scale recovery, Markdown/clipboard/download containment, transactional print setup, and PWA
+  startup/update race recovery.
+- Current work: implement the complete versioned Workspace Backup workflow, isolate concurrent local Playwright runners
+  onto independent ports, and finish overflow-safe PMT contribution math.
+- Queue status: product/UI, financial correctness, browser infrastructure, storage portability, and operational
+  robustness all remain represented; the queue is intentionally non-empty.
+
+### Improvement 75: Scale-safe PMT contribution math
+
+Status: completed.
+
+Changes:
+
+- Reproduced finite PMT results hidden by intermediate overflow: a legal 600-period, 1% payment on `MAX_VALUE` first
+  formed `PV * term = Infinity`, while equal/opposite maximum PV/FV values lost their finite rate contribution.
+- Normalized PV and FV by their common magnitude before applying the term/annuity and payment-timing factors, uses the
+  compensated sum already shared by the TVM engine, and restores scale only after division. Large level payments,
+  opposite-sign cancellation, and ordinary/due timing remain finite whenever the mathematical output is representable.
+- Extended the same scale-first contract to the zero-rate branch after review found `PV + FV` could overflow before
+  division. Two maximum balances over 600 periods now correctly produce a finite `-MAX_VALUE / 300` payment.
+- Added extreme finite-result/ratio regressions for ordinary and due timing plus zero rate while retaining the standard
+  mortgage and near-zero-rate oracle coverage.
+
+Files and areas:
+
+- `src/lib/finance-math.ts`
+- `src/lib/finance-math.test.ts`
+
+Verification:
+
+- The complete finance-math suite passed 74/74 tests.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: complete Workspace Backup and concurrent Playwright port isolation remain active; shared URL-state bounds
+and further core/UI robustness work remain queued or in implementation.
