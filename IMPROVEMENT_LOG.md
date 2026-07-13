@@ -47,7 +47,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Prevent rapid consecutive `useUrlState` field updates from overwriting earlier edits.
 - [x] Split storage feedback between applied session preferences and operations that were not completed.
 - [x] Stabilize Black-Scholes log-moneyness for extreme but finite spot/strike ratios.
-- [ ] Normalize History filters when deleting the last record in the active category.
+- [x] Normalize History filters when deleting the last record in the active category.
 - [ ] Detect and explain multiple valid TVM RATE roots instead of presenting one as unique.
 - [ ] Preserve NPV/IRR invariance when appending economically irrelevant zero cash flows.
 - [ ] Extend formatting enforcement beyond `src/` to E2E, scripts, workflows, and root configuration.
@@ -1630,3 +1630,46 @@ Verification:
 - The production `/calc` PWA Playwright suite passed 2/2 in 1.8 minutes: CSP hashes, installation, uncached offline
   navigation, 404 fallback, user-controlled worker activation, and reload all remained intact.
 - Changed scripts, tests, metadata, and documentation passed Prettier; `git diff --check` passed.
+
+### Improvement 38: Valid History filters after category removal
+
+Status: completed.
+
+Changes:
+
+- Reproduced a History view with TVM selected, one TVM record, and one Risk record. Removing the TVM record deleted its
+  filter button but left internal `activeTab="tvm"`; the remaining Risk record was hidden behind `noResults`, and no
+  visible filter had `aria-pressed="true"`.
+- Added an effective active filter derived from current grouped history. All filtering, visual variants, and pressed
+  states use it, so deletion, expiry, cross-tab synchronization, or clearing a category displays All and remaining
+  records in the same render without an empty-state flash.
+- Kept Favorites as an explicit stable filter even at zero items. Search misses and empty Favorites are valid user
+  views and are never mistaken for a missing page-category button.
+- Evaluated an effect-based state normalization, but the repository's React 19 lint correctly rejected synchronous
+  state updates inside effects. The final derivation has no cascading render and preserves the user's original category
+  intent if that category later reappears without another filter selection.
+- Reset mutable test history before each case. Added a deletion/category-removal contract with a MutationObserver that
+  proves `history.noResults` is never inserted, plus an empty-Favorites contract that remains selected and shows the
+  intended empty state.
+- Updated bilingual reliability documentation and engineering review evidence.
+
+Files and areas:
+
+- `src/app/history/page.tsx` and its focused test
+- English/Chinese README, engineering review, and improvement log
+
+Verification:
+
+- Strict TypeScript and focused ESLint passed; the History page suite passed 5/5 tests.
+- `npm run verify`: passed with 54 Vitest files and 445 tests, 15 routes, 197 precache assets, 96 script hashes, 35
+  static style hashes, 2 runtime style hashes per document, 722 internal references, and every route bundle budget.
+- Changed source and documentation passed Prettier; `git diff --check` passed.
+
+### Progress checkpoint: 13:21 +08:00
+
+- Resumed-goal elapsed time: 2 hours 9 minutes; cumulative logged active work: approximately 9 hours 46 minutes.
+- Completed improvement batches: 38; recent batches now cover core numeric tails, truthful failures, deployment topology,
+  and History filter state with independent subagent review.
+- Current work: Improvement 38 is fully verified and ready to commit; NPV/IRR zero-tail invariance is next.
+- Queue status: 7 active items remain across manifest validation, RATE/NPV semantics, preference cleanup, Portfolio
+  translations, deterministic local browser resolution, and broader formatting enforcement.

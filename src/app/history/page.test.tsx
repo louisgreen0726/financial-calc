@@ -67,6 +67,24 @@ vi.mock("sonner", () => ({ toast: toastMock }));
 describe("HistoryPage", () => {
   beforeEach(() => {
     window.localStorage.clear();
+    historyMock.history = [
+      {
+        id: "1",
+        page: "tvm",
+        inputs: { rate: "5" },
+        result: 100,
+        timestamp: 1,
+        label: "TVM",
+      },
+      {
+        id: "2",
+        page: "risk",
+        inputs: { value: "1000" },
+        result: 50,
+        timestamp: 2,
+        label: "VaR",
+      },
+    ];
     historyMock.removeManyFromHistory.mockClear();
     historyMock.removeFromHistory.mockClear();
     historyMock.clearAllHistory.mockClear();
@@ -121,5 +139,51 @@ describe("HistoryPage", () => {
     } finally {
       setItem.mockRestore();
     }
+  });
+
+  it("returns to all records when the active category loses its final item", async () => {
+    const { container, rerender } = render(<HistoryPage />);
+    const tvmFilter = screen.getByRole("button", { name: /tvm.*\(1\)/i });
+    fireEvent.click(tvmFilter);
+    expect(tvmFilter).toHaveAttribute("aria-pressed", "true");
+
+    await waitFor(() => expect(screen.getAllByRole("button", { name: "history.delete" })).toHaveLength(1));
+    fireEvent.click(screen.getByRole("button", { name: "history.delete" }));
+    expect(historyMock.removeFromHistory).toHaveBeenCalledWith("1");
+    const noResultsInsertions: Node[] = [];
+    const observer = new MutationObserver((records) => {
+      for (const record of records) {
+        noResultsInsertions.push(
+          ...[...record.addedNodes].filter((node) => node.textContent?.includes("history.noResults"))
+        );
+      }
+    });
+    observer.observe(container, { childList: true, subtree: true });
+    historyMock.history = historyMock.history.filter((item) => item.id !== "1");
+    rerender(<HistoryPage />);
+
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /history\.all.*\(1\)/ })).toHaveAttribute("aria-pressed", "true")
+    );
+    expect(screen.queryByRole("button", { name: /tvm.*\(1\)/i })).not.toBeInTheDocument();
+    expect(screen.getByText("VaR")).toBeInTheDocument();
+    expect(screen.queryByText("history.noResults")).not.toBeInTheDocument();
+    observer.disconnect();
+    expect(noResultsInsertions).toEqual([]);
+  });
+
+  it("keeps an empty favorites filter selected", async () => {
+    window.localStorage.setItem(`${STORAGE_PREFIX}favorites`, JSON.stringify(["1"]));
+    render(<HistoryPage />);
+
+    const favoritesFilter = await screen.findByRole("button", { name: /history\.favorites.*\(1\)/ });
+    fireEvent.click(favoritesFilter);
+    await waitFor(() => expect(screen.getAllByRole("button", { name: "history.favorites" })).toHaveLength(1));
+    fireEvent.click(screen.getByRole("button", { name: "history.favorites" }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /history\.favorites.*\(0\)/ })).toHaveAttribute("aria-pressed", "true")
+    );
+    expect(screen.getByText("history.noResults")).toBeInTheDocument();
   });
 });

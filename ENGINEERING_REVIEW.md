@@ -195,6 +195,9 @@ browser-level checks beyond the existing suite.
   `null` sentinel provides an equivalent cleanup; if all cleanup writes fail, a module-session signature prevents
   callback changes and Next.js remounts from replaying the payload. A localized warning accurately notes that a full
   browser refresh may attempt the restore again.
+- Page-category filters resolve against the current grouped history before rendering. If deletion, expiry, or cross-tab
+  synchronization removes the active category, the same render shows All selected and the remaining records without a
+  cascading state-normalization render. Empty Favorites remains an intentional selected view rather than falling back.
 
 ### Restore Follow-up: URL Cardinality and Format Boundaries
 

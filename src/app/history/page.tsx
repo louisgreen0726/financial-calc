@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -85,12 +85,15 @@ export default function HistoryPage() {
     return groups;
   }, [history]);
 
+  const effectiveActiveTab =
+    activeTab === "all" || activeTab === "favorites" || groupedHistory[activeTab] ? activeTab : "all";
+
   // Filter by tab
   const filteredHistory = useMemo(() => {
-    if (activeTab === "all") return history;
-    if (activeTab === "favorites") return history.filter((item) => visibleFavorites.has(item.id));
-    return groupedHistory[activeTab] || [];
-  }, [activeTab, history, visibleFavorites, groupedHistory]);
+    if (effectiveActiveTab === "all") return history;
+    if (effectiveActiveTab === "favorites") return history.filter((item) => visibleFavorites.has(item.id));
+    return groupedHistory[effectiveActiveTab] || [];
+  }, [effectiveActiveTab, history, visibleFavorites, groupedHistory]);
 
   // Filter by search
   const searchedHistory = useMemo(() => {
@@ -442,10 +445,10 @@ export default function HistoryPage() {
           >
             <Button
               type="button"
-              variant={activeTab === "all" ? "secondary" : "ghost"}
+              variant={effectiveActiveTab === "all" ? "secondary" : "ghost"}
               size="sm"
               className="gap-2"
-              aria-pressed={activeTab === "all"}
+              aria-pressed={effectiveActiveTab === "all"}
               onClick={() => setActiveTab("all")}
             >
               <Clock className="h-4 w-4" />
@@ -453,10 +456,10 @@ export default function HistoryPage() {
             </Button>
             <Button
               type="button"
-              variant={activeTab === "favorites" ? "secondary" : "ghost"}
+              variant={effectiveActiveTab === "favorites" ? "secondary" : "ghost"}
               size="sm"
               className="gap-2"
-              aria-pressed={activeTab === "favorites"}
+              aria-pressed={effectiveActiveTab === "favorites"}
               onClick={() => setActiveTab("favorites")}
             >
               <Star className="h-4 w-4" />
@@ -466,10 +469,10 @@ export default function HistoryPage() {
               <Button
                 key={page}
                 type="button"
-                variant={activeTab === page ? "secondary" : "ghost"}
+                variant={effectiveActiveTab === page ? "secondary" : "ghost"}
                 size="sm"
                 className="gap-2"
-                aria-pressed={activeTab === page}
+                aria-pressed={effectiveActiveTab === page}
                 onClick={() => setActiveTab(page)}
               >
                 {pageTitleMap[page] || page} ({items.length})
