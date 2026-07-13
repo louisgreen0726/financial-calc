@@ -4,13 +4,28 @@ import {
   calculatePortfolioPoint,
   clampEqualCorrelation,
   createSeededRandom,
+  getMonteCarloSimulationTarget,
   getMinimumEqualCorrelation,
   makeDeterministicBaselineWeights,
   makeRandomWeights,
   summarizePortfolioSimulations,
 } from "@/lib/portfolio-math";
+import { MAX_MONTE_CARLO_SIMULATIONS, MAX_PORTFOLIO_ASSETS } from "@/lib/constants";
 
 describe("portfolio-math", () => {
+  it("bounds simulation work while preserving required deterministic baselines", () => {
+    expect(getMonteCarloSimulationTarget(undefined, 4)).toBe(1000);
+    expect(getMonteCarloSimulationTarget(3, 4)).toBe(5);
+    expect(getMonteCarloSimulationTarget(10.9, 4)).toBe(10);
+    expect(getMonteCarloSimulationTarget(MAX_MONTE_CARLO_SIMULATIONS + 1_000_000, 4)).toBe(MAX_MONTE_CARLO_SIMULATIONS);
+    expect(() => getMonteCarloSimulationTarget(Number.POSITIVE_INFINITY, 4)).toThrow(
+      "Simulation count must be finite."
+    );
+    expect(() => getMonteCarloSimulationTarget(1000, MAX_PORTFOLIO_ASSETS + 1)).toThrow(
+      `Asset count must be between 1 and ${MAX_PORTFOLIO_ASSETS}.`
+    );
+  });
+
   it("computes the minimum valid equal-correlation boundary", () => {
     expect(getMinimumEqualCorrelation(1)).toBe(-1);
     expect(getMinimumEqualCorrelation(2)).toBe(-1);

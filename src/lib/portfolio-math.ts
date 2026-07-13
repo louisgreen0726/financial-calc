@@ -1,3 +1,5 @@
+import { MAX_MONTE_CARLO_SIMULATIONS, MAX_PORTFOLIO_ASSETS } from "@/lib/constants";
+
 export interface PortfolioAssetInput {
   id?: number;
   name: string;
@@ -16,6 +18,23 @@ export interface PortfolioSimulationResult {
   simulations: PortfolioPoint[];
   optimal: PortfolioPoint | null;
   minVol: PortfolioPoint | null;
+}
+
+const DEFAULT_MONTE_CARLO_SIMULATIONS = 1000;
+
+export function getMonteCarloSimulationTarget(requested: number | undefined, assetCount: number): number {
+  if (!Number.isInteger(assetCount) || assetCount <= 0 || assetCount > MAX_PORTFOLIO_ASSETS) {
+    throw new Error(`Asset count must be between 1 and ${MAX_PORTFOLIO_ASSETS}.`);
+  }
+
+  const requestedCount = requested ?? DEFAULT_MONTE_CARLO_SIMULATIONS;
+  if (!Number.isFinite(requestedCount)) {
+    throw new Error("Simulation count must be finite.");
+  }
+
+  const baselineCount = assetCount + 1;
+  const boundedCount = Math.min(MAX_MONTE_CARLO_SIMULATIONS, Math.max(0, Math.floor(requestedCount)));
+  return Math.max(baselineCount, boundedCount);
 }
 
 export function createSeededRandom(seed: string | number): () => number {

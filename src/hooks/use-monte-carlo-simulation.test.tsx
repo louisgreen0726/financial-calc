@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useMonteCarloSimulation } from "@/hooks/use-monte-carlo-simulation";
+import { MAX_MONTE_CARLO_SIMULATIONS, MAX_PORTFOLIO_ASSETS } from "@/lib/constants";
 
 class MockWorker {
   static instances: MockWorker[] = [];
@@ -125,6 +126,81 @@ describe("useMonteCarloSimulation", () => {
     expect(result.current.error?.message).toBe(correlationError);
     expect(onError).toHaveBeenCalledOnce();
     expect(onError.mock.calls[0][0]).toMatchObject({ message: correlationError });
+  });
+
+  it.each([Number.POSITIVE_INFINITY, Number.NaN])(
+    "rejects a non-finite simulation count %s before constructing a worker",
+    async (simulations) => {
+      const onError = vi.fn();
+      const { result } = renderHook(() => useMonteCarloSimulation());
+
+      await act(async () => {
+        await result.current.run({ ...payload, simulations }, { onError });
+      });
+
+      expect(MockWorker.instances).toHaveLength(0);
+      expect(result.current.isRunning).toBe(false);
+      expect(result.current.result).toBeNull();
+      expect(result.current.error?.message).toBe("Simulation count must be finite.");
+      expect(onError).toHaveBeenCalledOnce();
+    }
+  );
+
+  it("rejects too many assets before constructing a worker", async () => {
+    const onError = vi.fn();
+    const { result } = renderHook(() => useMonteCarloSimulation());
+    const oversizedAssets = Array.from({ length: MAX_PORTFOLIO_ASSETS + 1 }, (_, index) => ({
+      id: index + 1,
+      name: `Asset ${index + 1}`,
+      return: 5,
+      risk: 10,
+    }));
+
+    await act(async () => {
+      await result.current.run({ ...payload, assets: oversizedAssets }, { onError });
+    });
+
+    expect(MockWorker.instances).toHaveLength(0);
+    expect(result.current.isRunning).toBe(false);
+    expect(result.current.result).toBeNull();
+    expect(result.current.error?.message).toBe(`Asset count must be between 1 and ${MAX_PORTFOLIO_ASSETS}.`);
+    expect(onError).toHaveBeenCalledOnce();
+  });
+
+  it("normalizes a huge finite simulation request before posting it to the worker", async () => {
+    const { result } = renderHook(() => useMonteCarloSimulation());
+
+    await act(async () => {
+      await result.current.run({ ...payload, simulations: Number.MAX_VALUE });
+    });
+
+    const worker = MockWorker.instances[0];
+    expect(worker.postMessage).toHaveBeenCalledWith({
+      ...payload,
+      simulations: MAX_MONTE_CARLO_SIMULATIONS,
+    });
+  });
+
+  it("preserves the empty-result fallback for an empty asset list", async () => {
+    const onComplete = vi.fn();
+    vi.stubGlobal(
+      "Worker",
+      class {
+        constructor() {
+          throw new Error("worker unavailable");
+        }
+      }
+    );
+    const { result } = renderHook(() => useMonteCarloSimulation());
+
+    await act(async () => {
+      await result.current.run({ assets: [], simulations: Number.POSITIVE_INFINITY }, { onComplete });
+    });
+
+    expect(result.current.error).toBeNull();
+    expect(result.current.progress).toBe(100);
+    expect(result.current.result).toEqual({ simulations: [], optimal: null, minVol: null });
+    expect(onComplete).toHaveBeenCalledOnce();
   });
 
   it("includes equal-weight and corner baselines in the in-process fallback", async () => {

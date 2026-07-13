@@ -2675,3 +2675,39 @@ Verification:
 
 Queue status: Monte Carlo trust-boundary limits and an independent tooling improvement remain active in parallel;
 comparison baseline swapping, complete workspace backup, and further UI refinement remain queued.
+
+### Improvement 64: Bound Monte Carlo work at every execution boundary
+
+Status: completed.
+
+Changes:
+
+- Reproduced an unbounded-work path below the validated Portfolio page: a direct hook/Worker payload with an infinite
+  simulation count never terminated, and arbitrarily large finite counts or more than 20 assets could bypass the UI
+  limits and consume uncontrolled CPU/memory.
+- Added one shared simulation-target contract that validates the 1-to-20 asset boundary, rejects non-finite counts,
+  floors finite fractional counts, clamps work to the established 5,000-simulation maximum, and still emits the
+  required equal-weight plus every single-asset deterministic baseline when a smaller count is requested.
+- Applied the contract before Worker construction/postMessage so invalid work cannot be structured-cloned or started,
+  then retained the same validation inside both the asynchronous Worker and in-process fallback as defense in depth.
+  Huge finite hook requests are normalized before crossing the thread boundary.
+- Preserved the existing empty-asset result, seeded sampling, progress, cancellation, fallback, and summary semantics.
+- Added hook regressions proving Infinity/NaN and oversized asset arrays create no Worker, huge finite requests post the
+  exact 5,000 cap, and empty assets still complete. Direct Worker tests invoke `self.onmessage` to prove Infinity/NaN
+  return one error, 21 assets fail before baseline allocation, and `Number.MAX_VALUE` completes with exactly 5,000
+  bounded results.
+
+Files and areas:
+
+- `src/lib/portfolio-math.ts` and its focused tests
+- `src/hooks/use-monte-carlo-simulation.ts` and its focused tests
+- `src/workers/monte-carlo.worker.ts` and its new direct Worker test
+
+Verification:
+
+- Portfolio math, hook lifecycle/fallback, and direct Worker suites passed 30/30 tests across 3 files.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed after the parallel UI batch reached a
+  type-consistent state.
+
+Queue status: History baseline swapping, Playwright server lifecycle hardening, and stale PWA-test marker recovery are
+active in parallel; History loading stability and complete workspace backup remain queued UI/product improvements.

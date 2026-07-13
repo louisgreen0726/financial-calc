@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import {
   calculatePortfolioPoint,
   createSeededRandom,
+  getMonteCarloSimulationTarget,
   makeDeterministicBaselineWeights,
   makeRandomWeights,
   summarizePortfolioSimulations,
@@ -58,7 +59,6 @@ export function useMonteCarloSimulation() {
   const computeInProcess = useCallback(
     async (payload: MonteCarloPayload, options: UseMonteCarloOptions, runId: number) => {
       const assets = payload.assets ?? [];
-      const simulationsTarget = payload.simulations ?? 1000;
       const rf = payload.rf ?? 0;
       const correlation = payload.correlation ?? 0;
       const random = createSeededRandom(payload.seed ?? "portfolio-default");
@@ -72,9 +72,10 @@ export function useMonteCarloSimulation() {
         return;
       }
 
+      const simulationsTarget = getMonteCarloSimulationTarget(payload.simulations, assets.length);
       const baselineWeights = makeDeterministicBaselineWeights(assets.length);
       const results = baselineWeights.map((weights) => calculatePortfolioPoint(assets, weights, correlation, rf));
-      const randomSimulationTarget = Math.max(0, Math.floor(simulationsTarget) - baselineWeights.length);
+      const randomSimulationTarget = simulationsTarget - baselineWeights.length;
       const totalSimulationTarget = baselineWeights.length + randomSimulationTarget;
       const chunkSize = Math.max(50, Math.floor(randomSimulationTarget / 20));
 
@@ -120,6 +121,23 @@ export function useMonteCarloSimulation() {
 
       const runId = activeRunIdRef.current + 1;
       activeRunIdRef.current = runId;
+      let executionPayload = payload;
+      const assetCount = payload.assets?.length ?? 0;
+      if (assetCount > 0) {
+        try {
+          executionPayload = {
+            ...payload,
+            simulations: getMonteCarloSimulationTarget(payload.simulations, assetCount),
+          };
+        } catch (payloadError) {
+          const nextError =
+            payloadError instanceof Error ? payloadError : new Error("Invalid Monte Carlo simulation payload");
+          setError(nextError);
+          setIsRunning(false);
+          options.onError?.(nextError);
+          return;
+        }
+      }
       let createdWorker: Worker | null = null;
 
       try {
@@ -158,7 +176,7 @@ export function useMonteCarloSimulation() {
 
           const nextError = new Error(message.data);
           terminateWorker();
-          void computeInProcess(payload, options, runId).catch(() => {
+          void computeInProcess(executionPayload, options, runId).catch(() => {
             if (activeRunIdRef.current !== runId) return;
             setError(nextError);
             setIsRunning(false);
@@ -173,7 +191,7 @@ export function useMonteCarloSimulation() {
 
           const nextError = new Error("Monte Carlo worker execution failed");
           terminateWorker();
-          void computeInProcess(payload, options, runId).catch((fallbackError) => {
+          void computeInProcess(executionPayload, options, runId).catch((fallbackError) => {
             if (activeRunIdRef.current !== runId) return;
             const finalError = fallbackError instanceof Error ? fallbackError : nextError;
             setError(finalError);
@@ -182,7 +200,7 @@ export function useMonteCarloSimulation() {
           });
         };
 
-        worker.postMessage(payload);
+        worker.postMessage(executionPayload);
       } catch (workerError) {
         if (createdWorker) {
           createdWorker.terminate();
@@ -194,7 +212,7 @@ export function useMonteCarloSimulation() {
         const nextError =
           workerError instanceof Error ? workerError : new Error("Monte Carlo worker initialization failed");
         try {
-          await computeInProcess(payload, options, runId);
+          await computeInProcess(executionPayload, options, runId);
         } catch (fallbackError) {
           if (activeRunIdRef.current !== runId) return;
           const finalError = fallbackError instanceof Error ? fallbackError : nextError;

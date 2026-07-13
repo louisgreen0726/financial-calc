@@ -4,6 +4,7 @@
 import {
   calculatePortfolioPoint,
   createSeededRandom,
+  getMonteCarloSimulationTarget,
   makeDeterministicBaselineWeights,
   makeRandomWeights,
   summarizePortfolioSimulations,
@@ -19,7 +20,6 @@ self.onmessage = (event: MessageEvent) => {
       correlation?: number;
       seed?: string | number;
     };
-    const simCount = payload?.simulations ?? 1000;
     const assets = payload?.assets ?? [];
     const rf = payload?.rf ?? 0;
     const correlation = payload?.correlation ?? 0; // scalar pairwise correlation
@@ -30,11 +30,12 @@ self.onmessage = (event: MessageEvent) => {
       return;
     }
 
+    const simulationTarget = getMonteCarloSimulationTarget(payload?.simulations, assets.length);
     const baselineWeights = makeDeterministicBaselineWeights(assets.length);
     const simulations: PortfolioPoint[] = baselineWeights.map((weights) =>
       calculatePortfolioPoint(assets, weights, correlation, rf)
     );
-    const randomSimulationCount = Math.max(0, Math.floor(simCount) - baselineWeights.length);
+    const randomSimulationCount = simulationTarget - baselineWeights.length;
     const totalSimulationCount = baselineWeights.length + randomSimulationCount;
     const step = Math.max(1, Math.floor(randomSimulationCount / 20));
 
