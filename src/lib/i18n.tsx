@@ -309,6 +309,12 @@ type Translations = {
     seed: string;
     seedDesc: string;
     asset: string;
+    defaultAssets: {
+      usTech: string;
+      bonds: string;
+      gold: string;
+      emergingMarkets: string;
+    };
     ret: string;
     risk: string;
     add: string;
@@ -982,6 +988,12 @@ const en: Translations = {
     seed: "Simulation seed",
     seedDesc: "Use the same seed to reproduce identical Monte Carlo results and shared links.",
     asset: "Asset",
+    defaultAssets: {
+      usTech: "US Tech",
+      bonds: "Bonds",
+      gold: "Gold",
+      emergingMarkets: "Emerging Mkts",
+    },
     ret: "Ret (%)",
     risk: "Risk (%)",
     add: "Add Asset",
@@ -1661,6 +1673,12 @@ const zh: Translations = {
     seed: "模拟种子",
     seedDesc: "使用相同种子可复现一致的蒙特卡洛结果与分享链接。",
     asset: "资产名称",
+    defaultAssets: {
+      usTech: "美国科技股",
+      bonds: "债券",
+      gold: "黄金",
+      emergingMarkets: "新兴市场",
+    },
     ret: "预期回报 (%)",
     risk: "风险/波动率 (%)",
     add: "添加资产",

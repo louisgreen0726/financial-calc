@@ -39,7 +39,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Surface theme/language persistence write failures consistently with currency settings.
 - [x] Audit remaining preference setters for silent write failures, starting with sidebar collapse state.
 - [x] Investigate and eliminate development-only missing translation warnings for Portfolio seed controls.
-- [ ] Localize default Portfolio asset names without overwriting user-edited or restored names.
+- [x] Localize default Portfolio asset names without overwriting user-edited or restored names.
 - [x] Make local Playwright browser selection deterministic when the pinned browser binary is unavailable.
 - [x] Extend preference recovery coverage to failed cleanup of invalid persisted values.
 - [x] Consume pending history restores exactly once even when sessionStorage cleanup is blocked.
@@ -2324,3 +2324,55 @@ Verification:
 
 Queue status: 3 active items remain across default Portfolio asset localization, remaining app-shell refinement, and
 the strict two-record History comparison UI; dead dependency cleanup is also in verification.
+
+### Improvement 54: Stable localized Portfolio default assets
+
+Status: completed.
+
+Changes:
+
+- Replaced the four English-only default asset labels with allowlisted semantic `nameKey` identities plus stable English
+  fallback names. Defaults now render as US Tech/Bonds/Gold/Emerging Markets in English and localized asset classes in
+  Chinese without making translated display text part of persistent identity.
+- Split raw and resolved asset roles. URL state and History store the language-neutral fallback plus `nameKey`; form
+  values, accessible labels, worker payloads, report display inputs, exports, and allocation labels resolve the name in
+  the current language.
+- Made the simulation input signature locale-neutral through `nameKey ?? customName`. Switching language updates visible
+  asset and allocation labels but does not hide a valid completed simulation as though the economic inputs changed.
+  Editing a custom name still invalidates the old result as expected.
+- A user name edit explicitly removes `nameKey`, even if the text happens to equal a default translation. Later language
+  changes therefore preserve user intent. Reset recreates keyed defaults and immediately resolves them in the current
+  language.
+- Hardened restored asset normalization: known keys survive; unknown keys safely degrade to the sanitized literal
+  fallback; old records with an English-looking custom name are never guessed into a default identity; empty or invalid
+  records remain rejected.
+- Kept user-facing JSON exports self-explanatory by emitting resolved names, while raw report inputs and History retain
+  the keyed structure needed for future restoration. Added a share URL length assertion below the existing 4KB limit.
+- Added a real hydrated browser workflow covering English defaults, live Chinese localization, a custom Chinese edit,
+  switching back to English without overwrite, and Reset restoring keyed English defaults.
+
+Files and areas:
+
+- `src/lib/portfolio-state.ts` and `src/lib/portfolio-state.test.ts`
+- `src/app/portfolio/page.tsx` and its new focused component test
+- English/Chinese Portfolio default-asset catalog entries
+- `e2e/portfolio-asset-localization.spec.ts`
+
+Verification:
+
+- Focused Portfolio state/page tests and existing calculator/catalog regressions passed 31/31 tests.
+- The real Portfolio localization browser workflow passed 1/1 in 45.4 seconds without console or page errors.
+- Strict TypeScript, targeted ESLint, Prettier, independent subagent review, and `git diff --check` passed.
+
+Queue status: 2 active product/UI items remain across app-shell localization/information hierarchy and the strict
+two-record History comparison UI; dead dependency cleanup and legacy History formatting are active engineering items.
+
+### Progress checkpoint: 17:08 +08:00
+
+- Resumed-goal elapsed time: approximately 5 hours 56 minutes; cumulative logged active work: approximately 13 hours
+  33 minutes. The goal remains active until the user explicitly stops it.
+- Completed improvement batches: 54. The latest user-visible change localizes Portfolio defaults without making
+  language a hidden simulation input or weakening old URL/History compatibility.
+- Current work: commit Improvement 54, integrate the validated History comparison dialog/page workflow, and finish the
+  independent dead-dependency and legacy display-format batches.
+- Queue status: product, UI, compatibility, and maintenance work all remain assigned; the queue is intentionally non-empty.

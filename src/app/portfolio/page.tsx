@@ -10,7 +10,7 @@ import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, Tabl
 import { Trash2, Plus, Play, PieChart as PieIcon, RefreshCw, Loader2 } from "lucide-react";
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ZAxis } from "recharts";
 import { formatNumber } from "@/lib/utils";
-import { useLanguage } from "@/lib/i18n";
+import { useLanguage, type TranslationKey } from "@/lib/i18n";
 import { sanitizeInput } from "@/lib/sanitize";
 import { EmptyState } from "@/components/empty-state";
 import { ProgressBar } from "@/components/progress-bar";
@@ -23,9 +23,11 @@ import { SectionActionBar } from "@/components/section-action-bar";
 import { ResultActions } from "@/components/result-actions";
 import { clampEqualCorrelation, getMinimumEqualCorrelation, type PortfolioPoint } from "@/lib/portfolio-math";
 import {
+  DEFAULT_PORTFOLIO_ASSETS,
   normalizeRestoredPortfolioAssets,
   normalizeRestoredPortfolioCorrelation,
   normalizeRestoredPortfolioRiskFreeRate,
+  type PortfolioAssetState,
 } from "@/lib/portfolio-state";
 import { useCalculationHistory } from "@/hooks/use-calculation-history";
 import { HistoryPanel } from "@/components/history-panel";
@@ -41,26 +43,24 @@ import {
 } from "@/lib/constants";
 import { ResetDefaultsButton } from "@/components/reset-defaults-button";
 
-interface Asset {
-  id: number;
-  name: string;
-  return: string;
-  risk: string;
-}
+type Asset = PortfolioAssetState;
+type Translate = (key: TranslationKey) => string;
 
 const DEFAULT_PORTFOLIO_SEED = "balanced-2026";
-const DEFAULT_PORTFOLIO_ASSETS: Asset[] = [
-  { id: 1, name: "US Tech", return: "12", risk: "20" },
-  { id: 2, name: "Bonds", return: "4", risk: "5" },
-  { id: 3, name: "Gold", return: "6", risk: "15" },
-  { id: 4, name: "Emerging Mkts", return: "15", risk: "25" },
-];
+
+function createDefaultPortfolioAssets(): Asset[] {
+  return DEFAULT_PORTFOLIO_ASSETS.map((asset) => ({ ...asset }));
+}
+
+function resolvePortfolioAssetName(asset: Asset, t: Translate): string {
+  return asset.nameKey ? t(asset.nameKey) : asset.name;
+}
 
 export default function PortfolioPage() {
   const { t } = useLanguage();
   const formatSharpe = (value: number | null) => (value === null ? t("common.notAvailable") : formatNumber(value));
   const [rf, setRf] = useState(3.0);
-  const [assets, setAssets] = useState<Asset[]>(() => DEFAULT_PORTFOLIO_ASSETS.map((asset) => ({ ...asset })));
+  const [assets, setAssets] = useState<Asset[]>(createDefaultPortfolioAssets);
   const [correlation, setCorrelation] = useState(0.2);
   const [seed, setSeed] = useState(DEFAULT_PORTFOLIO_SEED);
   const [simulations, setSimulations] = useState<PortfolioPoint[]>([]);
@@ -72,14 +72,19 @@ export default function PortfolioPage() {
   const [chartSize, setChartSize] = useState({ width: 0, height: 0 });
   const { addToHistory } = useCalculationHistory({ page: "portfolio" });
 
+  const resolvedAssets = useMemo(
+    () => assets.map((asset) => ({ ...asset, name: resolvePortfolioAssetName(asset, t) })),
+    [assets, t]
+  );
+
   const parsedAssets = useMemo(
     () =>
-      assets.map((asset) => ({
+      resolvedAssets.map((asset) => ({
         name: asset.name.trim(),
         return: parseOptionalNumber(asset.return),
         risk: parseOptionalNumber(asset.risk),
       })),
-    [assets]
+    [resolvedAssets]
   );
 
   const minimumCorrelation = useMemo(() => getMinimumEqualCorrelation(parsedAssets.length), [parsedAssets.length]);
@@ -88,11 +93,29 @@ export default function PortfolioPage() {
     [correlation, parsedAssets.length]
   );
   const effectiveSeed = useMemo(() => seed.trim() || DEFAULT_PORTFOLIO_SEED, [seed]);
+  const signatureAssets = useMemo(
+    () =>
+      parsedAssets.map((asset, index) => ({
+        ...asset,
+        name: assets[index]?.nameKey ?? asset.name,
+      })),
+    [assets, parsedAssets]
+  );
   const inputSignature = useMemo(
-    () => JSON.stringify({ assets: parsedAssets, correlation: effectiveCorrelation, rf, seed: effectiveSeed }),
-    [effectiveCorrelation, effectiveSeed, parsedAssets, rf]
+    () => JSON.stringify({ assets: signatureAssets, correlation: effectiveCorrelation, rf, seed: effectiveSeed }),
+    [effectiveCorrelation, effectiveSeed, rf, signatureAssets]
   );
   const serializedAssets = useMemo(() => JSON.stringify(assets), [assets]);
+  const exportAssets = useMemo(
+    () =>
+      resolvedAssets.map((asset) => ({
+        id: asset.id,
+        name: asset.name,
+        return: asset.return,
+        risk: asset.risk,
+      })),
+    [resolvedAssets]
+  );
 
   const portfolioValidation = useMemo(() => {
     const hasInvalidAssetValue = parsedAssets.some(
@@ -180,17 +203,20 @@ export default function PortfolioPage() {
     setAssets(assets.filter((a) => a.id !== id));
   };
 
-  const updateAsset = (id: number, field: keyof Asset, value: string) => {
-    const sanitizedValue = field === "name" ? sanitizeInput(value) : value;
+  const updateAsset = (id: number, field: "name" | "return" | "risk", value: string) => {
     setAssets(
-      assets.map((a) =>
-        a.id === id
-          ? {
-              ...a,
-              [field]: field === "name" ? sanitizedValue : sanitizedValue,
-            }
-          : a
-      )
+      assets.map((asset) => {
+        if (asset.id !== id) return asset;
+        if (field === "name") {
+          return {
+            id: asset.id,
+            name: sanitizeInput(value),
+            return: asset.return,
+            risk: asset.risk,
+          };
+        }
+        return { ...asset, [field]: value };
+      })
     );
   };
 
@@ -303,7 +329,7 @@ export default function PortfolioPage() {
       resultSignature,
     };
     setRf(3);
-    setAssets(DEFAULT_PORTFOLIO_ASSETS.map((asset) => ({ ...asset })));
+    setAssets(createDefaultPortfolioAssets());
     setCorrelation(0.2);
     setSeed(DEFAULT_PORTFOLIO_SEED);
     setSimulations([]);
@@ -424,7 +450,7 @@ export default function PortfolioPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {assets.map((asset, index) => (
+                      {resolvedAssets.map((asset, index) => (
                         <TableRow key={asset.id}>
                           <TableCell>
                             <Input
@@ -488,7 +514,7 @@ export default function PortfolioPage() {
                   </Table>
                 </div>
                 <div className="space-y-3 sm:hidden">
-                  {assets.map((asset, index) => (
+                  {resolvedAssets.map((asset, index) => (
                     <div key={asset.id} className="space-y-3 rounded-lg border bg-muted/30 p-4">
                       <div className="flex items-center justify-between gap-3">
                         <p className="text-sm font-semibold">{t("portfolio.validation.assetCardTitle")}</p>
@@ -630,7 +656,7 @@ export default function PortfolioPage() {
                       rf,
                       correlation: effectiveCorrelation,
                       seed: effectiveSeed,
-                      assets: assets
+                      assets: resolvedAssets
                         .map((asset) => `${asset.name}: ${t("portfolio.retRisk")} ${asset.return}% / ${asset.risk}%`)
                         .join("; "),
                     }}
@@ -643,7 +669,7 @@ export default function PortfolioPage() {
                     shareUrl={shareUrl}
                     exportData={visibleSimulations as unknown as Record<string, unknown>[]}
                     exportJson={{
-                      assets,
+                      assets: exportAssets,
                       rf,
                       correlation: effectiveCorrelation,
                       seed: effectiveSeed,
@@ -687,7 +713,7 @@ export default function PortfolioPage() {
                   <div className="space-y-2">
                     {visibleOptimal.weights.map((w, i) => (
                       <div key={i} className="flex items-start justify-between gap-3 text-sm">
-                        <span className="min-w-0 break-words">{assets[i]?.name}</span>
+                        <span className="min-w-0 break-words">{resolvedAssets[i]?.name}</span>
                         <span className="shrink-0 font-bold">{(w * 100).toFixed(1)}%</span>
                       </div>
                     ))}
@@ -712,7 +738,7 @@ export default function PortfolioPage() {
                   <div className="space-y-2">
                     {visibleMinVol?.weights.map((w, i) => (
                       <div key={i} className="flex items-start justify-between gap-3 text-sm">
-                        <span className="min-w-0 break-words">{assets[i]?.name}</span>
+                        <span className="min-w-0 break-words">{resolvedAssets[i]?.name}</span>
                         <span className="shrink-0 font-bold">{(w * 100).toFixed(1)}%</span>
                       </div>
                     ))}

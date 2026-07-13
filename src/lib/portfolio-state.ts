@@ -9,11 +9,60 @@ import {
 import { parseOptionalNumber } from "@/lib/input-utils";
 import { sanitizeInput } from "@/lib/sanitize";
 
-export interface RestoredPortfolioAsset {
+export const PORTFOLIO_DEFAULT_ASSET_NAME_KEYS = [
+  "portfolio.defaultAssets.usTech",
+  "portfolio.defaultAssets.bonds",
+  "portfolio.defaultAssets.gold",
+  "portfolio.defaultAssets.emergingMarkets",
+] as const;
+
+export type PortfolioDefaultAssetNameKey = (typeof PORTFOLIO_DEFAULT_ASSET_NAME_KEYS)[number];
+
+const portfolioDefaultAssetNameKeys = new Set<string>(PORTFOLIO_DEFAULT_ASSET_NAME_KEYS);
+
+export interface PortfolioAssetState {
   id: number;
   name: string;
+  nameKey?: PortfolioDefaultAssetNameKey;
   return: string;
   risk: string;
+}
+
+export type RestoredPortfolioAsset = PortfolioAssetState;
+
+export const DEFAULT_PORTFOLIO_ASSETS = [
+  {
+    id: 1,
+    name: "US Tech",
+    nameKey: "portfolio.defaultAssets.usTech",
+    return: "12",
+    risk: "20",
+  },
+  {
+    id: 2,
+    name: "Bonds",
+    nameKey: "portfolio.defaultAssets.bonds",
+    return: "4",
+    risk: "5",
+  },
+  {
+    id: 3,
+    name: "Gold",
+    nameKey: "portfolio.defaultAssets.gold",
+    return: "6",
+    risk: "15",
+  },
+  {
+    id: 4,
+    name: "Emerging Mkts",
+    nameKey: "portfolio.defaultAssets.emergingMarkets",
+    return: "15",
+    risk: "25",
+  },
+] as const satisfies readonly PortfolioAssetState[];
+
+export function isPortfolioDefaultAssetNameKey(value: unknown): value is PortfolioDefaultAssetNameKey {
+  return typeof value === "string" && portfolioDefaultAssetNameKeys.has(value);
 }
 
 function normalizeRestoredNumber(value: unknown, min: number, max: number): number | null {
@@ -40,6 +89,7 @@ export function normalizeRestoredPortfolioAssets(value: unknown): RestoredPortfo
 
     const record = candidate as Record<string, unknown>;
     const name = typeof record.name === "string" ? sanitizeInput(record.name).trim() : "";
+    const nameKey = isPortfolioDefaultAssetNameKey(record.nameKey) ? record.nameKey : undefined;
     const expectedReturn =
       typeof record.return === "number"
         ? record.return
@@ -70,6 +120,7 @@ export function normalizeRestoredPortfolioAssets(value: unknown): RestoredPortfo
     normalized.push({
       id: normalized.length + 1,
       name,
+      ...(nameKey ? { nameKey } : {}),
       return: String(expectedReturn),
       risk: String(risk),
     });
