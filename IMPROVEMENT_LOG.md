@@ -46,7 +46,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [ ] Validate PWA manifest icons, shortcuts, and base-path asset targets in the static export gate.
 - [x] Prevent rapid consecutive `useUrlState` field updates from overwriting earlier edits.
 - [ ] Split storage feedback between applied session preferences and operations that were not completed.
-- [ ] Stabilize Black-Scholes log-moneyness for extreme but finite spot/strike ratios.
+- [x] Stabilize Black-Scholes log-moneyness for extreme but finite spot/strike ratios.
 - [ ] Normalize History filters when deleting the last record in the active category.
 - [ ] Detect and explain multiple valid TVM RATE roots instead of presenting one as unique.
 - [ ] Preserve NPV/IRR invariance when appending economically irrelevant zero cash flows.
@@ -1509,3 +1509,44 @@ Verification:
 - `npm run verify`: passed with 54 Vitest files and 437 tests, 15 routes, 197 precache assets, 96 script hashes, 35
   static style hashes, 2 runtime style hashes per document, 722 internal references, and every route bundle budget.
 - Changed source, browser tests, and documentation passed Prettier; `git diff --check` passed before the full gate.
+
+### Improvement 35: Stable extreme-moneyness option pricing and Greeks
+
+Status: completed.
+
+Changes:
+
+- Reproduced finite positive option inputs whose spot/strike division underflowed to zero before `Math.log`, turning
+  Black-Scholes prices and every Greek into `NaN`. The inverse ratio could overflow for the same reason.
+- Replaced both price and Greek log-moneyness calculations with `log(S) - log(K)`. Logs of all accepted positive finite
+  doubles remain finite even when their direct ratio is not representable.
+- Evaluated Gamma entirely in the log domain, including continuous dividend discounting. This avoids both a zero direct
+  denominator and premature normal-density underflow while retaining representable tail sensitivities.
+- Independent subagent review rejected an initial `nd1 === 0 ? 0` shortcut with a concrete subnormal counterexample:
+  Gamma can remain approximately `4.332662143e10` after the direct density/denominator have underflowed. The final
+  implementation and tests use the complete log-domain formula instead.
+- Added exact endpoint price/parity checks for both extreme directions, finite-value checks for all call/put Greeks,
+  a subnormal Gamma reference value, call/put Gamma equality, and inverse scaling under a common spot/strike scale.
+- Updated bilingual reliability documentation and engineering review evidence.
+
+Files and areas:
+
+- `src/lib/finance-math.ts` and `src/lib/finance-math.test.ts`
+- English/Chinese README, engineering review, and improvement log
+
+Verification:
+
+- The focused finance engine suite passed 61/61 tests; strict TypeScript passed during the full gate.
+- `npm run verify`: passed with 54 Vitest files and 439 tests, 15 routes, 197 precache assets, 96 script hashes, 35
+  static style hashes, 2 runtime style hashes per document, 722 internal references, and every route bundle budget.
+- Changed source and documentation passed Prettier; `git diff --check` passed.
+
+### Progress checkpoint: 12:43 +08:00
+
+- Resumed-goal elapsed time: 1 hour 31 minutes; cumulative logged active work: approximately 9 hours 8 minutes.
+- Completed improvement batches: 35; recent work hardened preference failures, pending restores, URL state concurrency,
+  and extreme-scale core option math in separate verified commits.
+- Current work: Improvement 35 is fully verified and ready to commit; storage feedback semantics are next, followed by
+  generated base-path deployment headers.
+- Queue status: 10 active items remain across user feedback correctness, deployment headers/manifest validation,
+  history state, RATE/NPV math semantics, local browser resolution, preference cleanup, translations, and formatting.

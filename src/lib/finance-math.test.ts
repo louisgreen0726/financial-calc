@@ -219,6 +219,41 @@ test("black scholes respects no-arbitrage bounds for numerically extreme contrac
   expect(put).toBeLessThanOrEqual(discountedStrike);
 });
 
+test("black scholes remains finite when spot-to-strike ratios underflow or overflow", () => {
+  const contracts = [
+    { spot: Number.MIN_VALUE, strike: 1e300, expectedCall: 0, expectedPut: 1e300 },
+    { spot: 1e300, strike: Number.MIN_VALUE, expectedCall: 1e300, expectedPut: 0 },
+  ];
+
+  for (const { spot, strike, expectedCall, expectedPut } of contracts) {
+    const call = Finance.blackScholes("call", spot, strike, 1, 0, 0.2);
+    const put = Finance.blackScholes("put", spot, strike, 1, 0, 0.2);
+    const callGreeks = Finance.greeks("call", spot, strike, 1, 0, 0.2);
+    const putGreeks = Finance.greeks("put", spot, strike, 1, 0, 0.2);
+
+    expect(call).toBe(expectedCall);
+    expect(put).toBe(expectedPut);
+    expect(call - put).toBe(spot - strike);
+    expect(Object.values(callGreeks).every(Number.isFinite)).toBe(true);
+    expect(Object.values(putGreeks).every(Number.isFinite)).toBe(true);
+    expect(callGreeks.gamma).toBe(0);
+    expect(putGreeks.gamma).toBe(0);
+  }
+});
+
+test("option gamma remains accurate across the subnormal-density transition", () => {
+  const spot = Number.MIN_VALUE;
+  const strike = 1e-320;
+  const gamma = Finance.greeks("call", spot, strike, 1, 0, 0.2).gamma;
+  const putGamma = Finance.greeks("put", spot, strike, 1, 0, 0.2).gamma;
+  const scale = 2;
+  const scaledGamma = Finance.greeks("call", spot * scale, strike * scale, 1, 0, 0.2).gamma;
+
+  expect(gamma).toBeCloseTo(4.332662143e10, 0);
+  expect(putGamma).toBe(gamma);
+  expect((scaledGamma * scale) / gamma).toBeCloseTo(1, 10);
+});
+
 test("option helpers return unavailable values when finite inputs overflow", () => {
   expect(Number.isNaN(Finance.blackScholes("put", 1, Number.MAX_VALUE, 100, -0.99, 0))).toBe(true);
   expect(Object.values(Finance.greeks("put", 1, Number.MAX_VALUE, 100, -0.99, 0)).every(Number.isNaN)).toBe(true);

@@ -55,6 +55,7 @@ Recent hardening work is reflected in the current source:
 
 - shared validation schemas now enforce rate, period, asset, cash-flow, and portfolio-size limits
 - finance math helpers reject unsupported bond frequencies, invalid DDM cases, invalid CPI/PPP inputs, and oversized amortization schedules
+- Black-Scholes prices and Greeks use stable log-moneyness and finite tail limits for extreme spot/strike scales
 - page-level result readiness checks verify outputs are finite before rendering or recording history
 - history records carry result-format metadata so currency, percentages, periods, and ratios render correctly
 - history restore no longer re-records restored entries as fresh calculations

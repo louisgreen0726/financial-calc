@@ -351,7 +351,9 @@ No P0 findings were identified.
   Separators must now form consistent three-digit groups; malformed and mixed grouping is rejected.
 - Black-Scholes no-arbitrage bounds: the normal-CDF approximation could produce a slightly negative price for an
   extreme deep-out-of-the-money contract. Stochastic prices are now constrained to the theoretical call/put lower
-  and upper bounds, with an extreme negative-rate regression test.
+  and upper bounds, with an extreme negative-rate regression test. Log-moneyness is computed as `log(S) - log(K)` so
+  positive finite values remain usable when `S / K` underflows or overflows. Gamma is evaluated in the log domain,
+  retaining representable tail sensitivities even when the normal density and direct denominator each underflow.
 
 #### P2 - fixed
 

@@ -18,6 +18,7 @@ const isSupportedBondFrequency = (frequency: number) =>
 const isSupportedPaymentTiming = (type: number) => type === 0 || type === 1;
 const isSupportedLoanMethod = (method: string) => method === "CPM" || method === "CAM";
 const isSupportedOptionType = (type: string) => type === "call" || type === "put";
+const optionLogMoneyness = (spot: number, strike: number) => Math.log(spot) - Math.log(strike);
 const toWholePeriods = (years: number, frequency: number) => {
   const periods = years * frequency;
   return Number.isInteger(periods) ? periods : NaN;
@@ -702,7 +703,7 @@ export const Finance = {
           : Math.max(discountedStrike - discountedSpot, 0);
       return isValid(deterministicPrice) ? deterministicPrice : NaN;
     }
-    const d1 = (Math.log(S / K) + (r - dividendYield + 0.5 * sigma * sigma) * t) / (sigma * Math.sqrt(t));
+    const d1 = (optionLogMoneyness(S, K) + (r - dividendYield + 0.5 * sigma * sigma) * t) / (sigma * Math.sqrt(t));
     const d2 = d1 - sigma * Math.sqrt(t);
 
     const rawPrice =
@@ -816,7 +817,7 @@ export const Finance = {
         : { delta: 0, gamma: 0, theta: 0, vega: 0, rho: 0 };
     }
 
-    const d1 = (Math.log(S / K) + (r - dividendYield + 0.5 * sigma * sigma) * t) / (sigma * Math.sqrt(t));
+    const d1 = (optionLogMoneyness(S, K) + (r - dividendYield + 0.5 * sigma * sigma) * t) / (sigma * Math.sqrt(t));
     const d2 = d1 - sigma * Math.sqrt(t);
     const nd1 = Finance.normPDF(d1);
     const Nd1 = Finance.normCDF(d1);
@@ -825,7 +826,14 @@ export const Finance = {
     const N_d2 = Finance.normCDF(-d2);
 
     let delta: number, theta: number, rho: number;
-    const gamma = (spotDiscountFactor * nd1) / (S * sigma * Math.sqrt(t));
+    const logGamma =
+      -dividendYield * t -
+      0.5 * d1 * d1 -
+      0.5 * Math.log(2 * Math.PI) -
+      Math.log(S) -
+      Math.log(sigma) -
+      0.5 * Math.log(t);
+    const gamma = Math.exp(logGamma);
     const vega = (discountedSpot * Math.sqrt(t) * nd1) / 100;
     const diffusionTheta = -(discountedSpot * nd1 * sigma) / (2 * Math.sqrt(t));
 
