@@ -2744,3 +2744,33 @@ Verification:
 
 Queue status: History baseline swapping and stale PWA-test marker recovery are active in parallel; History loading
 stability, complete workspace backup, and further UI/product auditing remain queued.
+
+### Improvement 66: Recover PWA E2E startup after interrupted offline tests
+
+Status: completed.
+
+Changes:
+
+- Reproduced a 180-second startup failure unique to interrupted PWA runs. The offline workflow intentionally creates
+  `out/.pwa-e2e-offline` so the static server drops sockets, but an interrupted run could leave that marker behind.
+  On the next run, Playwright's readiness probe was disconnected before the spec's own `beforeAll` cleanup could run.
+- Refactored the PWA server into an exported, testable `startPwaE2eServer` function while preserving direct CLI
+  startup, base-path rewriting, static serving/clean URL behavior, offline socket drops, and SIGINT/SIGTERM shutdown.
+- Removed a stale offline marker before calling `listen()`. A cleanup failure now fails startup immediately with the
+  real filesystem error instead of presenting as a generic readiness timeout.
+- Added an isolated temporary-directory test that creates a stale marker, starts on an OS-assigned port, verifies the
+  marker is gone before the first HTTP request, confirms the server responds, checks the resolved listening URL, and
+  closes the server plus temporary files after every run.
+
+Files and areas:
+
+- `scripts/serve-pwa-e2e.mjs`
+- `src/lib/pwa-e2e-server.test.ts`
+
+Verification:
+
+- The focused PWA E2E server lifecycle suite passed 1/1 tests.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: History baseline swapping and clipboard fallback cleanup are active in parallel; History loading
+stability, complete workspace backup, and further UI/product auditing remain queued.
