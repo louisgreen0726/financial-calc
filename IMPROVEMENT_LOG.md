@@ -63,7 +63,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Add a strict two-record comparison UI for compatible non-currency History results.
 - [x] Handle cross-tab `localStorage.clear()` without reviving queued history or favorite writes.
 - [ ] Add a versioned Workspace Backup workflow for history, favorites, and user preferences.
-- [ ] Isolate concurrent local Playwright runners by both port and Next.js build directory.
+- [x] Isolate concurrent local Playwright runners by both port and Next.js build directory.
 - [x] Preserve RATE scale invariance for extreme but finite cash flows.
 - [ ] Audit calculator charts and compact mobile result layouts for the next high-impact UI refinement.
 - [x] Expand Sidebar discovery across localized tool descriptions, groups, and multi-term queries.
@@ -3414,3 +3414,41 @@ Verification:
 
 Queue status: Workspace Backup and Playwright concurrent-runner isolation remain active; Fisher real-rate precision,
 browser integration, and further product/UI refinement remain queued, so the queue stays intentionally non-empty.
+
+### Improvement 87: Fully isolated concurrent Playwright lifecycle
+
+Status: completed.
+
+Changes:
+
+- Isolated every local browser runner onto a PID-derived high port and `.next/playwright-<runner>` build directory, with
+  strict validation for explicit port overrides and runner-owned relative paths. Existing-server reuse is now an
+  explicit opt-in rather than an accidental dependency on stale development state.
+- Prevented Next.js from rewriting the root `tsconfig.json` with per-run build paths. E2E servers select a dedicated
+  `tsconfig.playwright.json` that extends the project config; Next recognizes the extension and leaves both files
+  unchanged while still compiling against the isolated build output.
+- Replaced Playwright's Windows `webServer` shell lifecycle, which repeatedly hung while waiting after `taskkill`, with
+  a programmatic Next HTTP server owned by Playwright `globalSetup`. Teardown closes HTTP connections, the Next app,
+  and the build directory idempotently; a best-effort process-exit fallback cannot change an otherwise valid exit code.
+- Bridged the setup-selected URL through Playwright's official `PLAYWRIGHT_TEST_BASE_URL` fixture environment. This
+  keeps workers on the setup port even though Playwright re-evaluates config in multiple processes with different PIDs.
+- Added a 90-second test budget for isolated cold webpack route compilation while retaining the normal assertion
+  timeouts, and preserved explicit reuse, CI, browser selection, screenshots, and traces.
+
+Files and areas:
+
+- `playwright.config.ts`, `next.config.ts`, `tsconfig.playwright.json`
+- `scripts/playwright-global-setup.mjs`, `scripts/start-playwright-dev-server.mjs`
+- `src/lib/playwright-config.test.ts`, `src/lib/playwright-dev-server.test.ts`
+
+Verification:
+
+- Focused Playwright configuration/lifecycle suites passed 15/15 tests; strict TypeScript, focused ESLint, Prettier,
+  and `git diff --check` passed.
+- Two default-command runners executed concurrently: History passed on port 42044 and Bonds passed on port 43736,
+  both 1/1 with natural exit code 0.
+- After both exits, neither port was listening, no `.next/playwright-*` directory remained, and `tsconfig.json` had no
+  diff. Three directories created by earlier failed lifecycle experiments were also removed after ownership checks.
+
+Queue status: Workspace Backup, Calculator Finder, and final full integration verification remain in the frozen
+completion plan; no new improvement items will be added before stopping.
