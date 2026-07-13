@@ -461,6 +461,16 @@ test("macro helpers reject singular negative inflation cases", () => {
   expect(Number.isNaN(Finance.realInterestRate(-1, 0.02))).toBe(true);
 });
 
+test("macro amount scaling recovers finite results after intermediate overflow or underflow", () => {
+  expect(Finance.purchasingPower(Number.MAX_VALUE, 1, 1024)).toBeCloseTo(1, 12);
+  expect(Finance.purchasingPower(Number.MIN_VALUE, -0.5, 1075)).toBeCloseTo(2, 12);
+  expect(Finance.cpiAdjust(Number.MIN_VALUE, Number.MIN_VALUE, 1)).toBe(1);
+  expect(Finance.cpiAdjust(Number.MAX_VALUE, Number.MAX_VALUE, 1)).toBeCloseTo(1, 12);
+
+  expect(Finance.purchasingPower(10_000, 0.03, 10)).toBeCloseTo(7_440.939149, 6);
+  expect(Finance.cpiAdjust(1_000, 100, 125)).toBe(1_250);
+});
+
 test("irr rejects cash flows without a sign change", () => {
   expect(Number.isNaN(Finance.irr([100, 200, 300]))).toBe(true);
   expect(Number.isNaN(Finance.irr([-100, -50, -25]))).toBe(true);

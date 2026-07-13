@@ -899,7 +899,13 @@ export const Finance = {
     if (!isValid(currentAmount) || !isValid(inflationRate) || !isValid(years)) return NaN;
     if (years < 0) return NaN;
     if (1 + inflationRate <= 0) return NaN;
-    const result = currentAmount / Math.pow(1 + inflationRate, years);
+    const growthFactor = Math.pow(1 + inflationRate, years);
+    const directResult = currentAmount / growthFactor;
+    if (isValid(directResult) && (directResult !== 0 || currentAmount === 0)) return directResult;
+    if (currentAmount === 0) return 0;
+
+    const logMagnitude = Math.log(Math.abs(currentAmount)) - years * Math.log1p(inflationRate);
+    const result = Math.sign(currentAmount) * Math.exp(logMagnitude);
     return isValid(result) ? result : NaN;
   },
   realInterestRate: (nominalRate: number, inflationRate: number): number => {
@@ -911,7 +917,15 @@ export const Finance = {
   cpiAdjust: (amount: number, fromCPI: number, toCPI: number): number => {
     if (!isValid(amount) || !isValid(fromCPI) || !isValid(toCPI)) return NaN;
     if (amount < 0 || fromCPI <= 0 || toCPI <= 0) return NaN;
-    const result = amount * (toCPI / fromCPI);
+    if (amount === 0) return 0;
+
+    const directResult = amount * (toCPI / fromCPI);
+    if (isValid(directResult) && directResult !== 0) return directResult;
+
+    const reorderedResult = (amount / fromCPI) * toCPI;
+    if (isValid(reorderedResult) && reorderedResult !== 0) return reorderedResult;
+
+    const result = Math.exp(Math.log(amount) + Math.log(toCPI) - Math.log(fromCPI));
     return isValid(result) ? result : NaN;
   },
   exchangeRatePPP: (domesticPrice: number, foreignPrice: number): number => {

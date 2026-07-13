@@ -2868,3 +2868,34 @@ Verification:
 
 Queue status: a robust Playwright child-process wrapper and extreme purchasing-power/CPI stability remain active;
 History loading stability, complete workspace backup, and further UI/product work remain queued.
+
+### Improvement 70: Scale-stable purchasing power and CPI adjustment
+
+Status: completed.
+
+Changes:
+
+- Reproduced valid finite macro calculations whose mathematical result is finite but whose intermediate arithmetic is
+  not: `MAX_VALUE / 2^1024` collapsed through an infinite power factor, `MIN_VALUE / 0.5^1075` divided by zero, and
+  `MIN_VALUE * (1 / MIN_VALUE)` multiplied by an infinite CPI ratio.
+- Kept the existing direct purchasing-power calculation for ordinary/nonzero finite results, then added a signed
+  log-magnitude fallback only when the power/division path loses scale. Negative amounts retain their sign; invalid
+  rates/years and genuinely unrepresentable results retain the established `NaN` behavior.
+- Made CPI adjustment try direct multiplication, then a reordered `(amount / fromCPI) * toCPI` path, and finally a
+  log-domain reconstruction. Zero and validation semantics remain explicit, while finite results survive either ratio
+  overflow or amount underflow.
+- Added exact/close regressions recovering approximately 1, 2, and 1 for the three extreme identities, plus ordinary
+  purchasing-power and CPI cases so the fast path and visible calculator results stay unchanged.
+
+Files and areas:
+
+- `src/lib/finance-math.ts`
+- `src/lib/finance-math.test.ts`
+
+Verification:
+
+- The complete finance-math suite passed 73/73 tests.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: a robust Playwright child-process wrapper, object-URL download cleanup, and complete workspace backup are
+active in parallel; History loading stability and further UI/product work remain queued.
