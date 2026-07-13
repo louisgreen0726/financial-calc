@@ -292,6 +292,8 @@ type Translations = {
       couponRange: string;
       ytmRange: string;
       yearsRange: string;
+      wholeCouponPeriods: string;
+      periodLimit: string;
       frequencyValid: string;
     };
   };
@@ -962,6 +964,9 @@ const en: Translations = {
       couponRange: "Coupon rate must be within the supported range.",
       ytmRange: "Yield to maturity must be within the supported range.",
       yearsRange: "Years to maturity must be positive, within range, and align with the payment frequency.",
+      wholeCouponPeriods:
+        "Years to maturity must produce a whole number of coupon periods at the selected payment frequency.",
+      periodLimit: "The selected term and payment frequency exceed the 600-period calculation limit.",
       frequencyValid: "Choose a supported payment frequency.",
     },
   },
@@ -1639,6 +1644,8 @@ const zh: Translations = {
       couponRange: "票息率必须处于支持范围内。",
       ytmRange: "到期收益率必须处于支持范围内。",
       yearsRange: "剩余期限必须为正数、处于支持范围内，并与付息频率匹配。",
+      wholeCouponPeriods: "剩余期限与所选付息频率必须对应整数个票息期。",
+      periodLimit: "所选期限与付息频率超过最多 600 个票息期的计算限制。",
       frequencyValid: "请选择支持的付息频率。",
     },
   },

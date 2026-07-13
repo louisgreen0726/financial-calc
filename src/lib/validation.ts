@@ -26,6 +26,11 @@ export const TVMInputSchema = z.object({
   type: z.union([z.literal(0), z.literal(1)]).default(0),
 });
 
+export const BOND_VALIDATION_REASON = {
+  wholeCouponPeriods: "whole_coupon_periods",
+  periodLimit: "period_limit",
+} as const;
+
 export const BondInputSchema = z
   .object({
     faceValue: z.number().finite().positive("Face value must be positive"),
@@ -54,10 +59,12 @@ export const BondInputSchema = z
   .refine((data) => Number.isInteger(data.yearsToMaturity * data.frequency), {
     message: "Years and payment frequency must produce whole coupon periods",
     path: ["yearsToMaturity"],
+    params: { reason: BOND_VALIDATION_REASON.wholeCouponPeriods },
   })
   .refine((data) => data.yearsToMaturity * data.frequency <= MAX_PERIODS, {
     message: `Bond periods must be no more than ${MAX_PERIODS}`,
     path: ["yearsToMaturity"],
+    params: { reason: BOND_VALIDATION_REASON.periodLimit },
   });
 
 export const EquityCAPMSchema = z.object({

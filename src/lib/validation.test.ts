@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  BOND_VALIDATION_REASON,
   BondInputSchema,
   EquityDDMSchema,
   EquityWACCSchema,
@@ -73,7 +74,7 @@ describe("shared validation schemas", () => {
     ).toBe(true);
   });
 
-  it("rejects unsupported bond frequencies and fractional coupon periods", () => {
+  it("rejects unsupported bond frequencies and identifies fractional coupon periods", () => {
     expect(
       BondInputSchema.safeParse({
         faceValue: 1000,
@@ -83,15 +84,46 @@ describe("shared validation schemas", () => {
         frequency: 3,
       }).success
     ).toBe(false);
-    expect(
-      BondInputSchema.safeParse({
-        faceValue: 1000,
-        couponRate: 5,
-        yearsToMaturity: 10.25,
-        ytm: 4,
-        frequency: 2,
-      }).success
-    ).toBe(false);
+    const fractionalPeriods = BondInputSchema.safeParse({
+      faceValue: 1000,
+      couponRate: 5,
+      yearsToMaturity: 10.25,
+      ytm: 4,
+      frequency: 2,
+    });
+
+    expect(fractionalPeriods.success).toBe(false);
+    if (!fractionalPeriods.success) {
+      expect(fractionalPeriods.error.issues).toContainEqual(
+        expect.objectContaining({
+          code: "custom",
+          path: ["yearsToMaturity"],
+          params: { reason: BOND_VALIDATION_REASON.wholeCouponPeriods },
+        })
+      );
+    }
+  });
+
+  it("identifies the bond calculation limit while accepting its exact boundary", () => {
+    const base = { faceValue: 1000, couponRate: 5, ytm: 4 };
+    const overLimit = BondInputSchema.safeParse({
+      ...base,
+      yearsToMaturity: 50.5,
+      frequency: 12,
+    });
+
+    expect(overLimit.success).toBe(false);
+    if (!overLimit.success) {
+      expect(overLimit.error.issues).toContainEqual(
+        expect.objectContaining({
+          code: "custom",
+          path: ["yearsToMaturity"],
+          params: { reason: BOND_VALIDATION_REASON.periodLimit },
+        })
+      );
+    }
+    expect(BondInputSchema.safeParse({ ...base, yearsToMaturity: 50, frequency: 12 }).success).toBe(true);
+    expect(BondInputSchema.safeParse({ ...base, yearsToMaturity: 100, frequency: 4 }).success).toBe(true);
   });
 
   it("rejects bond rates outside the supported percent range", () => {

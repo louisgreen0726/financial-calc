@@ -18,7 +18,7 @@ import { ClientOnlyChart } from "@/components/client-only-chart";
 import { ResponsiveDisclosure } from "@/components/responsive-disclosure";
 import { parseOptionalNumber, parseRequiredNumber } from "@/lib/input-utils";
 import { ErrorDisplay, ValidationError } from "@/components/ui/error-display";
-import { BondInputSchema } from "@/lib/validation";
+import { BOND_VALIDATION_REASON, BondInputSchema } from "@/lib/validation";
 import { ResultShell } from "@/components/result-shell";
 import { ResultActions } from "@/components/result-actions";
 import { useShareableUrl } from "@/hooks/use-shareable-url";
@@ -74,7 +74,15 @@ export default function BondsPage() {
       : Object.fromEntries(
           result.error.issues.map((issue) => {
             const field = String(issue.path[0]) as keyof typeof messages;
-            return [field, messages[field] ?? t("bonds.validation.invalidInputs")];
+            let message = messages[field] ?? t("bonds.validation.invalidInputs");
+            if (issue.code === "custom") {
+              if (issue.params?.reason === BOND_VALIDATION_REASON.wholeCouponPeriods) {
+                message = t("bonds.validation.wholeCouponPeriods");
+              } else if (issue.params?.reason === BOND_VALIDATION_REASON.periodLimit) {
+                message = t("bonds.validation.periodLimit");
+              }
+            }
+            return [field, message];
           })
         );
   }, [couponRate, faceValue, frequency, t, years, ytm]);

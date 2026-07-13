@@ -54,7 +54,7 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [x] Stabilize translation-catalog source scanning under full-suite worker contention.
 - [x] Extend formatting enforcement beyond `src/` to E2E, scripts, workflows, and root configuration.
 - [x] Add analytic and finite-difference oracles for bond duration and convexity.
-- [ ] Reject unsupported fractional or over-600 coupon periods with actionable bond input validation.
+- [x] Explain unsupported fractional or over-600 coupon periods with actionable bond input validation.
 - [x] Repair stale cross-tab PWA update prompts after another tab activates the waiting worker.
 - [ ] Localize remaining hard-coded application-shell copy and refine sidebar information hierarchy.
 - [x] Design and validate a compatible-history scenario comparison workflow before implementation.
@@ -2241,3 +2241,50 @@ Verification:
 
 Queue status: 4 active items remain across default Portfolio asset localization, bond validation messaging, remaining
 app-shell refinement, and the now-specified two-record History comparison UI.
+
+### Improvement 52: Actionable bond coupon-period validation
+
+Status: completed.
+
+Changes:
+
+- Reproduced the user-facing gap: the shared bond schema already rejects terms that do not form whole coupon periods
+  and combinations above the 600-period engine limit, but the page mapped every maturity issue to one broad range
+  message. Users could not tell whether to change the term or the payment frequency.
+- Added stable custom-issue reason metadata for the whole-period and period-limit refinements. The UI branches on Zod's
+  custom issue code plus this machine-readable reason, never on the current English diagnostic string, and retains the
+  generic maturity fallback for ordinary positive/range failures and future unknown reasons.
+- Added focused English and Chinese messages. Fractional combinations explain the whole-coupon-period requirement;
+  over-limit combinations name the 600-period calculation boundary.
+- Expanded schema tests to assert both reason contracts, the exact 50-year monthly boundary at 600 periods, and a
+  100-year quarterly combination that remains below the limit.
+- Extended the calculator accessibility contract to confirm both reasons are attached to the maturity input through
+  `aria-invalid` and its existing help/error description IDs, including a restored over-limit History payload.
+- Added a browser workflow that enters a fractional semiannual term, switches to an over-limit monthly term, then
+  corrects the value to the exact boundary and confirms the validation error clears and Fair Price returns.
+
+Files and areas:
+
+- `src/lib/validation.ts` and `src/lib/validation.test.ts`
+- `src/app/bonds/page.tsx` and calculator accessibility coverage
+- English/Chinese bond validation catalog entries
+- `e2e/bonds-validation.spec.ts`
+
+Verification:
+
+- The focused validation, calculator accessibility, and catalog suites passed 38/38 tests.
+- The real bond validation browser workflow passed 1/1 in 5.2 seconds without console or page errors.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: 3 active items remain across default Portfolio asset localization, remaining app-shell
+localization/information hierarchy, and the strict two-record History comparison UI.
+
+### Progress checkpoint: 16:35 +08:00
+
+- Resumed-goal elapsed time: approximately 5 hours 23 minutes; cumulative logged active work: approximately 13 hours.
+  Work continues because the user has not requested a stop and the feature/UI queue remains substantive.
+- Completed improvement batches: 52. Recent work combines cross-tab data safety, independently verified financial
+  sensitivities, wider quality gates, corrected shell semantics, and actionable boundary diagnostics.
+- Current work: commit Improvement 52, then implement stable localized Portfolio defaults and the already validated
+  compatible History comparison UI.
+- Queue status: 3 active items remain, with additional UI and compatibility follow-ups identified during current audits.

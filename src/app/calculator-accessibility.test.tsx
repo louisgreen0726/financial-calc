@@ -80,6 +80,10 @@ vi.mock("@/components/history-panel", () => ({
       >
         restore legacy option fixture
       </button>
+    ) : page === "bonds" ? (
+      <button type="button" onClick={() => onRestore?.({ years: "50.5", frequency: "12" })}>
+        restore bond period-limit fixture
+      </button>
     ) : null,
 }));
 vi.mock("@/components/result-actions", () => ({ ResultActions: () => null }));
@@ -352,6 +356,22 @@ describe("calculator page accessibility", () => {
     render(<BondsPage />);
     fireEvent.change(screen.getByLabelText("bonds.ytm"), { target: { value: "5" } });
     expect(screen.getByText("bonds.par")).toBeInTheDocument();
+  });
+
+  it("connects specific bond period errors to the years input", () => {
+    render(<BondsPage />);
+    const yearsInput = screen.getByLabelText("bonds.years");
+
+    fireEvent.change(yearsInput, { target: { value: "10.25" } });
+    fireEvent.blur(yearsInput);
+    expect(yearsInput).toHaveAttribute("aria-invalid", "true");
+    expect(yearsInput).toHaveAttribute("aria-describedby", "bond-years-help bond-years-error");
+    expect(document.getElementById("bond-years-error")).toHaveTextContent("bonds.validation.wholeCouponPeriods");
+
+    fireEvent.click(screen.getByRole("button", { name: "restore bond period-limit fixture" }));
+    fireEvent.blur(yearsInput);
+    expect(yearsInput).toHaveAttribute("aria-invalid", "true");
+    expect(document.getElementById("bond-years-error")).toHaveTextContent("bonds.validation.periodLimit");
   });
 
   it("treats a zero-dividend DDM valuation as a valid zero result", () => {
