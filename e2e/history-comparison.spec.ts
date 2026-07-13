@@ -85,6 +85,35 @@ test("compares two compatible recorded results without implying recalculation", 
   await expect(dialog).toContainText("+2.5 percentage points");
   await expect(dialog.getByRole("row", { name: /Risk-Free Rate.*3\.5.*4/ })).toBeVisible();
 
+  const baseline = dialog.getByRole("region", { name: "Baseline" });
+  const comparison = dialog.getByRole("region", { name: "Comparison" });
+  const baselineTimestamp = await baseline.locator("p").last().textContent();
+  const comparisonTimestamp = await comparison.locator("p").last().textContent();
+  await expect(baseline).toContainText("8%");
+  await expect(comparison).toContainText("10.5%");
+
+  const swap = dialog.getByRole("button", { name: "Swap baseline and comparison" });
+  await expect(swap).toHaveAttribute("title", "Swap baseline and comparison");
+  await swap.click();
+
+  await expect(dialog).toBeVisible();
+  await expect(baseline).toContainText("10.5%");
+  await expect(baseline.locator("p").last()).toHaveText(comparisonTimestamp ?? "");
+  await expect(comparison).toContainText("8%");
+  await expect(comparison.locator("p").last()).toHaveText(baselineTimestamp ?? "");
+  await expect(dialog).toContainText("-2.5 percentage points");
+  await expect(dialog.getByRole("row", { name: /Risk-Free Rate.*4.*3\.5/ })).toBeVisible();
+
+  await dialog.getByRole("button", { name: "Close" }).last().click();
+  await expect(dialog).toHaveCount(0);
+  await page.getByRole("button", { name: "Switch to Chinese" }).click();
+  await page.getByRole("button", { name: "比较所选记录" }).click();
+
+  const chineseDialog = page.getByRole("dialog", { name: /比较已记录结果/ });
+  await expect(chineseDialog.getByRole("button", { name: "交换基准与对比记录" })).toBeVisible();
+  await chineseDialog.getByRole("button", { name: "交换基准与对比记录" }).click();
+  await expect(chineseDialog).toContainText("+2.5 个百分点");
+
   const { violations } = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22a", "wcag22aa", "best-practice"])
     .analyze();

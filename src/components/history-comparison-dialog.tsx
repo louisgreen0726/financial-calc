@@ -1,6 +1,6 @@
 "use client";
 
-import { GitCompareArrows } from "lucide-react";
+import { ArrowLeftRight, GitCompareArrows } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +30,7 @@ export interface HistoryComparisonCopy {
   percentagePointsUnit: string;
   periodsUnit: string;
   recordedOnly: string;
+  swap: string;
   title: string;
   yearsUnit: string;
 }
@@ -43,6 +44,7 @@ interface HistoryComparisonDialogProps {
   locale: "en" | "zh";
   metricLabel: string;
   onOpenChange: (open: boolean) => void;
+  onSwap: () => void;
   open: boolean;
 }
 
@@ -73,6 +75,7 @@ export function HistoryComparisonDialog({
   locale,
   metricLabel,
   onOpenChange,
+  onSwap,
   open,
 }: HistoryComparisonDialogProps) {
   const pair = createHistoryComparisonPair(baseline, comparison);
@@ -150,6 +153,17 @@ export function HistoryComparisonDialog({
         </div>
 
         <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-10 w-10"
+            aria-label={copy.swap}
+            title={copy.swap}
+            onClick={onSwap}
+          >
+            <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
+          </Button>
           <DialogClose asChild>
             <Button type="button" variant="outline">
               {copy.close}

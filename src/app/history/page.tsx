@@ -329,6 +329,13 @@ export default function HistoryPage() {
     setComparisonDialogSelection(null);
   };
 
+  const swapComparison = () => {
+    if (!comparisonReady) return;
+    const swapped = [comparisonItems[1], comparisonItems[0]];
+    setComparisonSelection(swapped);
+    setComparisonDialogSelection(swapped);
+  };
+
   const selectHistoryTab = (tab: string) => {
     setActiveTab(tab);
     clearComparisonForViewChange();
@@ -790,6 +797,7 @@ export default function HistoryPage() {
             percentagePointsUnit: t("history.percentagePointsUnit"),
             periodsUnit: t("history.periodsUnit"),
             recordedOnly: t("history.comparisonRecordedOnly"),
+            swap: t("history.swapComparison"),
             title: t("history.comparisonTitle"),
             yearsUnit: t("history.yearsUnit"),
           }}
@@ -803,6 +811,7 @@ export default function HistoryPage() {
           onOpenChange={(open) => {
             setComparisonDialogSelection(open && comparisonReady ? [...comparisonItems] : null);
           }}
+          onSwap={swapComparison}
           open={comparisonDialogOpen}
         />
       ) : null}

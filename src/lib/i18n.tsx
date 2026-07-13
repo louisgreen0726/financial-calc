@@ -573,6 +573,7 @@ type Translations = {
     comparison: string;
     input: string;
     changeFromBaseline: string;
+    swapComparison: string;
     selectForComparison: string;
     deselectFromComparison: string;
     selectTwoCompatible: string;
@@ -1275,6 +1276,7 @@ const en: Translations = {
     comparison: "Comparison",
     input: "Input",
     changeFromBaseline: "Change from baseline",
+    swapComparison: "Swap baseline and comparison",
     selectForComparison: "Select for comparison",
     deselectFromComparison: "Remove from comparison",
     selectTwoCompatible: "Select two compatible records",
@@ -1976,6 +1978,7 @@ const zh: Translations = {
     comparison: "对比记录",
     input: "输入项",
     changeFromBaseline: "相对基准的变化",
+    swapComparison: "交换基准与对比记录",
     selectForComparison: "选择用于比较",
     deselectFromComparison: "从比较中移除",
     selectTwoCompatible: "请选择两条兼容记录",

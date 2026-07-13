@@ -1,6 +1,6 @@
 /// <reference types="vitest/globals" />
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import HistoryPage from "@/app/history/page";
 import type { CalculationHistoryItem } from "@/lib/calculation-history";
 import { STORAGE_PREFIX } from "@/lib/constants";
@@ -239,7 +239,7 @@ describe("HistoryPage", () => {
         page: "equity",
         inputs: { rf: "3.5", beta: "1.2", rm: "10" },
         result: 0.08,
-        timestamp: 1,
+        timestamp: 1_700_000_000_000,
         label: "CAPM",
         resultFormat: "percentDecimal",
       },
@@ -248,7 +248,7 @@ describe("HistoryPage", () => {
         page: "equity",
         inputs: { rf: "4", beta: "1.3", rm: "11" },
         result: 0.105,
-        timestamp: 2,
+        timestamp: 1_700_000_100_000,
         label: "资本资产定价",
         resultFormat: "percentDecimal",
       },
@@ -298,6 +298,30 @@ describe("HistoryPage", () => {
     expect(dialog).toHaveTextContent("8%");
     expect(dialog).toHaveTextContent("10.5%");
     expect(dialog).toHaveTextContent("+2.5 history.percentagePointsUnit");
+
+    const swap = within(dialog).getByRole("button", { name: "history.swapComparison" });
+    expect(swap).toHaveAttribute("title", "history.swapComparison");
+    fireEvent.click(swap);
+
+    expect(dialog).toBeVisible();
+    const swappedBaseline = within(dialog).getByRole("region", { name: "history.baseline" });
+    const swappedComparison = within(dialog).getByRole("region", { name: "history.comparison" });
+    expect(swappedBaseline).toHaveTextContent("10.5%");
+    expect(swappedBaseline).toHaveTextContent(new Date(1_700_000_100_000).toLocaleString("en-US"));
+    expect(swappedComparison).toHaveTextContent("8%");
+    expect(swappedComparison).toHaveTextContent(new Date(1_700_000_000_000).toLocaleString("en-US"));
+    expect(within(dialog).getByText("-2.5 history.percentagePointsUnit")).toBeInTheDocument();
+    expect(within(dialog).getByRole("row", { name: /equity\.capm\.rf 4 3\.5/ })).toHaveAttribute(
+      "data-changed",
+      "true"
+    );
+
+    const closeButtons = within(dialog).getAllByRole("button", { name: "common.close" });
+    fireEvent.click(closeButtons[closeButtons.length - 1]);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    const remainingAlternatives = screen.getAllByRole("button", { name: "history.selectForComparison" });
+    expect(remainingAlternatives[0]).toHaveAttribute("title", "history.selectTwoCompatible");
+    expect(remainingAlternatives[1]).toHaveAttribute("title", "history.notComparableCurrency");
   });
 
   it("clears comparison selection when the view changes or a selected record disappears", async () => {
@@ -332,9 +356,14 @@ describe("HistoryPage", () => {
     fireEvent.change(search, { target: { value: "" } });
     fireEvent.click(screen.getAllByRole("button", { name: "history.selectForComparison" })[0]);
     expect(screen.getByText("1/2")).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole("button", { name: "history.selectForComparison" })[0]);
+    fireEvent.click(screen.getByRole("button", { name: "history.compareSelected" }));
+    expect(screen.getByRole("dialog")).toBeVisible();
+
     historyMock.history = historyMock.history.filter((item) => item.id !== "capm-one");
     rerender(<HistoryPage />);
 
-    await waitFor(() => expect(screen.getByText("0/2")).toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(screen.getByText("1/2")).toBeInTheDocument();
   });
 });

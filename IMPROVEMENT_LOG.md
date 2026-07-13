@@ -2804,3 +2804,40 @@ Verification:
 
 Queue status: History baseline swapping remains active; History loading stability, complete workspace backup, and the
 next core/tooling correctness batches remain queued or under audit.
+
+### Improvement 68: Swap History comparison baseline in place
+
+Status: completed.
+
+Changes:
+
+- Added a compact `ArrowLeftRight` command to the comparison dialog with explicit English/Chinese accessible labels and
+  tooltips. Users can now choose either saved record as the baseline without closing the dialog, cancelling selection,
+  or relying on the original click order.
+- Atomically reversed both the active comparison selection and the dialog's opening snapshot. The controlled dialog
+  therefore stays open while results, timestamps, baseline/comparison input columns, changed-row highlighting, and the
+  `comparison - baseline` delta direction all update together.
+- Preserved the safety contract: swapping cannot broaden eligibility or change the metric; closing retains the two
+  selected records and their incompatibility explanations; removing a selected record externally still closes the
+  dialog and leaves only the surviving valid selection.
+- Expanded component/page regressions to cover timestamps, input order, positive-to-negative delta reversal, dialog
+  continuity, close/reopen state, and external invalidation. The browser workflow swaps in English, closes, changes to
+  Chinese, reopens the retained pair, swaps back, and audits the final dialog with axe.
+
+Files and areas:
+
+- `src/components/history-comparison-dialog.tsx` and its focused tests
+- `src/app/history/page.tsx` and its focused tests
+- English/Chinese History comparison copy
+- `e2e/history-comparison.spec.ts`
+
+Verification:
+
+- History comparison contracts, page, dialog, and catalog suites passed 57/57 tests; the directly changed page/dialog
+  suites account for 16/16 of those tests.
+- The real bilingual swap/close/reopen workflow and axe scan passed 1/1. Its Playwright test body completed normally;
+  a separately tracked Windows dev-server teardown issue required terminating the outer runner afterward.
+- Strict TypeScript, targeted ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: a robust Playwright child-process wrapper, bare-CR Markdown containment, and extreme purchasing-power/CPI
+stability are active in parallel; History loading stability and complete workspace backup remain queued.

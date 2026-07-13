@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -13,6 +14,7 @@ const copy: HistoryComparisonCopy = {
   percentagePointsUnit: "pp",
   periodsUnit: "periods",
   recordedOnly: "These are recorded outputs and are not recalculated.",
+  swap: "Swap baseline and comparison",
   title: "Compare recorded results",
   yearsUnit: "years",
 };
@@ -40,6 +42,7 @@ describe("HistoryComparisonDialog", () => {
         locale="en"
         metricLabel="CAPM"
         onOpenChange={vi.fn()}
+        onSwap={vi.fn()}
         open
       />
     );
@@ -57,6 +60,51 @@ describe("HistoryComparisonDialog", () => {
     expect(betaRow).toHaveClass("bg-primary/5");
   });
 
+  it("keeps the dialog open while swapping results, timestamps, inputs, and delta direction", () => {
+    const first = makeCapmItem("baseline", 0.08, "1.2", 1_700_000_000_000);
+    const second = makeCapmItem("comparison", 0.105, "1.4", 1_700_000_100_000);
+
+    function SwapHarness() {
+      const [[baseline, comparison], setPair] = useState<[CalculationHistoryItem, CalculationHistoryItem]>([
+        first,
+        second,
+      ]);
+      return (
+        <HistoryComparisonDialog
+          baseline={baseline}
+          comparison={comparison}
+          copy={copy}
+          formatOptions={{ locale: "en" }}
+          getInputLabel={(key) => key.toUpperCase()}
+          locale="en"
+          metricLabel="CAPM"
+          onOpenChange={vi.fn()}
+          onSwap={() => setPair(([currentBaseline, currentComparison]) => [currentComparison, currentBaseline])}
+          open
+        />
+      );
+    }
+
+    render(<SwapHarness />);
+
+    const dialog = screen.getByRole("dialog", { name: `${copy.title}: CAPM` });
+    expect(within(dialog).getByRole("region", { name: copy.baseline })).toHaveTextContent("8%");
+    expect(within(dialog).getByRole("region", { name: copy.comparison })).toHaveTextContent("10.5%");
+    expect(within(dialog).getByText("+2.5 pp")).toBeInTheDocument();
+
+    fireEvent.click(within(dialog).getByRole("button", { name: copy.swap }));
+
+    expect(dialog).toBeVisible();
+    const swappedBaseline = within(dialog).getByRole("region", { name: copy.baseline });
+    const swappedComparison = within(dialog).getByRole("region", { name: copy.comparison });
+    expect(swappedBaseline).toHaveTextContent("10.5%");
+    expect(swappedBaseline).toHaveTextContent(new Date(second.timestamp).toLocaleString("en-US"));
+    expect(swappedComparison).toHaveTextContent("8%");
+    expect(swappedComparison).toHaveTextContent(new Date(first.timestamp).toLocaleString("en-US"));
+    expect(within(dialog).getByText("-2.5 pp")).toBeInTheDocument();
+    expect(within(dialog).getByRole("row", { name: /BETA 1\.4 1\.2/ })).toHaveAttribute("data-changed", "true");
+  });
+
   it("closes through the explicit command", () => {
     const onOpenChange = vi.fn();
     render(
@@ -69,6 +117,7 @@ describe("HistoryComparisonDialog", () => {
         locale="en"
         metricLabel="CAPM"
         onOpenChange={onOpenChange}
+        onSwap={vi.fn()}
         open
       />
     );
@@ -90,6 +139,7 @@ describe("HistoryComparisonDialog", () => {
         locale="en"
         metricLabel="CAPM"
         onOpenChange={vi.fn()}
+        onSwap={vi.fn()}
         open
       />
     );
