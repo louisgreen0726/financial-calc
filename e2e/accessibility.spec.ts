@@ -18,6 +18,7 @@ const routes = [
 ] as const;
 
 const axeTags = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22a", "wcag22aa", "best-practice"];
+const largeDocumentAccessibilityTimeout = 60_000;
 
 async function expectNoAccessibilityViolations(page: Page, state: string) {
   const { violations } = await new AxeBuilder({ page }).withTags(axeTags).analyze();
@@ -34,9 +35,12 @@ async function expectNoAccessibilityViolations(page: Page, state: string) {
 }
 
 for (const route of routes) {
-  test(`${route} meets the automated accessibility baseline`, async ({ page }) => {
-    await page.goto(route);
-    await page.locator("main").waitFor();
+  test(`${route} meets the automated accessibility baseline`, async ({ page }, testInfo) => {
+    // The complete 360-period loan table has about 2,400 accessible nodes and needs a larger Axe scan budget.
+    if (route === "/loans/") testInfo.setTimeout(largeDocumentAccessibilityTimeout);
+
+    await page.goto(route, { waitUntil: "networkidle" });
+    await expect(page.locator("main")).toBeVisible();
     await expectNoAccessibilityViolations(page, route);
   });
 }

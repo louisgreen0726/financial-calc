@@ -917,3 +917,44 @@ Verification:
 - Completed improvement batches: 22; all calculator reports now preserve both unit-bearing display inputs and raw keys.
 - Current work: Improvement 22 is fully verified and ready to commit; major dependency compatibility is next.
 - Queue status: 2 active items remain: isolated major dependency migrations and inline-style CSP reduction.
+
+### Improvement 23: Lucide React 1.x migration with deterministic large-document accessibility coverage
+
+Status: completed.
+
+Changes:
+
+- Upgraded `lucide-react` from 0.561.0 to 1.24.0 after confirming the new major's React 19 peer contract and checking
+  every existing icon import through strict TypeScript, ESLint, production bundling, and browser rendering.
+- Measured the generated route bundles after the migration rather than assuming tree shaking remained stable. Route
+  gzip sizes increased by roughly 50-250 bytes; `/portfolio` remained the largest route at 452,584 / 500,000 bytes.
+- Investigated an intermittent Loans Axe failure that surfaced during the full browser run. The trace showed that the
+  runner closed the page at its 30-second test deadline while Axe was traversing the complete 360-period table, whose
+  accessibility tree contains about 2,400 nodes; it was not a page navigation or an icon-rendering regression.
+- Made route readiness explicit by waiting for network idle and a visible `main` element before injecting Axe.
+- Assigned only the exhaustive Loans document scan a 60-second budget. All other browser tests retain the default
+  30-second limit, and the full amortization table remains covered instead of being excluded to make the test faster.
+
+Files and areas:
+
+- `package.json` and `package-lock.json`
+- `e2e/accessibility.spec.ts`
+
+Verification:
+
+- `npm run verify`: passed; strict TypeScript, ESLint, 49 Vitest files and 415 tests, production build, static-export
+  validation, and all route bundle budgets passed.
+- The production export remained at 15 routes, 197 precache assets, 96 exact inline-script hashes, and 722 validated
+  internal references.
+- The Loans accessibility baseline passed three consecutive runs with two workers, including two concurrent scans;
+  the final complete Playwright suite passed all 23 tests in 2.6 minutes.
+- Production dependency audit reported zero vulnerabilities; changed-file Prettier checks and `git diff --check`
+  passed.
+
+### Progress checkpoint: 08:12 +08:00
+
+- Continuous-session elapsed time: 5 hours 6 minutes.
+- Completed improvement batches: 23; the icon stack now uses the supported 1.x line without bundle-budget regression.
+- Current work: Improvement 23 is fully verified and ready to commit; ESLint 10 compatibility is next.
+- Queue status: 3 active items remain: ESLint 10 migration, inline-style CSP reduction, and amortization-table rendering
+  scalability without weakening complete exports or accessibility coverage.
