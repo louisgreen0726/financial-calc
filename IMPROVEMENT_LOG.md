@@ -2929,3 +2929,34 @@ Verification:
 
 Queue status: a robust Playwright child-process wrapper and complete workspace backup remain active; History loading
 stability and further UI/product/core work remain queued or under audit.
+
+### Improvement 72: Stable responsive History loading skeleton
+
+Status: completed.
+
+Changes:
+
+- Replaced the client-storage initialization screen's single large `Loading...` header panel and otherwise empty
+  viewport with a responsive skeleton that mirrors the final History toolbar, two page actions, search/selection row,
+  and three bounded record rows. Mobile and desktop first paint now reserve useful structure before localStorage state
+  is ready instead of jumping from a sparse screen to the full workflow.
+- Kept the real localized History heading and visible loading description, and added a dedicated screen-reader status
+  while marking the page busy. Decorative action/list placeholders are hidden from the accessibility tree so they
+  cannot be mistaken for disabled controls or records.
+- Used the existing shared Skeleton/Card primitives and stable widths/minimum row heights; the skeleton introduces no
+  new animation library, translation copy, storage behavior, or interactive state.
+- Made initialization controllable in the focused page harness and added a regression for busy/status semantics,
+  heading continuity, exactly three structural rows, and absence of live export controls before initialization.
+
+Files and areas:
+
+- `src/app/history/page.tsx`
+- `src/app/history/page.test.tsx`
+
+Verification:
+
+- The focused History page suite passed 9/9 tests.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: a robust Playwright child-process wrapper, transactional print preparation, and complete workspace backup
+are active in parallel; further UI/product/core auditing remains queued.

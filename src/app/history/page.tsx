@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage, type TranslationKey } from "@/lib/i18n";
 import { useCalculationHistory, CalculationHistoryItem } from "@/hooks/use-calculation-history";
 import { NAV_CONFIG } from "@/lib/nav-config";
@@ -406,13 +407,52 @@ export default function HistoryPage() {
 
   if (!isInitialized) {
     return (
-      <div className="page-stack" data-tone="neutral">
+      <div className="page-stack" data-tone="neutral" aria-busy="true">
+        <p className="sr-only" role="status">
+          {t("history.loading")}
+        </p>
         <div className="page-header">
           <div>
             <h1 className="page-title">{t("history.title")}</h1>
             <p className="page-description">{t("history.loading")}</p>
           </div>
+          <div className="page-actions grid sm:flex" aria-hidden="true">
+            <Skeleton className="h-9 w-full sm:w-28" />
+            <Skeleton className="h-9 w-full sm:w-28" />
+          </div>
         </div>
+        <Card aria-hidden="true">
+          <CardHeader className="pb-3">
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              <Skeleton className="h-9 w-full xl:max-w-md" />
+              <div className="flex gap-2">
+                <Skeleton className="h-9 w-24" />
+                <Skeleton className="h-9 w-20" />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="divide-y border-y">
+              {Array.from({ length: 3 }, (_, index) => (
+                <div
+                  className="flex min-h-24 items-start justify-between gap-4 p-4"
+                  data-history-loading-row=""
+                  key={index}
+                >
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <Skeleton className="h-6 w-28" />
+                    <Skeleton className="h-4 w-44 max-w-full" />
+                    <Skeleton className="h-4 w-64 max-w-full" />
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <Skeleton className="h-10 w-10" />
+                    <Skeleton className="h-10 w-10" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

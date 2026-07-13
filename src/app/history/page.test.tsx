@@ -11,6 +11,7 @@ const historyMock = vi.hoisted(() => ({
   clearAllHistory: vi.fn<() => void>(),
   retryPersistence: vi.fn<() => Promise<"persisted">>(() => Promise.resolve("persisted")),
   push: vi.fn(),
+  isInitialized: true,
   history: [
     {
       id: "1",
@@ -53,7 +54,7 @@ vi.mock("@/hooks/use-calculation-history", () => ({
     removeManyFromHistory: historyMock.removeManyFromHistory,
     clearAllHistory: historyMock.clearAllHistory,
     retryPersistence: historyMock.retryPersistence,
-    isInitialized: true,
+    isInitialized: historyMock.isInitialized,
     persistenceStatus: "idle",
     persistenceError: null,
     hasPendingPersistence: false,
@@ -94,6 +95,7 @@ describe("HistoryPage", () => {
         label: "VaR",
       },
     ];
+    historyMock.isInitialized = true;
     historyMock.removeManyFromHistory.mockClear();
     historyMock.removeFromHistory.mockClear();
     historyMock.clearAllHistory.mockClear();
@@ -102,6 +104,18 @@ describe("HistoryPage", () => {
     toastMock.error.mockClear();
     toastMock.success.mockClear();
     exportMock.exportToCSV.mockClear();
+  });
+
+  it("keeps the History layout stable while client storage initializes", () => {
+    historyMock.isInitialized = false;
+
+    const { container } = render(<HistoryPage />);
+
+    expect(container.firstElementChild).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByRole("status")).toHaveTextContent("history.loading");
+    expect(screen.getByRole("heading", { name: "history.title" })).toBeInTheDocument();
+    expect(container.querySelectorAll("[data-history-loading-row]")).toHaveLength(3);
+    expect(screen.queryByRole("button", { name: "export.csv" })).not.toBeInTheDocument();
   });
 
   it("exports stable raw history fields alongside localized display values", () => {
