@@ -44,7 +44,8 @@ Undo action that restores the prior inputs and visible result state.
 
 ### Supporting pages
 
-- **History**: saved calculation browsing, search, favorites, restore, batch delete, and CSV export
+- **History**: saved calculation browsing, search, favorites, restore, strict two-record comparison, batch delete, and
+  CSV export
 - **Settings**: self-healing cross-tab language/theme/currency preferences, explicit feedback when a browser blocks
   preference persistence, schema-validated history backup/restore, and reset controls
 - **Help**: usage guide and app support information
@@ -62,6 +63,8 @@ Recent hardening work is reflected in the current source:
   multiple mathematically valid rates, including the 10% initial-guess and fallback semantics
 - page-level result readiness checks verify outputs are finite before rendering or recording history
 - history records carry result-format metadata so currency, percentages, periods, and ratios render correctly
+- History comparison permits only records with proven compatible metadata, shows absolute-unit deltas and canonical
+  input changes, and clearly identifies saved outputs as recorded values rather than current-model recalculations
 - history restore no longer re-records restored entries as fresh calculations
 - cross-page pending restores are consumed once; blocked session cleanup cannot loop or overwrite later user edits
 - History falls back to All without an empty-state flash when the last record in an active page category disappears
@@ -71,7 +74,10 @@ Recent hardening work is reflected in the current source:
 - PWA metadata, install icons, generated precache assets, and bounded service worker caches respect
   `NEXT_PUBLIC_BASE_PATH`; cache quota/write failures never replace successful network responses, and a tab whose
   controller is replaced by an update activated elsewhere receives a working direct-refresh action
-- Monte Carlo simulations run in a Webpack-built worker and always include equal-weight and single-asset baselines
+- Monte Carlo simulations run in a Webpack-built worker, always include equal-weight and single-asset baselines, and
+  preserve actionable fallback computation errors when Worker startup fails
+- Option payoff chart domains and samples remain finite for finite inputs up to the JavaScript numeric limit without
+  changing ordinary-input chart shape
 - Print / Save as PDF isolates the active report and uses native browser pagination for sharp, searchable output
 - denied Clipboard API writes fall back to the legacy browser copy path; non-cancelled native-share and export
   failures show actionable feedback while leaving every action available for retry
@@ -88,7 +94,7 @@ Recent hardening work is reflected in the current source:
 - **Language**: TypeScript 5
 - **Styling**: Tailwind CSS 4, shadcn/ui, Radix UI
 - **Charts and animation**: Recharts, Framer Motion
-- **Forms and validation**: Zod, React Hook Form utilities
+- **Forms and validation**: Zod schemas with controlled React state
 - **Export**: native print layout, versioned JSON reports, spreadsheet-safe CSV helpers
 - **Testing**: Vitest, Testing Library, jsdom
 

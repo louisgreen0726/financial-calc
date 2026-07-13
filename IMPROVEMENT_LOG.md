@@ -2537,3 +2537,31 @@ Verification:
 
 Queue status: app-shell localization/mobile semantics is actively being implemented, while new finance correctness,
 tooling, dependency, UI, and robustness audits are replenishing the next prioritized work items.
+
+### Improvement 60: Synchronize the public capability overview
+
+Status: completed.
+
+Changes:
+
+- Updated the supporting-page overview to include the shipped strict two-record History comparison workflow rather
+  than presenting History as browse/delete/export only.
+- Documented the comparison safety contract: only proven compatible stored metadata is accepted, deltas use absolute
+  units, canonical inputs are shown, and recorded outputs are not misrepresented as current-model recalculations.
+- Added the newly hardened Monte Carlo fallback error precedence and finite extreme option-chart behavior to the
+  reliability overview so operational guarantees match the current implementation and tests.
+- Removed the stale React Hook Form stack claim after Improvement 57 deleted its only orphaned primitive and package;
+  the README now accurately describes Zod schemas with calculator-specific controlled React state.
+
+Files and areas:
+
+- `README.md`
+- `IMPROVEMENT_LOG.md`
+
+Verification:
+
+- Prettier and `git diff --check` passed for both Markdown files.
+- A current-document search confirms README no longer advertises the removed `react-hook-form` dependency.
+
+Queue status: app-shell localization/mobile semantics, extreme inflation-rate stability, and an independent tooling
+improvement are active in parallel; History comparison workflow follow-ups remain queued for product prioritization.
