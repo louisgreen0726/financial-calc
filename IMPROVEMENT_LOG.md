@@ -57,7 +57,8 @@ Minimum session target: 10 hours; continue until the user explicitly stops the g
 - [ ] Reject unsupported fractional or over-600 coupon periods with actionable bond input validation.
 - [x] Repair stale cross-tab PWA update prompts after another tab activates the waiting worker.
 - [ ] Localize remaining hard-coded application-shell copy and refine sidebar information hierarchy.
-- [ ] Design and validate a compatible-history scenario comparison workflow before implementation.
+- [x] Design and validate a compatible-history scenario comparison workflow before implementation.
+- [ ] Add a strict two-record comparison UI for compatible non-currency History results.
 - [x] Handle cross-tab `localStorage.clear()` without reviving queued history or favorite writes.
 
 ## 2026-07-13
@@ -2204,3 +2205,39 @@ Verification:
 
 Queue status: 4 active items remain across default Portfolio asset localization, bond input validation, remaining
 app-shell localization/information hierarchy, and the compatible History comparison feature.
+
+### Improvement 51: Strict History comparison eligibility and delta contracts
+
+Status: completed.
+
+Changes:
+
+- Designed the first History comparison as a comparison of two recorded outputs, not a claim that old scenarios can be
+  reproduced with the current model. The v1 record schema has no original currency, model version, simulation count,
+  or stable metric ID, so broad comparison would produce convincing but unsupported results.
+- Defined nine compatibility contracts that can be identified unambiguously from current fields: TVM rate and period
+  targets, CAPM, WACC, call/put implied volatility, inflation, real rate, and purchasing-power parity. Labels and
+  timestamps never participate, so English/Chinese records remain compatible.
+- Required exact current input-key sets, explicit expected result formats, absent custom result units, finite results,
+  valid discriminators/enums, and canonicalizable numeric inputs. Extra or missing keys, malformed values, inferred
+  legacy formats, and unknown variants are rejected rather than guessed.
+- Classified currency results separately because the original currency is not stored, and Portfolio results separately
+  because their simulation/model metadata is incomplete. Both remain intentionally unavailable to the MVP.
+- Added ordered pair construction and signed comparison-minus-baseline deltas in absolute display units. Decimal and
+  whole percentages become percentage-point changes; ratio, number, periods, and years retain their own units. No
+  relative-percent claim is synthesized.
+- Canonicalized grouped/numeric strings and enum representations for input tables, while omitting stable discriminators
+  and the field solved by TVM. Numeric-equivalent inputs compare consistently without mutating stored records.
+
+Files and areas:
+
+- `src/lib/history-comparison.ts`
+- `src/lib/history-comparison.test.ts`
+
+Verification:
+
+- The focused eligibility, compatibility, canonicalization, and delta suite passed 41/41 tests.
+- Strict TypeScript, focused ESLint, Prettier, and `git diff --check` passed.
+
+Queue status: 4 active items remain across default Portfolio asset localization, bond validation messaging, remaining
+app-shell refinement, and the now-specified two-record History comparison UI.
